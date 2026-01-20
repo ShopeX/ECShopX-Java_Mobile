@@ -27,6 +27,7 @@ import {
   BaNavBar,
   BaCoupon
 } from '@/subpages/guide/components'
+import { SG_GUIDE_PARAMS } from '@/consts/localstorage'
 import './index.scss'
 
 const initialState = {
