@@ -106,8 +106,8 @@ const SpLogin = forwardRef((props, ref) => {
         params['uid'] = uid
       }
 
-      if (shopInfo.distributor_id) {
-        params['distributor_id'] = shopInfo.distributor_id
+      if (shopInfo.shop_code) {
+        params['distributor_id'] = shopInfo.shop_code
       }
       if (dtid && dtid !== 'undefined') {
         params['distributor_id'] = dtid
