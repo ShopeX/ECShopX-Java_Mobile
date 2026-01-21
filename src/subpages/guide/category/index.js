@@ -118,7 +118,7 @@ const CategoryIndex = (props) => {
   return (
     <SpPage
       className='page-guide-category-index'
-      renderFloat={<BaTabBar height={state.footerHeight} />}
+      renderFooter={<BaTabBar height={state.footerHeight} />}
       onReady={({ footerHeight }) => {
         setState((draft) => {
           draft.footerHeight = footerHeight

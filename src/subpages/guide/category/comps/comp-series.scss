@@ -15,6 +15,7 @@
     background: #f5f5f5;
     box-sizing: border-box;
     top: 170px;
+    height: auto;
     &-list {
       &__content {
         height: 89px;
@@ -88,6 +89,7 @@
     box-sizing: border-box;
     left: 200px;
     top: 170px;
+    height: auto;
     .category-content {
       display: flex;
       flex-wrap: wrap;
