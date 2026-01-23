@@ -96,6 +96,8 @@ function linkPage(data) {
         clearPurchaseDtid()
       } else if (id == 'applyChief') {
         url += `?distributor_id=${dtid || distributor_id}`
+      } else if (id == 'kujiale') {
+        url = '/subpages/case/list'
       }
       // if (id == 'purchase') {
       //   clearPurchaseDtid()
