@@ -3,16 +3,16 @@
  * See LICENSE file for license details.
  */
 import React, { useEffect, useRef } from 'react'
+import { useSelector, useDispatch } from 'react-redux'
 import { View, Text, Image, Form, Picker } from '@tarojs/components'
 import Taro from '@tarojs/taro'
 import { AtTabBar, AtSearchBar, AtButton } from 'taro-ui'
 import SpTabbar from '@/components/sp-tabbar'
-import { autoGetLocation } from '@/utils/wxApi'
 import api from '@/api'
 import SpPage from '@/components/sp-page'
 import SpScrollView from '@/components/sp-scrollview'
-import { classNames, pickBy, entryLaunch } from '@/utils'
-import S from '@/spx'
+import { classNames, pickBy, entryLaunch, isEmpty } from '@/utils'
+import { updateLocation } from '@/store/slices/user'
 import { useImmer } from 'use-immer'
 import doc from '@/doc'
 import './list.scss'
@@ -92,8 +92,11 @@ const initialState = {
 }
 
 function CaseList() {
+  const { location } = useSelector((state) => state.user)
+  const { entryStoreByLBS } = useSelector((state) => state.sys)
   const [state, setState] = useImmer(initialState)
   const listRef = useRef(null)
+  const dispatch = useDispatch()
 
   const {
     tabList,
@@ -217,10 +220,9 @@ function CaseList() {
     }
   }
 
-  const getStorageLocation = async () => {
-    const currentLocation = S.get('currentLocation')
-    if (currentLocation) {
-      const data = await entryLaunch.getAddressByLnglatWebAPI(currentLocation.longitude, currentLocation.latitude)
+  const getStorageLocation = async (locationInfo) => {
+    if (!isEmpty(location) || !isEmpty(locationInfo)) {
+      const data = await entryLaunch.getAddressByLnglatWebAPI(location?.lng || locationInfo?.lng, location?.lat || locationInfo?.lat)
       const { city, error } = data
       if (error) {
         setState((draft) => {
@@ -231,7 +233,7 @@ function CaseList() {
       }
       setState((draft) => {
         draft.locationData = { cityName: city, cityId: '1438' }
-        draft.currentLocation = currentLocation
+        draft.currentLocation = location || locationInfo
       })
       refresh()
     } else {
@@ -243,14 +245,18 @@ function CaseList() {
   }
 
   const handleAutoGetLoaction = () => {
-    autoGetLocation().then((data) => {
-      const { latitude, longitude } = data
-      S.set('currentLocation', {
-        latitude,
-        longitude
-      })
-      getStorageLocation()
-    })
+    if (entryStoreByLBS) {
+      if (isEmpty(location)) {
+        entryLaunch.isOpenPosition((res) => {
+          if (res.lat) {
+            dispatch(updateLocation(res))
+            getStorageLocation(res)
+          }
+        })
+      } else {
+        getStorageLocation()
+      }
+    }
   }
 
   const handleToggleTab = (value) => {
