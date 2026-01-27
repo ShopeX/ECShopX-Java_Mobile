@@ -2,7 +2,7 @@
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
  */
-import React, { useEffect, useRef } from 'react'
+import React, { useCallback, useEffect, useRef } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import Taro, { getCurrentInstance, useRouter } from '@tarojs/taro'
 import { AtButton } from 'taro-ui'
@@ -272,7 +272,7 @@ function PurchaseCheckout(props) {
       try {
         const h5ResInfo = await api.trade.h5create({
           ...params,
-          pay_type: isAPP() ? payType : TRANSFORM_PAYTYPE[payType]
+          pay_type: isAPP() ? payType : TRANSFORM_PAYTYPE()[payType]
         })
         orderInfo = h5ResInfo
         orderId = h5ResInfo.order_id
@@ -646,6 +646,16 @@ function PurchaseCheckout(props) {
     )
   }
 
+  //原价总和
+  const renderMarketPrice = useCallback(() => {
+    const marketPrice = detailInfo?.reduce((total, item) => {
+      const salePrice = item?.salePrice || 0
+      const num = item?.num || 1
+      return total + salePrice * num
+    }, 0)
+    return <SpPrice value={marketPrice} />
+  }, [detailInfo])
+
   const renderGoodsComp = () => {
     return (
       <View className='cart-list'>
@@ -738,7 +748,7 @@ function PurchaseCheckout(props) {
 
       <View className='cart-checkout__total'>
         <SpCell className='trade-sub__item' title='原价：'>
-          <SpPrice unit='cent' value={totalInfo.market_fee} />
+          {renderMarketPrice()}
         </SpCell>
         <SpCell className='trade-sub__item' title='总价：'>
           <SpPrice unit='cent' value={totalInfo.item_fee_new} />

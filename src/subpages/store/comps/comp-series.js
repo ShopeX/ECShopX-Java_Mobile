@@ -24,10 +24,10 @@ const CompSeries = (props) => {
     const { category_id, main_category_id } = item
     let url = ''
     if (category_id) {
-      url = `/pages/item/list?cat_id=${category_id}`
+      url = `/subpages/item/list?cat_id=${category_id}`
     }
     if (main_category_id) {
-      url = `/pages/item/list?main_cat_id=${main_category_id}`
+      url = `/subpages/item/list?main_cat_id=${main_category_id}`
     }
     if (url) {
       Taro.navigateTo({
@@ -115,7 +115,7 @@ const CompSeries = (props) => {
             {currentChildren.map((item, index) => {
               return item.children ? (
                 <View className='new' key={index}>
-                  <View className='group-title'>{item.name}</View>
+                  {item.name && <View className='group-title'>{item.name}</View>}
                   <View className='content-group'>
                     {item.children.map((child, sindex) => (
                       <View className='goods-category-item' key={`content-group__${sindex}`}>

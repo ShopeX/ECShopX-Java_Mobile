@@ -2,7 +2,7 @@
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
  */
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useMemo } from 'react'
 import { useSelector } from 'react-redux'
 import { useImmer } from 'use-immer'
 import Taro, { getCurrentInstance } from '@tarojs/taro'
@@ -120,7 +120,7 @@ function TradeAfterSale(props) {
     const { orderInfo, offline_aftersales_is_open, distributor } = await api.trade.detail(id)
     const reasons = await api.aftersales.reasonList()
     const { intro, is_open } = await api.aftersales.remindDetail()
-    const { offline_aftersales, is_refund_freight } = distributor
+    const { offline_aftersales, is_refund_freight } = distributor || {}
     const _info = pickBy(orderInfo, doc.trade.TRADE_ITEM)
     setState((draft) => {
       draft.info = _info
@@ -132,7 +132,8 @@ function TradeAfterSale(props) {
         intro,
         is_open
       }
-      draft.offline_freight = _info?.freightFee
+      draft.offline_freight =
+        _info?.freightType == 'cash' ? _info?.freightFee : _info?.freightFeePoint
       if (
         (VERSION_STANDARD && !offline_aftersales_is_open) ||
         (VERSION_PLATFORM && offline_aftersales == 0)
@@ -225,7 +226,7 @@ function TradeAfterSale(props) {
       evidence_pic: pic
     }
     if (offline_freight_status) {
-      params.freight = offline_freight * 100
+      params.freight = info?.freightType == 'cash' ? offline_freight * 100 : offline_freight
     }
     // 退货退款
     if (aftersales_type == 'REFUND_GOODS') {
@@ -233,8 +234,11 @@ function TradeAfterSale(props) {
         ...params,
         return_type: refundType
       }
-      if (offline_freight > info?.freightFee) {
-        return showToast(`退款金额不能大于¥${info?.freightFee}`)
+      if (offline_freight > info?.freightFee && info?.freightType == 'cash') {
+        return showToast(`退款运费不能大于¥${info?.freightFee}`)
+      }
+      if (offline_freight > info?.freightFeePoint && info?.freightType == 'point') {
+        return showToast(`退款运费不能大于积分${info?.freightFeePoint}`)
       }
       // 到店退货
       if (refundType == 'offline') {
@@ -371,7 +375,7 @@ function TradeAfterSale(props) {
               <View className='refund-amount'>
                 <SpCell
                   border
-                  title='退运费'
+                  title={`退运费(${info?.freightType == 'cash' ? '¥' : '积分'})`}
                   value={
                     <AtInput
                       name='offline_freight'

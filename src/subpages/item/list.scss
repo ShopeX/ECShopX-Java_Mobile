@@ -55,7 +55,9 @@ $search-wrap-height: 90px;
       }
     }
   }
-
+  .item-list-scroll {
+    height: calc(100% - 232px);
+  }
   .list-scroll-container {
     height: calc(100% - #{$search-wrap-height});
   }

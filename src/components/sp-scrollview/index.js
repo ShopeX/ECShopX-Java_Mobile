@@ -111,18 +111,21 @@ function SpScrollView(props, ref) {
   return (
     <View className={classNames('sp-scrollview', className)} style={style} ref={wrapRef}>
       <View className='sp-scrollview-body'>{children}</View>
-      {page.hasMore && <SpLoading>正在加载...</SpLoading>}
-      {!page.hasMore &&
-        getTotal() == 0 &&
-        (renderEmpty ? renderEmpty : <SpNote img='empty_activity.png' title='没有查询到数据' />)}
-      {!page.loading &&
-        !page.hasMore &&
-        getTotal() > 0 &&
-        (renderMore ? (
-          renderMore()
-        ) : (
-          <SpNote className='no-more' title='--没有更多数据了--'></SpNote>
-        ))}
+      {/* 使用固定容器包裹状态提示，保持 DOM 结构稳定，避免滚动位置重置 */}
+      <View className='sp-scrollview-footer'>
+        {page.hasMore && <SpLoading>正在加载...</SpLoading>}
+        {!page.hasMore &&
+          getTotal() == 0 &&
+          (renderEmpty ? renderEmpty : <SpNote img='empty_activity.png' title='没有查询到数据' />)}
+        {!page.loading &&
+          !page.hasMore &&
+          getTotal() > 0 &&
+          (renderMore ? (
+            renderMore()
+          ) : (
+            <SpNote className='no-more' title='--没有更多数据了--'></SpNote>
+          ))}
+      </View>
       <View className={classNames('scrollview-bottom', `scrollview-${vid}`)}></View>
     </View>
   )

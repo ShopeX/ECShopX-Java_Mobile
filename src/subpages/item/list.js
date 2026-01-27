@@ -7,6 +7,7 @@ import { View, Text, ScrollView } from '@tarojs/components'
 import Taro, { getCurrentInstance, useDidShow } from '@tarojs/taro'
 import { useSelector, useDispatch } from 'react-redux'
 import { useImmer } from 'use-immer'
+import throttle from 'lodash/throttle'
 import {
   SpFilterBar,
   SpTagBar,
@@ -58,7 +59,8 @@ const initialState = {
   skuPanelOpen: false,
   info: null,
   selectType: 'picker',
-  card_id: null // 兑换券
+  card_id: null, // 兑换券
+  backTopScrollTop: 0
 }
 
 function ItemList() {
@@ -79,7 +81,8 @@ function ItemList() {
     info,
     show,
     fixTop,
-    routerParams
+    routerParams,
+    backTopScrollTop
   } = state
   const [isShowSearch, setIsShowSearch] = useState(false)
   const { cat_id, main_cat_id, tag_id, card_id, user_card_id, all } = routerParams || {}
@@ -329,6 +332,7 @@ function ItemList() {
       Taro.hideLoading()
     }
   }
+
   return (
     <SpPage
       scrollToTopBtn

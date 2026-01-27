@@ -109,6 +109,11 @@ import SpInput from './sp-input'
 import SpSelectModal from './sp-select-modal'
 import SpDeliver from './sp-deliver'
 import SharePurchase from './share-purchase'
+import SpSearchOne from './sp-search-one'
+
+import SpShop from './sp-shop'
+import SpClassifyHorizontal from './sp-classify-horizontal'
+import SpClassifyVertical from './sp-classify-vertical'
 
 export default {}
 
@@ -218,5 +223,9 @@ export {
   SpInput,
   SpSelectModal,
   SpDeliver,
-  SharePurchase
+  SharePurchase,
+  SpSearchOne,
+  SpShop,
+  SpClassifyHorizontal,
+  SpClassifyVertical
 }

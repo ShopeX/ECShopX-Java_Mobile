@@ -109,7 +109,8 @@ const initialState = {
   isParameter: false,
   imgHeightList: [], // 用于存储banner高度
   navigateMantle: false,
-  defaultImageHeight: 520 // 默认图片高度，避免空白
+  defaultImageHeight: 520, // 默认图片高度，避免空白
+  backTopScrollTop: 0
 }
 
 function EspierDetail(props) {
@@ -148,7 +149,8 @@ function EspierDetail(props) {
     isParameter,
     imgHeightList,
     navigateMantle,
-    defaultImageHeight
+    defaultImageHeight,
+    backTopScrollTop
   } = state
 
   useEffect(() => {
@@ -156,6 +158,21 @@ function EspierDetail(props) {
     entryLaunch.postGuideUV()
     entryLaunch.postGuideTask()
   }, [])
+
+  useEffect(() => {
+    if (
+      packageOpen ||
+      skuPanelOpen ||
+      sharePanelOpen ||
+      posterModalOpen ||
+      promotionOpen ||
+      isParameter
+    ) {
+      pageRef.current.pageLock()
+    } else {
+      pageRef.current.pageUnLock()
+    }
+  }, [packageOpen, skuPanelOpen, sharePanelOpen, posterModalOpen, promotionOpen, isParameter])
 
   useEffect(() => {
     const { path } = $instance.router
@@ -199,12 +216,6 @@ function EspierDetail(props) {
       isWeixin ? video.stop() : video.pause()
     }
   }, [play])
-
-  useEffect(() => {
-    Taro.nextTick(() => {
-      pageRef.current && pageRef.current.pageLock()
-    })
-  }, [])
 
   useEffect(() => {
     if (dtid) {
@@ -272,13 +283,13 @@ function EspierDetail(props) {
     if (type == 'pointitem') {
     } else {
       try {
-        console.log('🚀🚀🚀 ~ fetch ~ dtid:', dtid)
-
         const itemDetail = await api.item.detail(id, {
           showError: false,
           distributor_id: getDistributorId()
         })
+        console.log('🚀🚀🚀 ~ fetch ~ itemDetail:', itemDetail)
         data = pickBy(itemDetail, doc.goods.ESPIER_DETAIL_GOODS_INFO)
+
         // if (data.approveStatus == 'instock') {
         //   setState((draft) => {
         //     draft.isDefault = true
@@ -301,7 +312,7 @@ function EspierDetail(props) {
 
     // setNavigationBarTitle(data.itemName)
 
-    console.log(ACTIVITY_LIST()[data.activityType])
+    console.log(ACTIVITY_LIST()[data.activityType], data)
     if (ACTIVITY_LIST()[data.activityType]) {
       Taro.setNavigationBarColor({
         frontColor: '#ffffff',
@@ -320,7 +331,7 @@ function EspierDetail(props) {
       draft.play = data.video ? true : false // 辉绮需求
       draft.promotionActivity = data.promotionActivity
       // 初始化图片高度数组，使用默认高度
-      draft.imgHeightList = new Array(data.imgs.length).fill(draft.defaultImageHeight)
+      draft.imgHeightList = new Array(data?.imgs?.length).fill(draft.defaultImageHeight)
     })
 
     // 异步计算图片真实高度，不阻塞页面渲染
@@ -463,11 +474,6 @@ function EspierDetail(props) {
       sessionFrom['昵称'] = userInfo.username
     }
   }
-  const handleScroll = (e) => {
-    setState((draft) => {
-      draft.navigateMantle = e.detail.scrollTop > 20
-    })
-  }
 
   return (
     <SpPage
@@ -480,40 +486,44 @@ function EspierDetail(props) {
       immersive
       title={navigateMantle ? info?.itemName : ' '}
       ref={pageRef}
+      loading={!info}
+      onClickBackToTop={() => {
+        setState((draft) => {
+          draft.backTopScrollTop = state.backTopScrollTop == 0 ? -1 : 0
+        })
+      }}
       renderFloat={
-        <View>
-          <SpFloatMenuItem
-            onClick={() => {
-              Taro.navigateTo({ url: '/subpages/member/index' })
-            }}
-          >
-            <Text className='iconfont icon-huiyuanzhongxin'></Text>
-          </SpFloatMenuItem>
-          <SpChat sessionFrom={JSON.stringify(sessionFrom)}>
-            <SpFloatMenuItem>
-              <Text className='iconfont icon-headphones'></Text>
+        info && (
+          <View>
+            <SpFloatMenuItem
+              onClick={() => {
+                Taro.navigateTo({ url: '/subpages/member/index' })
+              }}
+            >
+              <Text className='iconfont icon-huiyuanzhongxin'></Text>
             </SpFloatMenuItem>
-          </SpChat>
-        </View>
+            <SpChat sessionFrom={JSON.stringify(sessionFrom)}>
+              <SpFloatMenuItem>
+                <Text className='iconfont icon-headphones'></Text>
+              </SpFloatMenuItem>
+            </SpChat>
+          </View>
+        )
       }
       renderFooter={
-        <CompBuytoolbar
-          info={info}
-          onChange={onChangeToolBar}
-          onSubscribe={() => {
-            fetch()
-          }}
-        />
+        info && (
+          <CompBuytoolbar
+            info={info}
+            onChange={onChangeToolBar}
+            onSubscribe={() => {
+              fetch()
+            }}
+          />
+        )
       }
     >
       <View className='page-item-espierdetail__header-bg'></View>
-      <ScrollView
-        scrollY
-        className='page-item-espierdetail-goods-contents'
-        style='height: 100%;'
-        onScroll={handleScroll}
-      >
-        {!info && <SpLoading />}
+      <ScrollView scrollY className='page-item-espierdetail-goods-contents' style='height: 100%;'>
         {info && (
           <View className='goods-contents'>
             <View className='goods-pic-container'>
@@ -523,7 +533,7 @@ function EspierDetail(props) {
                 onChange={onChangeSwiper}
                 style={{ height: (imgHeightList[curImgIdx] || defaultImageHeight) + 'px' }}
               >
-                {info.imgs.map((img, idx) => (
+                {info?.imgs?.map((img, idx) => (
                   <SwiperItem key={`swiperitem__${idx}`}>
                     <View style={setSwiperCss(img)}>
                       <SpImage mode='scaleToFill' src={img} className='swiperitem__img' />
@@ -532,7 +542,7 @@ function EspierDetail(props) {
                 ))}
               </Swiper>
 
-              {info.imgs.length > 1 && (
+              {info?.imgs?.length > 1 && (
                 <View className='swiper-pagegation'>{`${curImgIdx + 1}/${info.imgs.length}`}</View>
               )}
 

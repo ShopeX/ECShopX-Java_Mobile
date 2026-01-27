@@ -15,7 +15,7 @@ import { useImmer } from 'use-immer'
 import S from '@/spx'
 import qs from 'qs'
 import req from '@/api/req'
-import { buildSharePath } from '@/utils'
+import { buildSharePath, getMemberLevel } from '@/utils'
 
 import { SpLogin, SpImage, SpTabbar, SpPage, SpCell } from '@/components'
 import api from '@/api'
@@ -162,6 +162,7 @@ function MemberIndex(props) {
     if (isLogin) {
       getUserInfo()
       getMemberCenterData()
+      setMemberBackground()
     }
   })
 
@@ -434,7 +435,7 @@ function MemberIndex(props) {
             }[vipInfo.isVip]
           }
         </Text>
-        <SpImage src='fv_chevron_right.png' width={40} />
+        <SpImage src='fv_chevron_right.png' width={40} className='icon-arrowRight-img' />
       </View>
     )
   }
@@ -452,16 +453,10 @@ function MemberIndex(props) {
       className='pages-member-index'
       immersive={state.pageData?.base?.isImmersive}
       pageConfig={state.pageData?.base || {}}
-      renderFooter={<SpTabbar height={state.footerHeight} />}
+      renderFooter={<SpTabbar />}
       title='会员中心'
-      onReady={({ footerHeight }) => {
-        setState((draft) => {
-          draft.footerHeight = footerHeight
-        })
-        console.log('onReady', footerHeight)
-      }}
     >
-      <View className='user-info-card-wrapper' style={{ paddingBottom: state.footerHeight }}>
+      <View className='user-info-card-wrapper min-h-full'>
         <View
           className='header-block'
           style={userInfo?.gradeInfo?.grade_background ? memberBckStyle : {}}
@@ -505,28 +500,35 @@ function MemberIndex(props) {
                 )}
               </View>
 
-              <View className='qr-code-btn'>
-                {/* <SpImage
-                  src={`fv_member_level_${getMemberLevel(userInfo?.gradeInfo)}_bg.png`}
-                  className='qr-code-img'
-                  width={120}
-                  height={88}
-                  mode='widthFix'
-                />
-                <SpImage
-                  src='fv_member_level_bg.png'
-                  width={120}
-                  height={88}
-                  mode='widthFix'
-                  className='member-level-bg'
-                /> */}
-                {isLogin && config.menu.member_code && !VERSION_SHUYUN && (
-                  <Text
-                    className='iconfont icon-erweima-01'
-                    onClick={() => onLoginChange('/marketing/pages/member/member-code')}
-                  ></Text>
-                )}
-              </View>
+              {isLogin && (
+                <View className='qr-code-btn'>
+                  <SpImage
+                    src='fv_member_level_1_bg.png'
+                    className='qr-code-img'
+                    width={120}
+                    height={88}
+                    mode='widthFix'
+                  />
+                  <SpImage
+                    src='fv_member_level_bg.png'
+                    width={120}
+                    height={88}
+                    mode='widthFix'
+                    className='member-level-bg'
+                  />
+                  <SpImage
+                    src='fv_qr_code.png'
+                    className='qr-code'
+                    width={48}
+                    height={48}
+                    onClick={() => {
+                      Taro.navigateTo({
+                        url: `/subpages/member/qrcode?grade=${userInfo?.gradeInfo?.grade_name}`
+                      })
+                    }}
+                  />
+                </View>
+              )}
             </View>
 
             <View className='user-stats'>

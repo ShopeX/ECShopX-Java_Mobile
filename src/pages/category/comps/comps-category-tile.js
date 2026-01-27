@@ -2,8 +2,8 @@
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
  */
-import React, { useEffect } from 'react'
-import { View } from '@tarojs/components'
+import React, { useEffect, useRef } from 'react'
+import { View, Text, Image } from '@tarojs/components'
 import { useImmer } from 'use-immer'
 import { AtTabs, AtTabsPane } from 'taro-ui'
 import api from '@/api'
@@ -26,10 +26,16 @@ const initialState = {
 
 const CompsCategoryTile = (props) => {
   const [state, setState] = useImmer(initialState)
+  const pageRef = useRef(null)
   const { currentList, activeIndex, tabList, contentList, hasSeries } = state
+  console.log('==state==', tabList)
   // 获取数据
   useEffect(() => {
     getConfig()
+  }, [])
+
+  useEffect(() => {
+    pageRef.current?.pageLock()
   }, [])
 
   const getConfig = async () => {
@@ -39,22 +45,26 @@ const CompsCategoryTile = (props) => {
 
     if (!seriesList.length) {
       const res = await api.category.get(VERSION_PLATFORM ? { is_main_category: 1 } : {})
+      console.log('res', res)
       const currentList = pickBy(res, {
         name: 'category_name',
         img: 'image_url',
         id: 'id',
         category_id: 'category_id',
+        main_category_id: 'main_category_id',
         children: ({ children }) =>
           pickBy(children, {
             name: 'category_name',
             img: 'image_url',
             id: 'id',
             category_id: 'category_id',
+            main_category_id: 'main_category_id',
             children: ({ children }) =>
               pickBy(children, {
                 name: 'category_name',
                 img: 'image_url',
-                category_id: 'category_id'
+                category_id: 'category_id',
+                main_category_id: 'main_category_id'
               })
           })
       })
@@ -87,33 +97,36 @@ const CompsCategoryTile = (props) => {
   const fnSwitchSeries = (index) => {
     setState((draft) => {
       draft.activeIndex = index
-      draft.currentList = draft.contentList[index]
     })
   }
-
-  console.log('==currentList==', currentList, tabList)
 
   return (
     <SpPage
       className='page-category-index-new'
+      ref={pageRef}
+      showpoweredBy={false}
       renderFooter={<SpTabbar height={state.footerHeight} />}
-      onReady={({ footerHeight }) => {
+      onReady={({ footerHeight, height }) => {
         setState((draft) => {
           draft.footerHeight = footerHeight
         })
       }}
     >
-      {tabList.length > 1 && (
-        <AtTabs current={activeIndex} tabList={tabList} onClick={fnSwitchSeries}>
-          {tabList.map((item, index) => (
-            <AtTabsPane current={activeIndex} index={index} key={item.status}></AtTabsPane>
-          ))}
-        </AtTabs>
-      )}
-      <View
-        className={`${hasSeries && tabList.length > 1 ? 'category-comps' : 'category-comps-not'}`}
-      >
-        <CompSeries info={currentList} />
+      <View style={{ height: `calc(100vh - ${state.footerHeight})` }}>
+        {tabList.length > 1 && (
+          <AtTabs current={activeIndex} tabList={tabList} onClick={fnSwitchSeries}>
+            {tabList.map((item, index) => (
+              <AtTabsPane current={activeIndex} index={index} key={item.status}>
+                <CompSeries info={contentList[index]} />
+              </AtTabsPane>
+            ))}
+          </AtTabs>
+        )}
+        {!(hasSeries && tabList.length > 1) && (
+          <View className='category-comps-not'>
+            <CompSeries info={currentList} />
+          </View>
+        )}
       </View>
     </SpPage>
   )

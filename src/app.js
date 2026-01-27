@@ -32,6 +32,7 @@ import {
   SG_GUIDE_PARAMS_EXPRESSTIME,
   SG_CHECK_STORE_RULE
 } from '@/consts'
+import { updateLang } from '@/store/slices/user'
 import {
   checkAppVersion,
   isWeixin,
@@ -100,7 +101,30 @@ function App({ children }) {
 
   useLaunch((options) => {
     console.log('useLaunch ***********', options)
-    Taro.eventCenter.on('languageChanged', () => {
+
+    // Initialize RTL
+    const lang = Taro.getStorageSync('lang') || 'en'
+    store.dispatch(updateLang(lang))
+    if (isWeb) {
+      document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr'
+      if (lang === 'ar') {
+        document.documentElement.classList.add('rtl-mode')
+      } else {
+        document.documentElement.classList.remove('rtl-mode')
+      }
+    }
+
+    Taro.eventCenter.on('languageChanged', (data) => {
+      const newLang = data?.lang || Taro.getStorageSync('lang')
+      store.dispatch(updateLang(newLang))
+      if (isWeb) {
+        document.documentElement.dir = newLang === 'ar' ? 'rtl' : 'ltr'
+        if (newLang === 'ar') {
+          document.documentElement.classList.add('rtl-mode')
+        } else {
+          document.documentElement.classList.remove('rtl-mode')
+        }
+      }
       getSystemConfig()
     })
     //分包异步加载语言包
@@ -156,18 +180,8 @@ function App({ children }) {
   // })
 
   const initCrm = async (params) => {
-    let _ucd = ''
-    //crmcode 区域code, ucd 用户会员 card,source_id, monitor_id, latest_source_id, latest_monitor_id
-    const {
-      crmcode,
-      ucd = '',
-      s = '',
-      m = '',
-      latest_source_id = '',
-      latest_monitor_id = ''
-    } = params || {}
+    const { s = '', m = '', latest_source_id = '', latest_monitor_id = '' } = params || {}
 
-    Taro.setStorageSync('user_card_code', ucd) //对方打开本小程序会传的参数
     Taro.setStorageSync('sourceInfo', {
       source_id: s,
       monitor_id: m,
@@ -176,20 +190,6 @@ function App({ children }) {
     })
     if (m && s) {
       await entryLaunch.trackViewNum(m, s)
-    }
-    if (crmcode) {
-      getSystemConfig()
-    }
-    if (ucd) {
-      const token = S.getAuthToken()
-      const userInfo = token ? tokenParse(token) : {}
-      _ucd = userInfo?.user_card_code
-      if (ucd !== _ucd) {
-        //如果有ucd 并且 与本地用户的_ucd相等说明是mob拉起 需要走自动登录
-        S.setAuthToken('')
-        Taro.removeStorageSync('userinfo')
-        return
-      }
     }
   }
 
@@ -217,6 +217,7 @@ function App({ children }) {
       is_open_recommend: openRecommend,
       is_open_scan_qrcode: openScanQrcode,
       is_open_official_account: openOfficialAccount,
+      is_open_wechatapp_location: openWechatappLocation,
       color_style: { primary, accent, marketing },
       title // 商城应用名称
     } = appBaseRes
@@ -256,6 +257,7 @@ function App({ children }) {
           openRecommend, // 开启猜你喜欢 1开启 2关闭
           openScanQrcode, // 开启扫码功能 1开启 2关闭
           openOfficialAccount, // 开启关注公众号组件 1开启 2关闭
+          openWechatappLocation, // 开启微信小程序定位 1开启 2关闭
           diskDriver: disk_driver,
           appName: title,
           echat,

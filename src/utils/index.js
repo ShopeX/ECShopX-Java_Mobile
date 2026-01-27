@@ -313,10 +313,10 @@ export function calcTimer(totalSec) {
 
 export function resolveOrderStatus(status, isBackwards) {
   if (isBackwards) {
-    return _findKey(STATUS_TYPES_MAP, (o) => o === status)
+    return _findKey(STATUS_TYPES_MAP(), (o) => o === status)
   }
 
-  return STATUS_TYPES_MAP[status]
+  return STATUS_TYPES_MAP()[status]
 }
 
 export function goToPage(page) {
@@ -881,6 +881,11 @@ export const pxToRpx = (px) => {
   return parseInt((screenWidth * px) / 375)
 }
 
+export const rpxToPx = (rpx) => {
+  const { windowWidth } = Taro.getSystemInfoSync()
+  return parseInt(rpx * (windowWidth / 750))
+}
+
 export const pxToUnitRpx = (px) => {
   return Taro.pxTransform(px * 2)
 }
@@ -900,6 +905,38 @@ export function buildSharePath(from_scene, params = {}) {
   debugger
   return `/pages/share-land${queryString ? '?' + queryString : ''}`
 }
+
+const getMobAppExtraData = () => {
+  const store = configStore()
+  const { regionauth } = store.getState()
+  const { regionauthInfo } = regionauth || {}
+  const code = regionauthInfo?.regionauth_code
+  const token = S.getAuthToken()
+  const userInfo = token ? tokenParse(token) : {}
+  const aioucd = userInfo?.user_card_code
+  return {
+    crmcode: code,
+    ucd: aioucd
+  }
+}
+
+export const getElementRectBox = (eid) => {
+  return new Promise((resolve, reject) => {
+    const query = Taro.createSelectorQuery()
+    query.select(eid).boundingClientRect()
+    setTimeout(() => {
+      try {
+        query.exec((res) => {
+          const [rectBox = {}] = res
+          resolve(rectBox)
+        })
+      } catch (error) {
+        reject(err)
+      }
+    }, 100)
+  })
+}
+
 
 export {
   classNames,
@@ -927,7 +964,8 @@ export {
   resolveStringifyParams,
   resolveUrlParamsParse,
   getCurrentShopId,
-  getMemberLevel
+  getMemberLevel,
+  getMobAppExtraData
 }
 
 export * from './platforms'

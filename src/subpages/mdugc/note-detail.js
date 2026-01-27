@@ -251,7 +251,7 @@ function UgcNoteDetail(props) {
     let params = {
       user_id: userInfo.user_id,
       post_id,
-      content: e
+      content: e.detail.value
     }
     if (parentCommentId) {
       params.parent_comment_id = parentCommentId
@@ -416,8 +416,8 @@ function UgcNoteDetail(props) {
           </View>
           <View className='ugc-author'>
             <View className='author-info' onClick={() => {}}>
-              <SpImage circle src={info.headimgurl} width={88} height={88} />
-              <Text className='author'>{info.username}</Text>
+              <SpImage circle src={info.headimgurl} width={88} height={88} mode='aspectFill' />
+              <Text className='author'>{info.username || info.nickname}</Text>
             </View>
             {!isMyNote() && (
               <SpLogin

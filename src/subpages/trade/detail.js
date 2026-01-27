@@ -2,7 +2,7 @@
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
  */
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useCallback } from 'react'
 import { useSelector } from 'react-redux'
 import { useImmer } from 'use-immer'
 import Taro, { useDidShow, useRouter } from '@tarojs/taro'
@@ -308,7 +308,7 @@ function TradeDetail(props) {
   const getTradeStatusIcon = () => {
     if (info.receiptType == 'dada') {
       // 达达同城配，订单状态单独处理
-      return `${ORDER_DADA_STATUS[info.dada?.dadaStatus]?.icon}.png` || ''
+      return `${ORDER_DADA_STATUS()[info.dada?.dadaStatus]?.icon}.png` || ''
     }
 
     if (squareRoot) {
@@ -322,13 +322,13 @@ function TradeDetail(props) {
     if (info.cancelStatus == 'WAIT_PROCESS') {
       return 'order_dengdai.png'
     }
-    return `${ORDER_STATUS_INFO[info.orderStatus]?.icon}.png`
+    return `${ORDER_STATUS_INFO()[info.orderStatus]?.icon}.png`
   }
 
   const getTradeStatusDesc = () => {
     if (info.receiptType == 'dada') {
       // 达达同城配，订单状态单独处理
-      return ORDER_DADA_STATUS[info.dada?.dadaStatus]?.msg
+      return ORDER_DADA_STATUS()[info.dada?.dadaStatus]?.msg
     } else if (squareRoot) {
       return '待医生开方'
     } else if (supplement) {
@@ -347,7 +347,7 @@ function TradeDetail(props) {
       //展示线下审核的一些状态 0 待处理;1 已审核;2 已拒绝;9 已取消
       return '待商家确认'
     } else {
-      return ORDER_STATUS_INFO[info.orderStatus]?.msg
+      return ORDER_STATUS_INFO()[info.orderStatus]?.msg
     }
   }
 
@@ -469,6 +469,15 @@ function TradeDetail(props) {
       v.openingTime = supplement
     })
   }
+
+  const renderMarketPrice = useCallback(() => {
+    const marketPrice = info?.items?.reduce((total, item) => {
+      const salePrice = item?.salePrice || 0
+      const num = item?.num || 1
+      return total + salePrice * num
+    }, 0)
+    return <SpPrice unit='cent' value={marketPrice} size={28} />
+  }, [info?.items])
 
   return (
     <SpPage
@@ -713,21 +722,36 @@ function TradeDetail(props) {
             {info && (
               <View className='trade-price-info'>
                 {enMarketPrice && info?.marketFee > 0 && (
-                  <SpCell title='原价' value={<SpPrice value={info?.marketFee} size={28} />} />
+                  <SpCell title='原价' value={renderMarketPrice()} />
                 )}
                 <SpCell
                   title='总价'
                   value={(() => {
                     if (info?.orderClass === 'pointsmall') {
                       return `${pointName} ${info?.itemPoint}${
-                        info?.itemFee ? `+${info?.freightType == 'point' ? `${pointName} ${info?.freightFee*100}` : `+¥${Number(info?.itemFee).toFixed(2)}`}` : ''
+                        info?.itemFee
+                          ? `+${
+                              info?.freightType == 'point'
+                                ? `${pointName} ${info?.freightFee * 100}`
+                                : `¥${Number(info?.itemFee).toFixed(2)}`
+                            }`
+                          : ''
                       }`
                     } else {
                       return <SpPrice value={info?.itemFee} size={28} />
                     }
                   })()}
                 />
-                <SpCell title='运费' value={info?.freightType == 'point'?`${pointName} ${info?.freightFee*100}`:<SpPrice value={info?.freightFee} size={28} />} />
+                <SpCell
+                  title='运费'
+                  value={
+                    info?.freightType == 'point' ? (
+                      `${pointName} ${info?.freightFee * 100}`
+                    ) : (
+                      <SpPrice value={info?.freightFee} size={28} />
+                    )
+                  }
+                />
                 <SpCell
                   title='促销'
                   value={<SpPrice value={info?.promotionDiscount} size={28} />}
