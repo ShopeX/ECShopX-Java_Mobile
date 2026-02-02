@@ -133,3 +133,8 @@ export function getMyStoreWhiteList() {
 export function getCookiePolicy() {
   return req.get('/company/privacy_setting_ck')
 }
+
+// 获取门店分类列表
+export function getCategoryList(params = {}) {
+  return req.get('/distributor/category/list', params)
+}

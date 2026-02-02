@@ -15,7 +15,7 @@ export const SHOP_ITEM = {
   distance: ({ distance, distance_unit }) => {
     return distance
       ? (distance < 1 ? Math.round(distance * Math.pow(10, 3)) : Number(distance).toFixed(0)) +
-          distance_unit
+          ` ${distance_unit}`
       : ''
   },
   cardList: 'discountCardList',
@@ -39,7 +39,12 @@ export const SHOP_ITEM = {
   is_self_delivery: 'is_self_delivery',
   created: 'created', // 创建时间
   isOpenDivided: 'isOpenDivided', // 是否开启店铺隔离
-  sort_id: 'sort_id' // 店铺隔离最新排序id
+  sort_id: 'sort_id', // 店铺隔离最新排序id
+  show_salesperson: 'show_salesperson', // 是否显示导购：0-不显示，1-显示门店二维码，2-显示导购二维码
+  fixed_salesperson_qrcode_url: 'fixed_salesperson_qrcode_url', // 门店固定二维码
+  work_qrcode: 'work_qrcode', // 导购企微二维码
+  salesperson_name: 'salesperson_name', // 导购姓名
+  salesperson_avatar: 'salesperson_avatar' // 导购头像
 }
 
 export const BUSINESS_SORT = {
