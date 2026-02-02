@@ -19,7 +19,14 @@ import './index.scss'
  * @param {string} props.classNamePrefix - CSS类名前缀，如 'wgt-goods', 'wgt-group' 等
  */
 export default function GoodsLayout(props) {
-  const { layout, goodsList = [], goodsLeftList = [], goodsRightList = [], onClickItem, classNamePrefix = 'wgt-goods' } = props
+  const {
+    layout,
+    goodsList = [],
+    goodsLeftList = [],
+    goodsRightList = [],
+    onClickItem,
+    classNamePrefix = 'wgt-goods'
+  } = props
 
   // 一列网格布局
   if (layout === 'one') {

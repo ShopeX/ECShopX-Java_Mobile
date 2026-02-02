@@ -17,7 +17,7 @@ function SpGoodsHeroCard(props) {
       onClick(info)
       return
     }
-    let query = { id: itemId, dtid: distributorId??''}
+    let query = { id: itemId, dtid: distributorId ?? '' }
     const url = `/pages/item/espier-detail?${qs.stringify(query)}`
     Taro.navigateTo({
       url
@@ -88,7 +88,7 @@ function SpGoodsHeroCard(props) {
         )}
         <View className='sp-goods-hero-card__price'>
           <View className='price-wrapper'>
-            <SpPrice size={34} value={finalPrice} style={{ marginRight: '6px' }} weight={600} />
+            <SpPrice className='current-price' size={34} value={finalPrice} style={{ marginRight: '6px' }} weight={600} />
             {Number(info.marketPrice || 0) > 0 &&
               Number(finalPrice || 0) < Number(info.marketPrice || 0) && (
                 <SpPrice

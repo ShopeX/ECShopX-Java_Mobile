@@ -404,6 +404,14 @@ function CompsCategoryAddCart(props) {
             onClick={onSecondCategoryClick}
           />
         </View>
+        <View className='container-bd'>
+          <View className='left-container'>
+            <CompSecondCategory
+              cusIndex={categorySecondIndex}
+              list={secondList}
+              onClick={onSecondCategoryClick}
+            />
+          </View>
 
         <View
           className='right-container'
@@ -436,6 +444,7 @@ function CompsCategoryAddCart(props) {
             </SpScrollView>
           </ScrollView>
         </View>
+      </View>
       </View>
 
       {/* Sku选择器 */}

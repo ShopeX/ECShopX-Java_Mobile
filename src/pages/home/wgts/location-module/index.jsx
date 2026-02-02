@@ -2,7 +2,15 @@
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
  */
-import React, { useState, useMemo, useContext, useRef, useEffect, useCallback, useLayoutEffect } from 'react'
+import React, {
+  useState,
+  useMemo,
+  useContext,
+  useRef,
+  useEffect,
+  useCallback,
+  useLayoutEffect
+} from 'react'
 import Taro from '@tarojs/taro'
 import { View } from '@tarojs/components'
 import { classNames, pxToRpx, getElementRectBox } from '@/utils'
@@ -25,7 +33,6 @@ import {
 } from '../index'
 import './index.scss'
 import { WgtsContext } from '../wgts-context'
-
 
 export default function WgtLocationModule(props) {
   const { info, id } = props
@@ -57,9 +64,7 @@ export default function WgtLocationModule(props) {
 
   // 获取导航项样式
   const getNavItemStyle = (item, isActive) => {
-    const textColor = isActive
-      ? item.navitemactivecolor
-      : item.navitemcolor
+    const textColor = isActive ? item.navitemactivecolor : item.navitemcolor
 
     return {
       height: Taro.pxTransform(base.navitemheight || 40),
@@ -138,10 +143,9 @@ export default function WgtLocationModule(props) {
         }
       })
 
-
       // 只在找到有效索引且不是当前索引时更新
       if (targetIndex >= 0 && targetIndex !== currentIndex && targetIndex < navList.length) {
-      setCurrentIndex(targetIndex)
+        setCurrentIndex(targetIndex)
       }
     } catch (error) {
       console.error('获取元素位置失败', error)
@@ -172,14 +176,15 @@ export default function WgtLocationModule(props) {
 
     const navItemHeight = base.navitemheight
 
-    const totalHeight =pxToRpx(
+    const totalHeight = pxToRpx(
       outerPaddingTop +
-      outerPaddingBottom +
-      navAreaPaddingTop +
-      navAreaPaddingBottom +
-      navItemHeight)
+        outerPaddingBottom +
+        navAreaPaddingTop +
+        navAreaPaddingBottom +
+        navItemHeight
+    )
     if (immersive) {
-      return pxToRpx(navBarHeight)+totalHeight
+      return pxToRpx(navBarHeight) + totalHeight
     }
     return totalHeight
   }, [base, immersive, navBarHeight])

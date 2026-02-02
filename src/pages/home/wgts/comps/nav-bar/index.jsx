@@ -33,7 +33,6 @@ export default function LocationModuleNavBar(props) {
     id = ''
   } = props
 
-
   return (
     <View className='wgt-comps__nav' id={id} style={styleNames(navStyle)}>
       {/* 导航项区域 */}
@@ -46,18 +45,14 @@ export default function LocationModuleNavBar(props) {
         )}
 
         {/* 导航项列表 */}
-        <ScrollView 
-          className='wgt-comps__nav-scroll'
-          scrollX
-          scrollWithAnimation
-        >
-          <View 
-            className='wgt-comps__nav-list' 
+        <ScrollView className='wgt-comps__nav-scroll' scrollX scrollWithAnimation>
+          <View
+            className='wgt-comps__nav-list'
             style={{
-              gap: base.navitemmargin?.paddedlr 
-                ? Taro.pxTransform(base.navitemmargin.paddedlr) 
-                : base.navitemmargin 
-                ? Taro.pxTransform(base.navitemmargin) 
+              gap: base.navitemmargin?.paddedlr
+                ? Taro.pxTransform(base.navitemmargin.paddedlr)
+                : base.navitemmargin
+                ? Taro.pxTransform(base.navitemmargin)
                 : 0
             }}
           >
@@ -73,14 +68,12 @@ export default function LocationModuleNavBar(props) {
                   onClick={() => onNavClick(index)}
                 >
                   {item.navitemtype === 'image' && item.imgUrl ? (
-                    <SpImage 
+                    <SpImage
                       src={isActive && item.navitemactiveimg ? item.navitemactiveimg : item.imgUrl}
                       className='wgt-comps__nav-item-img'
                     />
                   ) : (
-                    <Text className='wgt-comps__nav-item-text'>
-                      {item.navItemName}
-                    </Text>
+                    <Text className='wgt-comps__nav-item-text'>{item.navItemName}</Text>
                   )}
                 </View>
               )

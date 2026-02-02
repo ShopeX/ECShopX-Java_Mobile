@@ -103,16 +103,25 @@ const withStorageCommonLang =
 // 从本地存储中获取通用语言，如果不存在则使用空字符串
 const commonLang = withStorageCommonLang
   ? globalThis.localStorage.getItem('')
-  : process.env.APP_DEFAULT_LANGUAGE
+  : ''
 // 从本地存储中获取当前语言，如果不存在则使用源语言
 const baseLang = withStorageLang
   ? globalThis.localStorage.getItem('lang')
   : process.env.APP_DEFAULT_LANGUAGE
 console.log('baseLang', baseLang, process.env.APP_DEFAULT_LANGUAGE)
 console.log('commonLang', commonLang)
-const lang = commonLang ? commonLang : baseLang
+const lang = baseLang || commonLang || process.env.APP_DEFAULT_LANGUAGE || 'en'
 // 根据当前语言设置翻译函数的语言包
 globalThis.$t.locale(globalThis.langMap[lang], 'lang')
 globalThis.$changeLang = (lang) => {
+  console.log('globalThis.$changeLang', lang)
   globalThis.$t.locale(globalThis.langMap[lang], 'lang')
+}
+Taro.$changeLang = (lang) => {
+  globalThis._localStorage.setItem('lang', lang)
+  globalThis.$t.locale(globalThis.langMap[lang], 'lang')
+  // 触发语言变化事件，让其他地方能够监听到
+  if (Taro.eventCenter) {
+    Taro.eventCenter.trigger('languageChanged', { lang, langMap: globalThis.langMap[lang] })
+  }
 }
