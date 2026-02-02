@@ -14,7 +14,6 @@ import * as payment from './payment'
 import * as community from './community'
 import * as point from './point'
 import * as member from './member'
-import * as dianwu from './dianwu'
 import * as trade from './trade'
 import * as mdugc from './mdugc'
 import * as purchase from './purchase'
@@ -35,7 +34,6 @@ export default {
   community,
   point,
   member,
-  dianwu,
   trade,
   mdugc,
   purchase,
