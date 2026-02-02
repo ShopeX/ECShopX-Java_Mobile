@@ -96,7 +96,7 @@ function App({ children }) {
     console.log('useLaunch ***********', options)
 
     // Initialize RTL
-    const lang = Taro.getStorageSync('lang') || 'en'
+    const lang = Taro.getStorageSync('lang') || 'zhcn'
     store.dispatch(updateLang(lang))
     if (isWeb) {
       document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr'

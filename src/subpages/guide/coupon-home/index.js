@@ -27,6 +27,7 @@ import {
   BaNavBar,
   BaCoupon
 } from '@/subpages/guide/components'
+import { SG_GUIDE_PARAMS } from '@/consts/localstorage'
 import './index.scss'
 
 const initialState = {
@@ -43,6 +44,11 @@ function GuideCouponIndex(props) {
   const { list } = state
   const couponRef = useRef()
   const { userInfo } = useSelector((state) => state.guide)
+  const { gu } = Taro.getStorageSync(SG_GUIDE_PARAMS)
+  let work_userid = ''
+  if (gu) {
+    work_userid = gu.split('_')[0]
+  }
 
   useEffect(() => {
     if (isLogin) {
@@ -87,12 +93,16 @@ function GuideCouponIndex(props) {
 
   const fetch = async () => {
     const { card_id = '', item_id = '' } = $instance.router.params
-    const { distributor_id } = userInfo
+    const { distributor_id, work_userid: gu_user_id } = userInfo
     const params = {
+      work_userid: gu_user_id,
       end_date: 1,
       distributor_id,
       card_id,
       item_id
+    }
+    if (work_userid) {
+      params.work_userid = work_userid
     }
     const { list, total_count } = await api.member.homeCouponList(params)
     console.log(pickBy(list, doc.coupon.GUIDE_COUPON_ITEM))

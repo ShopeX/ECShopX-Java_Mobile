@@ -12,6 +12,7 @@ import { View, ScrollView, Text } from '@tarojs/components'
 import { SpImage, SpCouponPackage } from '@/components'
 import { classNames, styleNames, isWeixin, showToast } from '@/utils'
 import S from '@/spx'
+import { SG_GUIDE_PARAMS } from '@/consts/localstorage'
 import './coupon.scss'
 
 const initialState = {
@@ -21,6 +22,11 @@ function WgtCoupon(props) {
   const { base, data, voucher_package } = props.info
   const [state, setState] = useImmer(initialState)
   const { visibleCouponPkg } = state
+  const { gu } = Taro.getStorageSync(SG_GUIDE_PARAMS)
+  let work_userid = ''
+  if (gu) {
+    work_userid = gu.split('_')[0]
+  }
   useEffect(() => {}, [])
 
   const handleClickItem = async ({ id }) => {
@@ -68,9 +74,13 @@ function WgtCoupon(props) {
   }
 
   const handleGetCard = async (id) => {
-    await api.member.homeCouponGet({
+    const params = {
       card_id: id
-    })
+    }
+    if (work_userid) {
+      params.work_userid = work_userid
+    }
+    await api.member.homeCouponGet(params)
     showToast('优惠券领取成功')
   }
 
