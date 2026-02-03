@@ -57,6 +57,7 @@ import { useNavigation, useLogin, useLocation } from '@/hooks'
 import withPageWrapper from '@/hocs/withPageWrapper'
 import { ACTIVITY_LIST } from '@/consts'
 import { SG_ROUTER_PARAMS, SG_GUIDE_PARAMS } from '@/consts/localstorage'
+import FloatSalesperson from '@/subpages/store/comps/float-salesperson'
 import CompActivityBar from './comps/comp-activitybar'
 import CompVipGuide from './comps/comp-vipguide'
 import CompCouponList from './comps/comp-couponlist'
@@ -498,7 +499,7 @@ function EspierDetail(props) {
       }}
       renderFloat={
         info && (
-          <View>
+          <View className='page-item-espierdetail__float-container'>
             <SpFloatMenuItem
               onClick={() => {
                 Taro.navigateTo({ url: '/subpages/member/index' })
@@ -511,6 +512,7 @@ function EspierDetail(props) {
                 <Text className='iconfont icon-headphones'></Text>
               </SpFloatMenuItem>
             </SpChat>
+            <FloatSalesperson />
           </View>
         )
       }

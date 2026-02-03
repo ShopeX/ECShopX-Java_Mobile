@@ -4,7 +4,7 @@
  */
 import React, { useEffect, useRef } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
-import { View, Text, Input, Picker, Image } from '@tarojs/components'
+import { View, Text, Input, Picker } from '@tarojs/components'
 import Taro from '@tarojs/taro'
 import { SpPage, SpScrollView, SpNote } from '@/components'
 import { updateLocation } from '@/store/slices/user'
@@ -14,6 +14,7 @@ import doc from '@/doc'
 import { entryLaunch, pickBy, classNames } from '@/utils'
 import { useImmer } from 'use-immer'
 
+import ConsultModal from './comps/consult-modal'
 import './nearby-list.scss'
 
 const initialState = {
@@ -548,61 +549,12 @@ function NearbyList() {
       </SpScrollView>
 
       {/* 联系顾问弹框 */}
-      {showConsultModal && consultModalData && (
-        <View className='consult-modal-overlay' onClick={closeConsultModal}>
-          <View className='consult-modal' onClick={(e) => e.stopPropagation()}>
-            <View className='consult-modal-content'>
-              {consultModalType === '1' ? (
-                <>
-                  <Text className='modal-title'>{consultModalData.storeName}</Text>
-                  <View className='qrcode-wrap'>
-                    <View className='qrcode-border-outer'>
-                      <View className='qrcode-border-inner'>
-                        <Image
-                          className='qrcode-image'
-                          src={consultModalData.qrcodeUrl}
-                          mode='aspectFit'
-                        />
-                      </View>
-                    </View>
-                    <Text className='qrcode-tip'>长按识别二维码</Text>
-                  </View>
-                </>
-              ) : (
-                <>
-                  <Text className='modal-title'>添加导购</Text>
-                  <View className='qrcode-wrap'>
-                    <View className='qrcode-border-outer'>
-                      <View className='qrcode-border-inner'>
-                        <Image
-                          className='qrcode-image'
-                          src={consultModalData.qrcodeUrl}
-                          mode='aspectFit'
-                        />
-                      </View>
-                    </View>
-                    <Text className='qrcode-tip'>长按扫码联系您的专属顾问</Text>
-                  </View>
-                  <View className='salesperson-info'>
-                    <Image
-                      className='salesperson-avatar'
-                      src={consultModalData.salespersonAvatar}
-                      mode='aspectFill'
-                    />
-                    <View className='salesperson-text'>
-                      <Text className='salesperson-label'>您的顾问</Text>
-                      <Text className='salesperson-name'>{consultModalData.salespersonName}</Text>
-                    </View>
-                  </View>
-                </>
-              )}
-            </View>
-            <View className='close-btn' onClick={closeConsultModal}>
-              <Text className='iconfont icon-guanbi'></Text>
-            </View>
-          </View>
-        </View>
-      )}
+      <ConsultModal
+        visible={showConsultModal}
+        type={consultModalType}
+        data={consultModalData}
+        onClose={closeConsultModal}
+      />
 
     </SpPage>
   )

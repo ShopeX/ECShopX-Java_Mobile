@@ -56,6 +56,7 @@ import { useLogin, useNavigation, useLocation, useModal, useEffectAsync } from '
 import doc from '@/doc'
 import { SG_ROUTER_PARAMS } from '@/consts/localstorage'
 import withPageWrapper from '@/hocs/withPageWrapper'
+import FloatSalesperson from '@/subpages/store/comps/float-salesperson'
 import HomeWgts from './home/comps/home-wgts'
 import { WgtHomeHeader, WgtHomeHeaderShop } from './home/wgts'
 import { WgtsContext } from './home/wgts/wgts-context'
@@ -296,7 +297,7 @@ function Home() {
       // renderNavigation={renderNavigation()}
       showpoweredBy={false}
       pageConfig={pageData?.base || {}}
-      renderFloat={wgts.length > 0 && <CompFloatMenu />}
+      renderFloat={wgts.length > 0 && <><CompFloatMenu /><FloatSalesperson /></>}
       renderFooter={<SpTabbar />}
       onScrollToTop={() => {
         // 先设置为一个很小的非0值，确保触发滚动变化

@@ -34,6 +34,8 @@ import {
 } from '@/utils'
 import S from '@/spx'
 
+import FloatSalesperson from '@/subpages/store/comps/float-salesperson'
+
 import './list.scss'
 
 const MSpSkuSelect = React.memo(SpSkuSelect)
@@ -340,6 +342,7 @@ function ItemList() {
         'has-tagbar': tagList.length > 0
       })}
       ref={pageRef}
+      renderFloat={<FloatSalesperson />}
     >
       <View className='search-wrap'>
         {VERSION_STANDARD && card_id && (

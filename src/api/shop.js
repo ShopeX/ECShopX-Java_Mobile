@@ -9,6 +9,11 @@ export function getShop(params = {}) {
   return req.get('/distributor/is_valid', params)
 }
 
+// 获取导购员信息
+export function getSalespersonInfo(params = {}) {
+  return req.get('distributor/salesperson/qrcode', params)
+}
+
 // 获取白名单店铺
 export function checkUserInWhite(params = {}) {
   return req.get('/distributor/checkUserInWhite', params)
