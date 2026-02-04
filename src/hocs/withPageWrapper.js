@@ -181,10 +181,10 @@ function withPageWrapper(Component) {
       // 开启店铺码进店
       const currentShopInfo = await api.shop.getShop(params)
       // 获取导购员信息
-      const salespersonInfo = await api.shop.getSalespersonInfo({
-        distributor_id: currentShopInfo.distributor_id
-      })
-      dispatch(updateSalesperson(salespersonInfo))
+      // const salespersonInfo = await api.shop.getSalespersonInfo({
+      //   distributor_id: currentShopInfo.distributor_id
+      // })
+      // dispatch(updateSalesperson(salespersonInfo))
       // 如果请求的店铺ID和接口返回的店铺ID不一致（店铺可能关闭或禁用），此时需要根据兜底策略来决定跳转到引导页和默认店铺页
       if (
         dtid > 0 &&
