@@ -63,6 +63,7 @@ function NearbyList() {
     consultModalData
   } = state
   const { location = {} } = useSelector((state) => state.user)
+  const { salespersonInfo } = useSelector((state) => state.shop)
   const dispatch = useDispatch()
   const listRef = useRef(null)
 
@@ -200,6 +201,7 @@ function NearbyList() {
 
     setState((draft) => {
       const normalList = pickBy(list, doc.shop.SHOP_ITEM)
+
       if (pageIndex === 1) {
         // 第一页：专属门店放在最前面
         draft.shopList = binddingShopData ? [binddingShopData, ...normalList] : normalList
@@ -364,7 +366,8 @@ function NearbyList() {
         draft.consultModalData = {
           qrcodeUrl: info.work_qrcode,
           salespersonName: info.salesperson_name,
-          salespersonAvatar: info.salesperson_avatar
+          salespersonAvatar: info.salesperson_avatar,
+          bgAvatarUrl: salespersonInfo?.bg_avatar_url
         }
       })
     }
@@ -518,10 +521,17 @@ function NearbyList() {
                     <Text className='action-text'>电话咨询</Text>
                   </View>
                   {item.show_salesperson !== '0' && (
-                    <View className='action-btn-item' onClick={(e) => handleConsult(e, item)}>
-                      <Text className='iconfont icon-zixun action-icon'></Text>
-                      <Text className='action-text'>联系顾问</Text>
-                    </View>
+                    item.work_qrcode_configid ? (
+                      <View className='action-btn-item action-btn-cell'>
+                        <cell plugid={item.work_qrcode_configid} styleType={2} />
+                        <Text className='action-text'>联系顾问</Text>
+                      </View>
+                    ) : (
+                      <View className='action-btn-item' onClick={(e) => handleConsult(e, item)}>
+                        <Text className='iconfont icon-zixun action-icon'></Text>
+                        <Text className='action-text'>联系顾问</Text>
+                      </View>
+                    )
                   )}
                 </View>
               </View>

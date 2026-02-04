@@ -21,7 +21,7 @@ function FloatSalesperson({ layout = 'vertical' }) {
   const [showModal, setShowModal] = useState(false)
 
   // 如果没有导购信息或没有二维码，不显示
-  if (!salespersonInfo?.work_qrcode) {
+  if (!salespersonInfo?.work_qrcode && !salespersonInfo?.work_qrcode_configid) {
     return null
   }
 
@@ -36,7 +36,17 @@ function FloatSalesperson({ layout = 'vertical' }) {
   const modalData = {
     qrcodeUrl: salespersonInfo.work_qrcode,
     salespersonName: salespersonInfo.salesperson_name,
-    salespersonAvatar: salespersonInfo.salesperson_avatar
+    salespersonAvatar: salespersonInfo.salesperson_avatar,
+    bgAvatarUrl: salespersonInfo.bg_avatar_url
+  }
+
+  // 如果有 work_qrcode_configid，渲染 cell 组件
+  if (salespersonInfo?.work_qrcode_configid) {
+    return (
+      <View className='sp-float-salesperson-cell' style={{ marginBottom: '10rpx' }}>
+        <cell plugid={salespersonInfo.work_qrcode_configid} styleType={2} />
+      </View>
+    )
   }
 
   return (

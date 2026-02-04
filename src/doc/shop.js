@@ -43,6 +43,7 @@ export const SHOP_ITEM = {
   show_salesperson: 'show_salesperson', // 是否显示导购：0-不显示，1-显示门店二维码，2-显示导购二维码
   fixed_salesperson_qrcode_url: 'fixed_salesperson_qrcode_url', // 门店固定二维码
   work_qrcode: 'work_qrcode', // 导购企微二维码
+  work_qrcode_configid: 'work_qrcode_configid', // 导购企微configid
   salesperson_name: 'salesperson_name', // 导购姓名
   salesperson_avatar: 'salesperson_avatar' // 导购头像
 }

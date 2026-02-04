@@ -49,6 +49,13 @@ function ConsultModal({ visible, type, data, onClose }) {
             </>
           ) : (
             <>
+              {data.bgAvatarUrl && (
+                <Image
+                  className='modal-bg'
+                  src={data.bgAvatarUrl}
+                  mode='aspectFill'
+                />
+              )}
               <Text className='modal-title'>添加导购</Text>
               <View className='qrcode-wrap'>
                 <View className='qrcode-border-outer'>
