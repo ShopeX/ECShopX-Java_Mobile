@@ -274,8 +274,7 @@ function CaseList() {
         if (draft.locationList && draft.locationList.length > 0) {
           draft.locationValue = [0, 0]
           const firstProvince = draft.locationList[0]
-          const cities =
-            firstProvince && firstProvince.cities ? firstProvince.cities : []
+          const cities = firstProvince && firstProvince.cities ? firstProvince.cities : []
           draft.locationRange[1] = cities.map((c) => c.name)
         }
       })
@@ -472,10 +471,8 @@ function CaseList() {
                 {tagListConfig.map((item, index) => {
                   const checkedGroupkey = checked
                     ? checked.find((checkedItem) => {
-                      return tagContentList[item.key].find(
-                        (iitem) => iitem.id === checkedItem.id
-                      )
-                    })
+                        return tagContentList[item.key].find((iitem) => iitem.id === checkedItem.id)
+                      })
                     : null
                   const itemCls = classNames('sp-tag--head-item', {
                     'sp-tag--head-checked': !!checkedGroupkey
@@ -491,10 +488,7 @@ function CaseList() {
                     </View>
                   )
                 })}
-                <View
-                  onClick={handleToggleDownPop}
-                  className='iconfont icon-shaixuan1'
-                ></View>
+                <View onClick={handleToggleDownPop} className='iconfont icon-shaixuan1'></View>
               </View>
             </View>
             {downPop && (
@@ -505,24 +499,16 @@ function CaseList() {
                     const itemTitle = itemDetail ? itemDetail.title : ''
                     const tag_list = tagContentList[key] ? tagContentList[key] : []
                     return (
-                      <View
-                        key={key}
-                        className='sp-tag--content-wrap'
-                      >
-                        <View className='sp-tag--content-title'>
-                          {itemTitle}:
-                        </View>
+                      <View key={key} className='sp-tag--content-wrap'>
+                        <View className='sp-tag--content-title'>{itemTitle}:</View>
                         <View className='sp-tag--content-list'>
                           {tag_list.map((item) => {
                             const isChecked = checked
                               ? checked.find((iitem) => item.id === iitem.id)
                               : false
-                            const tagCls = classNames(
-                              'sp-tag--content-item',
-                              {
-                                'sp-tag--content-checked': isChecked
-                              }
-                            )
+                            const tagCls = classNames('sp-tag--content-item', {
+                              'sp-tag--content-checked': isChecked
+                            })
                             return (
                               <View
                                 onClick={() => handleSelectTag(item)}
@@ -562,12 +548,7 @@ function CaseList() {
             )}
           </View>
         </View>
-        <SpScrollView
-          className='sp-scroll-y'
-          fetch={fetchData}
-          auto={false}
-          ref={listRef}
-        >
+        <SpScrollView className='sp-scroll-y' fetch={fetchData} auto={false} ref={listRef}>
           <View className='sp-case-list--wrap'>
             <View className='sp-case-list--right'>
               {leftList.map((item) => {
@@ -584,17 +565,12 @@ function CaseList() {
                       src={item.cover_pic}
                     ></Image>
                     <View className='sp-case-list--item-desc'>
-                      <View className='sp-case-list--item-desc-title'>
-                        {item.design_name}
-                      </View>
+                      <View className='sp-case-list--item-desc-title'>{item.design_name}</View>
                       <View className='sp-case-list--group'>
                         <View className='sp-case-list--item-content'>
                           {item.tagList.map((style) => {
                             return (
-                              <View
-                                className='sp-case-list--item-content-tag'
-                                key={style.tag_name}
-                              >
+                              <View className='sp-case-list--item-content-tag' key={style.tag_name}>
                                 {style.tag_name}
                               </View>
                             )
@@ -621,17 +597,12 @@ function CaseList() {
                       src={item.cover_pic}
                     ></Image>
                     <View className='sp-case-list--item-desc'>
-                      <View className='sp-case-list--item-desc-title'>
-                        {item.design_name}
-                      </View>
+                      <View className='sp-case-list--item-desc-title'>{item.design_name}</View>
                       <View className='sp-case-list--group'>
                         <View className='sp-case-list--item-content'>
                           {item.tagList.map((style) => {
                             return (
-                              <View
-                                className='sp-case-list--item-content-tag'
-                                key={style.tag_name}
-                              >
+                              <View className='sp-case-list--item-content-tag' key={style.tag_name}>
                                 {style.tag_name}
                               </View>
                             )
