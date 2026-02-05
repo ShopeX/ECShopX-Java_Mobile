@@ -222,7 +222,10 @@ function CaseList() {
 
   const getStorageLocation = async (locationInfo) => {
     if (!isEmpty(location) || !isEmpty(locationInfo)) {
-      const data = await entryLaunch.getAddressByLnglatWebAPI(location?.lng || locationInfo?.lng, location?.lat || locationInfo?.lat)
+      const data = await entryLaunch.getAddressByLnglatWebAPI(
+        location?.lng || locationInfo?.lng,
+        location?.lat || locationInfo?.lat
+      )
       const { city, error } = data
       if (error) {
         setState((draft) => {
