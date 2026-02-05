@@ -85,8 +85,8 @@ const CustomNavigationHeader = memo((props) => {
       url: isGoodsShelves()
         ? '/subpages/guide/index'
         : VERSION_IN_PURCHASE
-          ? '/pages/purchase/index'
-          : '/pages/index'
+        ? '/pages/purchase/index'
+        : '/pages/index'
     })
   }, [])
 
@@ -139,7 +139,9 @@ const CustomNavigationHeader = memo((props) => {
   const renderNearby = useCallback(() => {
     return (
       <View className='title-function nearby-function' onClick={handleNearbyClick}>
-        <Text className='nearby-function-text'>{VERSION_STANDARD?(shopInfo?.name || '总店'):(nearbyText || '选择地区')}</Text>
+        <Text className='nearby-function-text'>
+          {VERSION_STANDARD ? shopInfo?.name || '总店' : nearbyText || '选择地区'}
+        </Text>
         <Text className='nearby-function-icon iconfont icon-arrowDown' />
       </View>
     )
