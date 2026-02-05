@@ -6,8 +6,9 @@ import React, { useCallback, memo } from 'react'
 import Taro, { getCurrentInstance } from '@tarojs/taro'
 import { View, Text, Input, Button } from '@tarojs/components'
 import { SpImage } from '@/components'
-import { styleNames, classNames } from '@/utils'
+import { styleNames, classNames, VERSION_STANDARD } from '@/utils'
 import { VERSION_IN_PURCHASE, isGoodsShelves, linkPage } from '@/utils'
+import { useSelector } from 'react-redux'
 
 const CustomNavigationHeader = memo((props) => {
   const {
@@ -30,33 +31,24 @@ const CustomNavigationHeader = memo((props) => {
   const value = pageConfig
   const titleStyle = value?.titleStyle
   const showHeaderContent = value && titleStyle !== '0'
+  const { shopInfo } = useSelector((state) => state.shop)
 
   const headerStyle = useCallback(() => {
     const style = {
       height: `${gNavbarH}px`,
-      paddingTop: `${gStatusBarHeight}px`,
       backgroundSize: '100% 100%',
       backgroundRepeat: 'no-repeat',
       backgroundPosition: 'center'
     }
-    const newNavigateStyle = value?.newNavigateStyle
-    if (newNavigateStyle?.color) {
-      style.backgroundColor = newNavigateStyle.color
+    if (value?.navigateBackgroundColorr) {
+      style.backgroundColor = value?.navigateBackgroundColor
     }
-    if (newNavigateStyle?.image) {
-      style.backgroundImage = `url(${newNavigateStyle.image})`
+    if (value?.navigateBackgroundImage) {
+      style.backgroundImage = `url(${value?.navigateBackgroundImage})`
       style.backgroundSize = 'cover'
       style.backgroundPosition = 'center'
     }
-    if (!newNavigateStyle?.color && !newNavigateStyle?.image) {
-      if (!immersive || (immersive && mantle) || navigateMantle) {
-        style.backgroundColor = value?.navigateBackgroundColor || navigateBackgroundColor
-        style.backgroundImage = value?.navigateBackgroundImage
-          ? `url(${value.navigateBackgroundImage})`
-          : undefined
-      }
-      style.transition = 'all 0.15s ease-in'
-    }
+    style.transition = 'all 0.15s ease-in'
     return style
   }, [
     value,
@@ -68,22 +60,10 @@ const CustomNavigationHeader = memo((props) => {
     gStatusBarHeight
   ])
 
-  const contentStyle = useCallback(() => {
-    const navBg = value?.navigateBackgroundColor || navigateBackgroundColor || '#fff'
-    return {
-      backgroundColor: navBg,
-      backgroundImage: value?.navigateBackgroundImage
-        ? `url(${value.navigateBackgroundImage})`
-        : undefined,
-      backgroundSize: 'cover',
-      backgroundPosition: 'center'
-    }
-  }, [value, navigateBackgroundColor])
-
   const containerStyle = useCallback(() => {
     return {
-      textAlign: value?.titlePosition || 'center',
-      color: value?.titleColor || '#333'
+      textAlign: value?.titlePosition,
+      color: value?.titleColor
     }
   }, [value])
 
@@ -105,8 +85,8 @@ const CustomNavigationHeader = memo((props) => {
       url: isGoodsShelves()
         ? '/subpages/guide/index'
         : VERSION_IN_PURCHASE
-        ? '/pages/purchase/index'
-        : '/pages/index'
+          ? '/pages/purchase/index'
+          : '/pages/index'
     })
   }, [])
 
@@ -149,8 +129,8 @@ const CustomNavigationHeader = memo((props) => {
   }, [hotzoneImgUrl, functionAreaHotzone])
 
   const handleNearbyClick = useCallback(() => {
-    if (onNearbyClick) {
-      onNearbyClick()
+    if (VERSION_STANDARD) {
+      Taro.navigateTo({ url: '/subpages/store/list' })
     } else {
       Taro.navigateTo({ url: '/subpages/ecshopx/nearly-shop' })
     }
@@ -159,7 +139,7 @@ const CustomNavigationHeader = memo((props) => {
   const renderNearby = useCallback(() => {
     return (
       <View className='title-function nearby-function' onClick={handleNearbyClick}>
-        <Text className='nearby-function-text'>{nearbyText || '选择地区'}</Text>
+        <Text className='nearby-function-text'>{VERSION_STANDARD?(shopInfo?.name || '总店'):(nearbyText || '选择地区')}</Text>
         <Text className='nearby-function-icon iconfont icon-arrowDown' />
       </View>
     )
@@ -173,7 +153,7 @@ const CustomNavigationHeader = memo((props) => {
           <Text className='iconfont icon-sousuo-01 search-icon' />
           <Input
             className='search-input'
-            placeholder='底纹词滚动展示'
+            placeholder=''
             onConfirm={(e) => onSearchConfirm && onSearchConfirm(e.detail?.value)}
           />
           <View className='search-button' style={styleNames(searchButtonStyle())}>
@@ -213,7 +193,7 @@ const CustomNavigationHeader = memo((props) => {
 
   return (
     <View className='wgt-page' style={styleNames(headerStyle())} onClick={props.onClickHeader}>
-      <View className='wgt-page-content' style={styleNames(contentStyle())}>
+      <View className='wgt-page-content'>
         <View
           className={classNames('header-container', { 'has-nearby': hasNearby })}
           style={showHeaderContent ? styleNames(containerStyle()) : {}}
