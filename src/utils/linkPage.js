@@ -98,6 +98,8 @@ function linkPage(data) {
         url += `?distributor_id=${dtid || distributor_id}`
       } else if (id == 'kujiale') {
         url = '/subpages/case/list'
+      } else if (id == 'nearby_store') {
+        url = '/subpages/store/nearby-list'
       }
       // if (id == 'purchase') {
       //   clearPurchaseDtid()
