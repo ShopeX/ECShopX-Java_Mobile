@@ -34,11 +34,14 @@ export default (props = {}) => {
 
   useEffect(() => {
     const token = S.getAuthToken()
+    // 判断是否为企微环境
+    const isQywx = typeof wx !== 'undefined' && wx.qy
     if (!token) {
       autoLogin && !VERSION_SHUYUN && login()
     } else {
       setIsLogin(true)
-      process.env.APP_FROM !== 'guide' && getUserInfo()
+      // 企微环境不调用 getUserInfo
+      !isQywx && getUserInfo()
     }
   }, [])
 
