@@ -38,7 +38,7 @@ export default (props = {}) => {
       autoLogin && !VERSION_SHUYUN && login()
     } else {
       setIsLogin(true)
-      process.env.APP_FROM !== 'guide' && getUserInfo()
+      getUserInfo()
     }
   }, [])
 
