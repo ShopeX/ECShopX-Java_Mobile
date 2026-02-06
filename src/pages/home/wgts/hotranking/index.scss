@@ -105,7 +105,7 @@
       font-weight: 800;
       box-sizing: border-box;
       font-size: 18px;
-      border: 1PX solid rgba(153, 153, 153, 0.25);
+      border: 1px solid rgba(153, 153, 153, 0.25);
       color: #999999;
       z-index: 99;
       padding: 0 8px;
@@ -118,18 +118,18 @@
       &__one {
         background: #f6efd8;
         color: #cb9800;
-        border: 1PX solid rgba(203, 152, 0, 0.25);
+        border: 1px solid rgba(203, 152, 0, 0.25);
       }
 
       &__two {
         background: #e6e9ef;
-        border: 1PX solid rgba(87, 107, 149, 0.25);
+        border: 1px solid rgba(87, 107, 149, 0.25);
         color: #576b95;
       }
 
       &__three {
         background: #ffe5d7;
-        border: 1PX solid rgba(222, 127, 72, 0.25);
+        border: 1px solid rgba(222, 127, 72, 0.25);
         color: #de7f48;
       }
     }
@@ -154,7 +154,7 @@
     justify-content: center;
     height: 28px;
     overflow: hidden;
-    color: #1A1A1A;
+    color: #1a1a1a;
 
     &__unit {
       font-family: D-DIN-PRO, D-DIN-PRO;
@@ -166,7 +166,7 @@
       font-family: D-DIN-PRO, D-DIN-PRO;
       font-weight: 600;
       font-size: 28px;
-      color: #1A1A1A;
+      color: #1a1a1a;
     }
   }
 
