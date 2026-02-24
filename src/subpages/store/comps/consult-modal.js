@@ -28,7 +28,7 @@ function ConsultModal({ visible, type, data, onClose }) {
   }
 
   return (
-    <View className='consult-modal-overlay' onClick={handleOverlayClick}>
+    <View className='consult-modal-overlay' onClick={handleOverlayClick} catchMove>
       <View className='consult-modal' onClick={handleModalClick}>
         <View className='consult-modal-content'>
           {type === '1' ? (
@@ -41,6 +41,7 @@ function ConsultModal({ visible, type, data, onClose }) {
                       className='qrcode-image'
                       src={data.qrcodeUrl}
                       mode='aspectFit'
+                      showMenuByLongpress
                     />
                   </View>
                 </View>
@@ -64,6 +65,7 @@ function ConsultModal({ visible, type, data, onClose }) {
                       className='qrcode-image'
                       src={data.qrcodeUrl}
                       mode='aspectFit'
+                      showMenuByLongpress
                     />
                   </View>
                 </View>
