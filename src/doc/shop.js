@@ -45,7 +45,8 @@ export const SHOP_ITEM = {
   work_qrcode: 'work_qrcode', // 导购企微二维码
   work_qrcode_configid: 'work_qrcode_configid', // 导购企微configid
   salesperson_name: 'salesperson_name', // 导购姓名
-  salesperson_avatar: 'salesperson_avatar' // 导购头像
+  salesperson_avatar: 'salesperson_avatar', // 导购头像
+  show_mobile: 'show_mobile' // 是否显示电话咨询
 }
 
 export const BUSINESS_SORT = {

@@ -516,10 +516,12 @@ function NearbyList() {
                   <Text className='shop-distance'>{formatDistance(item.distance)}</Text>
                 </View>
                 <View className={classNames('action-btns', { 'action-btns-bindding': item.isBinddingShop })}>
-                  <View className='action-btn-item' onClick={(e) => handlePhoneCall(e, item.mobile)}>
-                    <Text className='iconfont icon-mobile action-icon'></Text>
-                    <Text className='action-text'>电话咨询</Text>
-                  </View>
+                  {item.show_mobile === '1' && (
+                    <View className='action-btn-item' onClick={(e) => handlePhoneCall(e, item.mobile)}>
+                      <Text className='iconfont icon-mobile action-icon'></Text>
+                      <Text className='action-text'>电话咨询</Text>
+                    </View>
+                  )}
                   {item.show_salesperson !== '0' && (
                     item.work_qrcode_configid ? (
                       <View className='action-btn-item action-btn-cell'>
