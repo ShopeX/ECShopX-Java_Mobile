@@ -34,13 +34,13 @@ function withPageWrapper(Component) {
       }
     }, [initState])
 
+    // 用户信息/店铺变化时仅后台重新执行进店规则，不隐藏页面，避免注册/登录后页面长时间空白
     useEffect(() => {
       if (state) {
-        setState(false)
-
-        setTimeout(() => {
+        const timer = setTimeout(() => {
           resolveInStoreRule()
-        }, 1000)
+        }, 100)
+        return () => clearTimeout(timer)
       }
     }, [shopInfo, userInfo])
 
