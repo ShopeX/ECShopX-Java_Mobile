@@ -369,8 +369,6 @@ function CaseList() {
   }
 
   useEffect(() => {
-    // 默认全国案例，首次进入用全国数据加载列表，不调用 getStorageLocation 覆盖为本地
-    refresh()
     api.design.getDesignTagsList().then((data) => {
       let house_type, style
       data.forEach((item) => {
@@ -417,6 +415,11 @@ function CaseList() {
       })
     })
     initLocationPicker()
+    // 延迟执行确保 SpScrollView 已挂载、listRef 已就绪，否则 reset() 不会触发首屏加载
+    const timer = setTimeout(() => {
+      refresh()
+    }, 300)
+    return () => clearTimeout(timer)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
