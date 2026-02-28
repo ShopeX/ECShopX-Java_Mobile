@@ -39,7 +39,7 @@ function GuideCouponIndex(props) {
     autoLogin: true
   })
   const $instance = getCurrentInstance()
-  const { subtask_id = '' } = getCurrentInstance().router.params
+  const { subtask_id = '' } = getCurrentInstance()?.router?.params
   const [state, setState] = useImmer(initialState)
   const { list } = state
   const couponRef = useRef()

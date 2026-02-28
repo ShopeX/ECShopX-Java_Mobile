@@ -58,7 +58,7 @@ function Invoice(props) {
   } = state
 
   useEffect(() => {
-    entryLaunch.getRouteParams($router.params).then((params) => {
+    entryLaunch.getRouteParams($router?.params).then((params) => {
       setState((draft) => {
         draft.invoice_amount = params?.invoice_amount || 0
         draft.order_id = params?.order_id || ''
@@ -346,7 +346,7 @@ function Invoice(props) {
               <AtInput
                 name='individual_title'
                 value={info?.individual_title}
-                placeholder='必填'
+                placeholder=''
                 placeholderClass='input-placeholder'
                 onChange={(e) => handleChange('individual_title', e)}
               />
@@ -358,7 +358,7 @@ function Invoice(props) {
                 <AtInput
                   name='company_title'
                   value={info?.company_title}
-                  placeholder='必填'
+                  placeholder=''
                   placeholderClass='input-placeholder'
                   onChange={(e) => handleChange('company_title', e)}
                 />
@@ -367,7 +367,7 @@ function Invoice(props) {
                 <AtInput
                   name='company_tax_number'
                   value={info?.company_tax_number}
-                  placeholder='必填'
+                  placeholder=''
                   placeholderClass='input-placeholder'
                   onChange={(e) => handleChange('company_tax_number', e)}
                 />
@@ -441,7 +441,7 @@ function Invoice(props) {
               <AtInput
                 name='email'
                 value={info?.email}
-                placeholder='必填'
+                placeholder=''
                 placeholderClass='input-placeholder'
                 onChange={(e) => handleChange('email', e)}
               />
