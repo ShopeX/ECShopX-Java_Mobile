@@ -350,8 +350,16 @@ class EntryLaunch {
 
   /**
    * 判断是否开启定位，去获取经纬度，根据经纬度去获取地址
+   * 仅当后台开启 LBS 定位（is_open_wechatapp_location == 1）时才请求定位权限并可能弹出授权弹窗
    */
   async isOpenPosition(callback) {
+    const { is_open_wechatapp_location } = Taro.getStorageSync('settingInfo') || {}
+    // LBS 未开启（2 关闭或未配置）时不请求定位、不弹授权弹窗
+    if (is_open_wechatapp_location != 1) {
+      if (callback) callback(false)
+      return
+    }
+
     if (process.env.TARO_ENV === 'weapp') {
       const { authSetting } = await Taro.getSetting()
       if (!authSetting['scope.userLocation']) {
