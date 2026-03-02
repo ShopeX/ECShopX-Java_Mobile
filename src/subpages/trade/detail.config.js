@@ -4,7 +4,7 @@
  */
 export default {
   usingComponents: {
-    'cell': 'plugin://contactPlugin/cell'
+    //'cell': 'plugin://contactPlugin/cell'
   },
   navigationBarTitleText: '订单详情'
 }

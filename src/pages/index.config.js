@@ -4,7 +4,7 @@
  */
 export default {
   usingComponents: {
-    'cell': 'plugin://contactPlugin/cell'
+    //'cell': 'plugin://contactPlugin/cell'
   },
   // enablePullDownRefresh: true,
   // backgroundTextStyle: 'dark',

@@ -7,7 +7,8 @@ import { createSlice } from '@reduxjs/toolkit'
 const initialState = {
   shopInfo: {},
   salespersonInfo: {},
-  zitiShop: null
+  zitiShop: null,
+  showGuideConsultModal: false // 全局企微导购联系弹框（与 FloatSalesperson 一致）
 }
 
 const shopSlice = createSlice({
@@ -22,10 +23,14 @@ const shopSlice = createSlice({
     },
     changeZitiStore: (state, { payload }) => {
       state.zitiShop = payload
+    },
+    setShowGuideConsultModal: (state, { payload }) => {
+      state.showGuideConsultModal = !!payload
     }
   }
 })
 
-export const { updateShopInfo, updateSalesperson, changeZitiStore } = shopSlice.actions
+export const { updateShopInfo, updateSalesperson, changeZitiStore, setShowGuideConsultModal } =
+  shopSlice.actions
 
 export default shopSlice.reducer

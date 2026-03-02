@@ -41,13 +41,13 @@ function FloatSalesperson({ layout = 'vertical' }) {
   }
 
   // 如果有 work_qrcode_configid，渲染 cell 组件
-  if (salespersonInfo?.work_qrcode_configid) {
-    return (
-      <View className='sp-float-salesperson-cell' style={{ marginBottom: '10rpx' }}>
-        <cell plugid={salespersonInfo.work_qrcode_configid} styleType={2} />
-      </View>
-    )
-  }
+  // if (salespersonInfo?.work_qrcode_configid) {
+  //   return (
+  //     <View className='sp-float-salesperson-cell' style={{ marginBottom: '10rpx' }}>
+  //       <cell plugid={salespersonInfo.work_qrcode_configid} styleType={2} />
+  //     </View>
+  //   )
+  // }
 
   return (
     <>
