@@ -5,6 +5,7 @@
 import Taro, { getCurrentInstance } from '@tarojs/taro'
 import { stringify } from 'qs'
 import configStore from '@/store'
+import { setShowGuideConsultModal } from '@/store/slices/shop'
 
 const { store } = configStore()
 
@@ -145,6 +146,13 @@ function linkPage(data) {
       break
     case 'store':
       url = `/subpages/store/index?id=${id}`
+      break
+    case 'customer_service':
+      // 企微导购服务 (id: guide_service)：与 FloatSalesperson 一致，弹出联系顾问弹框
+      if (id === 'guide_service') {
+        store.dispatch(setShowGuideConsultModal(true))
+        return
+      }
       break
     case 'custom':
       url = id
