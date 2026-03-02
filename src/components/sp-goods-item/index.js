@@ -6,7 +6,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import Taro, { useDidShow } from '@tarojs/taro'
 import { View, Text, Image } from '@tarojs/components'
-import { SpImage, SpPoint, SpPrice, SpVipLabel } from '@/components'
+import { SpImage, SpPoint, SpPrice, SpVipLabel, SpLogin } from '@/components'
 import { fetchUserFavs, addUserFav, deleteUserFav } from '@/store/slices/user'
 import { useLogin } from '@/hooks'
 import qs from 'qs'
@@ -84,11 +84,6 @@ function SpGoodsItem(props) {
     if (S.getAuthToken()) {
       showToast(fav ? '已移出收藏' : '已加入收藏')
     }
-  }
-
-  const onChangeToolBar = (e) => {
-    e.stopPropagation()
-    onAddToCart(info)
   }
 
   const handleClick = () => {
@@ -259,9 +254,11 @@ function SpGoodsItem(props) {
             )}
 
             {showAddCart ? (
-              <View onClick={(e) => onChangeToolBar(e)}>
-                <Text className='iconfont icon-gouwuche2' />
-              </View>
+              <SpLogin onChange={() => onAddToCart(info)}>
+                <View>
+                  <Text className='iconfont icon-gouwuche2' />
+                </View>
+              </SpLogin>
             ) : (
               ''
             )}
