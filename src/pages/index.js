@@ -139,11 +139,12 @@ function Home() {
     dispatch(updateEnterpriseId())
   })
 
+  // 定位变化或选择店铺后（distributor_id 变化）重新拉取首页
   useEffect(() => {
-    if (location && VERSION_STANDARD) {
+    if (VERSION_STANDARD && (location||shopInfo?.distributor_id)) {
       fetchWgts()
     }
-  }, [location])
+  }, [location, shopInfo?.distributor_id])
 
   useEffect(() => {
     if (skuPanelOpen) {
