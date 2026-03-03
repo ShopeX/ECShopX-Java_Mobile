@@ -57,7 +57,6 @@ function ConsultModal({ visible, type, data, onClose }) {
                   mode='aspectFill'
                 />
               )}
-              <Text className='modal-title'>添加导购</Text>
               <View className='qrcode-wrap'>
                 <View className='qrcode-border-outer'>
                   <View className='qrcode-border-inner'>
@@ -69,7 +68,6 @@ function ConsultModal({ visible, type, data, onClose }) {
                     />
                   </View>
                 </View>
-                <Text className='qrcode-tip'>长按扫码联系您的专属顾问</Text>
               </View>
               <View className='salesperson-info'>
                 <Image
