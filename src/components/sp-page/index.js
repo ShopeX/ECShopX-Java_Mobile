@@ -329,7 +329,6 @@ const SpPage = memo(
             btnReturn={state.btnReturn}
             btnHome={state.btnHome}
             mantle={state.mantle}
-            showFloatForContact={salespersonInfo?.show_float !== 0}
           />
         )}
         {props.isDefault &&

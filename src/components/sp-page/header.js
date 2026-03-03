@@ -26,8 +26,7 @@ const CustomNavigationHeader = memo((props) => {
     navigationLSpace,
     btnReturn,
     btnHome,
-    mantle,
-    showFloatForContact
+    mantle
   } = props
 
   // 计算导航栏样式
@@ -75,7 +74,6 @@ const CustomNavigationHeader = memo((props) => {
           }
 
           if (citem.id === 'customerService') {
-            if (showFloatForContact === false) return null
             return (
               <Button
                 key={citem.id}
@@ -98,7 +96,7 @@ const CustomNavigationHeader = memo((props) => {
         })}
       </View>
     )
-  }, [pageConfig?.pTitleHotSetting, showFloatForContact])
+  }, [pageConfig?.pTitleHotSetting])
 
   // 渲染左侧按钮区域
   const renderLeftBlock = useCallback(() => {
