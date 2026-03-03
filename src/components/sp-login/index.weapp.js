@@ -108,9 +108,6 @@ const SpLogin = forwardRef((props, ref) => {
         params['uid'] = uid
       }
 
-      // if (shopInfo.shop_code) {
-      //   params['distributor_id'] = shopInfo.shop_code
-      // }
       if (dtid && dtid !== 'undefined') {
         params['distributor_id'] = dtid
       }
@@ -120,7 +117,6 @@ const SpLogin = forwardRef((props, ref) => {
       }
       if (gu) {
         work_userid = gu.split('_')[0]
-        params['distributor_id'] = gu.split('_')[1]
       }
       // gu_user_id: 欢迎语上带过来的员工编号, 同work_user_id
       if (work_userid) {
