@@ -254,11 +254,13 @@ function SpGoodsItem(props) {
             )}
 
             {showAddCart ? (
-              <SpLogin onChange={() => onAddToCart(info)}>
-                <View>
-                  <Text className='iconfont icon-gouwuche2' />
-                </View>
-              </SpLogin>
+              <View onClick={(e) => e.stopPropagation()}>
+                <SpLogin onChange={() => onAddToCart(info)}>
+                  <View>
+                    <Text className='iconfont icon-gouwuche2' />
+                  </View>
+                </SpLogin>
+              </View>
             ) : (
               ''
             )}

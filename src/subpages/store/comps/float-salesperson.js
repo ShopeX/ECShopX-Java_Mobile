@@ -64,7 +64,7 @@ function FloatSalesperson({ layout = 'vertical' }) {
           height={60}
           mode='aspectFill'
         />
-        <Text className='sp-float-salesperson__name'>{salespersonInfo.salesperson_name}</Text>
+        <Text className='sp-float-salesperson__name'>{salespersonInfo.salesperson_common_name}</Text>
       </View>
 
       <ConsultModal
