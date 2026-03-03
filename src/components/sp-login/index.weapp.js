@@ -16,7 +16,7 @@ import { AtButton, AtCurtain } from 'taro-ui'
 import { useImmer } from 'use-immer'
 import S from '@/spx'
 import api from '@/api'
-import { isWeixin, isAlipay, classNames, showToast, entryLaunch } from '@/utils'
+import { isWeixin, isAlipay, classNames, showToast, entryLaunch, getDistributorId } from '@/utils'
 import { SG_SHARER_UID, SG_TRACK_PARAMS, SG_ROUTER_PARAMS, SG_GUIDE_PARAMS } from '@/consts'
 import { Tracker } from '@/service'
 import { SpPrivacyModal, SpImage, SpCheckbox } from '@/components'
@@ -126,6 +126,13 @@ const SpLogin = forwardRef((props, ref) => {
       if (work_userid) {
         params['channel'] = 1
         params['work_userid'] = work_userid
+      }
+      // 若前面未带上店铺 id，用当前 Redux 中的店铺兜底，避免注册请求缺 distributor_id
+      if (params['distributor_id'] == null || params['distributor_id'] === '') {
+        const fallbackId = shopInfo?.distributor_id ?? getDistributorId()
+        if (fallbackId != null && fallbackId !== '') {
+          params['distributor_id'] = fallbackId
+        }
       }
 
       if (source_id) {

@@ -118,13 +118,9 @@ const SpPage = memo(
       }
     }, [state.lock])
 
-    // 企微导购弹框：show_float 为 0 或无导购二维码时关闭状态，避免一直为 true
+    // 企微导购弹框：无导购二维码时关闭状态，避免一直为 true
     useEffect(() => {
-      const showFloat = salespersonInfo?.show_float == 1
-      if (
-        showGuideConsultModal &&
-        (!showFloat || (!salespersonInfo?.work_qrcode && !salespersonInfo?.work_qrcode_configid))
-      ) {
+      if (showGuideConsultModal && !salespersonInfo?.work_qrcode && !salespersonInfo?.work_qrcode_configid) {
         dispatch(setShowGuideConsultModal(false))
       }
     }, [showGuideConsultModal, salespersonInfo, dispatch])
@@ -333,6 +329,7 @@ const SpPage = memo(
             btnReturn={state.btnReturn}
             btnHome={state.btnHome}
             mantle={state.mantle}
+            showFloatForContact={salespersonInfo?.show_float !== 0}
           />
         )}
         {props.isDefault &&
@@ -398,7 +395,7 @@ const SpPage = memo(
         )}
         <CookieConsent />
         {/* 全局企微导购联系弹框（与 FloatSalesperson 一致，如热区/分类页点击企微导购服务时弹出） */}
-        {showGuideConsultModal && salespersonInfo?.show_float == 1 && salespersonInfo?.work_qrcode && (
+        {showGuideConsultModal && salespersonInfo?.work_qrcode && (
           <ConsultModal
             visible={showGuideConsultModal}
             type='2'
