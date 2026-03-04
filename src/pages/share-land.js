@@ -32,7 +32,10 @@ function ShareIand() {
     Taro.setStorageSync(SG_ROUTER_PARAMS, routeParams)
     if (routeParams?.gu || routeParams?.gu_user_id) {
       // 导购参数处理
-      Taro.setStorageSync(SG_GUIDE_PARAMS, routeParams)
+      Taro.setStorageSync(SG_GUIDE_PARAMS, {
+        ...routeParams,
+        gu_user_id: routeParams.gu_user_id || routeParams.gu.split('_')[0]
+      })
       Taro.setStorageSync(SG_GUIDE_PARAMS_UPDATETIME, dayjs().unix())
       // if (S.getAuthToken()) {
       //   entryLaunch.postGuideUV() // 导购uv上报
