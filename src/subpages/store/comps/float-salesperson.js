@@ -21,7 +21,8 @@ function FloatSalesperson({ layout = 'vertical' }) {
   const [showModal, setShowModal] = useState(false)
 
   // 无导购信息或无二维码不展示（show_float 用于控制小程序客服，不控制导购浮窗）
-  if (!salespersonInfo?.work_qrcode && !salespersonInfo?.work_qrcode_configid) {
+  // && !salespersonInfo?.work_qrcode_configid
+  if (!salespersonInfo?.work_qrcode) {
     return null
   }
 

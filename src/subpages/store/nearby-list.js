@@ -522,18 +522,21 @@ function NearbyList() {
                       <Text className='action-text'>电话咨询</Text>
                     </View>
                   )}
-                  {item.show_salesperson !== '0' && (
-                    item.work_qrcode_configid ? (
-                      <View className='action-btn-item action-btn-cell'>
-                        <cell plugid={item.work_qrcode_configid} styleType={2} />
-                        <Text className='action-text'>联系顾问</Text>
-                      </View>
-                    ) : (
-                      <View className='action-btn-item' onClick={(e) => handleConsult(e, item)}>
+                  {item.show_salesperson !== '0' && ( <View className='action-btn-item' onClick={(e) => handleConsult(e, item)}>
                         <Text className='iconfont icon-zixun action-icon'></Text>
                         <Text className='action-text'>联系顾问</Text>
                       </View>
-                    )
+                    // item.work_qrcode_configid ? (
+                    //   <View className='action-btn-item action-btn-cell'>
+                    //     <cell plugid={item.work_qrcode_configid} styleType={2} />
+                    //     <Text className='action-text'>联系顾问</Text>
+                    //   </View>
+                    // ) : (
+                    //   <View className='action-btn-item' onClick={(e) => handleConsult(e, item)}>
+                    //     <Text className='iconfont icon-zixun action-icon'></Text>
+                    //     <Text className='action-text'>联系顾问</Text>
+                    //   </View>
+                    // )
                   )}
                 </View>
               </View>
