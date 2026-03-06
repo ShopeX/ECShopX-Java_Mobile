@@ -175,7 +175,6 @@ const SpPage = memo(
 
     // 电脑端小程序：窗口尺寸变化时更新 body 高度，避免调整窗口后留白（ECX-8058）
     useEffect(() => {
-      if (!isPCMiniProgram() || typeof Taro.onWindowResize !== 'function') return
       const onResize = () => {
         const { windowHeight } = Taro.getWindowInfo()
         setState((draft) => {
@@ -346,6 +345,7 @@ const SpPage = memo(
           <View
             className='sp-page__body'
             style={styleNames({
+              'height': `${state.bodyHeight}px`,
               'padding-top': `${!props.immersive && state.customNavigation ? state.gNavbarH : 0}px`,
               'padding-bottom': props.renderFooter
                 ? Taro.pxTransform(
