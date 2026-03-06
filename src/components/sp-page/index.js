@@ -175,8 +175,9 @@ const SpPage = memo(
 
     // 电脑端小程序：窗口尺寸变化时更新 body 高度，避免调整窗口后留白（ECX-8058）
     useEffect(() => {
-      const onResize = () => {
-        const { windowHeight } = Taro.getWindowInfo()
+      const onResize = (res) => {
+        console.log('onResize🚀', res)
+        const { windowHeight } = res
         setState((draft) => {
           draft.bodyHeight = windowHeight
         })
