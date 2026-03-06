@@ -85,6 +85,17 @@ export const isAlipay = Taro.getEnv() == Taro.ENV_TYPE.ALIPAY
 /** 在微信平台 */
 export const isWeixin = Taro.getEnv() == Taro.ENV_TYPE.WEAPP
 
+/** 是否电脑端微信小程序（Windows / Mac 客户端） */
+export const isPCMiniProgram = () => {
+  if (!isWeixin) return false
+  try {
+    const { platform } = Taro.getSystemInfoSync() || {}
+    return platform === 'windows' || platform === 'mac'
+  } catch {
+    return false
+  }
+}
+
 /** 在H5平台 */
 export const isWeb = Taro.getEnv() == Taro.ENV_TYPE.WEB
 

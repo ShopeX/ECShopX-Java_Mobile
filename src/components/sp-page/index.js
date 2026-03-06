@@ -38,6 +38,7 @@ import {
   isWeixin,
   isAlipay,
   isIphoneX,
+  isPCMiniProgram,
   VERSION_IN_PURCHASE,
   isGoodsShelves,
   linkPage,
@@ -171,6 +172,21 @@ const SpPage = memo(
         footerHeight: _height
       })
     }, [props.immersive, isPageVisible])
+
+    // 电脑端小程序：窗口尺寸变化时更新 body 高度，避免调整窗口后留白（ECX-8058）
+    useEffect(() => {
+      if (!isPCMiniProgram() || typeof Taro.onWindowResize !== 'function') return
+      const onResize = () => {
+        const { windowHeight } = Taro.getWindowInfo()
+        setState((draft) => {
+          draft.bodyHeight = windowHeight
+        })
+      }
+      Taro.onWindowResize(onResize)
+      return () => {
+        if (typeof Taro.offWindowResize === 'function') Taro.offWindowResize(onResize)
+      }
+    }, [])
 
     useEffect(() => {
       const {
@@ -335,7 +351,11 @@ const SpPage = memo(
                 ? Taro.pxTransform(
                     props.footerHeight + (isIphoneX() ? DEFAULT_SAFE_AREA_HEIGHT : 0)
                   )
-                : 0
+                : 0,
+              // 电脑端小程序：用实际窗口高度替代 100vh，避免底部灰色或显示不全（ECX-8058）
+              ...(isPCMiniProgram() && state.bodyHeight
+                ? { 'min-height': `${state.bodyHeight}px` }
+                : {})
             })}
           >
             <View className='sp-page__body-content'>
