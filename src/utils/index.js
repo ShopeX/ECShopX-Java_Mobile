@@ -889,7 +889,7 @@ const getMemberLevel = (gradeInfo = {}) => {
 
 export const pxToRpx = (px) => {
   const { screenWidth } = Taro.getSystemInfoSync()
-  return parseInt((screenWidth * px) / 375)
+  return parseInt((750 * px) / screenWidth)
 }
 
 export const rpxToPx = (rpx) => {
