@@ -36,7 +36,7 @@ class EntryLaunch {
     const pageStack = Taro.getCurrentPages()
 
     const resPage = pageStack.find(
-      (item) => item.route == options?.path && _isEqual(options.query, item.$taroParams)
+      (item) => item != null && item.route == options?.path && _isEqual(options.query, item.$taroParams)
     )
 
     // 只返回小程序启动时的参数（包含冷启动和热启动）

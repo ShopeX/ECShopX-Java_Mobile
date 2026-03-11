@@ -21,7 +21,7 @@ function linkPage(data) {
     content,
     seletedTags = []
   } = data
-  const { id: dtid } = getCurrentInstance().router.params
+  const { id: dtid } = getCurrentInstance()?.router?.params
   if (id === 'homeSearch') {
     Taro.navigateTo({
       url: '/pages/item/list'
@@ -142,6 +142,9 @@ function linkPage(data) {
       url = '/marketing/pages/reservation/goods-reservate?activity_id=' + id
       break
     case 'liverooms':
+      url = 'plugin-private://wx2b03c6e691cd7370/pages/live-player-plugin?room_id=' + id
+      break
+    case 'live':
       url = 'plugin-private://wx2b03c6e691cd7370/pages/live-player-plugin?room_id=' + id
       break
     case 'store':

@@ -42,10 +42,14 @@ function SpGoodsItem(props) {
     if (loadingRef.current) return
     loadingRef.current = true
     let isPurchase = false
-    if (isWeixin) {
-      isPurchase = $instance.page.route.includes('subpages/purchase')
-    } else {
-      isPurchase = $instance.page.path.includes('subpages/purchase')
+    const pageRoute = $instance?.page?.route
+    const pagePath = $instance?.page?.path
+    if (pageRoute || pagePath) {
+      if (isWeixin) {
+        isPurchase = (pageRoute || '').includes('subpages/purchase')
+      } else {
+        isPurchase = (pagePath || '').includes('subpages/purchase')
+      }
     }
     setIsPurchase(isPurchase)
   }

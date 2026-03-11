@@ -220,18 +220,20 @@ const SpPage = memo(
 
     useDidShow(() => {
       setIsPageVisible(true) // 页面显示时设置为true
-      const { page, router } = getCurrentInstance()
-      const fidx = Object.values(TABBAR_PATH()).findIndex((v) => v == router?.path.split('?')[0])
+      const instance = getCurrentInstance()
+      if (!instance?.router) return
+      const { page, router } = instance
+      const fidx = Object.values(TABBAR_PATH()).findIndex((v) => v == router?.path?.split('?')[0])
       const isTabBarPage = fidx > -1
       setState((draft) => {
         draft.showLeftContainer = !['/subpages/guide/index', '/pages/index'].includes(
-          `/${page?.route}`
+          `/${page?.route ?? ''}`
         )
         draft.isTabBarPage = isTabBarPage
       })
 
       // 导购货架分包路由，隐藏所有分享入口
-      if (router.path.indexOf('/subpages/guide') > -1) {
+      if (router?.path?.indexOf('/subpages/guide') > -1) {
         Taro.hideShareMenu({
           menus: ['shareAppMessage', 'shareTimeline']
         })
