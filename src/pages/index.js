@@ -339,7 +339,11 @@ function Home() {
             <WgtHomeHeader>{fixedTop && <SpSearch info={searchComp} />}</WgtHomeHeader>
           )}
           <View style={{ flex: 1 }}>
-            {filterWgts.length > 0 && (
+            {loading ? (
+              <View className='home-loading'>
+                <SpLoading />
+              </View>
+            ) : filterWgts.length > 0 ? (
               <WgtsContext.Provider
                 value={{
                   onAddToCart,
@@ -354,7 +358,7 @@ function Home() {
                   <SpRecommend className='recommend-block' info={likeList} />
                 </HomeWgts>
               </WgtsContext.Provider>
-            )}
+            ) : null}
           </View>
           {/* If you remove or alter Shopex brand identifiers, you must obtain a branding removal license from Shopex.  Contact us at:  http://www.shopex.cn to purchase a branding removal license. */}
           {/* <View className='sp-page__powered-by w-full'>
