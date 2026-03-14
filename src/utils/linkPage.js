@@ -6,6 +6,7 @@ import Taro, { getCurrentInstance } from '@tarojs/taro'
 import { stringify } from 'qs'
 import configStore from '@/store'
 import { setShowGuideConsultModal } from '@/store/slices/shop'
+import { getDistributorId } from '.'
 
 const { store } = configStore()
 
@@ -58,7 +59,7 @@ function linkPage(data) {
       url = `/subpages/game-activity/index?id=${id}`
       break
     case 'goods':
-      url = `/pages/item/espier-detail?id=${id}&dtid=${distributor_id}`
+      url = `/pages/item/espier-detail?id=${id}&dtid=${distributor_id || getDistributorId()}`
       break
     case 'sale_category':
       url = '/pages/item/list?cat_id=' + id
@@ -96,7 +97,7 @@ function linkPage(data) {
       if (id == 'purchase') {
         clearPurchaseDtid()
       } else if (id == 'applyChief') {
-        url += `?distributor_id=${dtid || distributor_id}`
+        url += `?distributor_id=${dtid || distributor_id || getDistributorId()}`
       } else if (id == 'kujiale') {
         url = '/subpages/case/list'
       } else if (id == 'nearby_store') {

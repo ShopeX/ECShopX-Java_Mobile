@@ -154,6 +154,10 @@ function EspierDetail(props) {
     backTopScrollTop
   } = state
 
+  // 路由里 dtid=undefined 会变成字符串 "undefined"，需视为无效
+  const isEmptyDtid = (v) =>
+    v == null || v === '' || v === 'undefined' || v === 'null'
+
   useEffect(() => {
     init()
     entryLaunch.postGuideUV()
@@ -219,7 +223,8 @@ function EspierDetail(props) {
   }, [play])
 
   useEffect(() => {
-    if (dtid) {
+    // 路由 dtid=undefined 会变成字符串 "undefined"，isEmptyDtid 会判为无效
+    if (!isEmptyDtid(dtid)) {
       init(dtid)
       fetch()
     }
@@ -251,7 +256,7 @@ function EspierDetail(props) {
     const { itemName, imgs } = info
     const query = {
       id,
-      dtid
+      dtid: isEmptyDtid(dtid) ? getDistributorId() : dtid || ''
     }
     if (userInfo) {
       query['uid'] = userInfo.user_id
@@ -268,13 +273,14 @@ function EspierDetail(props) {
   const init = async (newDtid) => {
     const routerParams = await entryLaunch.getRouteParams()
     const { type, id, dtid: routerDtid } = routerParams
-    const dtid = newDtid || routerDtid
+    const rawDtid = newDtid ?? routerDtid
+    const dtid = isEmptyDtid(rawDtid) ? null : rawDtid
     setState((draft) => {
       draft.id = id
       draft.type = type
       draft.dtid = dtid
     })
-    if (S.getAuthToken()) {
+    if (S.getAuthToken() && !isEmptyDtid(dtid)) {
       await dispatch(fetchUserFavs({ distributor_id: dtid }))
     }
   }
