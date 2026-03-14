@@ -345,7 +345,7 @@ function ItemList() {
       renderFloat={<FloatSalesperson />}
     >
       <View className='search-wrap'>
-        {VERSION_STANDARD && card_id && (
+        {/* {VERSION_STANDARD && card_id && (
           <View
             className='store-picker'
             onClick={() => {
@@ -357,7 +357,7 @@ function ItemList() {
             <View className='shop-name'>{shopInfo.store_name || '暂无店铺信息'}</View>
             <Text className='iconfont icon-qianwang-01'></Text>
           </View>
-        )}
+        )} */}
         <SpSearchBar
           keyword={keywords}
           placeholder='搜索'
