@@ -2,14 +2,13 @@
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
  */
-import Taro, { getCurrentInstance } from '@tarojs/taro'
-// 按需加载 api，避免 spx→api→req→spx 循环依赖导致冷启动时 S 为 undefined
-const getApi = () => require('@/api').default
+import Taro from '@tarojs/taro'
 import { isWeixin, isAlipay, log, isGoodsShelves, showToast, isMerchantModule } from '@/utils'
 import { SG_TOKEN, SG_USER_INFO, MERCHANT_TOKEN } from '@/consts/localstorage'
 import dayjs from 'dayjs'
-import qs from 'qs'
 import configStore from '@/store'
+// 按需加载 api，避免 spx→api→req→spx 循环依赖导致冷启动时 S 为 undefined
+const getApi = () => require('@/api').default
 
 const { store } = configStore()
 
