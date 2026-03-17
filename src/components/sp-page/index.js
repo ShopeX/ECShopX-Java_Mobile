@@ -19,9 +19,10 @@ import Taro, {
   usePageScroll,
   getCurrentInstance
 } from '@tarojs/taro'
-import { View, Text, Button, Image } from '@tarojs/components'
+import S from '@/spx'
+import { View, Text } from '@tarojs/components'
 import { useImmer } from 'use-immer'
-import { SpNavBar, SpFloatMenuItem, SpNote, SpLoading, SpImage } from '@/components'
+import { SpFloatMenuItem, SpNote, SpLoading } from '@/components'
 import { useThemsColor, useLogin } from '@/hooks'
 import CookieConsent from '@/components/cookie-consent'
 import {
@@ -34,13 +35,9 @@ import {
 import {
   classNames,
   styleNames,
-  hasNavbar,
   isWeixin,
   isAlipay,
   isIphoneX,
-  VERSION_IN_PURCHASE,
-  isGoodsShelves,
-  linkPage,
   VERSION_SHUYUN
 } from '@/utils'
 import context from '@/hooks/usePageContext'
