@@ -81,6 +81,7 @@ const SpPage = memo(
     const [state, setState] = useImmer(initialState)
     const wrapRef = useRef(null)
     const scrollTopRef = useRef(0)
+    const dispatch = useDispatch()
     const setStatusBarBgColorFromSticky = useCallback((color, sourceId) => {
       setState((draft) => {
         if (color != null) {
