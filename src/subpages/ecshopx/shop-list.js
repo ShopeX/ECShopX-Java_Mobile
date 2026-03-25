@@ -8,22 +8,10 @@ import { AtDrawer, AtSearchBar } from 'taro-ui'
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { useImmer } from 'use-immer'
-import {
-  SpNewInput,
-  SpSearch,
-  SpFilterBar,
-  SpShopItem,
-  SpNewFilterDrawer,
-  SpSearchBar,
-  SpPage,
-  SpScrollView,
-  SpButton,
-  SpTagBar,
-  SpDrawer,
-  SpSelect,
-  SearchBar
-} from '@/components'
+import { SpNewInput, SpSearch, SpNewFilterDrawer, SpSearchBar, SpPage, SpScrollView, SpButton, SpSelect, SearchBar } from '@/components'
+import { SpFilterBar, SpShopItem, SpTagBar, SpDrawer } from '@/subpages/components'
 import doc from '@/doc'
+import * as shopDoc from '@/doc/shop'
 import { classNames, pickBy } from '@/utils'
 import api from '@/api'
 import { Tracker } from '@/service'
@@ -70,9 +58,9 @@ function shopList(props) {
     const query = {
       page,
       pageSize,
-      province: location.lat ? location.province : '北京市',
-      city: location.lat ? location.city : '北京市',
-      area: location.lat ? location.district : '昌平区',
+      province: location?.lat ? location.province : '北京市',
+      city: location?.lat ? location.city : '北京市',
+      area: location?.lat ? location.district : '昌平区',
       type: 0,
       show_discount: 1,
       show_marketing_activity: 1,
@@ -80,8 +68,8 @@ function shopList(props) {
       is_delivery: businessServices.includes('delivery') ? 1 : undefined,
       is_dada: businessServices.includes('dada') ? 1 : undefined,
       distributor_tag_id: brandSelect.join(),
-      lng: location.lng,
-      lat: location.lat,
+      lng: location?.lng,
+      lat: location?.lat,
       //是否展示积分
       show_score: 1,
       sort_type: curFilterIdx,
@@ -89,7 +77,7 @@ function shopList(props) {
       name
     }
     const { list, total_count, tagList } = await api.shop.list(query)
-    const _list = pickBy(list, doc.shop.SHOP_ITEM)
+    const _list = pickBy(list, shopDoc.SHOP_ITEM)
     const _tagList = pickBy(tagList, doc.goods.BUSINESS_LIST_TAG)
     console.log('_list', _list)
     await setState((v) => {

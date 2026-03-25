@@ -10,14 +10,14 @@ import { useImmer } from 'use-immer'
 import './view-case.scss'
 
 const initialState = {
-  designWorks: [],
+  designWorks: []
 }
 
 function ViewCase() {
   const [state, setState] = useImmer(initialState)
   const { designWorks } = state
-  const $instance = getCurrentInstance()
-  const { design_works } = $instance.router?.params || {}
+  const $instance = getCurrentInstance() || {}
+  const { design_works } = $instance?.router?.params || {}
   useEffect(() => {
     if (design_works) {
       const designWorksList = JSON.parse(design_works)
@@ -52,9 +52,7 @@ function ViewCase() {
                     src={item.cover_pic}
                   ></Image>
                   <View className='sp-case-list--item-desc'>
-                    <View className='sp-case-list--item-desc-title'>
-                      {item.design_name}
-                    </View>
+                    <View className='sp-case-list--item-desc-title'>{item.design_name}</View>
                   </View>
                 </View>
               )

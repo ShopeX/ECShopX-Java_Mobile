@@ -11,7 +11,6 @@ import { BackToTop, Loading, SpNote, GoodsItem, SpNavBar, SpCheckboxNew } from '
 import { connect } from 'react-redux'
 import api from '@/api'
 import { pickBy, hasNavbar, getDistributorId } from '@/utils'
-
 import './plusprice.scss'
 
 @connect(({ colors }) => ({
@@ -20,7 +19,7 @@ import './plusprice.scss'
 @withPager
 @withBackToTop
 export default class DetailPluspriceList extends Component {
-  $instance = getCurrentInstance()
+  $instance = getCurrentInstance() || {}
   constructor(props) {
     super(props)
 
@@ -89,7 +88,7 @@ export default class DetailPluspriceList extends Component {
   async fetch(params) {
     const { page_no: page, page_size: pageSize } = params
     const query = {
-      marketing_id: this.$instance.router.params.marketing_id,
+      marketing_id: this.$instance?.router?.params.marketing_id,
       page,
       pageSize
     }

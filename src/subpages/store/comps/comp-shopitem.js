@@ -5,7 +5,6 @@
 import Taro from '@tarojs/taro'
 import { View, Image, Text } from '@tarojs/components'
 import { useSelector } from 'react-redux'
-
 import './comp-shopitem.scss'
 
 function CompShopItem(props) {
@@ -22,7 +21,7 @@ function CompShopItem(props) {
       </View> */}
       <View className='shopitem-bd'>
         <View className='shop-info'>
-          <View className='distance'>{info.distance || '100km'}</View>
+          {!!info.distance && <View className='distance'>{info.distance}</View>}
           <View className='name'>{info.store_name}</View>
           {info.isOpenDivided && (
             <View className='shop-tag'>

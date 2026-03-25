@@ -14,7 +14,6 @@ import { addCart, updateCount } from '@/store/slices/cart'
 import { showToast, log } from '@/utils'
 import api from '@/api'
 import CompPackageItem from './comps/comp-packageitem'
-
 import './package-list.scss'
 
 const initialState = {
@@ -22,8 +21,8 @@ const initialState = {
 }
 
 function PackageList(props) {
-  const $instance = getCurrentInstance()
-  const { id, distributor_id } = $instance.router.params
+  const $instance = getCurrentInstance() || {}
+  const { id, distributor_id } = $instance?.router?.params
   const dispatch = useDispatch()
   const [state, setState] = useImmer(initialState)
   const { list } = state

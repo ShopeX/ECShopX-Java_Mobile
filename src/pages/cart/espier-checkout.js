@@ -58,7 +58,7 @@ import CompPointUse from './comps/comp-pointuse'
 import './espier-checkout.scss'
 
 function CartCheckout(props) {
-  const $instance = getCurrentInstance()
+  const $instance = getCurrentInstance() || {}
   const { updateAddress } = useLocation()
   const { isLogin, getUserInfoAuth } = useLogin({
     autoLogin: true,
@@ -138,7 +138,6 @@ function CartCheckout(props) {
     launchScene = routerParams.launchScene
   } = $instance?.router?.params || {}
   const isLaunchScene = launchScene == 1 ? true : false
-  console.log('$instance.router?.params:', $instance.router)
 
   useEffect(() => {
     Taro.eventCenter.on('onEventCheckoutInvoiceChange', (params) => {
@@ -177,7 +176,7 @@ function CartCheckout(props) {
   }, [isLogin])
 
   useEffect(() => {
-    const token = S.getAuthToken()
+    const token = S?.getAuthToken()
     if (!token && !isWeb) {
       Taro.redirectTo({
         url: `/subpages/member/index`
@@ -821,11 +820,11 @@ function CartCheckout(props) {
     }
     // 处理导购数据(旧)
     if (storageParams?.cxdid && isLaunchScene) {
-      cus_parmas.cxdid = storageParams?.cxdid;
-      cus_parmas.distributor_id = storageParams?.dtid;
-      cus_parmas.cart_type = "cxd";
-      cus_parmas.order_type = "normal_shopguide";
-      cus_parmas.salesman_id = storageParams?.smid;
+      cus_parmas.cxdid = storageParams?.cxdid
+      cus_parmas.distributor_id = storageParams?.dtid
+      cus_parmas.cart_type = 'cxd'
+      cus_parmas.order_type = 'normal_shopguide'
+      cus_parmas.salesman_id = storageParams?.smid
       cus_parmas.work_userid = storageParams?.gu.split('_')[0] || storageParams?.gu_user_id || ''
     }
 

@@ -1,9 +1,8 @@
 /**
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
+ * 仅主包用到的 doc 子模块在此导出；仅分包用到的请分包内直接 import from '@/doc/address' 等以减小主包体积。
  */
-import * as address from './address'
-import * as shop from './shop'
 import * as goods from './goods'
 import * as cart from './cart'
 import * as coupon from './coupon'
@@ -11,19 +10,13 @@ import * as checkout from './checkout'
 import * as category from './category'
 import * as article from './article'
 import * as payment from './payment'
-import * as community from './community'
-import * as point from './point'
-import * as member from './member'
-import * as dianwu from './dianwu'
 import * as trade from './trade'
-import * as mdugc from './mdugc'
 import * as purchase from './purchase'
-import * as activity from './activity'
-import * as cases from './case'
+import * as wgt from './wgt'
+
+// 仅分包用，分包内直接 import from '@/doc/xxx': shop, member, mdugc, activity, case（address 已删除，无引用）
 
 export default {
-  address,
-  shop,
   goods,
   cart,
   coupon,
@@ -31,13 +24,7 @@ export default {
   category,
   article,
   payment,
-  community,
-  point,
-  member,
-  dianwu,
   trade,
-  mdugc,
   purchase,
-  activity,
-  case: cases
+  wgt
 }

@@ -118,8 +118,18 @@ class API {
     }
     this.baseURL = baseURL
 
+    // 从域名获取 company_id，例如 m38.shopex123.com -> 38
+    let company_id = process.env.APP_COMPANY_ID
+    if (isWeb && typeof global !== 'undefined' && global.location) {
+      const hostname = global.location.hostname
+      const match = hostname.match(/^m(\d+)\./)
+      if (match && match[1]) {
+        company_id = match[1]
+      }
+    }
+
     const options = {
-      company_id: process.env.APP_COMPANY_ID
+      company_id: company_id
     }
     if (isWeixin) {
       const extConfig = getExtConfigData()
@@ -155,8 +165,8 @@ class API {
     this.isRefreshingToken = false
     getS().logout()
     setTimeout(() => {
-      console.log(getCurrentInstance().router)
-      const { path, params } = getCurrentInstance().router
+      console.log(getCurrentInstance()?.router)
+      const { path, params } = getCurrentInstance()?.router
       delete params.$taroTimestamp
       const fullPath = Object.keys(params).length > 0 ? `${path}?${qs.stringify(params)}` : path
       let url
@@ -186,14 +196,14 @@ class API {
     if (company_id) {
       query['company_id'] = company_id
     }
-    const lang = Taro.getStorageSync('lang')
+    const lang = Taro.getStorageSync('lang') || process.env.APP_DEFAULT_LANGUAGE
     if (lang) {
-      const langMap = {
-        zhcn: 'zh-CN',
-        en: 'en-CN',
-        zhtw: 'zh-TW',
-        ar: 'ar-SA'
-      }
+    const langMap = {
+      zhcn: 'zh-CN',
+      en: 'en-CN',
+      zhtw: 'zh-TW',
+      ar: 'ar-SA'
+    }
       query['country_code'] = langMap[lang || process.env.APP_COUNTRY_CODE]
     }
     if (!methodIsGet) {

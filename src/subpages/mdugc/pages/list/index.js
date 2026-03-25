@@ -6,14 +6,13 @@ import React, { Component } from 'react'
 import Taro from '@tarojs/taro'
 import { View, Text, Image, ScrollView } from '@tarojs/components'
 import S from '@/spx'
-
-import { SpNote, BackToTop, FloatMenus, FloatMenuItem } from '@/components'
+import { SpNote, BackToTop } from '@/components'
+import { FloatMenus, FloatMenuItem } from '@/subpages/components'
 import { pickBy } from '@/utils'
 import { withPager, withBackToTop } from '@/hocs'
-
 import api from '@/api'
+import * as mdugcApi from '@/api/mdugc'
 import { TagsBar, Scrollitem, TabBar } from '../../components'
-
 import './index.scss'
 
 @withPager
@@ -34,7 +33,7 @@ export default class mdugclist extends Component {
   }
 
   componentDidMount() {
-    let { item } = this.$router.params
+    let { item } = this.$router?.params
     item = JSON.parse(item)
     let { topic_id, topic_name } = item
     this.setState(
@@ -111,7 +110,7 @@ export default class mdugclist extends Component {
       sort: istag == 1 ? 'likes desc' : 'created desc',
       topics: [curTagId]
     }
-    const { list, total_count: total } = await api.mdugc.postlist(params)
+    const { list, total_count: total } = await mdugcApi.postlist(params)
     console.log('list, total', list, total)
     let nList = []
     if (list) {

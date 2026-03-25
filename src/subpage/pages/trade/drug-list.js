@@ -11,13 +11,12 @@ import { withPager, withLogin } from '@/hocs'
 import { log, pickBy, resolveOrderStatus, getCurrentRoute } from '@/utils'
 import TradeItem from './comps/item'
 // import { Tracker } from '@/service'
-
 import './list.scss'
 
 @withPager
 @withLogin()
 export default class TradePickList extends Component {
-  $instance = getCurrentInstance()
+  $instance = getCurrentInstance() || {}
 
   constructor(props) {
     super(props)
@@ -121,7 +120,7 @@ export default class TradePickList extends Component {
     const { tid } = trade
     if (type === 'confirm') {
       await api.trade.confirm(tid)
-      const { fullPath } = getCurrentRoute(this.$instance.router)
+      const { fullPath } = getCurrentRoute(this.$instance?.router)
       Taro.redirectTo({
         url: fullPath
       })

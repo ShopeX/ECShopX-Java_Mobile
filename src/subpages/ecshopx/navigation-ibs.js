@@ -20,7 +20,6 @@ import { WgtHomeHeader } from '@/pages/home/wgts'
 import { WgtsContext } from '@/pages/home/wgts/wgts-context'
 import { parse } from 'qs'
 import CompNavigationClassification from './comps/comp-navigation-classification'
-
 import './navigation-ibs.scss'
 
 const MSpSkuSelect = React.memo(SpSkuSelect)
@@ -73,7 +72,7 @@ function NavigationIbs() {
 
   //请求销售分类数据请求接口和设置动态的标题
   useEffect(() => {
-    let { content, seletedTags } = router.params
+    let { content, seletedTags } = router?.params
     setState((draft) => {
       draft.seletedTags = Object.values(parse(decodeURIComponent(seletedTags)))
     })
@@ -99,8 +98,8 @@ function NavigationIbs() {
 
   //获销售分类数据，并且处理成页面需要的数据
   const goodsCategoryin = async () => {
-    let tags = parse(decodeURIComponent(router.params.seletedTags))
-    let res = await api.item.goodsCategoryinfo({ category_id: router.params.id })
+    let tags = parse(decodeURIComponent(router?.params.seletedTags))
+    let res = await api.item.goodsCategoryinfo({ category_id: router?.params.id })
     fetchWgts(res.customize_page_id)
     //挂件中存在商家第一层加推荐店铺
     if (Object.values(tags).length > 0) {

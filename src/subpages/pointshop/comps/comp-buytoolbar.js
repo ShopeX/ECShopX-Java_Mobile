@@ -24,7 +24,7 @@ function CompGoodsBuyToolbar(props) {
   } = props
   const { cartCount = 0 } = useSelector((state) => state.cart)
   const { favs = [] } = useSelector((state) => state.user)
-  const $instance = getCurrentInstance()
+  const $instance = getCurrentInstance() || {}
   const dispatch = useDispatch()
   const btns = []
 
@@ -34,7 +34,7 @@ function CompGoodsBuyToolbar(props) {
 
   const RenderBtns = () => {
     // 兑换券
-    const { card_id } = $instance.router?.params || {}
+    const { card_id } = $instance?.router?.params || {}
     if (card_id) {
       btns.push(BUY_TOOL_BTNS().EX_CHANGE)
       return
@@ -45,11 +45,7 @@ function CompGoodsBuyToolbar(props) {
       return
     }
     if (info.store == 0) {
-      if (info.subscribe) {
-        btns.push(BUY_TOOL_BTNS().SUBSCRIBE)
-      } else {
-        btns.push(BUY_TOOL_BTNS().NOTICE)
-      }
+      btns.push(BUY_TOOL_BTNS().NO_STORE)
       return
     }
 
@@ -96,33 +92,8 @@ function CompGoodsBuyToolbar(props) {
   RenderBtns()
 
   const onChangeLogin = async ({ key }) => {
-    const { dtid, card_id, user_card_id } = $instance.router.params
-    console.log('onChangeLogin:', key)
-    if (key == 'notice') {
-      const { subscribe } = info
-      if (subscribe) return false
-
-      if (isWeb) {
-        showToast('请在小程序完成商品到货通知')
-        return
-      }
-
-      await api.user.subscribeGoods(info.itemId, { distributor_id: dtid })
-      const { template_id } = await api.user.newWxaMsgTmpl({
-        temp_name: 'yykweishop',
-        source_type: 'goods'
-      })
-      Taro.requestSubscribeMessage({
-        tmplIds: template_id,
-        success: () => {
-          onSubscribe()
-          showToast('订阅成功')
-        },
-        fail: () => {
-          onSubscribe()
-        }
-      })
-    } else if (key == 'exchange') {
+    const { dtid, card_id, user_card_id } = $instance?.router?.params
+    if (key == 'exchange') {
       const { itemId } = info
       const { status } = await api.cart.exchangeGood({
         item_id: itemId,

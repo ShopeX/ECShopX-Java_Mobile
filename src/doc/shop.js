@@ -58,7 +58,8 @@ export const BUSINESS_SORT = {
 export const STORE_INFO = {
   name: 'name',
   logo: 'logo',
-  marketingActivityList: 'marketingActivityList'
+  marketingActivityList: 'marketingActivityList',
+  banner: 'banner'
 }
 
 export const STORE_ITEM = {

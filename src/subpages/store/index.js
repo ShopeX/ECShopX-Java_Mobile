@@ -9,13 +9,14 @@ import Taro, {
   useDidShow,
   getCurrentInstance
 } from '@tarojs/taro'
-import { View, Text } from '@tarojs/components'
+import { View, Text, ScrollView } from '@tarojs/components'
 import { useSelector, useDispatch } from 'react-redux'
 import { SG_ROUTER_PARAMS } from '@/consts'
 import S from '@/spx'
-import { SpFloatMenuItem, SpPage, SpSearch, SpRecommend, SpSkuSelect, SpLogin } from '@/components'
+import { SpFloatMenuItem, SpPage, SpSearch, SpRecommend, SpSkuSelect, SpLogin, SpPoweredBy } from '@/components'
 import api from '@/api'
 import doc from '@/doc'
+import * as shopDoc from '@/doc/shop'
 import {
   getDistributorId,
   classNames,
@@ -35,7 +36,6 @@ import CompShopBrand from './comps/comp-shopbrand'
 import Categorys from './categorys'
 import CompTab from './comps/comp-tab'
 import CompAddCart from './comps/comp-add-cart'
-
 import './index.scss'
 
 const MSpSkuSelect = React.memo(SpSkuSelect)
@@ -53,7 +53,9 @@ const initState = {
   selectType: 'picker',
   statusBarHeight: '',
   open: false,
-  hideClose: true
+  hideClose: true,
+  /** 页面滚动超过 20px 时搜索条白底 */
+  searchSolidBg: false
 }
 
 function StoreIndex() {
@@ -62,8 +64,8 @@ function StoreIndex() {
   const { openRecommend, colorPrimary } = useSelector((state) => state.sys)
   const { shopCartCount } = useSelector((state) => state.cart)
   const { setNavigationBarTitle } = useNavigation()
-  const $instance = getCurrentInstance()
-  const router = $instance.router
+  const $instance = getCurrentInstance() || {}
+  const router = $instance?.router
 
   const {
     wgts,
@@ -77,7 +79,7 @@ function StoreIndex() {
     selectType,
     statusBarHeight,
     open,
-    hideClose
+    searchSolidBg
   } = state
 
   const dispatch = useDispatch()
@@ -177,7 +179,7 @@ function StoreIndex() {
       setState((draft) => {
         draft.wgts = config
         draft.distributorId = distributor_id
-        draft.storeInfo = pickBy(storeInfo, doc.shop.STORE_INFO)
+        draft.storeInfo = pickBy(storeInfo, shopDoc.STORE_INFO)
         draft.loading = false
       })
       await shopping(distributor_id)
@@ -287,7 +289,7 @@ function StoreIndex() {
   }
 
   // const settlement = () => {
-  //   const { type = 'distributor' } = router.params
+  //   const { type = 'distributor' } = router?.params
   //   const { shop_id, is_delivery, is_ziti, shop_name, address, lat, lng, hour, mobile } =
   //     shopCartCount.storeDetails
   //   const query = {
@@ -345,23 +347,9 @@ function StoreIndex() {
       loading={loading}
       scrollToTopBtn
       ref={pageRef}
+      showpoweredBy={false}
       // navigateMantle
       pageConfig={pageData?.base}
-      // renderTitle={
-      //   fixedTop && (
-      //     <>
-      //     <SpSearch
-      //       isFixTop={searchComp.config.fixTop}
-      //       onClick={() => {
-      //         Taro.navigateTo({
-      //           url: `/subpages/store/item-list?dtid=${distributorId}`
-      //         })
-      //       }}
-      //     />
-      //     </>
-
-      //   )
-      // }
       renderFloat={
         <View>
           <SpFloatMenuItem
@@ -382,8 +370,23 @@ function StoreIndex() {
       }
       renderFooter={<CompTab popFrame={popFrame} />}
     >
+      <ScrollView
+        scrollY
+        className='search-scroll'
+        style={{ height: `100%` }}
+        onScroll={(e) => {
+          const st = e?.detail?.scrollTop ?? 0
+          setState((draft) => {
+            draft.searchSolidBg = st > 15
+          })
+        }}
+      >
       {searchComp && (
-        <View className='search'>
+        <View
+          className={classNames('search', {
+            'search--solid': searchSolidBg
+          })}
+        >
           <SpSearch
             // isFixTop={searchComp?.config?.fixTop}
             info={searchComp}
@@ -398,7 +401,7 @@ function StoreIndex() {
 
       <View
         className={searchComp ? 'header-block' : 'header-block-pad'}
-        style={{ background: `${pageData?.base?.pageBackgroundColor}` }}
+        style={{ background: `url('${storeInfo?.banner}') no-repeat center center / cover` }}
       >
         <CompShopBrand storeInfo={storeInfo} dtid={distributorId} />
       </View>
@@ -438,7 +441,9 @@ function StoreIndex() {
       ) : (
         <Categorys addPurchases={addPurchases} dtid={distributorId} />
       )}
-
+      <View className='sp-page__powered-by w-full'>
+        <SpPoweredBy />
+      </View>
       {/* Sku选择器 */}
       <MSpSkuSelect
         open={skuPanelOpen}
@@ -469,6 +474,7 @@ function StoreIndex() {
       />
 
       <SpLogin ref={loginRef} />
+      </ScrollView>
     </SpPage>
   )
 }

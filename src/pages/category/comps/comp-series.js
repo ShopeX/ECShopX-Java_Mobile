@@ -25,10 +25,10 @@ const CompSeries = (props) => {
     console.log('item', item)
     let url = ''
     if (category_id) {
-      url = `/pages/item/list?cat_id=${category_id}&all=true`
+      url = `/subpages/item/list?cat_id=${category_id}&all=true`
     }
     if (main_category_id) {
-      url = `/pages/item/list?main_cat_id=${main_category_id}&all=true`
+      url = `/subpages/item/list?main_cat_id=${main_category_id}&all=true`
     }
     if (url) {
       Taro.navigateTo({
@@ -134,14 +134,10 @@ const CompSeries = (props) => {
           </View>
         </View>
         {/* If you remove or alter Shopex brand identifiers, you must obtain a branding removal license from Shopex.  Contact us at:  http://www.shopex.cn to purchase a branding removal license. */}
-        {/* <View className='sp-page__powered-by w-full'>
+        <View className='sp-page__powered-by w-full'>
           <Text>Powered by</Text>
-          <Image
-            src='/assets/imgs/powered-logo.png'
-            className='powered-logo'
-            mode='contain'
-          />
-        </View> */}
+          <Image src='/assets/imgs/powered-logo.png' className='powered-logo' mode='contain' />
+        </View>
       </ScrollView>
     </View>
   )

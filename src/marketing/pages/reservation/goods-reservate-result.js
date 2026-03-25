@@ -12,7 +12,6 @@ import { SpCell, SpPage, SpAddress, SpInput as AtInput } from '@/components'
 import api from '@/api'
 import { pickBy } from '@/utils'
 import { useNavigation } from '@/hooks'
-
 import './goods-reservate-result.scss'
 
 const initialState = {
@@ -32,7 +31,7 @@ function GoodReservateResult(props) {
 
   const fetch = async () => {
     const { activity_info } = await api.user.registrationActivity({
-      activity_id: router.params.activity_id
+      activity_id: router?.params.activity_id
     })
     const _info = pickBy(activity_info, {
       joinTips: 'join_tips',

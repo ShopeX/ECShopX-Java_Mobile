@@ -23,7 +23,7 @@ function SpChat(props) {
   const { isWeAppKefu } = state
   const { echat, meiqia } = useSelector((state) => state.sys)
   const { salespersonInfo } = useSelector((state) => state.shop)
-  const $instance = getCurrentInstance()
+  const $instance = getCurrentInstance() || {}
 
   // 小程序客服开关：接口 show_float 0=关闭 1=开启，关闭后不展示悬浮客服
   if (salespersonInfo?.show_float == 0) {
@@ -51,7 +51,7 @@ function SpChat(props) {
       }
     } else if (meiqia?.is_open) {
       // 获取店铺美洽配置
-      const { dtid } = $instance.router.params
+      const { dtid } = $instance?.router?.params
       const meiqiaConfig = await api.im.getImConfigByDistributor(dtid)
       const { channel, meiqia_url } = meiqiaConfig
       let chat_link = ''

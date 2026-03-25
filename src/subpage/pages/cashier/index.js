@@ -15,7 +15,6 @@ import getPaymentList from '@/utils/payment'
 import { PAYTYPE } from '@/consts'
 import { AlipayPay, WeH5Pay, WePay } from './comps'
 import { deleteForm } from './util'
-
 import './index.scss'
 
 @connect(({ sys }) => ({
@@ -23,7 +22,7 @@ import './index.scss'
 }))
 @withLogin()
 export default class Cashier extends Component {
-  $instance = getCurrentInstance()
+  $instance = getCurrentInstance() || {}
   state = {
     info: null,
     env: '',
@@ -45,12 +44,12 @@ export default class Cashier extends Component {
   }
 
   isPointitemGood() {
-    const options = this.$instance.router.params
+    const options = this.$instance?.router?.params
     return options.type === 'pointitem'
   }
 
   async fetch() {
-    const { order_id, pay_type = PAYTYPE().WXH5, id } = this.$instance.router.params
+    const { order_id, pay_type = PAYTYPE().WXH5, id } = this.$instance?.router?.params
 
     let env = ''
     if (browser.weixin) {

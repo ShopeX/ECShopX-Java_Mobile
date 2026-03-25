@@ -30,7 +30,6 @@ import {
   isAPP,
   getDistributorId
 } from '@/utils'
-
 import doc from '@/doc'
 import entryLaunch from '@/utils/entryLaunch'
 import qs from 'qs'
@@ -49,7 +48,6 @@ import CompShare from './comps/comp-share'
 import CompPromation from './comps/comp-promation'
 import CompGroup from './comps/comp-group'
 import CompSkuSelect from './comps/comp-skuselect'
-
 import './espier-detail.scss'
 
 const MSpSkuSelect = React.memo(CompSkuSelect)
@@ -85,8 +83,8 @@ const initialState = {
 }
 
 function EspierDetail(props) {
-  const $instance = getCurrentInstance()
-  // const { type, id, dtid } = $instance.router.params
+  const $instance = getCurrentInstance() || {}
+  // const { type, id, dtid } = $instance?.router?.params
   // const { type, id, dtid } = await entryLaunch.getRouteParams()
   const { getUserInfoAuth } = useLogin()
   const pageRef = useRef()

@@ -10,7 +10,6 @@ import { connect } from 'react-redux'
 import { SpToast, SpCell, SpNavBar, SpCheckbox } from '@/components'
 import S from '@/spx'
 import api from '@/api'
-
 import './crm-address-list.scss'
 
 const ADDRESS_ID = 'third_data'
@@ -65,7 +64,7 @@ export default class CrmAddressList extends Component {
     })
     try {
       await api.member.addressCreateOrUpdate(item)
-      S.toast('创建成功')
+      S?.toast('创建成功')
       setTimeout(() => {
         Taro.navigateBack()
       }, 700)

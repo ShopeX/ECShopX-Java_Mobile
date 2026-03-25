@@ -5,7 +5,8 @@
 import React, { Component } from 'react'
 import Taro, { getCurrentInstance } from '@tarojs/taro'
 import { View, Text, ScrollView, Button } from '@tarojs/components'
-import { SpPage, SpImage, SharePurchase, SpPoster } from '@/components'
+import { SpPage, SpImage, SpPoster } from '@/components'
+import { SharePurchase } from '@/subpages/components'
 import api from '@/api'
 import dayjs from 'dayjs'
 import { connect } from 'react-redux'
@@ -19,7 +20,7 @@ import './share.scss'
 }))
 @withPager
 export default class PurchaseIndex extends Component {
-  $instance = getCurrentInstance()
+  $instance = getCurrentInstance() || {}
   constructor(props) {
     super(props)
 

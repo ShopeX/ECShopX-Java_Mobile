@@ -7,10 +7,10 @@ import classNames from 'classnames'
 import qs from 'qs'
 import dayjs from 'dayjs'
 import copy from 'copy-to-clipboard'
-import S from '@/spx'
 import { STATUS_TYPES_MAP, SG_ROUTER_PARAMS } from '@/consts'
 import api from '@/api'
 import configStore from '@/store'
+import S from '@/spx'
 import _get from 'lodash/get'
 import _findKey from 'lodash/findKey'
 import _pickBy from 'lodash/pickBy'
@@ -160,14 +160,10 @@ export const isIphoneX = () => {
 
 // TODO: 验证方法在h5及边界情况稳定性
 export function getCurrentRoute() {
-  const instance = getCurrentInstance()
-  const router = instance?.router
-  if (!router) {
-    return { path: '', fullPath: '', params: {} }
-  }
+  const router = getCurrentInstance()?.router
   // eslint-disable-next-line
-  const { $taroTimestamp, ...params } = router.params || {}
-  const path = router.path || ''
+  const { $taroTimestamp, ...params } = router?.params || {}
+  const path = router?.path
   const fullPath = `${path}${Object.keys(params).length > 0 ? '?' + qs.stringify(params) : ''}`
 
   return {
@@ -397,13 +393,13 @@ export const browser = (() => {
 
 // 注入美洽客服插件
 export const meiqiaInit = () => {
-  ;(function (m, ei, q, i, a, j, s) {
+  ; (function (m, ei, q, i, a, j, s) {
     m[i] =
       m[i] ||
       function () {
-        ;(m[i].a = m[i].a || []).push(arguments)
+        ; (m[i].a = m[i].a || []).push(arguments)
       }
-    ;(j = ei.createElement(q)), (s = ei.getElementsByTagName(q)[0])
+      ; (j = ei.createElement(q)), (s = ei.getElementsByTagName(q)[0])
     j.async = true
     j.charset = 'UTF-8'
     j.src = 'https://static.meiqia.com/dist/meiqia.js?_=t'
@@ -882,7 +878,12 @@ const getMemberLevel = (gradeInfo = {}) => {
 
 export const pxToRpx = (px) => {
   const { screenWidth } = Taro.getSystemInfoSync()
-  return parseInt((screenWidth * px) / 375)
+  return parseInt((750 * px) / screenWidth)
+}
+
+export const rpxToPx = (rpx) => {
+  const { windowWidth } = Taro.getSystemInfoSync()
+  return parseInt(rpx * (windowWidth / 750))
 }
 
 export const pxToUnitRpx = (px) => {
@@ -903,6 +904,34 @@ export function buildSharePath(from_scene, params = {}) {
   const queryString = qs.stringify(shareParams)
   debugger
   return `/pages/share-land${queryString ? '?' + queryString : ''}`
+}
+
+const getMobAppExtraData = () => {
+  const store = configStore()
+
+  const token = S.getAuthToken()
+  const userInfo = token ? tokenParse(token) : {}
+  const aioucd = userInfo?.user_card_code
+  return {
+    ucd: aioucd
+  }
+}
+
+export const getElementRectBox = (eid) => {
+  return new Promise((resolve, reject) => {
+    const query = Taro.createSelectorQuery()
+    query.select(eid).boundingClientRect()
+    setTimeout(() => {
+      try {
+        query.exec((res) => {
+          const [rectBox = {}] = res
+          resolve(rectBox)
+        })
+      } catch (error) {
+        reject(err)
+      }
+    }, 100)
+  })
 }
 
 export {
@@ -931,7 +960,8 @@ export {
   resolveStringifyParams,
   resolveUrlParamsParse,
   getCurrentShopId,
-  getMemberLevel
+  getMemberLevel,
+  getMobAppExtraData
 }
 
 export * from './platforms'

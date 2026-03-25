@@ -16,7 +16,6 @@ import React, { Component } from 'react'
 import Taro, { getCurrentInstance } from '@tarojs/taro'
 import { View, Text } from '@tarojs/components'
 import S from '@/spx'
-
 import './vip-guide.scss'
 
 export default class VipGuide extends Component {
@@ -30,10 +29,10 @@ export default class VipGuide extends Component {
 
   handleClick = () => {
     if (!S.getAuthToken()) {
-      S.toast('请先登录')
+      S?.toast('请先登录')
 
       setTimeout(() => {
-        S.login(this)
+        S?.login(this)
       }, 2000)
 
       return

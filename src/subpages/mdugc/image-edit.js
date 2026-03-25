@@ -9,7 +9,6 @@ import { AtButton } from 'taro-ui'
 import { useImmer } from 'use-immer'
 import { SpPage, SpImage } from '@/components'
 import { useDebounce } from '@/hooks'
-
 import './image-edit.scss'
 
 const initialState = {
@@ -22,7 +21,7 @@ function UgcImageEdit(props) {
   const router = useRouter()
   const [state, setState] = useImmer(initialState)
   const { movearray, imageWidth, imageHeight } = state
-  const { image, index, topics } = router.params
+  const { image, index, topics } = router?.params
   const imageSrc = decodeURIComponent(image)
 
   useEffect(() => {

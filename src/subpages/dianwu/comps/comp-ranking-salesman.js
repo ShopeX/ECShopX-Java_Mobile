@@ -7,15 +7,15 @@ import { useImmer } from 'use-immer'
 import Taro, { useDidShow, useRouter } from '@tarojs/taro'
 import api from '@/api'
 import { View, Text, Image } from '@tarojs/components'
-import { SpTime, SpImage, SpTable } from '@/components'
+import { SpImage } from '@/components'
+import { SpTime, SpTable } from '@/subpages/components'
 import { classNames } from '@/utils'
 import S from '@/spx'
 import { useSyncCallback } from '@/hooks'
-
 import './comp-ranking-salesman.scss'
 
 const initialState = {
-  datas: S.getNowDate(),
+  datas: S?.getNowDate(),
   datasType: 2,
   listHeader: [
     { title: '排名', id: 'ranking' },

@@ -7,10 +7,10 @@ import Taro, { getCurrentInstance } from '@tarojs/taro'
 import { View, Text, Button, Image, ScrollView } from '@tarojs/components'
 import { connect } from 'react-redux'
 import { AtCountdown } from 'taro-ui'
-import { Loading, SpToast, SpNavBar, FloatMenuMeiQia, SpImg } from '@/components'
+import { Loading, SpToast, SpNavBar, SpImg } from '@/components'
+import { FloatMenuMeiQia } from '@/subpages/components'
 import { pickBy, formatTime, resolveOrderStatus } from '@/utils'
 import api from '@/api'
-
 import './split-bagpack.scss'
 
 @connect(({ colors }) => ({
@@ -30,7 +30,7 @@ import './split-bagpack.scss'
 //   })
 // }
 export default class TradeDetail extends Component {
-  $instance = getCurrentInstance()
+  $instance = getCurrentInstance() || {}
   constructor(props) {
     super(props)
 
@@ -45,7 +45,7 @@ export default class TradeDetail extends Component {
   }
 
   async fetch() {
-    const { order_id, order_type } = this.$instance.router.params
+    const { order_id, order_type } = this.$instance?.router?.params
     const data = await api.trade.deliveryLists({ order_id })
 
     let { delivery_num, list } = data

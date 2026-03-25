@@ -6,9 +6,11 @@ import React, { useEffect, useRef, useMemo } from 'react'
 import { useImmer } from 'use-immer'
 import Taro, { useDidShow, useRouter } from '@tarojs/taro'
 import { View, ScrollView, Text, Swiper, SwiperItem } from '@tarojs/components'
-import { SpPage, SpHtml, SpLoading, SpImage, SpSelectModal } from '@/components'
+import { SpPage, SpHtml, SpLoading, SpImage } from '@/components'
+import { SpSelectModal } from '@/subpages/components'
 import api from '@/api'
 import doc from '@/doc'
+import * as activityDoc from '@/doc/activity'
 import { AtButton } from 'taro-ui'
 import { pickBy, isArray, classNames } from '@/utils'
 import { useNavigation } from '@/hooks'
@@ -41,10 +43,10 @@ function ActivityInfo(props) {
 
   const fetch = async () => {
     const { activity_info, total_join_num } = await api.user.registrationActivity({
-      activity_id: router.params.activity_id
+      activity_id: router?.params.activity_id
     })
 
-    let _info = pickBy(activity_info, doc.activity.ACTIVITY_DETAIL)
+    let _info = pickBy(activity_info, activityDoc.ACTIVITY_DETAIL)
     _info.totalJoinNum = total_join_num
     setNavigationBarTitle(_info?.activityName)
     setState((draft) => {
@@ -52,13 +54,15 @@ function ActivityInfo(props) {
       draft.imgHeightList = new Array(_info?.pics?.length).fill(draft.defaultImageHeight)
     })
     // 异步计算图片真实高度，不阻塞页面渲染
-    getMultipleImageInfo(_info?.pics).then(heights => {
-      setState((draft) => {
-        draft.imgHeightList = heights
+    getMultipleImageInfo(_info?.pics)
+      .then((heights) => {
+        setState((draft) => {
+          draft.imgHeightList = heights
+        })
       })
-    }).catch(error => {
-      console.log('计算图片高度失败，使用默认高度:', error)
-    })
+      .catch((error) => {
+        console.log('计算图片高度失败，使用默认高度:', error)
+      })
   }
 
   const getMultipleImageInfo = async (imageUrls = []) => {
@@ -223,7 +227,12 @@ function ActivityInfo(props) {
       {info && (
         <ScrollView scrollY className='activity-info__pic' style={{ height: `calc(100vh - 71px)` }}>
           <View className='ctivity-info__pic-container'>
-            <Swiper className='activity-swiper' indicatorDots onChange={onChangeSwiper} style={{ height: (imgHeightList[curImgIdx] || defaultImageHeight) + 'px' }}>
+            <Swiper
+              className='activity-swiper'
+              indicatorDots
+              onChange={onChangeSwiper}
+              style={{ height: (imgHeightList[curImgIdx] || defaultImageHeight) + 'px' }}
+            >
               {info?.pics.map((img, idx) => (
                 <SwiperItem key={`swiperitem__${idx}`}>
                   <SpImage mode='widthFix' src={img} width={windowWidth * 2}></SpImage>

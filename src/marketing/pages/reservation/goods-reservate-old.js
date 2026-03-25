@@ -13,7 +13,6 @@ import api from '@/api'
 import { pickBy, classNames, showToast } from '@/utils'
 import _cloneDeep from 'lodash/cloneDeep'
 import S from '@/spx'
-
 import './goods-reservate.scss'
 
 @connect(({ colors }) => ({
@@ -22,7 +21,7 @@ import './goods-reservate.scss'
 @withPager
 @withBackToTop
 export default class GoodsReservate extends Component {
-  $instance = getCurrentInstance()
+  $instance = getCurrentInstance() || {}
   constructor(props) {
     super(props)
 
@@ -46,7 +45,7 @@ export default class GoodsReservate extends Component {
 
   async fetch() {
     const { activity_info } = await api.user.registrationActivity({
-      activity_id: this.$instance.router.params.activity_id
+      activity_id: this.$instance?.router?.params.activity_id
     })
     if (!activity_info) {
       showToast('您已经超出活动次数')

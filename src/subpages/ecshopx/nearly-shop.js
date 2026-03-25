@@ -12,9 +12,9 @@ import { updateLocation, updateChooseAddress } from '@/store/slices/user'
 import api from '@/api'
 import { usePage, useLogin } from '@/hooks'
 import doc from '@/doc'
+import * as shopDoc from '@/doc/shop'
 import { entryLaunch, pickBy, classNames, showToast, log, isArray, isObject } from '@/utils'
 import CompShopItem from './comps/comp-shopitem'
-
 import './nearly-shop.scss'
 
 const initialState = {
@@ -41,18 +41,7 @@ function NearlyShop(props) {
     }
   })
   const [state, setState] = useImmer(initialState)
-  const {
-    chooseValue,
-    isSpAddressOpened,
-    keyword,
-    refresh,
-    type,
-    queryProvice,
-    queryCity,
-    queryDistrict,
-    queryAddress,
-    isToken
-  } = state
+  const { chooseValue, isSpAddressOpened, keyword, refresh, type, isToken } = state
   const [policyModal, setPolicyModal] = useState(false)
   const { location = {}, address } = useSelector((state) => state.user)
   const shopRef = useRef()
@@ -161,7 +150,7 @@ function NearlyShop(props) {
     const { list, total_count: total, defualt_address } = await api.shop.list(params)
 
     setState((draft) => {
-      draft.shopList = draft.shopList.concat(pickBy(list, doc.shop.SHOP_ITEM))
+      draft.shopList = draft.shopList.concat(pickBy(list, shopDoc.SHOP_ITEM))
       draft.refresh = false
     })
 

@@ -6,7 +6,6 @@ import React, { useEffect } from 'react'
 import Taro, { useRouter } from '@tarojs/taro'
 import dayjs from 'dayjs'
 import { SG_ROUTER_PARAMS, SG_GUIDE_PARAMS, SG_GUIDE_PARAMS_UPDATETIME } from '@/consts'
-import S from '@/spx'
 import qs from 'qs'
 import { entryLaunch, showToast } from '@/utils'
 
@@ -61,7 +60,7 @@ function ShareIand() {
       'guide_welcome_couponlist': '/subpages/marketing/coupon-center', // 导购欢迎语--商城优惠券中心
       'guide_welcome_recommend': '/pages/recommend/list', // 导购欢迎语--商城种草
       'guide_welcome_member': '/subpages/member/index', // 导购欢迎语--商城会员中心
-      'guide_welcome_itemlist': '/pages/item/list', // 导购欢迎语--商城商品列表
+      'guide_welcome_itemlist': '/subpages/item/list', // 导购欢迎语--商城商品列表
 
       // 导购任务
       'guide_task_home': '/pages/index', // 导购任务-管理端-小程序首页
@@ -99,7 +98,9 @@ function ShareIand() {
     // entryLaunch.postGuideUV() // 导购uv上报
     // entryLaunch.postGuideTask(welcomeRoutes[from_scene]) // 导购任务上报
 
-    const targetUrl = queryString ? `${welcomeRoutes[from_scene]}?${queryString}` : welcomeRoutes[from_scene]
+    const targetUrl = queryString
+      ? `${welcomeRoutes[from_scene]}?${queryString}`
+      : welcomeRoutes[from_scene]
     console.log('导购任务分享跳转:', targetUrl, welcomeRoutes[from_scene])
 
     if (welcomeRoutes[from_scene]) {

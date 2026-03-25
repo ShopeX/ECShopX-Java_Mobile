@@ -11,10 +11,8 @@ import { fetchUserFavs, addUserFav, deleteUserFav } from '@/store/slices/user'
 import { addCart, updateCount } from '@/store/slices/cart'
 import qs from 'qs'
 import S from '@/spx'
-
 import { classNames, showToast, styleNames, VERSION_PLATFORM } from '@/utils'
 import { PROMOTION_TAG } from '@/consts'
-
 import './goods-item.scss'
 
 function GoodsItem(props) {
@@ -153,8 +151,8 @@ function GoodsItem(props) {
               key={item.tag_id}
               style={styleNames({
                 color: item.font_color,
-                borderColor: item.tag_color,
-                backgroundColor: item.tag_color
+                'border-color': item.tag_color,
+                'background-color': item.tag_color
               })}
             >
               {item.tag_name}

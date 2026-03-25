@@ -20,10 +20,8 @@ import {
   updateCount
 } from '@/store/slices/purchase'
 import { SpPage, SpPrice, SpLogin, SpDefault, SpCheckboxNew, SpPrivacyModal } from '@/components'
-
 import CompGoodsItem from '@/pages/cart/comps/comp-goodsitem'
 import CompTabbar from './comps/comp-tabbar'
-
 import './espier-index.scss'
 
 const initialState = {
@@ -40,8 +38,8 @@ function CartIndex() {
   })
 
   const dispatch = useDispatch()
-  const $instance = getCurrentInstance()
-  const router = $instance.router
+  const $instance = getCurrentInstance() || {}
+  const router = $instance?.router
 
   const [state, setState] = useImmer(initialState)
   const { current, policyModal } = state
@@ -205,7 +203,7 @@ function CartIndex() {
     const { activity_id, enterprise_id } = purchase_share_info
     console.log(`onChangeCartGoodsItem:`, num)
     let { shop_id, cart_id } = item
-    const { type = 'distributor' } = router.params
+    const { type = 'distributor' } = router?.params
     await dispatch(updateCartItemNum({ shop_id, cart_id, num, type, activity_id, enterprise_id }))
     getCartList()
   }, 200)
@@ -223,7 +221,7 @@ function CartIndex() {
   }
 
   const handleCheckout = (item) => {
-    const { type = 'distributor' } = router.params
+    const { type = 'distributor' } = router?.params
     const { shop_id, is_delivery, is_ziti, shop_name, address, lat, lng, hour, mobile } = item
     const query = {
       cart_type: 'cart',

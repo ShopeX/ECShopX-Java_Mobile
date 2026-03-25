@@ -109,7 +109,7 @@ function SpImage(props) {
   return (
     <View
       className={classNames('sp-image-container sp-image', props.className)}
-      style={containerStyle}
+      style={{ ...containerStyle, ...props.style }}
     >
       {/* 加载占位区域（加载完成后淡出，与图片淡入过渡衔接） */}
       <View
@@ -171,9 +171,9 @@ SpImage.defaultProps = {
   ossMaxWidth: 750, // 未传 width/height 时限制最长边（px），避免大图原图
   ossWebp: true, // 输出 WebP 减小体积，设为 false 可关闭
   placeholderColor: 'transparent',
-  onClick: () => {},
-  onError: () => {},
-  onLoad: () => {}
+  onClick: () => { },
+  onError: () => { },
+  onLoad: () => { }
 }
 
 export default React.memo(SpImage)

@@ -29,7 +29,7 @@ const initialState = {
   collectArticleStatus: false
 }
 function GuideRecommendDetail(props) {
-  const $instance = getCurrentInstance()
+  const $instance = getCurrentInstance() || {}
   const [state, setState] = useImmer(initialState)
   const { img, shareImageUrl, itemId, title, content, articleFocusNum, updated } = state
   const { userInfo } = useSelector((state) => state.guide)
@@ -47,15 +47,20 @@ function GuideRecommendDetail(props) {
   })
 
   useShareAppMessage(async () => {
-    const { salesperson_id, work_userid, distributor_id, shop_code } = userInfo
-    const { subtask_id } = router.params
+    const { subtask_id } = router?.params
     const query = {
       id: itemId,
-      dtid: distributor_id,
-      smid: salesperson_id,
-      gu: `${work_userid}_${shop_code}`,
       subtask_id
     }
+
+    // 如果有userInfo，添加相关参数
+    if (userInfo) {
+      const { salesperson_id, work_userid, distributor_id, shop_code } = userInfo
+      query.dtid = distributor_id
+      query.smid = salesperson_id
+      query.gu = `${work_userid}_${shop_code}`
+    }
+
     const sharePath = buildSharePath('poster_recommend_detail', query)
     log.debug(`【/pages/recommend/detail】onShareAppMessage path: ${sharePath}`)
     return {
@@ -66,7 +71,7 @@ function GuideRecommendDetail(props) {
   })
 
   const fetch = async () => {
-    const { id } = router.params
+    const { id } = router?.params
     // 关注数加1
     const res = await api.article.detail(id)
     if (S.getAuthToken()) {
@@ -94,7 +99,7 @@ function GuideRecommendDetail(props) {
   }
 
   const handleLikeClick = async () => {
-    const { count, status } = await api.article.praise(router.params.id)
+    const { count, status } = await api.article.praise(router?.params.id)
     setState((draft) => {
       draft.isPraise = status
       draft.articlePraiseNum = count
@@ -102,7 +107,7 @@ function GuideRecommendDetail(props) {
   }
 
   const handleMarkClick = async () => {
-    const resCollectArticle = await api.article.collectArticle(router.params.id)
+    const resCollectArticle = await api.article.collectArticle(router?.params.id)
     if (resCollectArticle.fav_id && !state.collectArticleStatus) {
       setState((draft) => {
         draft.collectArticleStatus = true
@@ -110,7 +115,7 @@ function GuideRecommendDetail(props) {
       showToast('已加入心愿单')
     } else {
       await api.article.delCollectArticle({
-        article_id: router.params.id
+        article_id: router?.params.id
       })
       setState((draft) => {
         draft.collectArticleStatus = false

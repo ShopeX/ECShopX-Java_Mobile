@@ -13,6 +13,9 @@ dist/
 .vscode
 .env.local
 .cursor/
+.claude/
 AGENTS.md
 openspec/
 scripts/
+.agent/
+.codex/

@@ -11,11 +11,10 @@ import imgUploader from '@/utils/upload'
 import S from '@/spx'
 import api from '@/api'
 // import req from '@/api/req'
-
 import './shop-form.scss'
 
 export default class DistributionShopForm extends Component {
-  $instance = getCurrentInstance()
+  $instance = getCurrentInstance() || {}
   constructor(props) {
     super(props)
 
@@ -27,7 +26,7 @@ export default class DistributionShopForm extends Component {
 
   componentDidMount() {
     // const { imgs } = this.state
-    const { key, val } = this.$instance.router.params
+    const { key, val } = this.$instance?.router?.params
     this.setState({
       info: {
         key,
@@ -80,7 +79,7 @@ export default class DistributionShopForm extends Component {
     }
 
     if (data.length > 1) {
-      S.toast('最多上传1张图片')
+      S?.toast('最多上传1张图片')
     }
     const imgFiles = data.slice(0, 1)
     const res = await imgUploader.uploadImageFn(imgFiles)

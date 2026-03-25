@@ -18,12 +18,12 @@ import { SpPage, SpScrollView, SpSearchBar } from '@/components'
 import { pickBy, isWeb, isAPP, payPlatform, log, getCurrentRoute } from '@/utils'
 import { useSelector } from 'react-redux'
 import { useImmer } from 'use-immer'
-import doc from '@/doc'
+import doc from '@/subpages/doc'
 import api from '@/api'
+import * as communityApi from '@/api/community'
 import CompOrderItem from './comps/comp-orderitem'
 import CompTabbar from './comps/comp-tabbar'
 import CompTradeItem from './comps/comp-tradeitem'
-
 import './order.scss'
 
 const initialState = {
@@ -63,8 +63,8 @@ function CommunityOrder(props) {
   const [isShowSearch, setIsShowSearch] = useState(false)
   const { colorPrimary } = useSelector((state) => state.sys)
   const orderRef = useRef()
-  const $instance = getCurrentInstance()
-  const { activity_id } = $instance.router?.params
+  const $instance = getCurrentInstance() || {}
+  const { activity_id } = $instance?.router?.params
 
   const { keywords, orderList, curTabIdx, isOpened, remark, payLoading } = state
   const fetch = async ({ pageIndex, pageSize }) => {
@@ -91,7 +91,7 @@ function CommunityOrder(props) {
       const {
         list,
         pager: { count }
-      } = await api.community.getCommunityList(params)
+      } = await communityApi.getCommunityList(params)
       const n_list = pickBy(list, doc.community.COMMUNITY_ORDER_LIST)
       setState((draft) => {
         draft.orderList = [...orderList, ...n_list]
@@ -266,7 +266,7 @@ function CommunityOrder(props) {
         title: '支付成功',
         icon: 'success'
       })
-      const { fullPath } = getCurrentRoute($instance.router?.params || {})
+      const { fullPath } = getCurrentRoute($instance?.router?.params || {})
       Taro.redirectTo({
         url: fullPath
       })

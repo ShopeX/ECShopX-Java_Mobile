@@ -6,13 +6,11 @@ import React, { useEffect } from 'react'
 import Taro from '@tarojs/taro'
 import { View, Form, Button, Image } from '@tarojs/components'
 import { useSelector } from 'react-redux'
-
 import { useImmer } from 'use-immer'
 import S from '@/spx'
 import { SpPage, SpNavBar, SpToast, SpInput as AtInput } from '@/components'
 import api from '@/api'
 import { isArray } from '@/utils'
-
 import './certification.scss'
 
 const initialState = {
@@ -73,16 +71,16 @@ function Certification(props) {
   const handleSubmit = (e) => {
     const { value } = e.detail
     if (!value.card_name) {
-      return S.toast('请输入姓名')
+      return S?.toast('请输入姓名')
     }
     if (!value.tel_no || !/1\d{10}/.test(value.tel_no)) {
-      return S.toast('请输入正确的手机号')
+      return S?.toast('请输入正确的手机号')
     }
     if (!value.card_id || !/^[1-9]\d{9,29}$/.test(value.card_id)) {
-      return S.toast('请输入正确的结算卡号')
+      return S?.toast('请输入正确的结算卡号')
     }
     if (!value.cert_id || !/^(\d{18,18}|\d{15,15}|\d{17,17}X)$/.test(value.cert_id)) {
-      return S.toast('请输入正确的证件号码')
+      return S?.toast('请输入正确的证件号码')
     }
     if (isEdit) {
       onSumbitChange()

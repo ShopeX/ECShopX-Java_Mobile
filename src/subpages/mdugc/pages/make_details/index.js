@@ -5,14 +5,14 @@
 import React, { Component } from 'react'
 import Taro from '@tarojs/taro'
 import { View, Text, Input, Image, ScrollView, Button } from '@tarojs/components'
-
-import { FloatMenus, FloatMenuItem, BackToTop, Loading } from '@/components'
+import { BackToTop, Loading } from '@/components'
+import { FloatMenus, FloatMenuItem } from '@/subpages/components'
 import S from '@/spx'
 import { connect } from 'react-redux'
 import { withPager, withBackToTop, withPointitem } from '@/hocs'
-
 import { AtActionSheet, AtActionSheetItem } from 'taro-ui'
 import api from '@/api'
+import * as mdugcApi from '@/api/mdugc'
 import { Swiperugc, Popups } from '../../components'
 import './index.scss'
 
@@ -48,7 +48,7 @@ export default class mdugcdetails extends Component {
   }
   async onShareAppMessage(res) {
     let that = this
-    let { item_id } = this.$router.params
+    let { item_id } = this.$router?.params
     let { file_details } = this.state
     if (res.from === 'button') {
       // 来自页面内转发按钮
@@ -59,9 +59,9 @@ export default class mdugcdetails extends Component {
     let data = {
       post_id: item_id
     }
-    const isAuth = S.getAuthToken()
+    const isAuth = S?.getAuthToken()
     if (isAuth) {
-      let share = await api.mdugc.postshare(data)
+      let share = await mdugcApi.postshare(data)
       if (share.post_id == item_id) {
         console.log('share', share.share_nums)
         file_details.share_nums = share.share_nums
@@ -78,12 +78,12 @@ export default class mdugcdetails extends Component {
     }
   }
   componentDidShow() {
-    let { item_id } = this.$router.params
+    let { item_id } = this.$router?.params
     this.getpostdetail(item_id)
   }
   componentDidMount() {
     // 判断是否是笔记作者
-    // let {item_id}=this.$router.params
+    // let {item_id}=this.$router?.params
     // this.getpostdetail(item_id)
   }
   // 获取详情
@@ -99,7 +99,7 @@ export default class mdugcdetails extends Component {
     let data = {
       post_id: id
     }
-    let res = await api.mdugc.postdetail(data)
+    let res = await mdugcApi.postdetail(data)
     // console.log("这是笔记详情",res,res.post_info,memberData,memberData.memberInfo.user_id,res.post_info.user_id)
     isoneself = memberData.memberInfo && memberData.memberInfo.user_id == res.post_info.user_id
     if (res.post_info) {
@@ -132,7 +132,7 @@ export default class mdugcdetails extends Component {
     Taro.navigateTo({ url })
   }
   async fetch(params) {
-    let { item_id } = this.$router.params
+    let { item_id } = this.$router?.params
     const { memberData } = this.props
     const { page_no: page, page_size: pageSize } = params
     params = {
@@ -143,7 +143,7 @@ export default class mdugcdetails extends Component {
     if (memberData.memberInfo) {
       params.user_id = memberData.memberInfo.user_id
     }
-    const { list, total_count: total } = await api.mdugc.commentlist(params)
+    const { list, total_count: total } = await mdugcApi.commentlist(params)
     console.log('list, total', list, total)
 
     this.setState({
@@ -154,7 +154,7 @@ export default class mdugcdetails extends Component {
   }
   // 获取二级评论列表
   getcommentlist = async (item) => {
-    let { item_id } = this.$router.params
+    let { item_id } = this.$router?.params
     let { commentlist } = this.state
     let comment_id = item.comment_id
     const { memberData } = this.props
@@ -178,7 +178,7 @@ export default class mdugcdetails extends Component {
       data.user_id = memberData.memberInfo.user_id
     }
 
-    const { list, total_count: total } = await api.mdugc.commentlist(data)
+    const { list, total_count: total } = await mdugcApi.commentlist(data)
 
     data.page_no += 1
     if (commentlist[comment_id]) {
@@ -227,7 +227,7 @@ export default class mdugcdetails extends Component {
   }
   // 回复评论
   reply = (type) => {
-    const isAuth = S.getAuthToken()
+    const isAuth = S?.getAuthToken()
     if (!isAuth) {
       Taro.showToast({
         icon: 'none',
@@ -282,7 +282,7 @@ export default class mdugcdetails extends Component {
   setinput = async (e) => {
     console.log('这是文本', e, e.detail.value)
     let { theory, comment_act, commentlist, page, totalnum } = this.state
-    let { item_id } = this.$router.params
+    let { item_id } = this.$router?.params
     const { memberData } = this.props
     let data = {
       user_id: memberData.memberInfo.user_id,
@@ -303,7 +303,7 @@ export default class mdugcdetails extends Component {
     } else {
       console.log('生成一级评论')
     }
-    let res = await api.mdugc.commentcreate(data)
+    let res = await mdugcApi.commentcreate(data)
     console.log('这是发布评论', res)
     Taro.showToast({
       icon: 'none',
@@ -416,7 +416,7 @@ export default class mdugcdetails extends Component {
             totalnum = page.total - 1
           }
         }
-        let res = await api.mdugc.commentdelete(data)
+        let res = await mdugcApi.commentdelete(data)
         if (res.comment_id) {
           try {
             theory.forEach((theoryi, idx) => {
@@ -454,11 +454,11 @@ export default class mdugcdetails extends Component {
         }
       } else {
         console.log('确认删除作品')
-        let { item_id } = that.$router.params
+        let { item_id } = that.$router?.params
         let data = {
           post_id: [item_id]
         }
-        let res = await api.mdugc.postdelete(data)
+        let res = await mdugcApi.postdelete(data)
         if (res.message) {
           Taro.showToast({
             icon: 'none',
@@ -500,7 +500,7 @@ export default class mdugcdetails extends Component {
   }
   // 点赞评论
   commentlike = async (comment_id) => {
-    const isAuth = S.getAuthToken()
+    const isAuth = S?.getAuthToken()
     if (!isAuth) {
       Taro.showToast({
         icon: 'none',
@@ -514,7 +514,7 @@ export default class mdugcdetails extends Component {
 
       return
     }
-    let { item_id } = this.$router.params
+    let { item_id } = this.$router?.params
     let { theory, comment_act, commentlist } = this.state
     const { memberData } = this.props
     let that = this
@@ -523,7 +523,7 @@ export default class mdugcdetails extends Component {
       post_id: item_id,
       comment_id
     }
-    let res = await api.mdugc.commentlike(data)
+    let res = await mdugcApi.commentlike(data)
     console.log('点赞返回', res)
 
     if (res.action) {
@@ -568,7 +568,7 @@ export default class mdugcdetails extends Component {
   }
   // 点赞笔记
   postlike = async () => {
-    const isAuth = S.getAuthToken()
+    const isAuth = S?.getAuthToken()
     if (!isAuth) {
       Taro.showToast({
         icon: 'none',
@@ -582,7 +582,7 @@ export default class mdugcdetails extends Component {
 
       return
     }
-    let { item_id } = this.$router.params
+    let { item_id } = this.$router?.params
     const { memberData } = this.props
     let { file_details } = this.state
     let data = {
@@ -590,7 +590,7 @@ export default class mdugcdetails extends Component {
       post_id: item_id
     }
     let message = ''
-    let res = await api.mdugc.postlike(data)
+    let res = await mdugcApi.postlike(data)
     if (res.action) {
       if (res.action == 'unlike') {
         file_details.like_status = 0
@@ -612,7 +612,7 @@ export default class mdugcdetails extends Component {
   }
   // 收藏笔记
   postfavorite = async () => {
-    const isAuth = S.getAuthToken()
+    const isAuth = S?.getAuthToken()
     if (!isAuth) {
       Taro.showToast({
         icon: 'none',
@@ -626,13 +626,13 @@ export default class mdugcdetails extends Component {
 
       return
     }
-    let { item_id } = this.$router.params
+    let { item_id } = this.$router?.params
     let { file_details } = this.state
     let data = {
       post_id: item_id
     }
     let message = ''
-    let res = await api.mdugc.postfavorite(data)
+    let res = await mdugcApi.postfavorite(data)
     if (res.action) {
       if (res.action == 'unfavorite') {
         message = '取消收藏'
@@ -654,7 +654,7 @@ export default class mdugcdetails extends Component {
   }
   // 关注|取消关注
   followercreate = async () => {
-    const isAuth = S.getAuthToken()
+    const isAuth = S?.getAuthToken()
     if (!isAuth) {
       Taro.showToast({
         icon: 'none',
@@ -674,7 +674,7 @@ export default class mdugcdetails extends Component {
       user_id: file_details.user_id,
       follower_user_id: memberData.memberInfo.user_id
     }
-    let res = await api.mdugc.followercreate(data)
+    let res = await mdugcApi.followercreate(data)
     if (res.action == 'unfollow') {
       // 取消关注
       file_details.follow_status = 0
@@ -726,7 +726,7 @@ export default class mdugcdetails extends Component {
   }
   // 销毁组件触发
   componentWillUnmount() {
-    let { item_id } = this.$router.params
+    let { item_id } = this.$router?.params
     let { old_isheart, file_details } = this.state
     let pages = Taro.getCurrentPages() // 获取当前的页面栈
     if (pages.length > 1) {

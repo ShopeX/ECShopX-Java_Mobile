@@ -20,7 +20,7 @@ function WgtGoodsGridTab(props) {
   const [current, setCurrent] = useState(0)
   const { onAddToCart } = useContext(WgtsContext)
   const router = useRouter()
-  const isPurchase = router.path == '/subpages/purchase/index'
+  const isPurchase = router?.path == '/subpages/purchase/index'
 
   const { base, config, list } = info
 
@@ -29,7 +29,7 @@ function WgtGoodsGridTab(props) {
     if (moreLink) {
       linkPage(moreLink)
     } else {
-      this.navigateTo(`/pages/item/list?dis_id=${info.distributor_id || ''}`)
+      this.navigateTo(`/subpages/item/list?dis_id=${info.distributor_id || ''}`)
     }
   }
 

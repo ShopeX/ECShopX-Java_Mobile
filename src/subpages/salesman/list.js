@@ -7,7 +7,8 @@ import { useSelector } from 'react-redux'
 import { useImmer } from 'use-immer'
 import Taro, { useRouter } from '@tarojs/taro'
 import { View, ScrollView } from '@tarojs/components'
-import { SpPage, SpScrollView, SpTagBar, SpImage, SpTradeItem } from '@/components'
+import { SpPage, SpScrollView, SpImage, SpTradeItem } from '@/components'
+import { SpTagBar } from '@/subpages/components'
 import api from '@/api'
 import doc from '@/doc'
 import { pickBy } from '@/utils'
@@ -32,7 +33,7 @@ function TradeList(props) {
   const router = useRouter()
 
   useEffect(() => {
-    const { status = 0 } = router.params
+    const { status = 0 } = router?.params
     setState((draft) => {
       draft.status = status
     })

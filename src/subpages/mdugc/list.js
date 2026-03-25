@@ -13,23 +13,17 @@ import Taro, {
 import { AtButton } from 'taro-ui'
 import { View, Image, Text, Button, ScrollView } from '@tarojs/components'
 import { useSelector, useDispatch } from 'react-redux'
-import {
-  SpLogin,
-  SpScrollView,
-  SpTagBar,
-  FloatMenus,
-  FloatMenuItem,
-  SpPage,
-  SpFloatMenuItem
-} from '@/components'
+import { SpLogin, SpScrollView, SpPage, SpFloatMenuItem } from '@/components'
+import { SpTagBar, FloatMenus, FloatMenuItem } from '@/subpages/components'
 import api from '@/api'
+import * as mdugcApi from '@/api/mdugc'
 import { useImmer } from 'use-immer'
 import { useLogin, useNavigation } from '@/hooks'
 import { pickBy, showToast, navigateTo } from '@/utils'
 import doc from '@/doc'
+import * as mdugcDoc from '@/doc/mdugc'
 import S from '@/spx'
 import CompNoteItem from './comps/comp-noteitem'
-
 import './list.scss'
 
 const initialState = {
@@ -64,16 +58,16 @@ function UgcTopicList() {
 
   // 列表
   const fetch = async ({ pageIndex, pageSize }) => {
-    const { topic_id, topic_name } = router.params
+    const { topic_id, topic_name } = router?.params
     let params = {
       page: pageIndex,
       pageSize,
       sort: curFilterIndex == 0 ? 'likes desc' : 'created desc',
       topics: [topic_id]
     }
-    const { list, total_count: total } = await api.mdugc.postlist(params)
+    const { list, total_count: total } = await mdugcApi.postlist(params)
 
-    let nList = pickBy(list, doc.mdugc.UGC_LIST)
+    let nList = pickBy(list, mdugcDoc.UGC_LIST)
 
     const resLeftList = nList.filter((item, index) => {
       if (index % 2 == 0) {
@@ -105,7 +99,7 @@ function UgcTopicList() {
 
   // 浮动按钮跳转
   const onHandleMenuItem = (url) => {
-    // const isAuth = S.getAuthToken()
+    // const isAuth = S?.getAuthToken()
     // if (!isAuth) {
     //   showToast('请先登录')
     //   return

@@ -10,8 +10,9 @@ import { View, Text, Button } from '@tarojs/components'
 import { SpPage, SpImage, SpButton, SpUpload, SpCell } from '@/components'
 import { AtCountdown, AtButton, AtProgress } from 'taro-ui'
 import { calcTimer, pickBy, log, isArray, buildSharePath } from '@/utils'
-import doc from '@/doc'
+import doc from '@/subpages/doc'
 import api from '@/api'
+import * as communityApi from '@/api/community'
 
 import CompGroupTabbar from './comps/comp-groupbar'
 import CompGroupNeighbour from './comps/comp-groupneighbour'
@@ -19,7 +20,6 @@ import CompGoodsItemBuy from './comps/comp-goodsitembuy'
 import CompGroupLogList from './comps/comp-grouploglist'
 import CompGoodsItem from './comps/comp-goodsitem'
 import CompWgts from './comps/comp-wgts'
-
 import './group-leaderdetail.scss'
 
 const initialState = {
@@ -29,8 +29,8 @@ const initialState = {
   shareImageUrl: ''
 }
 function GroupLeaderDetail(props) {
-  const $instance = getCurrentInstance()
-  const { activity_id } = $instance.router.params
+  const $instance = getCurrentInstance() || {}
+  const { activity_id } = $instance?.router?.params
 
   const [state, setState] = useImmer(initialState)
   const { detail, loading, timer, shareImageUrl } = state
@@ -41,7 +41,7 @@ function GroupLeaderDetail(props) {
   }, [])
 
   const fetchDetial = async () => {
-    const res = await api.community.getChiefActivity(activity_id)
+    const res = await communityApi.getChiefActivity(activity_id)
     console.log('fetchDetail:', pickBy(res, doc.community.COMMUNITY_ACTIVITY_ITEM))
     let timer = {}
     if (res.last_second > 0) {

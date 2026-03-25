@@ -77,6 +77,8 @@ function App({ children }) {
       checkAppVersion()
     }
 
+    getFontFace()
+
     // 导购参数缓存处理
     const guideUpdateTime = Taro.getStorageSync(SG_GUIDE_PARAMS_UPDATETIME) || 0
     const guideExpressTime = Taro.getStorageSync(SG_GUIDE_PARAMS_EXPRESSTIME) || 0
@@ -88,22 +90,18 @@ function App({ children }) {
         Taro.removeStorageSync(SG_GUIDE_PARAMS_UPDATETIME)
       }
     }
-    const { show_time } = await api.promotion.getScreenAd()
-    let showAdv
-    if (show_time === 'always') {
-      showAdv = false
-      store.dispatch({
-        type: 'user/closeAdv',
-        payload: showAdv
-      })
-    }
   }, [])
 
   useLaunch((options) => {
     console.log('useLaunch ***********', options)
+    Taro.setStorageSync(SG_CHECK_STORE_RULE, 0)
 
-    // Initialize RTL
-    const lang = Taro.getStorageSync('lang') || 'zhcn'
+    // Initialize RTL；首次进入时 Taro 无 lang，需写入默认语言，否则 baseinfo 等首请求不会带 country_code
+    let lang = Taro.getStorageSync('lang')
+    if (!lang) {
+      lang = process.env.APP_DEFAULT_LANGUAGE || 'en'
+      Taro.setStorageSync('lang', lang)
+    }
     store.dispatch(updateLang(lang))
     if (isWeb) {
       document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr'
@@ -127,6 +125,7 @@ function App({ children }) {
       }
       getSystemConfig()
     })
+
     //分包异步加载语言包
     if (process.env.TARO_ENV === 'weapp') {
       __non_webpack_require__ &&
@@ -289,6 +288,40 @@ function App({ children }) {
     } catch (error) {
       console.log(error)
     }
+  }
+  const getFontFace = () => {
+    wx.loadFontFace({
+      family: 'D-DIN-PRO',
+      global: true,
+      source:
+        'https://b-img-cdn.yuanyuanke.cn/fv-vshop/D-DIN-PRO/D-DIN-PRO-600-SemiBold.otf?t=1718810009',
+      success: () => { },
+      fail: () => { }
+    })
+    wx.loadFontFace({
+      family: 'D-DIN-PRO-Regular',
+      global: true,
+      source:
+        'https://b-img-cdn.yuanyuanke.cn/fv-vshop/D-DIN-PRO/D-DIN-PRO-400-Regular.otf?t=1718810009',
+      success: () => { },
+      fail: () => { }
+    })
+    wx.loadFontFace({
+      family: 'D-DIN-PRO-Medium',
+      global: true,
+      source:
+        'https://b-img-cdn.yuanyuanke.cn/fv-vshop/D-DIN-PRO/D-DIN-PRO-500-Medium.otf?t=1718810009',
+      success: () => { },
+      fail: () => { }
+    })
+    wx.loadFontFace({
+      family: 'D-DIN-PRO-ExtraBold',
+      global: true,
+      source:
+        'https://b-img-cdn.yuanyuanke.cn/fv-vshop/D-DIN-PRO/D-DIN-PRO-800-ExtraBold.otf?t=1718810009',
+      success: () => { },
+      fail: () => { }
+    })
   }
 
   return <Provider store={store}>{children}</Provider>

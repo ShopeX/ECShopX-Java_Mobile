@@ -12,17 +12,9 @@ import { useLogin, useModal } from '@/hooks'
 import api from '@/api'
 import { classNames, showToast, VERSION_IN_PURCHASE, getDistributorId, isWeb } from '@/utils'
 import qs from 'qs'
-
 import { updateEnterpriseId, updateCurDistributorId } from '@/store/slices/purchase'
-import {
-  SpForm,
-  SpFormItem,
-  SpTimer,
-  SpPage,
-  SpPrivacyModal,
-  SpInput as AtInput
-} from '@/components'
-
+import { SpForm, SpFormItem, SpPage, SpPrivacyModal, SpInput as AtInput } from '@/components'
+import { SpTimer } from '@/subpages/components'
 import CompBottomTip from './comps/comp-bottomTip'
 import './select-company-email.scss'
 
@@ -49,7 +41,7 @@ function PurchaseAuthEmail(props) {
         { validate: 'email', message: '请输入正确的邮箱' },
         {
           validate: async (value) => {
-            const { enterprise_id } = router.params
+            const { enterprise_id } = router?.params
             try {
               const params = {
                 email: value
@@ -77,7 +69,7 @@ function PurchaseAuthEmail(props) {
     enterprise_sn,
     activity_id,
     is_activity = ''
-  } = router.params
+  } = router?.params
 
   const onInputChange = (key, value) => {
     setState((draft) => {

@@ -11,7 +11,6 @@ import { SpScrollView } from '@/components'
 import api from '@/api'
 import doc from '@/doc'
 import { useDebounce } from '@/hooks'
-
 import { pickBy, classNames, styleNames, showToast } from '@/utils'
 import CompFirstCategory from './comps/comp-first-category'
 import CompSecondCategory from './comps/comp-second-category'
@@ -35,7 +34,7 @@ const initialState = {
 }
 
 function StoreItemList(props) {
-  const $instance = getCurrentInstance()
+  const $instance = getCurrentInstance() || {}
   const [state, setState] = useImmer(initialState)
   // const { purchase_share_info = {} } = useSelector((state) => state.purchase)
   const {
@@ -96,7 +95,7 @@ function StoreItemList(props) {
   }
 
   const fetch = async ({ pageIndex, pageSize }) => {
-    const { dis_id = null } = $instance.router.params
+    const { dis_id = null } = $instance?.router?.params
     const params = {
       page: pageIndex,
       pageSize,
@@ -133,7 +132,7 @@ function StoreItemList(props) {
     console.log('handleConfirm', val)
     if (val) {
       Taro.navigateTo({
-        url: `/pages/item/list?keywords=${val}`
+        url: `/subpages/item/list?keywords=${val}`
       })
     }
   }

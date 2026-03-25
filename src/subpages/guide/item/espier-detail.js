@@ -42,7 +42,6 @@ import {
   navigateTo,
   buildSharePath
 } from '@/utils'
-
 import doc from '@/doc'
 import entryLaunch from '@/utils/entryLaunch'
 import qs from 'qs'
@@ -60,7 +59,6 @@ import CompBuytoolbar from './comps/comp-buytoolbar'
 import CompShare from './comps/comp-share'
 import CompPromation from './comps/comp-promation'
 import CompGroup from './comps/comp-group'
-
 import './espier-detail.scss'
 
 const MBaSkuSelect = React.memo(BaSkuSelect)
@@ -96,8 +94,8 @@ const initialState = {
 }
 
 function EspierDetail(props) {
-  const $instance = getCurrentInstance()
-  // const { type, id, dtid } = $instance.router.params
+  const $instance = getCurrentInstance() || {}
+  // const { type, id, dtid } = $instance?.router?.params
   // const { type, id, dtid } = await entryLaunch.getRouteParams()
   const pageRef = useRef()
   const { userInfo, cartCount, storeInfo } = useSelector((state) => state.guide)
@@ -351,10 +349,10 @@ function EspierDetail(props) {
     return {
       height: '100%',
       width: '100%',
-      backgroundSize: 'cover',
-      backgroundImage: `url(${item})`,
-      backgroundRepeat: 'no-repeat',
-      backgroundPosition: 'center'
+      'background-size': 'cover',
+      'background-image': `url(${item})`,
+      'background-repeat': 'no-repeat',
+      'background-position': 'center'
     }
   }
 

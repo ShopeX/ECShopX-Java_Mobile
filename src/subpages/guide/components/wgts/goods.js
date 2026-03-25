@@ -8,9 +8,7 @@ import { View, Text, Image } from '@tarojs/components'
 import { classNames } from '@/utils'
 import { connect } from 'react-redux'
 import api from '@/api'
-
 import S from '@/spx'
-
 import './goods.scss'
 
 @connect(
@@ -64,7 +62,7 @@ export default class WgtGoods extends Component {
     const { info, sourcetype, title, author, source, componentIndex } = this.props
     e.stopPropagation()
     if (!S.getAuthToken()) {
-      S.login(this)
+      S?.login(this)
       return false
     }
     /*if(info.data) {

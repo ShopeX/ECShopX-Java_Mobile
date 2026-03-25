@@ -10,11 +10,10 @@ import S from '@/spx'
 import api from '@/api'
 import { Loading } from '@/components'
 import { normalizeQuerys } from '@/utils'
-
 import './shopping-guide-card.scss'
 
 export default class ShoppingGuideCard extends Component {
-  $instance = getCurrentInstance()
+  $instance = getCurrentInstance() || {}
   constructor(props) {
     super(props)
 
@@ -29,13 +28,13 @@ export default class ShoppingGuideCard extends Component {
       title: '导购名片'
     })
 
-    let token = S.getAuthToken()
+    let token = S?.getAuthToken()
 
     this.setState({
       token
     })
 
-    let { smid, dtid } = await normalizeQuerys(this.$instance.router.params)
+    let { smid, dtid } = await normalizeQuerys(this.$instance?.router?.params)
 
     if (smid) {
       Taro.setStorageSync('s_smid', smid)
@@ -46,7 +45,7 @@ export default class ShoppingGuideCard extends Component {
   }
 
   componentDidMount() {
-    let token = S.getAuthToken()
+    let token = S?.getAuthToken()
 
     this.fetch(token)
     if (!token) return

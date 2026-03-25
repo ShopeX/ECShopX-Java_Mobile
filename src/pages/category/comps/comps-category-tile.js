@@ -42,6 +42,9 @@ const CompsCategoryTile = (props) => {
     const query = { template_name: platformTemplateName, version: 'v1.0.1', page_name: 'category' }
     const { list } = await api.category.getCategory(query)
     let seriesList = list[0] ? list[0].params.data : []
+    const params = list[0] ? list[0].params : {}
+    const { addCar = false, classify = false } = params
+    if (classify) return
 
     if (!seriesList.length) {
       const res = await api.category.get(VERSION_PLATFORM ? { is_main_category: 1 } : {
@@ -74,7 +77,7 @@ const CompsCategoryTile = (props) => {
         draft.currentList = currentList
         draft.hasSeries = true
       })
-    } else {
+    } else if (addCar) {
       let tabList = []
       let contentList = []
       if (list[0].params.hasSeries) {

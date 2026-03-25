@@ -6,13 +6,12 @@ import React, { Component } from 'react'
 import Taro from '@tarojs/taro'
 import { View, Text, Image, ScrollView } from '@tarojs/components'
 import S from '@/spx'
-
 import { SpNote, BackToTop, GoodsItem, Loading } from '@/components'
 import { pickBy } from '@/utils'
 import { withPager, withBackToTop } from '@/hocs'
 import entry from '@/utils/entry'
-
 import api from '@/api'
+import * as mdugcApi from '@/api/mdugc'
 
 import { SearchBar } from '../../components'
 import './index.scss'
@@ -120,7 +119,7 @@ export default class make_complete extends Component {
       query.distributor_id = isOpenStore ? store_id : distributor_id
     }
 
-    // const { list, total_count: total } = await api.mdugc.yuyueActivityList(params)
+    // const { list, total_count: total } = await mdugcApi.yuyueActivityList(params)
     const { list, total_count: total } = await api.item.search(query)
     console.log('list, total', list, total)
 

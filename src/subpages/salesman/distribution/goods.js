@@ -7,29 +7,20 @@ import Taro, { getCurrentInstance } from '@tarojs/taro'
 import { View, ScrollView } from '@tarojs/components'
 import { platformTemplateName } from '@/utils/platform'
 import { AtTabBar } from 'taro-ui'
-import {
-  SpToast,
-  Loading,
-  FilterBar,
-  SpNote,
-  SpSearchInput,
-  SpNavBar,
-  SpNavFilter,
-  SpPage
-} from '@/components'
+import { SpToast, Loading, FilterBar, SpNote, SpSearchInput, SpNavBar, SpPage } from '@/components'
+import { SpNavFilter } from '@/subpages/components'
 import S from '@/spx'
 import { getDtidIdUrl } from '@/utils/helper'
 import api from '@/api'
 import { withPager, withBackToTop } from '@/hocs'
 import { pickBy, getCurrentRoute, isAlipay } from '@/utils'
 import DistributionGoodsItem from './comps/goods-item'
-
 import './goods.scss'
 
 @withPager
 @withBackToTop
 export default class DistributionGoods extends Component {
-  $instance = getCurrentInstance()
+  $instance = getCurrentInstance() || {}
   constructor(props) {
     super(props)
 
@@ -117,7 +108,7 @@ export default class DistributionGoods extends Component {
       menus: ['shareAppMessage', 'shareTimeline']
     })
     this.firstStatus = true
-    const { status } = this.$instance.router.params
+    const { status } = this.$instance?.router?.params
     const { tabList } = this.state
     tabList[1].url += `?status=${status}`
     this.setState(
@@ -383,7 +374,7 @@ export default class DistributionGoods extends Component {
             scrollTop: this.state.top
           },
           () => {
-            S.toast('上架成功')
+            S?.toast('上架成功')
           }
         )
       }
@@ -397,7 +388,7 @@ export default class DistributionGoods extends Component {
             scrollTop: this.state.top
           },
           () => {
-            S.toast('下架成功')
+            S?.toast('下架成功')
           }
         )
       }
@@ -470,7 +461,7 @@ export default class DistributionGoods extends Component {
       const curTab = this.state.tabList[current]
       const { url } = curTab
 
-      const fullPath = getCurrentRoute(this.$instance.router).fullPath.split('?')[0]
+      const fullPath = getCurrentRoute(this.$instance?.router).fullPath.split('?')[0]
 
       if (url && fullPath !== url) {
         Taro.redirectTo({ url })
@@ -582,7 +573,7 @@ export default class DistributionGoods extends Component {
     )
   }
   render() {
-    const { status } = this.$instance.router.params
+    const { status } = this.$instance?.router?.params
     const {
       list,
       page,

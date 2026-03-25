@@ -15,12 +15,11 @@ import { withPager, withLogin } from '@/hocs'
 import { getCurrentRoute, pickBy, entryLaunch, log } from '@/utils'
 import entry from '@/utils/entry'
 import CustomHeader from './comps/header'
-
 import './shop-home.scss'
 
 @withPager
 export default class DistributionShopHome extends Component {
-  $instance = getCurrentInstance()
+  $instance = getCurrentInstance() || {}
   constructor(props) {
     super(props)
 
@@ -80,7 +79,7 @@ export default class DistributionShopHome extends Component {
 
   async componentDidMount() {
     // if (!S.getAuthToken()) {
-    //   const { path } = this.$instance.router
+    //   const { path } = this.$instance?.router
     //   const params = await entryLaunch.getRouteParams()
     //   const redirect = encodeURIComponent(`${path}?${qs.stringify(params)}`)
     //   Taro.navigateTo({
@@ -99,7 +98,7 @@ export default class DistributionShopHome extends Component {
   }
 
   async salesmanShare() {
-    let params = this.$instance.router.params
+    let params = this.$instance?.router?.params
     if (params?.qr == 'Y') {
       let param = {
         promoter_user_id: params?.featuredshop
@@ -205,7 +204,7 @@ export default class DistributionShopHome extends Component {
 
   // 获取小店信息
   getShopInfo = async () => {
-    // const options = this.$instance.router.params
+    // const options = this.$instance?.router?.params
     const { tabList } = this.state
     // 当前登录用户
     const { userId } = Taro.getStorageSync('userinfo')
@@ -247,7 +246,7 @@ export default class DistributionShopHome extends Component {
     tabList[0].url += `?featuredshop=${param.user_id}`
     tabList[1].url += `?featuredshop=${param.user_id}`
     // 是否当前页面
-    const isCurrentPage = this.$instance.router.path.indexOf('distribution/shop-home') !== -1
+    const isCurrentPage = this.$instance?.router?.path.indexOf('distribution/shop-home') !== -1
     if (isCurrentPage) {
       Taro.setNavigationBarTitle({
         title: shop_name || `${nickname || username || mobile}的小店`
@@ -338,7 +337,7 @@ export default class DistributionShopHome extends Component {
       const curTab = this.state.tabList[current]
       const { url, urlRedirect } = curTab
 
-      const fullPath = getCurrentRoute(this.$instance.router).fullPath.split('?')[0]
+      const fullPath = getCurrentRoute(this.$instance?.router).fullPath.split('?')[0]
       if (url && fullPath !== url) {
         if (!urlRedirect || (url === '/subpages/member/index' && !S.getAuthToken())) {
           Taro.navigateTo({ url })

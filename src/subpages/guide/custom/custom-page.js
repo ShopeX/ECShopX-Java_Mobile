@@ -29,7 +29,6 @@ import {
   BaNavBar
 } from '@/subpages/guide/components'
 // import { WgtHomeHeader } from '@/pages/home/wgts'
-
 import './custom-page.scss'
 
 const initState = {
@@ -41,7 +40,7 @@ const initState = {
 
 function GuideCustomPage() {
   const [state, setState] = useImmer(initState)
-  const $instance = getCurrentInstance()
+  const $instance = getCurrentInstance() || {}
   const { setNavigationBarTitle } = useNavigation()
   const { isLogin, login } = useQwLogin({
     autoLogin: true
@@ -58,7 +57,7 @@ function GuideCustomPage() {
   }, [userInfo])
 
   const fetchWgts = async () => {
-    const { id } = $instance.router.params
+    const { id } = $instance?.router?.params
     const { config, share } = await api.guide.getHomeTmps({
       template_name: 'yykweishop',
       version: 'v1.0.1',
@@ -72,7 +71,7 @@ function GuideCustomPage() {
   }
 
   useShareAppMessage(async () => {
-    const { id, subtask_id } = $instance.router.params
+    const { id, subtask_id } = $instance?.router?.params
     const { salesperson_id, distributor_id, work_userid, shop_code } = userInfo
     const query = {
       id,

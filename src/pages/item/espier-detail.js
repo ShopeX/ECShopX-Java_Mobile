@@ -5,7 +5,7 @@
 import React, { useEffect, useRef, useMemo } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import Taro, { getCurrentInstance, useShareAppMessage, useShareTimeline } from '@tarojs/taro'
-import { View, Text, Swiper, SwiperItem, Video, ScrollView } from '@tarojs/components'
+import { View, Text, Swiper, SwiperItem, Video, ScrollView, Image } from '@tarojs/components'
 import { useImmer } from 'use-immer'
 import { AtFloatLayout, AtButton } from 'taro-ui'
 import {
@@ -46,6 +46,7 @@ import {
   VERSION_STANDARD,
   buildSharePath
 } from '@/utils'
+import { saveBrowseItem } from '@/utils/browseHistory'
 import { fetchUserFavs } from '@/store/slices/user'
 
 import doc from '@/doc'
@@ -115,7 +116,7 @@ const initialState = {
 }
 
 function EspierDetail(props) {
-  const $instance = getCurrentInstance()
+  const $instance = getCurrentInstance() || {}
   const pageRef = useRef()
 
   const { userInfo } = useSelector((state) => state.user)
@@ -180,7 +181,7 @@ function EspierDetail(props) {
   }, [packageOpen, skuPanelOpen, sharePanelOpen, posterModalOpen, promotionOpen, isParameter])
 
   useEffect(() => {
-    const { path } = $instance.router
+    const { path } = $instance?.router
     if (id && path === '/pages/item/espier-detail') {
       fetch()
     }
@@ -239,7 +240,7 @@ function EspierDetail(props) {
   })
 
   const salesmanShare = async () => {
-    let params = $instance.router.params
+    let params = $instance?.router?.params
     if (params?.qr == 'Y') {
       let param = {
         promoter_user_id: params?.uid,
@@ -340,6 +341,9 @@ function EspierDetail(props) {
       // 初始化图片高度数组，使用默认高度
       draft.imgHeightList = new Array(data?.imgs?.length).fill(draft.defaultImageHeight)
     })
+
+    // 进入详情页算一次浏览，写入本地浏览记录（最多 10 条）
+    saveBrowseItem({ ...data, distributorId: data.distributorId ?? dtid })
 
     // 异步计算图片真实高度，不阻塞页面渲染
     getMultipleImageInfo(data.imgs)
@@ -467,10 +471,10 @@ function EspierDetail(props) {
     return {
       height: '100%',
       width: '100%',
-      backgroundSize: 'cover',
-      backgroundImage: `url(${item})`,
-      backgroundRepeat: 'no-repeat',
-      backgroundPosition: 'center'
+      'background-size': 'cover',
+      'background-image': `url(${item})`,
+      'background-repeat': 'no-repeat',
+      'background-position': 'center'
     }
   }
 
@@ -483,7 +487,9 @@ function EspierDetail(props) {
   }
 
   const goToCaseView = () => {
-    Taro.navigateTo({ url: `/subpages/case/view-case?design_works=${JSON.stringify(info.designWorks)}` })
+    Taro.navigateTo({
+      url: `/subpages/case/view-case?design_works=${JSON.stringify(info.designWorks)}`
+    })
   }
 
   return (
@@ -548,7 +554,7 @@ function EspierDetail(props) {
                 {info?.imgs?.map((img, idx) => (
                   <SwiperItem key={`swiperitem__${idx}`}>
                     <View style={setSwiperCss(img)}>
-                      <SpImage mode='scaleToFill' src={img} className='swiperitem__img' />
+                      <Image mode='scaleToFill' src={img} className='swiperitem__img' />
                     </View>
                   </SwiperItem>
                 ))}
@@ -612,7 +618,9 @@ function EspierDetail(props) {
                   <SpGoodsPrice info={curItem ? curItem : info} />
                 )}
                 {info.designWorks && info.designWorks.length > 0 && (
-                  <View className='goods-info-case' onClick={goToCaseView}>查看案例</View>
+                  <View className='goods-info-case' onClick={goToCaseView}>
+                    查看案例
+                  </View>
                 )}
               </View>
 

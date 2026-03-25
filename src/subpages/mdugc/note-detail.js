@@ -20,11 +20,11 @@ import {
 import S from '@/spx'
 import { WgtFloorImg } from '@/pages/home/wgts'
 import { classNames, isWeb, isWeixin, showToast, pickBy, isNumber, buildSharePath } from '@/utils'
-
 import api from '@/api'
+import * as mdugcApi from '@/api/mdugc'
 import doc from '@/doc'
+import * as mdugcDoc from '@/doc/mdugc'
 import { useImmer } from 'use-immer'
-
 import './note-detail.scss'
 
 const initialState = {
@@ -57,7 +57,7 @@ function UgcNoteDetail(props) {
   const pageRef = useRef()
   const listRef = useRef()
   const { windowWidth } = Taro.getSystemInfoSync()
-  const { post_id } = router.params
+  const { post_id } = router?.params
 
   useEffect(() => {
     getPostDetail()
@@ -88,7 +88,7 @@ function UgcNoteDetail(props) {
   // 获取详情
   const getPostDetail = async () => {
     Taro.showLoading()
-    const { post_info } = await api.mdugc.postdetail({
+    const { post_info } = await mdugcApi.postdetail({
       post_id
     })
     Taro.hideLoading()
@@ -99,7 +99,7 @@ function UgcNoteDetail(props) {
     if (post_info.status != 1) {
       Taro.hideShareMenu()
     }
-    const info = pickBy(post_info, doc.mdugc.UGC_DETAIL)
+    const info = pickBy(post_info, mdugcDoc.UGC_DETAIL)
     setState((draft) => {
       draft.info = info
     })
@@ -122,8 +122,8 @@ function UgcNoteDetail(props) {
         user_id: userInfo.user_id
       }
     }
-    const { list, total_count: total } = await api.mdugc.commentlist(params)
-    const _commentList = pickBy(list, doc.mdugc.COMMENT_INFO)
+    const { list, total_count: total } = await mdugcApi.commentlist(params)
+    const _commentList = pickBy(list, mdugcDoc.COMMENT_INFO)
     setState((draft) => {
       draft.commentList = _commentList
       draft.commentTotal = _commentList.reduce((previous, current) => {
@@ -137,7 +137,7 @@ function UgcNoteDetail(props) {
 
   useShareAppMessage(async (res) => {
     if (S.getAuthToken()) {
-      const shareInfo = await api.mdugc.postshare({
+      const shareInfo = await mdugcApi.postshare({
         post_id
       })
       setState((draft) => {
@@ -165,7 +165,7 @@ function UgcNoteDetail(props) {
 
   // 关注|取消关注
   const handleFollower = async () => {
-    const { action, followers } = await api.mdugc.followercreate({
+    const { action, followers } = await mdugcApi.followercreate({
       user_id: info.userId,
       follower_user_id: userInfo.user_id
     })
@@ -182,7 +182,7 @@ function UgcNoteDetail(props) {
 
   // 点赞
   const likeNote = async () => {
-    const { action, likes } = await api.mdugc.postlike({
+    const { action, likes } = await mdugcApi.postlike({
       user_id: userInfo.user_id,
       post_id
     })
@@ -199,7 +199,7 @@ function UgcNoteDetail(props) {
 
   // 收藏笔记
   const favoriteNote = async () => {
-    const { action, likes } = await api.mdugc.postfavorite({
+    const { action, likes } = await mdugcApi.postfavorite({
       post_id
     })
     if (action == 'unfavorite') {
@@ -224,7 +224,7 @@ function UgcNoteDetail(props) {
 
   // 点赞评论
   const handleCommentLike = async (comment_id, pindex, index) => {
-    const { action, likes } = await api.mdugc.commentlike({
+    const { action, likes } = await mdugcApi.commentlike({
       user_id: userInfo.user_id,
       post_id,
       comment_id
@@ -256,7 +256,7 @@ function UgcNoteDetail(props) {
     if (parentCommentId) {
       params.parent_comment_id = parentCommentId
     }
-    const res = await api.mdugc.commentcreate(params)
+    const res = await mdugcApi.commentcreate(params)
     showToast(res.message)
     listRef.current.reset()
     setState((draft) => {
@@ -279,7 +279,7 @@ function UgcNoteDetail(props) {
       content: ''
     })
     if (confirm) {
-      await api.mdugc.postdelete({
+      await mdugcApi.postdelete({
         post_id: [info.postId]
       })
       showToast('删除成功')

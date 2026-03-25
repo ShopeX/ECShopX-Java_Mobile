@@ -19,12 +19,12 @@ import Taro, {
   usePageScroll,
   getCurrentInstance
 } from '@tarojs/taro'
-import S from '@/spx'
 import { View, Text } from '@tarojs/components'
 import { useImmer } from 'use-immer'
-import { SpFloatMenuItem, SpNote, SpLoading } from '@/components'
+import { SpFloatMenuItem, SpNote, SpLoading, SpPoweredBy } from '@/components'
 import { useThemsColor, useLogin } from '@/hooks'
 import CookieConsent from '@/components/cookie-consent'
+import S from '@/spx'
 import {
   TAB_PAGES,
   TABBAR_PATH,
@@ -37,6 +37,7 @@ import {
   styleNames,
   isWeixin,
   isAlipay,
+  isWeb,
   isIphoneX,
   VERSION_SHUYUN
 } from '@/utils'
@@ -67,7 +68,10 @@ const initialState = {
   pageBackground: {},
   pageTheme: {},
   showLeftContainer: false,
-  windowHeight: 0
+  windowHeight: 0,
+  scrollTop: 0,
+  statusBarBgColor: null,
+  statusBarBgColorSourceId: null // 仅由设置过颜色的挂件 sourceId 清除，避免多挂件冲突
 }
 
 const SpPage = memo(
@@ -77,7 +81,18 @@ const SpPage = memo(
     const [state, setState] = useImmer(initialState)
     const wrapRef = useRef(null)
     const scrollTopRef = useRef(0)
-    const dispatch = useDispatch()
+    const setStatusBarBgColorFromSticky = useCallback((color, sourceId) => {
+      setState((draft) => {
+        if (color != null) {
+          if (draft.statusBarBgColor === color && draft.statusBarBgColorSourceId === sourceId) return
+          draft.statusBarBgColor = color
+          draft.statusBarBgColorSourceId = sourceId
+        } else if (draft.statusBarBgColorSourceId === sourceId) {
+          draft.statusBarBgColor = null
+          draft.statusBarBgColorSourceId = null
+        }
+      })
+    }, [])
     const sys = useSelector((state) => state.sys)
     const { lang } = useSelector((state) => state.user)
     const { showGuideConsultModal, salespersonInfo } = useSelector((state) => state.shop)
@@ -134,8 +149,12 @@ const SpPage = memo(
       let _navigationLSpace = 0 // 导航栏左间距
       let _navigationRSpace = 0 // 导航栏右间距
       const { screenHeight, windowWidth, windowHeight } = Taro.getWindowInfo()
-      const [absolutePath] = router.path.split('?')
-      const custom_navigation = isWeixin ? navigationStyle === 'custom' : false
+      const [absolutePath] = router?.path.split('?')
+      // 小程序/支付宝：按页面 config 是否 custom；H5：有 pageConfig 或 immersive 时也使用自定义顶栏以支持相同顶部样式
+      const custom_navigation =
+        isWeixin || isAlipay
+          ? navigationStyle === 'custom'
+          : isWeb && !!(props.pageConfig || props.immersive)
       const _btnReturn = pages.length > 1 && !TAB_PAGES.includes(absolutePath)
       const _btnHome = pages.length == 1 && !TAB_PAGES.includes(absolutePath)
       if (isWeixin || isAlipay) {
@@ -147,6 +166,10 @@ const SpPage = memo(
         _menuWidth = menuButton.width
         _navigationLSpace = windowWidth - menuButton.right
         _navigationRSpace = menuButton.width + (windowWidth - menuButton.right)
+      } else if (isWeb && custom_navigation) {
+        // H5 下使用自定义顶栏时给默认高度，使 pageConfig/immersive 样式生效
+        _gNavbarH = props.navigateHeight || DEFAULT_NAVIGATE_HEIGHT
+        _gStatusBarHeight = 0
       }
       setState((draft) => {
         draft.bodyHeight = windowHeight
@@ -168,7 +191,7 @@ const SpPage = memo(
 
       const _height = props.renderFooter
         ? Taro.pxTransform(props.footerHeight + (isIphoneX() ? DEFAULT_SAFE_AREA_HEIGHT : 0))
-        : 0
+        : Taro.pxTransform(0)
 
       props.onReady({
         gNavbarH: _gNavbarH,
@@ -178,14 +201,14 @@ const SpPage = memo(
         menuWidth: _menuWidth,
         footerHeight: _height
       })
-    }, [props.immersive, isPageVisible])
+    }, [props.immersive, props.pageConfig, isPageVisible])
 
     useEffect(() => {
       const {
         referrerInfo: { appId: fromAppId }
       } = Taro.getLaunchOptionsSync()
 
-      if (fromAppId && !S.getAuthToken() && VERSION_SHUYUN) {
+      if (fromAppId && !S?.getAuthToken() && VERSION_SHUYUN) {
         //数云：第三方小程序跳来需要免登
         login(fromAppId)
       }
@@ -230,7 +253,7 @@ const SpPage = memo(
       })
 
       // 导购货架分包路由，隐藏所有分享入口
-      if (router?.path?.indexOf('/subpages/guide') > -1) {
+      if (router?.path.indexOf('/subpages/guide') > -1) {
         Taro.hideShareMenu({
           menus: ['shareAppMessage', 'shareTimeline']
         })
@@ -254,6 +277,9 @@ const SpPage = memo(
     usePageScroll((res) => {
       if (!state.lock) {
         scrollTopRef.current = res.scrollTop
+        setState((draft) => {
+          draft.scrollTop = res.scrollTop
+        })
       }
       if (res.scrollTop > 20) {
         setState((draft) => {
@@ -286,6 +312,9 @@ const SpPage = memo(
       },
       // 当页面单独处理滚动事件时，调用此函数
       handlePageScroll: (res) => {
+        setState((draft) => {
+          draft.scrollTop = res.scrollTop
+        })
         if (res.scrollTop > 20) {
           setState((draft) => {
             draft.mantle = true
@@ -328,6 +357,18 @@ const SpPage = memo(
             btnReturn={state.btnReturn}
             btnHome={state.btnHome}
             mantle={state.mantle}
+            nearbyText={props.nearbyText}
+            onSearchConfirm={props.onSearchConfirm}
+            navigationRSpace={state.navigationRSpace}
+            showNavitionLeft={props.showNavitionLeft}
+            statusBarBgColor={state.statusBarBgColor}
+            immersiveScrollRevealBgColor={
+              props.immersive &&
+                props.pageConfig?.immersiveScrollBgColor &&
+                state.scrollTop >= 50
+                ? props.pageConfig.immersiveScrollBgColor
+                : null
+            }
           />
         )}
         {props.isDefault &&
@@ -340,15 +381,19 @@ const SpPage = memo(
               'padding-top': `${!props.immersive && state.customNavigation ? state.gNavbarH : 0}px`,
               'padding-bottom': props.renderFooter
                 ? Taro.pxTransform(
-                    props.footerHeight + (isIphoneX() ? DEFAULT_SAFE_AREA_HEIGHT : 0)
-                  )
+                  props.footerHeight + (isIphoneX() ? DEFAULT_SAFE_AREA_HEIGHT : 0)
+                )
                 : 0
             })}
           >
             <View className='sp-page__body-content'>
               {!props.loading && (
                 <View className='sp-page__body-children'>
-                  <context.Provider value={{}}>{props.children}</context.Provider>
+                  <context.Provider value={{
+                    scrollTop: state.scrollTop,
+                    setStatusBarBgColorFromSticky
+                  }}
+                  >{props.children}</context.Provider>
                 </View>
               )}
               {props.loading && (
@@ -357,14 +402,11 @@ const SpPage = memo(
                 </View>
               )}
               {/* If you remove or alter Shopex brand identifiers, you must obtain a branding removal license from Shopex.  Contact us at:  http://www.shopex.cn to purchase a branding removal license. */}
-              {/* {props.showpoweredBy && <View className='sp-page__powered-by w-full'>
-                <Text>Powered by</Text>
-                <Image
-                  src='/assets/imgs/powered-logo.png'
-                  className='powered-logo'
-                  mode='contain'
-                />
-              </View>} */}
+              {props.showpoweredBy && (
+                <View className='sp-page__powered-by w-full'>
+                  <SpPoweredBy />
+                </View>
+              )}
             </View>
           </View>
         )}
@@ -412,7 +454,7 @@ const SpPage = memo(
 )
 
 SpPage.defaultProps = {
-  onReady: () => {},
+  onReady: () => { },
   btnHomeEnable: true,
   className: '',
   children: null,
@@ -437,7 +479,9 @@ SpPage.defaultProps = {
   renderFooter: null,
   renderFloat: null,
   showpoweredBy: true,
-  onScrollToTop: () => {}
+  onScrollToTop: () => { },
+  nearbyText: '',
+  onSearchConfirm: null
 }
 
 export default SpPage

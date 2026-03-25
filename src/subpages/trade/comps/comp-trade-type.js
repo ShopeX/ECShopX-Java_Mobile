@@ -7,9 +7,8 @@ import { useSelector } from 'react-redux'
 import Taro, { useRouter } from '@tarojs/taro'
 import { View, Text, ScrollView } from '@tarojs/components'
 import { AtButton } from 'taro-ui'
-import { SpTagBar } from '@/components'
+import { SpTagBar } from '@/subpages/components'
 import { classNames, formatDateTime, VERSION_IN_PURCHASE } from '@/utils'
-
 import './comp-trade-type.scss'
 
 function CompTrackType(props) {
@@ -18,7 +17,7 @@ function CompTrackType(props) {
   const { isOpen: isPurchaseOpen } = useSelector((state) => state.purchase)
 
   const list = useMemo(() => {
-    onChange(router.params.is_purchase == '1' ? '1' : '0')
+    onChange(router?.params.is_purchase == '1' ? '1' : '0')
     //内购+商城 开启内购模块则展示
     if (!VERSION_IN_PURCHASE && isPurchaseOpen) {
       return [

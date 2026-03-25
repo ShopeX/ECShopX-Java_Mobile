@@ -3,7 +3,7 @@
  * See LICENSE file for license details.
  */
 import React, { useEffect, useCallback, useRef, useState } from 'react'
-import Taro, { getCurrentInstance } from '@tarojs/taro'
+import Taro, { getCurrentInstance, useDidShow } from '@tarojs/taro'
 import { View, Text, Picker, Input, Image } from '@tarojs/components'
 import { useSelector, useDispatch } from 'react-redux'
 import { useImmer } from 'use-immer'
@@ -14,9 +14,9 @@ import api from '@/api'
 import { useLogin } from '@/hooks'
 import { SG_ROUTER_PARAMS, SG_CHECK_STORE_RULE } from '@/consts/localstorage'
 import doc from '@/doc'
+import * as shopDoc from '@/doc/shop'
 import { entryLaunch, pickBy, classNames, showToast, log, isArray, isObject } from '@/utils'
 import CompShopItem from './comps/comp-shopitem'
-
 import './list.scss'
 
 const defaultChooseValue = ['北京市', '北京市', '昌平区']
@@ -37,7 +37,8 @@ const initialState = {
   headquarters: null,
   isRecommend: false,
   isSpAddressOpened: false,
-  refresh: false
+  refresh: false,
+  isToken: false
 }
 
 function NearlyShop(props) {
@@ -60,7 +61,8 @@ function NearlyShop(props) {
     queryProvice,
     queryCity,
     queryDistrict,
-    queryAddress
+    queryAddress,
+    isToken
   } = state
   const [policyModal, setPolicyModal] = useState(false)
   const { location = {}, address } = useSelector((state) => state.user)
@@ -72,6 +74,7 @@ function NearlyShop(props) {
   useEffect(() => {
     fetchDefaultShop()
     queryUserDistrict()
+    getTokenFromStorage()
   }, [])
 
   useEffect(() => {
@@ -87,6 +90,18 @@ function NearlyShop(props) {
       pageRef.current.pageUnLock()
     }
   }, [isSpAddressOpened])
+
+  useDidShow(() => {
+    getTokenFromStorage()
+  })
+
+  // 在需要获取 Token 的地方调用该函数
+  const getTokenFromStorage = async () => {
+    let res = await Taro.getStorage({ key: 'token' })
+    setState((draft) => {
+      draft.isToken = res?.data ? true : false
+    })
+  }
 
   const fetchDefaultShop = async () => {
     const res = await api.shop.getDefaultShop()
@@ -116,12 +131,12 @@ function NearlyShop(props) {
 
     // 构建位置相关参数
     if (filterType == 1) {
-      const [chooseProvince, chooseCity, chooseDistrict] = chooseValue
+      // const [chooseProvince, chooseCity, chooseDistrict] = chooseValue
       params = {
-        ...params,
-        province: chooseProvince,
-        city: chooseCity,
-        area: chooseDistrict
+        ...params
+        // province: chooseProvince,
+        // city: chooseCity,
+        // area: chooseDistrict
       }
       if (keyword) {
         params = {
@@ -163,7 +178,7 @@ function NearlyShop(props) {
     const { list, total_count: total, defualt_address, is_recommend } = await api.shop.list(params)
     // 未开启店铺隔离时，直接获取所有店铺数据
     setState((draft) => {
-      draft.shopList = draft.shopList.concat(pickBy(list, doc.shop.SHOP_ITEM))
+      draft.shopList = draft.shopList.concat(pickBy(list, shopDoc.SHOP_ITEM))
       draft.isRecommend = is_recommend === 1
       draft.defualt_address = defualt_address
       draft.refresh = false
@@ -265,7 +280,7 @@ function NearlyShop(props) {
     <SpPage className='page-store-list' ref={pageRef}>
       <View className='search-block'>
         <View className='search-bar'>
-          <View className='region-picker'>
+          {/* <View className='region-picker'>
             <View
               className='pick-title'
               onClick={() => {
@@ -276,9 +291,8 @@ function NearlyShop(props) {
             >
               <View className='iconfont icon-periscope'></View>
               <Text className='pick-address'>{chooseValue.join('') || '选择地区'}</Text>
-              {/* <Text className='iconfont icon-arrowDown'></Text> */}
             </View>
-          </View>
+          </View> */}
 
           <View className='search-comp-wrap'>
             <Text className='iconfont icon-sousuo-01'></Text>
@@ -297,13 +311,6 @@ function NearlyShop(props) {
         </View>
       </View>
 
-      {isRecommend && location?.address && (
-        <View className='shop-logo'>
-          <Image className='img' src={headquarters.logo} mode='aspectFill' />
-          <View className='tip'>您想要地区的店铺暂时未入驻网上商城</View>
-        </View>
-      )}
-
       <View className='location-block'>
         <View className='block-title'>当前定位地址</View>
         <View className='location-wrap'>
@@ -317,18 +324,17 @@ function NearlyShop(props) {
             {location?.address ? (state.locationIng ? '定位中...' : '重新定位') : '开启定位'}
           </View>
         </View>
-        {address && (
+        {address?.county && isToken && (
           <View className='block-title block-flex'>
             <View>我的收货地址</View>
           </View>
         )}
 
         <View className='receive-address'>
-          {address && (
-            <View
-              className='address'
-              onClick={() => onLocationChange(address)}
-            >{`${address.province}${address.city}${address.county}${address.adrdetail}`}</View>
+          {address?.county && isToken && (
+            <View className='address' onClick={() => onLocationChange(address)}>{`${
+              address.province || ''
+            }${address.city || ''}${address?.county || ''}${address?.adrdetail || ''}`}</View>
           )}
         </View>
       </View>

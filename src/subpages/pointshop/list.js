@@ -8,23 +8,8 @@ import Taro, { getCurrentInstance, useDidShow } from '@tarojs/taro'
 import { useSelector, useDispatch } from 'react-redux'
 import { useImmer } from 'use-immer'
 import { AtDrawer, AtTabs, AtSearchBar } from 'taro-ui'
-import {
-  SpFilterBar,
-  GoodsItem,
-  SpTagBar,
-  SpGoodsItem,
-  SpSearchBar,
-  SpNavBar,
-  SpLoadMore,
-  TabBar,
-  SpPage,
-  SpScrollView,
-  SpDrawer,
-  SpSelect,
-  SpPoint,
-  SpImage,
-  SpInput as AtInput
-} from '@/components'
+import { GoodsItem, SpGoodsItem, SpSearchBar, SpNavBar, SpLoadMore, TabBar, SpPage, SpScrollView, SpSelect, SpPoint, SpImage, SpInput as AtInput } from '@/components'
+import { SpFilterBar, SpTagBar, SpDrawer } from '@/subpages/components'
 import doc from '@/doc'
 import api from '@/api'
 import {
@@ -35,7 +20,6 @@ import {
   styleNames,
   VERSION_STANDARD
 } from '@/utils'
-
 import './list.scss'
 
 const initialState = {
@@ -43,11 +27,7 @@ const initialState = {
   rightList: [],
   brandList: [],
   pointSelect: [],
-  filterList: [
-    { title: '全部' },
-    { title: '销量' },
-    { title: '积分', icon: ['icon-shengxu-01', 'icon-jiangxu-01'], sort: 1 }
-  ],
+  filterList: [],
   curFilterIdx: 0,
   sort: -1,
   tagList: [],
@@ -63,7 +43,7 @@ const initialState = {
 }
 
 function PointShopList() {
-  const $instance = getCurrentInstance()
+  const $instance = getCurrentInstance() || {}
   const [state, setState] = useImmer(initialState)
   const {
     leftList,
@@ -89,7 +69,13 @@ function PointShopList() {
   const goodsRef = useRef()
 
   useEffect(() => {
-    getInitConfig()
+    setState((draft) => {
+      draft.filterList = [
+        { title: '全部' },
+        { title: '销量' },
+        { title: '积分', icon: ['icon-shengxu-01', 'icon-jiangxu-01'], sort: 1 }
+      ]
+    })
   }, [])
 
   useEffect(() => {
@@ -118,7 +104,7 @@ function PointShopList() {
   }
 
   const fetch = async ({ pageIndex, pageSize }) => {
-    const { dis_id, cat_id, main_cat_id } = $instance.router.params
+    const { dis_id, cat_id, main_cat_id } = $instance?.router?.params
     let params = {
       page: pageIndex,
       pageSize,

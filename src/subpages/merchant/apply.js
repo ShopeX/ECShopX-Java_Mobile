@@ -7,11 +7,10 @@ import { useEffect, useState } from 'react'
 import { ScrollView, View, Text } from '@tarojs/components'
 import { showToast, isArray, isUndefined } from '@/utils'
 import { SpPage, SpLoading } from '@/components'
-
 import { useSelector, useDispatch } from 'react-redux'
-
 import { useImmer } from 'use-immer'
 import api from '@/api'
+import * as merchantApi from '@/api/merchant'
 import S from '@/spx'
 import { updateBank, updateBusinessScope, updateMerchantType } from '@/store/slices/merchant'
 import {
@@ -280,9 +279,9 @@ const Apply = () => {
       }
     }
     try {
-      await api.merchant.save(params)
+      await merchantApi.save(params)
       if (step === 3) {
-        S.delete(MerchantStepKey, true)
+        S?.delete(MerchantStepKey, true)
         Taro.redirectTo({
           url: `/subpages/merchant/audit`
         })
@@ -319,7 +318,7 @@ const Apply = () => {
       bank_card_front_url,
       legal_certid_front_url,
       legal_cert_id_back_url
-    } = await api.merchant.detail()
+    } = await merchantApi.detail()
 
     //有保存过才赋值
     if (merchant_type_id) {
@@ -381,7 +380,7 @@ const Apply = () => {
       if (end) return
     }
     let nextStep = direction === 'next' ? Math.min(step + 1, 3) : Math.max(step - 1, 1)
-    S.set(MerchantStepKey, nextStep, true)
+    S?.set(MerchantStepKey, nextStep, true)
     setStep(nextStep)
   }
 
@@ -390,11 +389,11 @@ const Apply = () => {
     setState((state) => {
       state.formloading = true
     })
-    const { step } = await api.merchant.getStep()
+    const { step } = await merchantApi.getStep()
     const is_audit = step == 4
     //如果是审核失败跳回第一步
     if (is_audit) {
-      const storeStep = S.get(MerchantStepKey, true)
+      const storeStep = S?.get(MerchantStepKey, true)
       setStep(storeStep ? storeStep : 1)
     } else {
       setStep(step)
@@ -410,13 +409,13 @@ const Apply = () => {
     }
     //如果是一步都没走
     if (step === 1) {
-      S.delete(MerchantStepKey, true)
+      S?.delete(MerchantStepKey, true)
     }
   }
 
   const getMerchatType = async () => {
     if (merchantOptions.length === 2) return
-    const { settled_type } = await api.merchant.getSetting()
+    const { settled_type } = await merchantApi.getSetting()
     const options = settled_type.map((item) => {
       if (item === 'enterprise') {
         return { value: item, label: '企业' }
@@ -434,7 +433,7 @@ const Apply = () => {
   useEffect(() => {
     getStep()
     return () => {
-      S.delete(MerchantStepKey, true)
+      S?.delete(MerchantStepKey, true)
       clearMerchant()
     }
   }, [])
@@ -450,7 +449,7 @@ const Apply = () => {
   }
 
   const handleLogout = () => {
-    S.delete(MerchantStepKey, true)
+    S?.delete(MerchantStepKey, true)
     clearMerchant()
   }
 

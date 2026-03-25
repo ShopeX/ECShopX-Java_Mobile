@@ -9,11 +9,10 @@ import api from '@/api'
 import { formatDateTime } from '@/utils'
 import paySuccessPng from '../../../assets/imgs/pay_success.png'
 import payFailPng from '../../../assets/imgs/pay_fail.png'
-
 import './cashier-result.scss'
 
 export default class CashierResult extends Component {
-  $instance = getCurrentInstance()
+  $instance = getCurrentInstance() || {}
   constructor(props) {
     super(props)
 
@@ -34,7 +33,7 @@ export default class CashierResult extends Component {
   }
 
   async fetch() {
-    const { order_id } = this.$instance.router.params
+    const { order_id } = this.$instance?.router?.params
     const { orderInfo, tradeInfo } = await api.cashier.getOrderDetail(order_id)
 
     if (tradeInfo.orderId.indexOf('CZ') !== -1) {

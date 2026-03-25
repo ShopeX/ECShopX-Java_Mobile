@@ -2,7 +2,7 @@
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
  */
-import React, { useEffect, useRef, useImperativeHandle } from 'react'
+import React, { useEffect, useRef, useImperativeHandle, useMemo } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import Taro, { getCurrentInstance } from '@tarojs/taro'
 import { View, ScrollView, Text } from '@tarojs/components'
@@ -20,8 +20,7 @@ import { enumdays } from '@/consts'
 import { classNames, VERSION_STANDARD } from '@/utils'
 import dayjs from 'dayjs'
 import api from '@/api'
-
-import { deliveryList } from '../const'
+import { deliveryList as deliveryListFn } from '../const'
 import './comp-deliver.scss'
 
 const initialState = {
@@ -72,8 +71,8 @@ function CompDeliver(props, ref) {
     activeTimeId
   } = state
   const formRef = useRef()
-  const $instance = getCurrentInstance()
-  const { cart_type } = $instance.router?.params || {}
+  const $instance = getCurrentInstance() || {}
+  const { cart_type } = $instance?.router?.params || {}
   // useEffect(() => {
   //   fetch()
   // }, [])
@@ -99,6 +98,10 @@ function CompDeliver(props, ref) {
       onChangeWeekDays(0)
     }
   }, [weekdays])
+
+  const deliveryList = useMemo(() => {
+    return deliveryListFn()
+  }, [])
 
   const getShopInfo = async () => {
     let _distributorInfo

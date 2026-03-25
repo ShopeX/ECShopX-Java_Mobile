@@ -11,7 +11,6 @@ import { pickBy } from '@/utils'
 import S from '@/spx'
 import api from '@/api'
 import { connect } from 'react-redux'
-
 import './package-item.scss'
 
 @connect(
@@ -280,7 +279,7 @@ export default class PackageItem extends Component {
       })
 
       setTimeout(() => {
-        S.login(this)
+        S?.login(this)
       }, 2000)
 
       return

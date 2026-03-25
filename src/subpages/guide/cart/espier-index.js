@@ -15,9 +15,7 @@ import { navigateTo, pickBy, classNames } from '@/utils'
 import { fetchCartList, deleteCartItem, updateCartItemNum, updateCount } from '@/store/slices/guide'
 import { SpPage, SpPrice, SpRecommend, SpDefault, SpCheckboxNew } from '@/components'
 import { BaTabBar } from '@/subpages/guide/components'
-
 import CompGoodsItem from './comps/comp-goodsitem'
-
 import './espier-index.scss'
 
 // const tablist = [
@@ -33,15 +31,15 @@ const initialState = {
 
 function CartIndex() {
   const dispatch = useDispatch()
-  const $instance = getCurrentInstance()
-  const router = $instance.router
+  const $instance = getCurrentInstance() || {}
+  const router = $instance?.router
 
   const [state, setState] = useImmer(initialState)
   const { current, policyModal } = state
 
   const { colorPrimary } = useSelector((state) => state.sys)
   const { validCart = [], invalidCart = [] } = useSelector((state) => state.cart)
-  const { tabbar = 1 } = router.params
+  const { tabbar = 1 } = router?.params
 
   useDidShow(() => {
     fetch()
@@ -53,7 +51,7 @@ function CartIndex() {
 
   const getCartList = async () => {
     Taro.showLoading({ title: '' })
-    const { type = 'distributor' } = router.params
+    const { type = 'distributor' } = router?.params
     const params = {
       shop_type: type
     }
@@ -172,7 +170,7 @@ function CartIndex() {
 
   const onChangeCartGoodsItem = async (item, num) => {
     let { shop_id, cart_id } = item
-    const { type = 'distributor' } = router.params
+    const { type = 'distributor' } = router?.params
     await dispatch(
       updateCartItemNum({
         shop_id,
@@ -198,7 +196,7 @@ function CartIndex() {
   }
 
   const handleCheckout = (item) => {
-    const { type = 'distributor' } = router.params
+    const { type = 'distributor' } = router?.params
     const { shop_id, is_delivery, is_ziti, shop_name, address, lat, lng, hour, mobile } = item
     const query = {
       cart_type: 'cart',

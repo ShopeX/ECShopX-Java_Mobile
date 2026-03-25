@@ -5,7 +5,6 @@
 import Taro, { getCurrentInstance } from '@tarojs/taro'
 import api from '@/api'
 import qs from 'qs'
-import S from '@/spx'
 import dayjs from 'dayjs'
 import { showToast, log, isArray, VERSION_STANDARD, resolveUrlParamsParse } from '@/utils'
 import configStore from '@/store'
@@ -13,11 +12,18 @@ import _isEqual from 'lodash/isEqual'
 import { SG_ROUTER_PARAMS, SG_GUIDE_PARAMS } from '@/consts/localstorage'
 
 import MapLoader from '@/utils/lbs'
+import S from '@/spx'
 
-const $instance = getCurrentInstance()
+const $instance = getCurrentInstance() || {}
 const { store } = configStore()
+
+// 经纬度逆地理缓存：同一位置在有效期内不重复请求 getAreaByJwd（避免每次返回首页都调接口）
+const LNGLAT_CACHE_TTL_MS = 5 * 60 * 1000 // 5 分钟
+const LNGLAT_CACHE_PRECISION = 4 // 小数点位数，约 10m 内视为同位置
+
 class EntryLaunch {
   constructor() {
+    this._lnglatCache = null // { key: string, at: number, data: object }
     this.init()
   }
 
@@ -31,7 +37,7 @@ class EntryLaunch {
    * @function 获取小程序路由参数
    */
   async getRouteParams(options) {
-    const params = options?.query || options?.params || $instance.router?.params || {}
+    const params = options?.query || options?.params || $instance?.router?.params || {}
 
     const pageStack = Taro.getCurrentPages()
 
@@ -48,7 +54,7 @@ class EntryLaunch {
     }
 
     let _options = {}
-    console.log('$instance.router?.params', $instance.router?.params)
+    console.log('$instance?.router?.params', $instance?.router?.params)
     if (params?.scene) {
       console.log('params scene:', params.scene, resolveUrlParamsParse(params.scene))
       _options = {
@@ -139,7 +145,7 @@ class EntryLaunch {
     const pages = Taro.getCurrentPages()
     const currentPage = pages[pages.length - 1]
     const { dtid } =
-      process.env.TARO_ENV == 'weapp' ? currentPage.options : currentPage.$router.params
+      process.env.TARO_ENV == 'weapp' ? currentPage.options : currentPage.$router?.params
     let storeQuery = {} // 店铺查询参数
     if (dtid) {
       storeQuery = {
@@ -303,17 +309,29 @@ class EntryLaunch {
   }
 
   /**
-   * @function 根据经纬度解析地址
+   * @function 根据经纬度解析地址（带短期缓存，同一位置 5 分钟内不重复请求 getAreaByJwd）
    * @params lng Number 经度
    * @params lat Number 纬度
    */
   async getAddressByLnglatWebAPI(lng, lat) {
+    if (lat == null || lng == null) return { error: '地址解析错误' }
+    const key = `${Number(lng).toFixed(LNGLAT_CACHE_PRECISION)}_${Number(lat).toFixed(LNGLAT_CACHE_PRECISION)}`
+    const now = Date.now()
+    if (
+      this._lnglatCache &&
+      this._lnglatCache.key === key &&
+      now - this._lnglatCache.at < LNGLAT_CACHE_TTL_MS
+    ) {
+      return this._lnglatCache.data
+    }
     try {
       const res = await api.wx.getAreaByLnglat({ lng, lat })
-      console.log('getAddressByLnglatWebAPI res:', res)
       if (res && res.address) {
-        const { address_component: { province, city, district }, address } = res
-        return {
+        const {
+          address_component: { province, city, district },
+          address
+        } = res
+        const data = {
           lng,
           lat,
           address,
@@ -321,16 +339,14 @@ class EntryLaunch {
           city: isArray(city) ? province : city,
           district
         }
+        this._lnglatCache = { key, at: now, data }
+        return data
       } else {
-        return {
-          error: '地址解析错误'
-        }
+        return { error: '地址解析错误' }
       }
     } catch (error) {
       console.error('getAddressByLnglatWebAPI error:', error)
-      return {
-        error: '地址解析错误'
-      }
+      return { error: '地址解析错误' }
     }
   }
 
@@ -350,14 +366,18 @@ class EntryLaunch {
 
   /**
    * 判断是否开启定位，去获取经纬度，根据经纬度去获取地址
-   * 仅当后台开启 LBS 定位（is_open_wechatapp_location == 1）时才请求定位权限并可能弹出授权弹窗
+   * @param {Function} callback - 回调 (res)，res 为 null 表示位置未变化、跳过解析
+   * @param {{ previousLng?: number, previousLat?: number }} [opts] - 上次经纬度，与当前一致则不请求逆地理
    */
-  async isOpenPosition(callback) {
-    const { is_open_wechatapp_location } = Taro.getStorageSync('settingInfo') || {}
-    // LBS 未开启（2 关闭或未配置）时不请求定位、不弹授权弹窗
-    if (is_open_wechatapp_location != 1) {
-      if (callback) callback(false)
-      return
+  async isOpenPosition(callback, opts = {}) {
+    const { previousLng, previousLat } = opts
+    const posUnchanged = (lng, lat) => {
+      if (previousLng == null || previousLat == null) return false
+      const p = LNGLAT_CACHE_PRECISION
+      return (
+        Number(lng).toFixed(p) === Number(previousLng).toFixed(p) &&
+        Number(lat).toFixed(p) === Number(previousLat).toFixed(p)
+      )
     }
 
     if (process.env.TARO_ENV === 'weapp') {
@@ -367,6 +387,10 @@ class EntryLaunch {
           scope: 'scope.userLocation',
           success: async () => {
             let { lng, lat } = await this.getLocationInfo()
+            if (lat != null && posUnchanged(lng, lat)) {
+              if (callback) callback(null)
+              return
+            }
             let res = {}
             if (lat) {
               res = await this.getAddressByLnglatWebAPI(lng, lat)
@@ -383,6 +407,10 @@ class EntryLaunch {
                   const setting = await Taro.getSetting()
                   if (setting.authSetting['scope.userLocation']) {
                     let { lng, lat } = await this.getLocationInfo()
+                    if (lat != null && posUnchanged(lng, lat)) {
+                      if (callback) callback(null)
+                      return
+                    }
                     let res = {}
                     if (lat) {
                       res = await this.getAddressByLnglatWebAPI(lng, lat)
@@ -400,6 +428,10 @@ class EntryLaunch {
         })
       } else {
         let { lng, lat } = await this.getLocationInfo()
+        if (lat != null && posUnchanged(lng, lat)) {
+          if (callback) callback(null)
+          return
+        }
         let res = {}
         if (lat) {
           res = await this.getAddressByLnglatWebAPI(lng, lat)
@@ -448,7 +480,7 @@ class EntryLaunch {
    * 导购任务埋点上报
    */
   async postGuideTask(customPath) {
-    const { path, params } = $instance.router
+    const { path, params } = $instance?.router
     const paths = customPath || path
     const routePath = {
       '/pages/item/espier-detail': 'activeItemDetail',
@@ -464,7 +496,8 @@ class EntryLaunch {
       return
     }
     // gu_user_id: 欢迎语上带过来的员工编号, 同work_user_id
-    const { gu, subtask_id, item_id, dtid, smid, gu_user_id, id } = Taro.getStorageSync(SG_GUIDE_PARAMS) || {}
+    const { gu, subtask_id, item_id, dtid, smid, gu_user_id, id } =
+      Taro.getStorageSync(SG_GUIDE_PARAMS) || {}
     if (gu && S.getAuthToken()) {
       const [employee_number, shop_code] = gu.split('_')
       const _params = {
