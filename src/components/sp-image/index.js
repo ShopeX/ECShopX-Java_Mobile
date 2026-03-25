@@ -48,7 +48,7 @@ function SpImage(props) {
         // 未指定宽高时限制最长边，避免大图原图（体积主要来源）
         ossParams.push(`resize,m_lfit,w_${props.ossMaxWidth}`)
       }
-      const quality = props.quality != null ? props.quality : 65
+      const quality = props.quality != null ? props.quality : 80
       ossParams.push(`quality,q_${quality}`)
       // WebP 体积通常比 JPEG 小 25–35%，小程序/H5 均支持
       if (props.ossWebp !== false) {
@@ -167,7 +167,7 @@ SpImage.defaultProps = {
   ratio: [],
   src: '',
   width: '',
-  quality: 65, // OSS 质量 1–100
+  quality: 80, // OSS 质量 1–100
   ossMaxWidth: 750, // 未传 width/height 时限制最长边（px），避免大图原图
   ossWebp: true, // 输出 WebP 减小体积，设为 false 可关闭
   placeholderColor: 'transparent',
