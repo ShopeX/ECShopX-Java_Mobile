@@ -6,6 +6,13 @@
 .wgt-slider {
   box-sizing: border-box;
   width: 100%;
+  height: 100%;
+
+  &-content {
+    width: 100%;
+    height: 100%;
+    position: relative;
+  }
 
   &-wrap {
     position: relative;
@@ -19,11 +26,14 @@
   }
 
   .rounded {
+    border-radius: 16px!important;
+    overflow: hidden;
     .sp-image-content {
       border-radius: 16px!important;
       overflow: hidden;
     }
   }
+
 
   .slider-item {
     position: relative;
@@ -88,17 +98,15 @@
   }
 
   .slider-pagination {
-    position: absolute;
-    bottom: 0px;
-    z-index: 200;
-    box-sizing: border-box;
-    padding: 20px;
+    height: 56px;
+    width: 100%;
+    align-items: center;
     display: flex;
-    left: 0;
-    right: 0;
-
-    &.cover {
+    &.dot-cover {
+      position: absolute;
       bottom: 0px;
+      left: 0;
+      right: 0;
     }
 
     &.left {
