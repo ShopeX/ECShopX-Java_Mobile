@@ -50,8 +50,8 @@ function SpGoodsItem(props) {
       } else {
         isPurchase = (pagePath || '').includes('subpages/purchase')
       }
-      setIsPurchase(isPurchase)
     }
+    setIsPurchase(isPurchase)
   }
 
   const { priceDisplayConfig = {} } = useSelector((state) => state.purchase)
