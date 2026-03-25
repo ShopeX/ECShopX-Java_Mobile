@@ -29,7 +29,6 @@ import {
   BaNavBar
 } from '@/subpages/guide/components'
 // import { WgtHomeHeader } from '@/pages/home/wgts'
-
 import './custom-page.scss'
 
 const initState = {
@@ -41,7 +40,7 @@ const initState = {
 
 function GuideCustomPage() {
   const [state, setState] = useImmer(initState)
-  const $instance = getCurrentInstance()
+  const $instance = getCurrentInstance() || {}
   const { setNavigationBarTitle } = useNavigation()
   const { isLogin, login } = useQwLogin({
     autoLogin: true

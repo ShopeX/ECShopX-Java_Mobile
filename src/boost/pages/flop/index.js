@@ -6,7 +6,8 @@ import React, { Component } from 'react'
 import Taro, { getCurrentInstance } from '@tarojs/taro'
 import { View, Image, Progress, Text, Button } from '@tarojs/components'
 import { pickBy, normalizeQuerys } from '@/utils'
-import { SpNavBar, SpLogin, SpFloatPrivacy } from '@/components'
+import { SpNavBar, SpLogin } from '@/components'
+import { SpFloatPrivacy } from '@/subpages/components'
 import api from '@/api'
 import * as boostApi from '@/api/boost'
 import S from '@/spx'
@@ -17,7 +18,7 @@ import './index.scss'
   memberData: user.userInfo
 }))
 export default class Flop extends Component {
-  $instance = getCurrentInstance()
+  $instance = getCurrentInstance() || {}
   constructor(props) {
     super(props)
 
@@ -35,7 +36,7 @@ export default class Flop extends Component {
 
   componentDidMount() {
     this.getBoostDetail()
-    S.getAuthToken() && this.handleClickWxOAuth()
+    S?.getAuthToken() && this.handleClickWxOAuth()
   }
 
   // 获取助力详情wechat-taroturntable

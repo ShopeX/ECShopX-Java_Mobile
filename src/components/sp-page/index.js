@@ -11,7 +11,7 @@ import React, {
   forwardRef,
   useCallback
 } from 'react'
-import { useSelector } from 'react-redux'
+import { useSelector, useDispatch } from 'react-redux'
 import Taro, {
   useRouter,
   useDidShow,
@@ -24,6 +24,7 @@ import { useImmer } from 'use-immer'
 import { SpFloatMenuItem, SpNote, SpLoading, SpPoweredBy } from '@/components'
 import { useThemsColor, useLogin } from '@/hooks'
 import CookieConsent from '@/components/cookie-consent'
+import S from '@/spx'
 import {
   TAB_PAGES,
   TABBAR_PATH,
@@ -36,10 +37,13 @@ import {
   styleNames,
   isWeixin,
   isAlipay,
+  isWeb,
   isIphoneX,
   VERSION_SHUYUN
 } from '@/utils'
 import context from '@/hooks/usePageContext'
+import { setShowGuideConsultModal } from '@/store/slices/shop'
+import ConsultModal from '@/subpages/store/comps/consult-modal'
 import CustomNavigationHeader from './header'
 import './index.scss'
 
@@ -91,6 +95,7 @@ const SpPage = memo(
     }, [])
     const sys = useSelector((state) => state.sys)
     const { lang } = useSelector((state) => state.user)
+    const { showGuideConsultModal, salespersonInfo } = useSelector((state) => state.shop)
     const isRTL = lang === 'ar'
     const [showToTop, setShowToTop] = useState(false)
     const [isPageVisible, setIsPageVisible] = useState(true) // 页面是否显示
@@ -125,6 +130,13 @@ const SpPage = memo(
       }
     }, [state.lock])
 
+    // 企微导购弹框：无导购二维码时关闭状态，避免一直为 true
+    useEffect(() => {
+      if (showGuideConsultModal && !salespersonInfo?.work_qrcode && !salespersonInfo?.work_qrcode_configid) {
+        dispatch(setShowGuideConsultModal(false))
+      }
+    }, [showGuideConsultModal, salespersonInfo, dispatch])
+
     useEffect(() => {
       if (!isPageVisible) return
       instanceRef.current = getCurrentInstance()
@@ -138,7 +150,11 @@ const SpPage = memo(
       let _navigationRSpace = 0 // 导航栏右间距
       const { screenHeight, windowWidth, windowHeight } = Taro.getWindowInfo()
       const [absolutePath] = router?.path.split('?')
-      const custom_navigation = isWeixin ? navigationStyle === 'custom' : false
+      // 小程序/支付宝：按页面 config 是否 custom；H5：有 pageConfig 或 immersive 时也使用自定义顶栏以支持相同顶部样式
+      const custom_navigation =
+        isWeixin || isAlipay
+          ? navigationStyle === 'custom'
+          : isWeb && !!(props.pageConfig || props.immersive)
       const _btnReturn = pages.length > 1 && !TAB_PAGES.includes(absolutePath)
       const _btnHome = pages.length == 1 && !TAB_PAGES.includes(absolutePath)
       if (isWeixin || isAlipay) {
@@ -150,6 +166,10 @@ const SpPage = memo(
         _menuWidth = menuButton.width
         _navigationLSpace = windowWidth - menuButton.right
         _navigationRSpace = menuButton.width + (windowWidth - menuButton.right)
+      } else if (isWeb && custom_navigation) {
+        // H5 下使用自定义顶栏时给默认高度，使 pageConfig/immersive 样式生效
+        _gNavbarH = props.navigateHeight || DEFAULT_NAVIGATE_HEIGHT
+        _gStatusBarHeight = 0
       }
       setState((draft) => {
         draft.bodyHeight = windowHeight
@@ -171,7 +191,7 @@ const SpPage = memo(
 
       const _height = props.renderFooter
         ? Taro.pxTransform(props.footerHeight + (isIphoneX() ? DEFAULT_SAFE_AREA_HEIGHT : 0))
-        : 0
+        : Taro.pxTransform(0)
 
       props.onReady({
         gNavbarH: _gNavbarH,
@@ -181,14 +201,14 @@ const SpPage = memo(
         menuWidth: _menuWidth,
         footerHeight: _height
       })
-    }, [props.immersive, isPageVisible])
+    }, [props.immersive, props.pageConfig, isPageVisible])
 
     useEffect(() => {
       const {
         referrerInfo: { appId: fromAppId }
       } = Taro.getLaunchOptionsSync()
 
-      if (fromAppId && !S.getAuthToken() && VERSION_SHUYUN) {
+      if (fromAppId && !S?.getAuthToken() && VERSION_SHUYUN) {
         //数云：第三方小程序跳来需要免登
         login(fromAppId)
       }
@@ -220,12 +240,14 @@ const SpPage = memo(
 
     useDidShow(() => {
       setIsPageVisible(true) // 页面显示时设置为true
-      const { page, router } = getCurrentInstance()
-      const fidx = Object.values(TABBAR_PATH()).findIndex((v) => v == router?.path.split('?')[0])
+      const instance = getCurrentInstance()
+      if (!instance?.router) return
+      const { page, router } = instance
+      const fidx = Object.values(TABBAR_PATH()).findIndex((v) => v == router?.path?.split('?')[0])
       const isTabBarPage = fidx > -1
       setState((draft) => {
         draft.showLeftContainer = !['/subpages/guide/index', '/pages/index'].includes(
-          `/${page?.route}`
+          `/${page?.route ?? ''}`
         )
         draft.isTabBarPage = isTabBarPage
       })
@@ -340,6 +362,13 @@ const SpPage = memo(
             navigationRSpace={state.navigationRSpace}
             showNavitionLeft={props.showNavitionLeft}
             statusBarBgColor={state.statusBarBgColor}
+            immersiveScrollRevealBgColor={
+              props.immersive &&
+                props.pageConfig?.immersiveScrollBgColor &&
+                state.scrollTop >= 50
+                ? props.pageConfig.immersiveScrollBgColor
+                : null
+            }
           />
         )}
         {props.isDefault &&
@@ -352,8 +381,8 @@ const SpPage = memo(
               'padding-top': `${!props.immersive && state.customNavigation ? state.gNavbarH : 0}px`,
               'padding-bottom': props.renderFooter
                 ? Taro.pxTransform(
-                    props.footerHeight + (isIphoneX() ? DEFAULT_SAFE_AREA_HEIGHT : 0)
-                  )
+                  props.footerHeight + (isIphoneX() ? DEFAULT_SAFE_AREA_HEIGHT : 0)
+                )
                 : 0
             })}
           >
@@ -405,13 +434,27 @@ const SpPage = memo(
           </View>
         )}
         <CookieConsent />
+        {/* 全局企微导购联系弹框（与 FloatSalesperson 一致，如热区/分类页点击企微导购服务时弹出） */}
+        {showGuideConsultModal && salespersonInfo?.work_qrcode && (
+          <ConsultModal
+            visible={showGuideConsultModal}
+            type='2'
+            data={{
+              qrcodeUrl: salespersonInfo.work_qrcode,
+              salespersonName: salespersonInfo.salesperson_name,
+              salespersonAvatar: salespersonInfo.salesperson_avatar,
+              bgAvatarUrl: salespersonInfo.bg_avatar_url
+            }}
+            onClose={() => dispatch(setShowGuideConsultModal(false))}
+          />
+        )}
       </View>
     )
   })
 )
 
 SpPage.defaultProps = {
-  onReady: () => {},
+  onReady: () => { },
   btnHomeEnable: true,
   className: '',
   children: null,
@@ -436,7 +479,7 @@ SpPage.defaultProps = {
   renderFooter: null,
   renderFloat: null,
   showpoweredBy: true,
-  onScrollToTop: () => {},
+  onScrollToTop: () => { },
   nearbyText: '',
   onSearchConfirm: null
 }

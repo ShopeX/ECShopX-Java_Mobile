@@ -5,7 +5,8 @@
 import React, { useEffect } from 'react'
 import { View, Text, Image } from '@tarojs/components'
 import Taro, { getCurrentInstance, useDidShow } from '@tarojs/taro'
-import { SpPage, SpTimer, SpInput as AtInput } from '@/components'
+import { SpPage, SpInput as AtInput } from '@/components'
+import { SpTimer } from '@/subpages/components'
 import { classNames, validate, showToast, tokenParseH5 } from '@/utils'
 import { AtForm, AtButton } from 'taro-ui'
 import { useLogin } from '@/hooks'
@@ -26,10 +27,10 @@ const initialValue = {
 }
 
 const PageBindPhone = () => {
-  const $instance = getCurrentInstance()
+  const $instance = getCurrentInstance() || {}
   const {
     params: { unionid, redi_url }
-  } = $instance.router
+  } = $instance?.router
 
   const { getUserInfo } = useLogin()
 

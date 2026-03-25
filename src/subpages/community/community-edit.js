@@ -8,7 +8,8 @@ import { useImmer } from 'use-immer'
 import Taro, { getCurrentInstance } from '@tarojs/taro'
 import { View } from '@tarojs/components'
 import { AtButton } from 'taro-ui'
-import { SpPage, SpCell, SpPickerAddress, SpInput as AtInput } from '@/components'
+import { SpPage, SpCell, SpInput as AtInput } from '@/components'
+import { SpPickerAddress } from '@/subpages/components'
 import { showToast, pickBy } from '@/utils'
 import doc from '@/subpages/doc'
 import api from '@/api'
@@ -23,7 +24,7 @@ const initialState = {
 function CommunityEdit(props) {
   const [state, setState] = useImmer(initialState)
   const { ziti_name, address, areaValue, province, city, area } = state
-  const $instance = getCurrentInstance()
+  const $instance = getCurrentInstance() || {}
   const { id } = $instance?.router?.params
   useEffect(() => {
     if (id) {

@@ -5,7 +5,8 @@
 import Taro from '@tarojs/taro'
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { Text, View, Input, Picker } from '@tarojs/components'
-import { Loading, SpPickerAddress, SpAddress } from '@/components'
+import { Loading, SpAddress } from '@/components'
+import { SpPickerAddress } from '@/subpages/components'
 import { useDepChange } from '@/hooks'
 import S from '@/spx'
 import { isWeb } from '@/utils/platforms'
@@ -232,7 +233,7 @@ const NavBar = (props) => {
     if (!confirm) {
       return
     }
-    S.logout()
+    S?.logout()
     onLogout?.()
     // eslint-disable-next-line
     Taro.redirectTo({

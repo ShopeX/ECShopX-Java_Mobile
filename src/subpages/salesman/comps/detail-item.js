@@ -8,7 +8,6 @@ import { View, Text } from '@tarojs/components'
 import { AtButton } from 'taro-ui'
 import { copyText, getThemeStyle, styleNames, JumpGoodDetail } from '@/utils'
 import { SpOrderItem } from '@/components'
-
 import './detail-item.scss'
 
 export default class DetailItem extends Component {
@@ -65,7 +64,7 @@ export default class DetailItem extends Component {
   }
   handleCodeCopy = (val) => {
     copyText(val)
-    S.toast('复制成功')
+    S?.toast('复制成功')
   }
   handleSelectionChange(item_id, checked) {
     //选择要申请售后的商品

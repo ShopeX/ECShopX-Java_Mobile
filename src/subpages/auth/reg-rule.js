@@ -5,15 +5,15 @@
 import React, { Component } from 'react'
 import Taro, { getCurrentInstance } from '@tarojs/taro'
 import { View, ScrollView, RichText } from '@tarojs/components'
-import { SpNavBar, SpHtmlContent, SpHtml, SpPage } from '@/components'
+import { SpNavBar, SpHtml, SpPage } from '@/components'
+import { SpHtmlContent } from '@/subpages/components'
 import { withPager } from '@/hocs'
 import api from '@/api'
-
 import './reg-rule.scss'
 
 @withPager
 export default class RegRule extends Component {
-  $instance = getCurrentInstance()
+  $instance = getCurrentInstance() || {}
   constructor(props) {
     super(props)
 

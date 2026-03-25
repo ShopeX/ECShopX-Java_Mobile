@@ -12,7 +12,6 @@ import { connect } from 'react-redux'
 import { pickBy } from '@/utils'
 import { AtRate, AtTextarea, AtImagePicker } from 'taro-ui'
 import imgUploader from '@/utils/upload'
-
 import './rate.scss'
 
 @connect(
@@ -22,7 +21,7 @@ import './rate.scss'
   () => ({})
 )
 export default class TradeRate extends Component {
-  $instance = getCurrentInstance()
+  $instance = getCurrentInstance() || {}
   constructor(props) {
     super(props)
 

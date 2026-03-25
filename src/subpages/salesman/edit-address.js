@@ -13,7 +13,6 @@ import api from '@/api'
 import { isWxWeb, showToast } from '@/utils'
 import S from '@/spx'
 import { useNavigation } from '@/hooks'
-
 import './edit-address.scss'
 
 const initialState = {
@@ -27,7 +26,7 @@ const initialState = {
 }
 
 function AddressIndex(props) {
-  const $instance = getCurrentInstance()
+  const $instance = getCurrentInstance() || {}
   const [state, setState] = useImmer(initialState)
   const colors = useSelector((state) => state.colors.current)
   const { customerLnformation } = useSelector((state) => state.cart)

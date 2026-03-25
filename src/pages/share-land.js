@@ -6,7 +6,6 @@ import React, { useEffect } from 'react'
 import Taro, { useRouter } from '@tarojs/taro'
 import dayjs from 'dayjs'
 import { SG_ROUTER_PARAMS, SG_GUIDE_PARAMS, SG_GUIDE_PARAMS_UPDATETIME } from '@/consts'
-import S from '@/spx'
 import qs from 'qs'
 import { entryLaunch, showToast } from '@/utils'
 
@@ -30,9 +29,13 @@ function ShareIand() {
   const resloveRouterParams = async () => {
     const routeParams = await entryLaunch.getRouteParams(router)
     Taro.setStorageSync(SG_ROUTER_PARAMS, routeParams)
+
     if (routeParams?.gu || routeParams?.gu_user_id) {
       // 导购参数处理
-      Taro.setStorageSync(SG_GUIDE_PARAMS, routeParams)
+      Taro.setStorageSync(SG_GUIDE_PARAMS, {
+        ...routeParams,
+        gu_user_id: routeParams.gu_user_id || routeParams.gu.split('_')[0]
+      })
       Taro.setStorageSync(SG_GUIDE_PARAMS_UPDATETIME, dayjs().unix())
       // if (S.getAuthToken()) {
       //   entryLaunch.postGuideUV() // 导购uv上报
@@ -79,7 +82,8 @@ function ShareIand() {
       'poster_community_memberdetail': '/subpages/community/group-memberdetail', // 小程序-海报分享&页面转发-社区
       'poster_coupon_center': '/subpages/marketing/coupon-center', // 小程序-海报分享&页面转发-领券中心
       'poster_mdugc_detail': '/subpages/mdugc/note-detail', // 小程序-海报分享&页面转发-笔记详情
-      'poster_pointshop_espier_detail': '/subpages/pointshop/espier-detail' // 小程序-海报分享&页面转发-积分商品详情
+      'poster_pointshop_espier_detail': '/subpages/pointshop/espier-detail', // 小程序-海报分享&页面转发-积分商品详情
+      'poster_goods_reservate': '/marketing/pages/reservation/goods-reservate' // 小程序-海报分享&页面转发-预约商品
     }
 
     // 过滤掉内部使用的参数
@@ -146,7 +150,7 @@ function ShareIand() {
     if (normalizedPath === '/pages/cart/espier-checkout') {
       filteredParams['launchScene'] = 1
     }
-
+    
     // 构建目标URL
     const queryString = qs.stringify(filteredParams)
     const targetUrl = queryString ? `${normalizedPath}?${queryString}` : normalizedPath

@@ -13,7 +13,6 @@ import { pickBy, classNames, styleNames } from '@/utils'
 import { platformTemplateName } from '@/utils/platform'
 import { SpPage, SpImage } from '@/components'
 import CompTabbar from './comps/comp-tabbar'
-
 import './category.scss'
 
 const initialState = {
@@ -25,7 +24,7 @@ const initialState = {
 }
 
 const CategoryIndex = (props) => {
-  const $instance = getCurrentInstance()
+  const $instance = getCurrentInstance() || {}
   const [state, setState] = useImmer(initialState)
   const { currentList, pIndex, sIndex, tabList, contentList, hasSeries } = state
   // 获取数据

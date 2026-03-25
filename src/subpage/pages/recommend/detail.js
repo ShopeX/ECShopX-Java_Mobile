@@ -7,7 +7,8 @@ import Taro, { getCurrentInstance } from '@tarojs/taro'
 import { View, Text, Button } from '@tarojs/components'
 import api from '@/api'
 import { withPager } from '@/hocs'
-import { FloatMenus, FloatMenuItem, SpNavBar } from '@/components'
+import { SpNavBar } from '@/components'
+import { FloatMenus, FloatMenuItem } from '@/subpages/components'
 import { connect } from 'react-redux'
 import { formatTime, log, isWeixin, entryLaunch } from '@/utils'
 import S from '@/spx'
@@ -20,7 +21,7 @@ import './detail.scss'
 }))
 @withPager
 export default class recommendDetail extends Component {
-  $instance = getCurrentInstance()
+  $instance = getCurrentInstance() || {}
   constructor(props) {
     props = props || {}
     // props.pageSize = 50
@@ -79,7 +80,7 @@ export default class recommendDetail extends Component {
   // 确认本人文章是否已收藏
   confirmCollectArticle = async () => {
     const { id } = this.$instance?.router?.params
-    console.log('this.$instance.router:', this.$instance.router)
+    console.log('this.$instance?.router:', this.$instance?.router)
     if (S.getAuthToken()) {
       const res = await api.article.collectArticleInfo({ article_id: id })
       if (res.length === 0) {
@@ -96,7 +97,7 @@ export default class recommendDetail extends Component {
 
   // 拉取详情
   detailInfo = async (id) => {
-    const info = S.getAuthToken() ? await api.article.detailAuth(id) : await api.article.detail(id)
+    const info = S?.getAuthToken() ? await api.article.detailAuth(id) : await api.article.detail(id)
 
     info.updated_str = formatTime(info.updated * 1000, 'YYYY-MM-DD')
 
@@ -107,7 +108,7 @@ export default class recommendDetail extends Component {
 
   async fetchContent() {
     const { id } = this.$instance?.router?.params
-    console.log('this.$instance.router:', this.$instance.router)
+    console.log('this.$instance?.router:', this.$instance?.router)
     // 关注数加1
     const resFocus = await api.article.focus(id)
 
@@ -144,7 +145,7 @@ export default class recommendDetail extends Component {
     if(!S.getAuthToken()){
       return false
     }
-    const { id } = getCurrentInstance().params
+    const { id } = getCurrentInstance()?.params
     const { status } = await api.article.praiseCheck(id)
     this.setState({
       praiseCheckStatus: status

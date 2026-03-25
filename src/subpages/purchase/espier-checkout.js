@@ -46,13 +46,11 @@ import doc from '@/doc'
 import qs from 'qs'
 import S from '@/spx'
 import { initialState } from './const'
-
 import CompDeliver from './comps/comp-deliver'
-
 import './espier-checkout.scss'
 
 function PurchaseCheckout(props) {
-  const $instance = getCurrentInstance()
+  const $instance = getCurrentInstance() || {}
   const { updateAddress } = useLocation()
   const { isLogin, isNewUser, getUserInfoAuth } = useLogin({
     autoLogin: true,
@@ -131,7 +129,7 @@ function PurchaseCheckout(props) {
     scene, // 情景值
     goodType,
     ticket = null
-  } = $instance.router?.params || {}
+  } = $instance?.router?.params || {}
 
   useEffect(() => {
     if (isLogin) {
@@ -488,7 +486,7 @@ function PurchaseCheckout(props) {
     }
 
     if (real_use_point && real_use_point < point_use) {
-      S.toast(`${pointName}有调整`)
+      S?.toast(`${pointName}有调整`)
     }
 
     Taro.hideLoading()

@@ -492,11 +492,6 @@ const config = {
     //   'version': '1.3.0', // 注意填写该直播组件最新版本号，微信开发者工具调试时可获取最新版本号（复制时请去掉注释）
     //   'provider': 'wx2b03c6e691cd7370' // 必须填该直播组件appid，该示例值即为直播组件appid（复制时请去掉注释）
     // }
-    // 'contactPlugin': {
-    //   'usingComponents': true,
-    //   'version': '1.4.8',
-    //   'provider': 'wx104a1a20c3f81ec2'
-    // }
   },
   requiredPrivateInfos: ['getLocation', 'chooseAddress']
   // "__usePrivacyCheck__": true
@@ -511,6 +506,15 @@ if (process.env.TARO_ENV == 'weapp') {
   })
 }
 
+if (process.env.APP_CONTACT_PLUGIN == 'true') {
+  Object.assign(config.plugins, {
+    'contactPlugin': {
+      'usingComponents': true,
+      'version': '1.4.8',
+      'provider': 'wx104a1a20c3f81ec2'
+    }
+  })
+}
 if (process.env.APP_LIVE == 'true') {
   Object.assign(config.plugins, {
     'live-player-plugin': {

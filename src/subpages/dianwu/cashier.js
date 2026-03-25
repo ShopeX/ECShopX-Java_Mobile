@@ -68,7 +68,7 @@ function DianWuCashier() {
   const pageRef = useRef()
   const scanIsUseableRef = useRef(true)
   const audioContextRef = useRef()
-  const $instance = getCurrentInstance()
+  const $instance = getCurrentInstance() || {}
 
   const { member } = useSelector((state) => state.dianwu)
   const dispatch = useDispatch()
@@ -140,7 +140,7 @@ function DianWuCashier() {
   }
 
   const handleScanGoodsBN = async () => {
-    // 注意：真机scancode扫码完成后回调，taro getCurrentInstance().router = null，无法获取到路由参数
+    // 注意：真机scancode扫码完成后回调，taro getCurrentInstance()?.router = null，无法获取到路由参数
     const { errMsg, result } = await Taro.scanCode()
     console.log('handleScanCode:', result)
     if (errMsg == 'scanCode:ok') {

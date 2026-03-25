@@ -12,7 +12,6 @@ import { showToast, validate } from '@/utils'
 import Taro, { useRouter, getCurrentInstance } from '@tarojs/taro'
 import api from '@/api'
 import { useNavigation } from '@/hooks'
-
 import './add-personnel.scss'
 
 const initialState = {
@@ -29,7 +28,7 @@ const initialState = {
 }
 
 function AddPersonnel() {
-  const $instance = getCurrentInstance()
+  const $instance = getCurrentInstance() || {}
   const [state, setState] = useImmer(initialState)
   const { setNavigationBarTitle } = useNavigation()
 

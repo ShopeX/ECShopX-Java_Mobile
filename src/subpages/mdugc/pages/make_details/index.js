@@ -5,12 +5,11 @@
 import React, { Component } from 'react'
 import Taro from '@tarojs/taro'
 import { View, Text, Input, Image, ScrollView, Button } from '@tarojs/components'
-
-import { FloatMenus, FloatMenuItem, BackToTop, Loading } from '@/components'
+import { BackToTop, Loading } from '@/components'
+import { FloatMenus, FloatMenuItem } from '@/subpages/components'
 import S from '@/spx'
 import { connect } from 'react-redux'
 import { withPager, withBackToTop, withPointitem } from '@/hocs'
-
 import { AtActionSheet, AtActionSheetItem } from 'taro-ui'
 import api from '@/api'
 import * as mdugcApi from '@/api/mdugc'
@@ -60,7 +59,7 @@ export default class mdugcdetails extends Component {
     let data = {
       post_id: item_id
     }
-    const isAuth = S.getAuthToken()
+    const isAuth = S?.getAuthToken()
     if (isAuth) {
       let share = await mdugcApi.postshare(data)
       if (share.post_id == item_id) {
@@ -228,7 +227,7 @@ export default class mdugcdetails extends Component {
   }
   // 回复评论
   reply = (type) => {
-    const isAuth = S.getAuthToken()
+    const isAuth = S?.getAuthToken()
     if (!isAuth) {
       Taro.showToast({
         icon: 'none',
@@ -501,7 +500,7 @@ export default class mdugcdetails extends Component {
   }
   // 点赞评论
   commentlike = async (comment_id) => {
-    const isAuth = S.getAuthToken()
+    const isAuth = S?.getAuthToken()
     if (!isAuth) {
       Taro.showToast({
         icon: 'none',
@@ -569,7 +568,7 @@ export default class mdugcdetails extends Component {
   }
   // 点赞笔记
   postlike = async () => {
-    const isAuth = S.getAuthToken()
+    const isAuth = S?.getAuthToken()
     if (!isAuth) {
       Taro.showToast({
         icon: 'none',
@@ -613,7 +612,7 @@ export default class mdugcdetails extends Component {
   }
   // 收藏笔记
   postfavorite = async () => {
-    const isAuth = S.getAuthToken()
+    const isAuth = S?.getAuthToken()
     if (!isAuth) {
       Taro.showToast({
         icon: 'none',
@@ -655,7 +654,7 @@ export default class mdugcdetails extends Component {
   }
   // 关注|取消关注
   followercreate = async () => {
-    const isAuth = S.getAuthToken()
+    const isAuth = S?.getAuthToken()
     if (!isAuth) {
       Taro.showToast({
         icon: 'none',

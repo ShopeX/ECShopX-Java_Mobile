@@ -6,11 +6,10 @@ import React, { Component } from 'react'
 import { getCurrentInstance } from '@tarojs/taro'
 import { View } from '@tarojs/components'
 import api from '@/api'
-
 import './we.scss'
 
 export default class WeappBtn extends Component {
-  $instance = getCurrentInstance()
+  $instance = getCurrentInstance() || {}
   static options = {
     addGlobalClass: true
   }

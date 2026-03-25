@@ -13,11 +13,10 @@ import api from '@/api'
 import S from '@/spx'
 import qs from 'qs'
 import { getDtidIdUrl } from '@/utils/helper'
-
 import './group-detail.scss'
 
 export default class GroupDetail extends Component {
-  $instance = getCurrentInstance()
+  $instance = getCurrentInstance() || {}
 
   constructor(props) {
     super(props)
@@ -97,7 +96,7 @@ export default class GroupDetail extends Component {
 
     if (!S.getAuthToken()) {
       showToast('请先登录')
-      const { params, path } = this.$instance.router
+      const { params, path } = this.$instance?.router
       let url = ''
       if (isWeixin || isAlipay) {
         url = `/subpages/member/index?redirect=${encodeURIComponent(

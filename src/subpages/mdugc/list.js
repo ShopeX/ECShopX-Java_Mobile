@@ -13,15 +13,8 @@ import Taro, {
 import { AtButton } from 'taro-ui'
 import { View, Image, Text, Button, ScrollView } from '@tarojs/components'
 import { useSelector, useDispatch } from 'react-redux'
-import {
-  SpLogin,
-  SpScrollView,
-  SpTagBar,
-  FloatMenus,
-  FloatMenuItem,
-  SpPage,
-  SpFloatMenuItem
-} from '@/components'
+import { SpLogin, SpScrollView, SpPage, SpFloatMenuItem } from '@/components'
+import { SpTagBar, FloatMenus, FloatMenuItem } from '@/subpages/components'
 import api from '@/api'
 import * as mdugcApi from '@/api/mdugc'
 import { useImmer } from 'use-immer'
@@ -31,7 +24,6 @@ import doc from '@/doc'
 import * as mdugcDoc from '@/doc/mdugc'
 import S from '@/spx'
 import CompNoteItem from './comps/comp-noteitem'
-
 import './list.scss'
 
 const initialState = {
@@ -107,7 +99,7 @@ function UgcTopicList() {
 
   // 浮动按钮跳转
   const onHandleMenuItem = (url) => {
-    // const isAuth = S.getAuthToken()
+    // const isAuth = S?.getAuthToken()
     // if (!isAuth) {
     //   showToast('请先登录')
     //   return

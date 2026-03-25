@@ -24,7 +24,7 @@ function CompGoodsBuyToolbar(props) {
   } = props
   const { cartCount = 0 } = useSelector((state) => state.cart)
   const { favs = [] } = useSelector((state) => state.user)
-  const $instance = getCurrentInstance()
+  const $instance = getCurrentInstance() || {}
   const dispatch = useDispatch()
   const btns = []
 
@@ -34,7 +34,7 @@ function CompGoodsBuyToolbar(props) {
 
   const RenderBtns = () => {
     // 兑换券
-    const { card_id } = $instance.router?.params || {}
+    const { card_id } = $instance?.router?.params || {}
     if (card_id) {
       btns.push(BUY_TOOL_BTNS().EX_CHANGE)
       return

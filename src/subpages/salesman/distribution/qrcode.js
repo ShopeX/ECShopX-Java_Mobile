@@ -9,14 +9,13 @@ import { connect } from 'react-redux'
 import { SpNavBar } from '@/components'
 import api from '@/api'
 import userIcon from '@/assets/imgs/user-icon.png'
-
 import './qrcode.scss'
 
 @connect(({ colors }) => ({
   colors: colors.current
 }))
 export default class DistributionQrcode extends Component {
-  $instance = getCurrentInstance()
+  $instance = getCurrentInstance() || {}
   constructor(props) {
     super(props)
 

@@ -20,7 +20,6 @@ import { enumdays } from '@/consts'
 import { classNames, VERSION_STANDARD } from '@/utils'
 import dayjs from 'dayjs'
 import api from '@/api'
-
 import { deliveryList as deliveryListFn } from '../const'
 import './comp-deliver.scss'
 
@@ -72,8 +71,8 @@ function CompDeliver(props, ref) {
     activeTimeId
   } = state
   const formRef = useRef()
-  const $instance = getCurrentInstance()
-  const { cart_type } = $instance.router?.params || {}
+  const $instance = getCurrentInstance() || {}
+  const { cart_type } = $instance?.router?.params || {}
   // useEffect(() => {
   //   fetch()
   // }, [])

@@ -10,13 +10,12 @@ import { Loading, SpNote, SpNavBar, SpPage } from '@/components'
 import api from '@/api'
 import { hasNavbar, pickBy } from '@/utils'
 import { withPager, withBackToTop } from '@/hocs'
-
 import './trade.scss'
 
 @withPager
 @withBackToTop
 export default class DistributionTrade extends Component {
-  $instance = getCurrentInstance()
+  $instance = getCurrentInstance() || {}
   constructor(props) {
     super(props)
 

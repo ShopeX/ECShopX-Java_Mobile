@@ -7,9 +7,7 @@ import { useEffect, useState } from 'react'
 import { ScrollView, View, Text } from '@tarojs/components'
 import { showToast, isArray, isUndefined } from '@/utils'
 import { SpPage, SpLoading } from '@/components'
-
 import { useSelector, useDispatch } from 'react-redux'
-
 import { useImmer } from 'use-immer'
 import api from '@/api'
 import * as merchantApi from '@/api/merchant'
@@ -283,7 +281,7 @@ const Apply = () => {
     try {
       await merchantApi.save(params)
       if (step === 3) {
-        S.delete(MerchantStepKey, true)
+        S?.delete(MerchantStepKey, true)
         Taro.redirectTo({
           url: `/subpages/merchant/audit`
         })
@@ -382,7 +380,7 @@ const Apply = () => {
       if (end) return
     }
     let nextStep = direction === 'next' ? Math.min(step + 1, 3) : Math.max(step - 1, 1)
-    S.set(MerchantStepKey, nextStep, true)
+    S?.set(MerchantStepKey, nextStep, true)
     setStep(nextStep)
   }
 
@@ -395,7 +393,7 @@ const Apply = () => {
     const is_audit = step == 4
     //如果是审核失败跳回第一步
     if (is_audit) {
-      const storeStep = S.get(MerchantStepKey, true)
+      const storeStep = S?.get(MerchantStepKey, true)
       setStep(storeStep ? storeStep : 1)
     } else {
       setStep(step)
@@ -411,7 +409,7 @@ const Apply = () => {
     }
     //如果是一步都没走
     if (step === 1) {
-      S.delete(MerchantStepKey, true)
+      S?.delete(MerchantStepKey, true)
     }
   }
 
@@ -435,7 +433,7 @@ const Apply = () => {
   useEffect(() => {
     getStep()
     return () => {
-      S.delete(MerchantStepKey, true)
+      S?.delete(MerchantStepKey, true)
       clearMerchant()
     }
   }, [])
@@ -451,7 +449,7 @@ const Apply = () => {
   }
 
   const handleLogout = () => {
-    S.delete(MerchantStepKey, true)
+    S?.delete(MerchantStepKey, true)
     clearMerchant()
   }
 

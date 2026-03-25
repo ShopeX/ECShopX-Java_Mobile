@@ -5,7 +5,8 @@
 import React, { Component } from 'react'
 import Taro, { getCurrentInstance } from '@tarojs/taro'
 import { View, Image, Text, ScrollView } from '@tarojs/components'
-import { Price, SpNavBar, SpCell, CouponModal, SpPage, SpCouponPackage } from '@/components'
+import { Price, SpNavBar, SpCell, SpPage, SpCouponPackage } from '@/components'
+import { CouponModal } from '@/subpages/components'
 import { connect } from 'react-redux'
 import { AtTabs, AtTabsPane } from 'taro-ui'
 import api from '@/api'
@@ -22,7 +23,6 @@ import {
 import CompPaymentPicker from '@/pages/cart/comps/comp-paymentpicker'
 import userIcon from '@/assets/imgs/user-icon.png'
 // import { useDispatch } from 'react-redux'
-
 import './vipgrades.scss'
 // import { updateUserInfo } from '@/store/slices/user'
 // const dispatch = useDispatch()
@@ -37,7 +37,7 @@ import './vipgrades.scss'
   })
 )
 export default class VipIndex extends Component {
-  $instance = getCurrentInstance()
+  $instance = getCurrentInstance() || {}
   constructor(props) {
     super(props)
 
@@ -165,7 +165,7 @@ export default class VipIndex extends Component {
       })
 
       setTimeout(() => {
-        S.login(this)
+        S?.login(this)
       }, 2000)
 
       return
@@ -213,7 +213,7 @@ export default class VipIndex extends Component {
             icon: 'none'
           })
         }
-        S.getMemberInfo()
+        S?.getMemberInfo()
         this.setState({ visible: true })
       } catch (e) {
         Taro.showToast({
@@ -239,7 +239,7 @@ export default class VipIndex extends Component {
           showCancel: false,
           success: function (res) {
             console.log('success')
-            S.getMemberInfo()
+            S?.getMemberInfo()
             // that.fetchCouponCardList()
             this.setState({ visible: true })
             // Taro.navigateBack()

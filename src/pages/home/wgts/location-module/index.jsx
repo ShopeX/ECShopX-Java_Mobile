@@ -51,20 +51,19 @@ export default function WgtLocationModule(props) {
 
   // 获取导航栏样式
   const navStyle = useMemo(() => {
-    console.log(immersive, navBarHeight, 'immersive,navBarHeight')
     return {
       ...getGlobalBaseStyle(base.outerMargin),
       position: base.navSticky ? 'sticky' : 'relative',
-      top: immersive ? `${navBarHeight}px` : 0
+      top: base.navSticky && immersive ? `${navBarHeight}px` : '0px'
     }
-  }, [base.outerMargin, base.navSticky, immersive, navBarHeight])
+  }, [base.outerMargin, base.navSticky, navBarHeight, immersive])
 
   // 获取导航项区域样式（navitemarea）
   const navItemAreaStyle = useMemo(() => {
     const navitemarea = base.navitemarea || {}
     return {
       ...getGlobalBaseStyle(navitemarea),
-      borderRadius: base.navitemradius ? Taro.pxTransform(base.navitemradius) : 0
+      'border-radius': base.navitemradius ? Taro.pxTransform(base.navitemradius) : 0
     }
   }, [base.navitemarea, base.navitemradius])
 
@@ -74,11 +73,11 @@ export default function WgtLocationModule(props) {
     return {
       height: Taro.pxTransform(base.navitemheight || 40),
       color: textColor,
-      backgroundColor: isActive
+      'background-color': isActive
         ? item.navitemactivebg || 'transparent'
         : item.navitembg || 'transparent',
-      paddingLeft: `${Taro.pxTransform(base.navitemmargin || 0)}`,
-      paddingRight: `${Taro.pxTransform(base.navitemmargin || 0)}`
+      'padding-left': `${Taro.pxTransform(base.navitemmargin || 0)}`,
+      'padding-right': `${Taro.pxTransform(base.navitemmargin || 0)}`
     }
   }
 
@@ -111,7 +110,8 @@ export default function WgtLocationModule(props) {
     setCurrentIndex(index)
     let viewIndex = index > 0 ? index - 1 : 0
     setScrollView(`nav-item-${viewIndex}-${id}`)
-    setScrollIntoView(`#content-section-${index}-${id}`)
+    // scrollIntoView 传纯 id，不要 # 前缀，否则 H5/小程序 可能匹配不到导致滚回顶部
+    setScrollIntoView(`content-section-${index}-${id}`)
     setTimeout(() => {
       isClickTab.current = false
     }, 500)

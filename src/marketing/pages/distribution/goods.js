@@ -13,13 +13,12 @@ import api from '@/api'
 import { withPager, withBackToTop } from '@/hocs'
 import { pickBy, getCurrentRoute, isAlipay } from '@/utils'
 import DistributionGoodsItem from './comps/goods-item'
-
 import './goods.scss'
 
 @withPager
 @withBackToTop
 export default class DistributionGoods extends Component {
-  $instance = getCurrentInstance()
+  $instance = getCurrentInstance() || {}
   spPageRef = React.createRef()
   constructor(props) {
     super(props)
@@ -255,7 +254,7 @@ export default class DistributionGoods extends Component {
             scrollTop: this.state.top
           },
           () => {
-            S.toast('上架成功')
+            S?.toast('上架成功')
           }
         )
       }
@@ -269,7 +268,7 @@ export default class DistributionGoods extends Component {
             scrollTop: this.state.top
           },
           () => {
-            S.toast('下架成功')
+            S?.toast('下架成功')
           }
         )
       }
@@ -345,7 +344,7 @@ export default class DistributionGoods extends Component {
       const curTab = this.state.tabList[current]
       const { url } = curTab
 
-      const fullPath = getCurrentRoute(this.$instance.router).fullPath.split('?')[0]
+      const fullPath = getCurrentRoute(this.$instance?.router).fullPath.split('?')[0]
 
       if (url && fullPath !== url) {
         Taro.redirectTo({ url })

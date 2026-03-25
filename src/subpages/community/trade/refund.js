@@ -14,14 +14,13 @@ import { Tracker } from '@/service'
 import { pickBy, classNames } from '@/utils'
 import S from '@/spx'
 import imgUploader from '@/utils/upload'
-
 import './refund.scss'
 
 @connect(({ colors }) => ({
   colors: colors.current
 }))
 export default class TradeRefund extends Component {
-  $instance = getCurrentInstance()
+  $instance = getCurrentInstance() || {}
   constructor(props) {
     super(props)
 
@@ -143,7 +142,7 @@ export default class TradeRefund extends Component {
     }
 
     if (data.length > 3) {
-      S.toast('最多上传3张图片')
+      S?.toast('最多上传3张图片')
     }
     const imgFiles = data.slice(0, 3)
 
@@ -223,7 +222,7 @@ export default class TradeRefund extends Component {
     Tracker.dispatch('ORDER_REFUND', orderInfo)
 
     try {
-      S.toast('操作成功')
+      S?.toast('操作成功')
       setTimeout(() => {
         Taro.redirectTo({
           url: `/subpages/community/order`
@@ -285,7 +284,7 @@ export default class TradeRefund extends Component {
           current={curSegIdx}
           tabList={segTypes}
           onClick={this.handleClickTab}
-          customStyle={{ color: colors.data[0].primary, backgroundColor: colors.data[0].primary }}
+          customStyle={{ color: colors.data[0].primary, 'background-color': colors.data[0].primary }}
         >
           {/* {segTypes.map((panes, pIdx) => (
             <AtTabsPane current={curSegIdx} key={panes.status} index={pIdx}></AtTabsPane>

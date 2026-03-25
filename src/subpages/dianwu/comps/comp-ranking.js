@@ -8,18 +8,18 @@ import Taro, { useDidShow, useRouter } from '@tarojs/taro'
 import api from '@/api'
 import * as dianwuApi from '@/api/dianwu'
 import { View, Text, Image } from '@tarojs/components'
-import { SpTime, SpImage } from '@/components'
+import { SpImage } from '@/components'
+import { SpTime } from '@/subpages/components'
 import { classNames } from '@/utils'
 import S from '@/spx'
 import { useSyncCallback } from '@/hooks'
-
 import './comp-ranking.scss'
 
 const initialState = {
   list: [],
   valList: [],
   total_count: 0,
-  datas: S.getNowDate(),
+  datas: S?.getNowDate(),
   datasType: 2
 }
 

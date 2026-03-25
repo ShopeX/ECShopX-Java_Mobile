@@ -6,7 +6,8 @@ import Taro, { useRouter, useDidShow } from '@tarojs/taro'
 import { Text, View } from '@tarojs/components'
 import { useImmer } from 'use-immer'
 import { classNames } from '@/utils'
-import { SpPage, SpTime, SpCustomPicker } from '@/components'
+import { SpPage } from '@/components'
+import { SpTime, SpCustomPicker } from '@/subpages/components'
 import { useSelector, useDispatch } from 'react-redux'
 import { useSyncCallback } from '@/hooks'
 import api from '@/api'
@@ -33,7 +34,7 @@ const initialConfigState = {
   info: {},
   parameter: {
     datetype: 2,
-    date: S.getNowDate(),
+    date: S?.getNowDate(),
     distributor_id: ''
   },
   selector: []
@@ -63,9 +64,9 @@ const Index = () => {
     }
     const res = await deliveryApi.datacubeDeliverystaffdata(params)
     Taro.hideLoading()
-    res.self_delivery_fee_count = S.formatMoney(res.self_delivery_fee_count / 100)
-    res.refund_fee_count = S.formatMoney(res.refund_fee_count / 100)
-    res.total_fee_count = S.formatMoney(res.total_fee_count / 100)
+    res.self_delivery_fee_count = S?.formatMoney(res.self_delivery_fee_count / 100)
+    res.refund_fee_count = S?.formatMoney(res.refund_fee_count / 100)
+    res.total_fee_count = S?.formatMoney(res.total_fee_count / 100)
     setState((draft) => {
       draft.info = res
     })

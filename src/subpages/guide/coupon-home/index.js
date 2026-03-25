@@ -38,7 +38,7 @@ function GuideCouponIndex(props) {
   const { isLogin, login } = useQwLogin({
     autoLogin: true
   })
-  const $instance = getCurrentInstance()
+  const $instance = getCurrentInstance() || {}
   const { subtask_id = '' } = getCurrentInstance()?.router?.params
   const [state, setState] = useImmer(initialState)
   const { list } = state
@@ -92,7 +92,7 @@ function GuideCouponIndex(props) {
   }
 
   const fetch = async () => {
-    const { card_id = '', item_id = '' } = $instance.router.params
+    const { card_id = '', item_id = '' } = $instance?.router?.params
     const { distributor_id, work_userid: gu_user_id } = userInfo
     const params = {
       work_userid: gu_user_id,

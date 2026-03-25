@@ -46,17 +46,14 @@ import api from '@/api'
 import doc from '@/doc'
 import qs from 'qs'
 import S from '@/spx'
-
 import { initialState } from './const'
-
 import CompDelivers from './comps/comp-delivers'
 import CompSelectPackage from './comps/comp-selectpackage'
 import CompPointUse from './comps/comp-pointuse'
-
 import './espier-checkout.scss'
 
 function CartCheckout(props) {
-  const $instance = getCurrentInstance()
+  const $instance = getCurrentInstance() || {}
   const { isLogin, isNewUser, getUserInfoAuth } = useLogin({
     autoLogin: true
   })
@@ -131,7 +128,7 @@ function CartCheckout(props) {
     scene, // 情景值
     goodType = routerParams.goodType
   } = $instance?.router?.params || {}
-  console.log('$instance.router?.params:', $instance.router)
+  console.log('$instance?.router?.params:', $instance?.router)
   useEffect(() => {
     if (isLogin) {
       getTradeSetting()

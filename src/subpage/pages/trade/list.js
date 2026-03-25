@@ -26,7 +26,6 @@ import {
 import { Tracker } from '@/service'
 import S from '@/spx'
 import TradeItem from './comps/new-item'
-
 import './list.scss'
 
 @connect(({ colors, purchase }) => ({
@@ -35,7 +34,7 @@ import './list.scss'
 }))
 @withPager
 export default class TradeList extends Component {
-  $instance = getCurrentInstance()
+  $instance = getCurrentInstance() || {}
   constructor(props) {
     super(props)
 
@@ -257,7 +256,7 @@ export default class TradeList extends Component {
 
     if (type === 'confirm') {
       await api.trade.confirm(tid)
-      const { fullPath } = getCurrentRoute(this.$instance.router)
+      const { fullPath } = getCurrentRoute(this.$instance?.router)
       Taro.redirectTo({
         url: fullPath
       })
@@ -337,7 +336,7 @@ export default class TradeList extends Component {
       evaluate
     } = this.state
 
-    const isLogin = S.getAuthToken()
+    const isLogin = S?.getAuthToken()
 
     return (
       <View

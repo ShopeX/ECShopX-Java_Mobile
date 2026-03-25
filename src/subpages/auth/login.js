@@ -6,7 +6,8 @@ import React, { Component } from 'react'
 import Taro, { getCurrentInstance } from '@tarojs/taro'
 import { View, Text, Image } from '@tarojs/components'
 import { AtForm, AtButton } from 'taro-ui'
-import { SpTimer, SpPage, SpInput as AtInput } from '@/components'
+import { SpPage, SpInput as AtInput } from '@/components'
+import { SpTimer } from '@/subpages/components'
 import { updateUserInfo } from '@/store/slices/user'
 import { connect } from 'react-redux'
 import S from '@/spx'
@@ -23,7 +24,7 @@ import './login.scss'
   (dispatch) => ({ dispatch })
 )
 export default class Login extends Component {
-  $instance = getCurrentInstance()
+  $instance = getCurrentInstance() || {}
   constructor(props) {
     super(props)
 

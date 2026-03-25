@@ -15,9 +15,7 @@ import { navigateTo, pickBy, classNames } from '@/utils'
 import { fetchCartList, deleteCartItem, updateCartItemNum, updateCount } from '@/store/slices/guide'
 import { SpPage, SpPrice, SpRecommend, SpDefault, SpCheckboxNew } from '@/components'
 import { BaTabBar } from '@/subpages/guide/components'
-
 import CompGoodsItem from './comps/comp-goodsitem'
-
 import './espier-index.scss'
 
 // const tablist = [
@@ -33,8 +31,8 @@ const initialState = {
 
 function CartIndex() {
   const dispatch = useDispatch()
-  const $instance = getCurrentInstance()
-  const router = $instance.router
+  const $instance = getCurrentInstance() || {}
+  const router = $instance?.router
 
   const [state, setState] = useImmer(initialState)
   const { current, policyModal } = state

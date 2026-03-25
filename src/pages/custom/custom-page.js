@@ -9,16 +9,14 @@ import Taro, {
   useRouter,
   getCurrentInstance,
   useShareAppMessage,
-  useShareTimeline
+  useShareTimeline,
 } from '@tarojs/taro'
-import api from '@/api'
-import doc from '@/doc'
+import { ScrollView, View } from '@tarojs/components'
 import qs from 'qs'
-import { SpPage, SpSearch, SpSkuSelect, SpTabbar, SpLogin } from '@/components'
+import { SpPage, SpSkuSelect, SpTabbar, SpLogin, SpPoweredBy } from '@/components'
 import { WgtsContext } from '@/pages/home/wgts/wgts-context'
-import { getDistributorId, log, entryLaunch, pickBy, showToast, buildSharePath } from '@/utils'
+import { getDistributorId, log, entryLaunch, buildSharePath } from '@/utils'
 import { platformTemplateName } from '@/utils/platform'
-import { useNavigation } from '@/hooks'
 import req from '@/api/req'
 import HomeWgts from '@/pages/home/comps/home-wgts'
 import './custom-page.scss'
@@ -31,16 +29,21 @@ const initialState = {
   skuPanelOpen: false,
   selectType: 'picker',
   isShowTabBar: false,
-  footerHeight: 0
+  footerHeight: 0,
+  bodyHeight: 0,
+  scrollIntoView: null,
+  navbarHeight: 0
 }
 function CustomPage(props) {
-  const $instance = getCurrentInstance()
+  const $instance = getCurrentInstance() || {}
   const [state, setState] = useImmer(initialState)
-  const { wgts, loading, shareInfo, skuPanelOpen, selectType, info, isShowTabBar } = state
+  const { wgts, loading, shareInfo, skuPanelOpen, selectType, info, isShowTabBar, scrollIntoView, navbarHeight } = state
   const MSpSkuSelect = React.memo(SpSkuSelect)
   const pageRef = useRef()
   const loginRef = useRef()
   const router = useRouter()
+  const { location, address } = useSelector((state) => state.user)
+  const nearbyText = address?.city || location?.city || ''
 
   useEffect(() => {
     fetch()
@@ -83,28 +86,6 @@ function CustomPage(props) {
     return getAppShareInfo()
   })
 
-  const onAddToCart = async ({ itemId, distributorId }) => {
-    Taro.showLoading()
-    try {
-      const itemDetail = await api.item.detail(itemId, {
-        showError: false,
-        distributor_id: distributorId
-      })
-      Taro.hideLoading()
-      setState((draft) => {
-        draft.info = pickBy(itemDetail, doc.goods.GOODS_INFO)
-        draft.skuPanelOpen = true
-        draft.selectType = 'addcart'
-      })
-    } catch (e) {
-      Taro.hideLoading({
-        success: () => {
-          showToast(e.message)
-        }
-      })
-    }
-  }
-
   const getAppShareInfo = async () => {
     const { id } = await entryLaunch.getRouteParams($instance?.router?.params)
     const { userId } = Taro.getStorageSync('userinfo')
@@ -123,71 +104,94 @@ function CustomPage(props) {
   }
 
   const searchComp = wgts.find((wgt) => wgt.name == 'search')
-  let filterWgts = []
-  if (searchComp && searchComp.config.fixTop) {
-    filterWgts = wgts.filter((wgt) => wgt.name !== 'search')
-  } else {
-    filterWgts = wgts
-  }
-  const fixedTop = searchComp && searchComp.config.fixTop
   const pageData = wgts.find((wgt) => wgt.name == 'page')
+  let filterWgts = []
+  if (searchComp && searchComp.config && searchComp.config.fixTop) {
+    filterWgts = wgts.filter((wgt) => wgt.name !== 'search' && wgt.name != 'page')
+  } else {
+    filterWgts = wgts.filter((wgt) => wgt.name != 'page')
+  }
   return (
     <SpPage
       btnHomeEnable={router?.params.fromConnect !== 'davild'}
       scrollToTopBtn
       className='page-custom-page'
+      showpoweredBy={false}
       loading={loading}
       title={shareInfo?.page_name}
+      immersive={pageData?.base?.isImmersive}
+      pageConfig={pageData?.base || {}}
+      nearbyText={nearbyText}
       ref={pageRef}
       renderFooter={isShowTabBar && <SpTabbar height={state.footerHeight} />}
-      fixedTopContainer={fixedTop && <SpSearch info={searchComp} />}
-      onReady={({ footerHeight }) => {
+      onReady={({ footerHeight, height, gNavbarH }) => {
         setState((draft) => {
           draft.footerHeight = footerHeight
+          draft.bodyHeight = height
+          draft.navbarHeight = gNavbarH
         })
       }}
     >
-      <WgtsContext.Provider
-        value={{
-          onAddToCart,
-          immersive: pageData?.base?.isImmersive,
-          isTab: isShowTabBar
+      <ScrollView
+        scrollY
+        onScroll={(e) => {
+          pageRef.current.handlePageScroll(e?.detail)
         }}
+        scrollIntoView={scrollIntoView}
+        style={{ height: state.bodyHeight }}
       >
-        <HomeWgts wgts={filterWgts} />
-      </WgtsContext.Provider>
+        <WgtsContext.Provider
+          value={{
+            immersive: pageData?.base?.isImmersive,
+            isTab: isShowTabBar,
+            navBarHeight: navbarHeight,
+            footerHeight: state.footerHeight,
+            setScrollIntoView: (view) => {
+              setState((draft) => {
+                draft.scrollIntoView = view
+              })
+            }
+          }}
+        >
+          <HomeWgts wgts={filterWgts} />
+        </WgtsContext.Provider>
+        {/* If you remove or alter Shopex brand identifiers, you must obtain a branding removal license from Shopex.  Contact us at:  http://www.shopex.cn to purchase a branding removal license. */}
+        <View className='sp-page__powered-by w-full'>
+          <SpPoweredBy />
+        </View>
 
-      {/* Sku选择器 */}
-      <MSpSkuSelect
-        open={skuPanelOpen}
-        type={selectType}
-        info={info}
-        onClose={() => {
-          setState((draft) => {
-            draft.skuPanelOpen = false
-          })
-        }}
-        onChange={(skuText, curItem) => {
-          setState((draft) => {
-            draft.skuText = skuText
-            draft.curItem = curItem
-          })
-        }}
-      />
+        {/* Sku选择器 */}
+        <MSpSkuSelect
+          open={skuPanelOpen}
+          type={selectType}
+          info={info}
+          onClose={() => {
+            setState((draft) => {
+              draft.skuPanelOpen = false
+            })
+          }}
+          onChange={(skuText, curItem) => {
+            setState((draft) => {
+              draft.skuText = skuText
+              draft.curItem = curItem
+            })
+          }}
+        />
 
-      {/* 登录组件 */}
-      <SpLogin
-        ref={loginRef}
-        newUser
-        onChange={() => {
-          // 新注册会员登录成功
-          // 登录成功后需要获取店铺信息，然后查看店铺
-          checkEnterStoreRule()
-        }}
-        onPolicyClose={() => {
-          onPolicyChange(false)
-        }}
-      ></SpLogin>
+        {/* 登录组件 */}
+        <SpLogin
+          ref={loginRef}
+          newUser
+          onChange={() => {
+            // 新注册会员登录成功
+            // 登录成功后需要获取店铺信息，然后查看店铺
+            checkEnterStoreRule()
+          }}
+          onPolicyClose={() => {
+            onPolicyChange(false)
+          }}
+        ></SpLogin>
+      </ScrollView>
     </SpPage>
   )
 }

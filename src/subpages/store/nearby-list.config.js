@@ -3,8 +3,8 @@
  * See LICENSE file for license details.
  */
 export default {
-  // usingComponents: {
-  //   'cell': 'plugin://contactPlugin/cell'
-  // },
+  usingComponents: {
+    //'cell': 'plugin://contactPlugin/cell'
+  },
   navigationBarTitleText: '门店列表'
 }

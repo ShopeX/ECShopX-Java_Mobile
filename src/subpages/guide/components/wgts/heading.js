@@ -5,7 +5,6 @@
 import React, { Component } from 'react'
 import Taro, { getCurrentInstance } from '@tarojs/taro'
 import { View } from '@tarojs/components'
-
 import './writing.scss'
 
 export default class WgtHeading extends Component {
@@ -41,8 +40,8 @@ export default class WgtHeading extends Component {
       return null
     }
 
-    const { config, base, data } = info
-    const curContent = (data[curIdx] || {}).content
+    const { config, base, data = [] } = info
+    const curContent = ((data || [])[curIdx] || {}).content
     let stringStyle = ''
     if (config) {
       if (config.align) {

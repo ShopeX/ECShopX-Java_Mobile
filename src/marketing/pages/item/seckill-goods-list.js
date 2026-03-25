@@ -11,7 +11,6 @@ import { AtCountdown } from 'taro-ui'
 import { connect } from 'react-redux'
 import api from '@/api'
 import { classNames, pickBy, isNavbar, getDistributorId } from '@/utils'
-
 import './seckill-goods-list.scss'
 
 @connect(({ colors }) => ({
@@ -20,7 +19,7 @@ import './seckill-goods-list.scss'
 @withPager
 @withBackToTop
 export default class SeckillGoodsList extends Component {
-  $instance = getCurrentInstance()
+  $instance = getCurrentInstance() || {}
   constructor(props) {
     super(props)
 

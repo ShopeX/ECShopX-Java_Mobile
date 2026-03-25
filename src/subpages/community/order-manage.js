@@ -23,7 +23,6 @@ import api from '@/api'
 import * as communityApi from '@/api/community'
 
 import CompOrderItem from './comps/comp-orderitem'
-
 import './order-manage.scss'
 
 const initialState = {
@@ -66,8 +65,8 @@ function CheifOrderManage(props) {
   const { colorPrimary } = useSelector((state) => state.sys)
   const { checkIsChief } = useSelector((state) => state.user)
   const orderRef = useRef()
-  const $instance = getCurrentInstance()
-  const { activity_id } = $instance.router?.params
+  const $instance = getCurrentInstance() || {}
+  const { activity_id } = $instance?.router?.params
 
   const {
     keywords,

@@ -10,7 +10,8 @@ import api from '@/api'
 import doc from '@/doc'
 import { View, Text } from '@tarojs/components'
 import { changeCoupon } from '@/store/slices/cart'
-import { SpPage, SpTagBar, SpScrollView, SpCoupon, SpImage, SpCheckboxNew } from '@/components'
+import { SpPage, SpScrollView, SpCoupon, SpImage, SpCheckboxNew } from '@/components'
+import { SpTagBar } from '@/subpages/components'
 import { pickBy } from '@/utils'
 import './coupon-picker.scss'
 
@@ -20,7 +21,7 @@ const initialState = {
   select: null
 }
 function CouponPicker(props) {
-  const $instance = getCurrentInstance()
+  const $instance = getCurrentInstance() || {}
   const [state, setState] = useImmer(initialState)
   let { couponListVaild, couponListInVaild, select } = state
   const { customerLnformation } = useSelector((state) => state.cart)

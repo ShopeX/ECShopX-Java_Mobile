@@ -7,7 +7,8 @@ import { useSelector } from 'react-redux'
 import { useImmer } from 'use-immer'
 import Taro, { useDidShow, useRouter } from '@tarojs/taro'
 import { View, ScrollView, Text } from '@tarojs/components'
-import { SpPage, SpScrollView, SpTagBar, SpImage, SpSelectModal } from '@/components'
+import { SpPage, SpScrollView, SpImage } from '@/components'
+import { SpTagBar, SpSelectModal } from '@/subpages/components'
 import api from '@/api'
 import * as dianwuApi from '@/api/dianwu'
 import QRCode from 'qrcode'
@@ -25,7 +26,7 @@ function ActivityCode(props) {
   useEffect(() => {}, [])
 
   const handleScanGoodsBN = async () => {
-    // 注意：真机scancode扫码完成后回调，taro getCurrentInstance().router = null，无法获取到路由参数
+    // 注意：真机scancode扫码完成后回调，taro getCurrentInstance()?.router = null，无法获取到路由参数
     const { errMsg, result } = await Taro.scanCode()
     console.log('handleScanCode:', result)
     if (errMsg == 'scanCode:ok') {

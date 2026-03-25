@@ -10,7 +10,6 @@ import api from '@/api'
 import req from '@/api/req'
 import { getAppId, isAlipay } from '@/utils'
 import { connect } from 'react-redux'
-
 import './index.scss'
 
 // canvas宽高
@@ -34,7 +33,7 @@ const steps = [
   colors: colors.current
 }))
 export default class EditShare extends Component {
-  $instance = getCurrentInstance()
+  $instance = getCurrentInstance() || {}
   constructor(...props) {
     super(...props)
 

@@ -20,7 +20,6 @@ import CompGoodsItemBuy from './comps/comp-goodsitembuy'
 import CompGroupLogList from './comps/comp-grouploglist'
 import CompGoodsItem from './comps/comp-goodsitem'
 import CompWgts from './comps/comp-wgts'
-
 import './group-leaderdetail.scss'
 
 const initialState = {
@@ -30,7 +29,7 @@ const initialState = {
   shareImageUrl: ''
 }
 function GroupLeaderDetail(props) {
-  const $instance = getCurrentInstance()
+  const $instance = getCurrentInstance() || {}
   const { activity_id } = $instance?.router?.params
 
   const [state, setState] = useImmer(initialState)

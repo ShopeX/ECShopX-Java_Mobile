@@ -8,14 +8,13 @@ import { View, Image, Input } from '@tarojs/components'
 import { connect } from 'react-redux'
 import api from '@/api'
 // import { classNames, pickBy } from '@/utils'
-
 import './coupon-detail.scss'
 
 @connect(({ colors }) => ({
   colors: colors.current
 }))
 export default class CouponDetail extends Component {
-  $instance = getCurrentInstance()
+  $instance = getCurrentInstance() || {}
   constructor(props) {
     super(props)
 

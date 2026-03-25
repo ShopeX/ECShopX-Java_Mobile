@@ -7,7 +7,8 @@ import Taro, { getCurrentInstance } from '@tarojs/taro'
 import { View, Text, Button, Image, ScrollView } from '@tarojs/components'
 import { connect } from 'react-redux'
 import { AtCountdown, AtFloatLayout } from 'taro-ui'
-import { Loading, SpNavBar, FloatMenuMeiQia, SpNewShopItem, SpCell, SpImage } from '@/components'
+import { Loading, SpNavBar, SpCell, SpImage } from '@/components'
+import { FloatMenuMeiQia, SpNewShopItem } from '@/subpages/components'
 import {
   pickBy,
   formatDateTime,
@@ -41,7 +42,6 @@ import OnRoad from '../../assets/dada4.png'
 import Cancel from '../../assets/dada5.png'
 import Success from '../../assets/dada6.png'
 import DadaGoStore from '../../assets/dada7.png'
-
 import './detail.scss'
 
 // 订单状态和图片匹配
@@ -70,7 +70,7 @@ const statusImg = {
   purchase: purchase.purchase_share_info
 }))
 export default class TradeDetail extends Component {
-  $instance = getCurrentInstance()
+  $instance = getCurrentInstance() || {}
   constructor(props) {
     super(props)
 
@@ -425,12 +425,12 @@ export default class TradeDetail extends Component {
       if (confirm) {
         await api.trade.confirm(info.tid)
         if (isWeixin || isAlipay) {
-          const { fullPath } = getCurrentRoute(this.$instance.router)
+          const { fullPath } = getCurrentRoute(this.$instance?.router)
           Taro.redirectTo({
             url: fullPath
           })
         } else {
-          const { path } = this.$instance.router
+          const { path } = this.$instance?.router
           Taro.redirectTo({
             url: path
           })
@@ -518,7 +518,7 @@ export default class TradeDetail extends Component {
     const { webSocketIsOpen, restartOpenWebsoect } = this.state
     // websocket 开始
     if (!webSocketIsOpen) {
-      const token = S.getAuthToken()
+      const token = S?.getAuthToken()
       Taro.connectSocket({
         url: process.env.APP_WEBSOCKET,
         header: {
@@ -594,7 +594,7 @@ export default class TradeDetail extends Component {
         restartOpenWebsoect: false
       },
       () => {
-        const token = S.getAuthToken()
+        const token = S?.getAuthToken()
         Taro.connectSocket({
           url: process.env.APP_WEBSOCKET,
           header: {

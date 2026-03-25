@@ -8,7 +8,6 @@ import { Image, View, Picker } from '@tarojs/components'
 import { AtList, AtListItem } from 'taro-ui'
 import { useSelector } from 'react-redux'
 import { useImmer } from 'use-immer'
-
 import { SpTab, SpScrollView, SpPage, SpCell, SpImage } from '@/components'
 import { pickBy, showToast } from '@/utils'
 import doc from '@/subpages/doc'
@@ -39,8 +38,8 @@ const BoxList = () => {
   const { startDate, startTime, endDate, endTime, activeIndex, list, itemBoxNum, itemPieceNum } =
     state
   const goodsRef = useRef()
-  const $instance = getCurrentInstance()
-  const { activity_id } = $instance.router?.params
+  const $instance = getCurrentInstance() || {}
+  const { activity_id } = $instance?.router?.params
 
   // useEffect(() => {
   //   if (startDate && startTime && endDate && endTime) {

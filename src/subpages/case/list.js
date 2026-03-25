@@ -47,7 +47,7 @@ const tagListConfig = [
 const initialState = {
   footerHeight: 0,
   currentLocation: null,
-  locationData: defaultLocationData,
+  locationData: { cityName: '全国', cityId: 0 }, // 默认选中「全国案例」tab
   locationList: [],
   locationRange: [[], []],
   locationValue: [0, 0],
@@ -84,10 +84,10 @@ const initialState = {
   },
   tabList: [
     {
-      title: '本地案例'
+      title: '全国案例'
     },
     {
-      title: '全国案例'
+      title: '本地案例'
     }
   ]
 }
@@ -183,12 +183,12 @@ function CaseList() {
       options.tags_params = [...unitIds, ...styleIds]
     }
 
-    if (currentIndex != 1 || locationData.cityId != 0) {
+    if (currentIndex != 0 || locationData.cityId != 0) {
       options.city_id = locationData.cityName
     }
     const res = await api.design.getDesignList(options)
     const { total_count, list: nList } = res
-    const list = pickBy(nList, caseDoc.CASE_LIST)
+    const list = pickBy(nList, doc.case.CASE_LIST)
 
     const nleftList = []
     const nrightList = []
@@ -223,10 +223,7 @@ function CaseList() {
 
   const getStorageLocation = async (locationInfo) => {
     if (!isEmpty(location) || !isEmpty(locationInfo)) {
-      const data = await entryLaunch.getAddressByLnglatWebAPI(
-        location?.lng || locationInfo?.lng,
-        location?.lat || locationInfo?.lat
-      )
+      const data = await entryLaunch.getAddressByLnglatWebAPI(location?.lng || locationInfo?.lng, location?.lat || locationInfo?.lat)
       const { city, error } = data
       if (error) {
         setState((draft) => {
@@ -267,9 +264,8 @@ function CaseList() {
     setState((draft) => {
       draft.currentIndex = value
     })
+    // value 0 = 全国案例, value 1 = 本地案例
     if (value == 0) {
-      getStorageLocation()
-    } else {
       setState((draft) => {
         draft.locationData = {
           cityName: '全国',
@@ -283,6 +279,8 @@ function CaseList() {
         }
       })
       refresh()
+    } else {
+      getStorageLocation()
     }
   }
 
@@ -371,7 +369,6 @@ function CaseList() {
   }
 
   useEffect(() => {
-    getStorageLocation()
     api.design.getDesignTagsList().then((data) => {
       let house_type, style
       data.forEach((item) => {
@@ -418,6 +415,11 @@ function CaseList() {
       })
     })
     initLocationPicker()
+    // 延迟执行确保 SpScrollView 已挂载、listRef 已就绪，否则 reset() 不会触发首屏加载
+    const timer = setTimeout(() => {
+      refresh()
+    }, 300)
+    return () => clearTimeout(timer)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -439,12 +441,12 @@ function CaseList() {
             current={currentIndex}
           />
           <View className='sp-search'>
-            {currentIndex == 0 && (
+            {currentIndex == 1 && (
               <View onClick={handleAutoGetLoaction}>
                 <Text className='sp-case-list--head-city'>{locationData.cityName}</Text>
               </View>
             )}
-            {currentIndex == 1 && (
+            {currentIndex == 0 && (
               <Picker
                 mode='multiSelector'
                 value={locationValue}
@@ -475,8 +477,8 @@ function CaseList() {
                 {tagListConfig.map((item, index) => {
                   const checkedGroupkey = checked
                     ? checked.find((checkedItem) => {
-                        return tagContentList[item.key].find((iitem) => iitem.id === checkedItem.id)
-                      })
+                      return tagContentList[item.key].find((iitem) => iitem.id === checkedItem.id)
+                    })
                     : null
                   const itemCls = classNames('sp-tag--head-item', {
                     'sp-tag--head-checked': !!checkedGroupkey

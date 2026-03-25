@@ -12,7 +12,6 @@ import { SpToast, SpCell, SpNavBar, SpPage } from '@/components'
 import S from '@/spx'
 import api from '@/api'
 import { classNames, isWeixin } from '@/utils'
-
 import './address.scss'
 
 const ADDRESS_ID = 'address_id'
@@ -24,7 +23,7 @@ const initialState = {
 }
 
 function AddressIndex(props) {
-  const $instance = getCurrentInstance()
+  const $instance = getCurrentInstance() || {}
   const [state, setState] = useImmer(initialState)
   const { selectedId, isPicker, list } = state
   const colors = useSelector((state) => state.sys)
@@ -88,7 +87,7 @@ function AddressIndex(props) {
     try {
       await api.member.addressCreateOrUpdate(nItem)
       if (item?.address_id) {
-        S.toast('修改成功')
+        S?.toast('修改成功')
       }
 
       setTimeout(() => {

@@ -7,15 +7,9 @@ import { View, Text } from '@tarojs/components'
 import Taro, { getCurrentInstance } from '@tarojs/taro'
 import { useSelector, useDispatch } from 'react-redux'
 import { useImmer } from 'use-immer'
-import {
-  SpFilterBar,
-  SpTagBar,
-  SpGoodsItem,
-  SpSearchBar,
-  SpPage,
-  SpScrollView,
-  SpSkuSelect
-} from '@/components'
+import throttle from 'lodash/throttle'
+import { SpGoodsItem, SpSearchBar, SpPage, SpScrollView, SpSelect, SpSkuSelect } from '@/components'
+import { SpFilterBar, SpTagBar, SpDrawer } from '@/subpages/components'
 import { fetchUserFavs } from '@/store/slices/user'
 import doc from '@/doc'
 import api from '@/api'
@@ -28,6 +22,8 @@ import {
   showToast
 } from '@/utils'
 import S from '@/spx'
+
+import FloatSalesperson from '@/subpages/store/comps/float-salesperson'
 
 import './list.scss'
 
@@ -59,7 +55,7 @@ const initialState = {
 }
 
 function ItemList() {
-  const $instance = getCurrentInstance()
+  const $instance = getCurrentInstance() || {}
   const [state, setState] = useImmer(initialState)
   const {
     keywords,
@@ -74,7 +70,7 @@ function ItemList() {
     curTagIdx,
     info,
     fixTop,
-    routerParams  } = state
+    routerParams } = state
   const [isShowSearch, setIsShowSearch] = useState(false)
   const { cat_id, main_cat_id, tag_id, card_id, user_card_id } = routerParams || {}
   const { shopInfo } = useSelector((state) => state.shop)
@@ -82,7 +78,7 @@ function ItemList() {
 
   const goodsRef = useRef()
   const pageRef = useRef()
-  // console.log('$instance?.router?.params', $instance.router?.params)
+  // console.log('$instance?.router?.params', $instance?.router?.params)
   useEffect(() => {
     if (S.getAuthToken()) {
       dispatch(fetchUserFavs())
@@ -308,9 +304,10 @@ function ItemList() {
         'has-tagbar': tagList.length > 0
       })}
       ref={pageRef}
+      renderFloat={<FloatSalesperson />}
     >
       <View className='search-wrap'>
-        {VERSION_STANDARD && card_id && (
+        {/* {VERSION_STANDARD && card_id && (
           <View
             className='store-picker'
             onClick={() => {
@@ -322,7 +319,7 @@ function ItemList() {
             <View className='shop-name'>{shopInfo.store_name || '暂无店铺信息'}</View>
             <Text className='iconfont icon-qianwang-01'></Text>
           </View>
-        )}
+        )} */}
         <SpSearchBar
           keyword={keywords}
           placeholder='搜索'

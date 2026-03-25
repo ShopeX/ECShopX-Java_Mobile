@@ -13,7 +13,7 @@ import { normalizeQuerys, getAppId } from '@/utils'
 import './index.scss'
 
 export default class AuthLogin extends Component {
-  $instance = getCurrentInstance()
+  $instance = getCurrentInstance() || {}
   constructor(props) {
     super(props)
     this.state = {
@@ -23,9 +23,9 @@ export default class AuthLogin extends Component {
 
   componentDidMount() {
     if (!S.getAuthToken()) {
-      S.toast('请先登录')
+      S?.toast('请先登录')
       setTimeout(() => {
-        S.login(this)
+        S?.login(this)
       }, 2000)
       return
     }

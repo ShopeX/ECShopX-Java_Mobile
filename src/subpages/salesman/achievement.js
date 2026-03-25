@@ -6,7 +6,8 @@ import Taro from '@tarojs/taro'
 import { useEffect, useState } from 'react'
 import { Text, View, ScrollView } from '@tarojs/components'
 import { classNames, validate, showToast } from '@/utils'
-import { SpImage, SpPage, SpTime, SpTabs, SpCustomPicker, SpTable } from '@/components'
+import { SpImage, SpPage, SpTabs } from '@/components'
+import { SpTime, SpCustomPicker, SpTable } from '@/subpages/components'
 import { useImmer } from 'use-immer'
 import { useSyncCallback } from '@/hooks'
 import api from '@/api'
@@ -30,7 +31,7 @@ const initialConfigState = {
     page: 1,
     pageSize: 1000,
     datetype: 2,
-    date: S.getNowDate(),
+    date: S?.getNowDate(),
     distributor_id: '',
     tab: 'all'
   },

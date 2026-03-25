@@ -16,16 +16,8 @@ import { updateUserInfo } from '@/store/slices/user'
 import { updateIsOpenPurchase } from '@/store/slices/purchase'
 import { useSelector, useDispatch } from 'react-redux'
 import { useImmer } from 'use-immer'
-
-import {
-  SpLogin,
-  SpImage,
-  SpPrice,
-  CouponModal,
-  SpPrivacyModal,
-  SpTabbar,
-  SpPage
-} from '@/components'
+import { SpLogin, SpImage, SpPrice, SpPrivacyModal, SpTabbar, SpPage } from '@/components'
+import { CouponModal } from '@/subpages/components'
 import api from '@/api'
 import * as dianwuApi from '@/api/dianwu'
 import {
@@ -50,7 +42,6 @@ import CompPanel from './comps/comp-panel'
 import CompMenu from './comps/comp-menu'
 import CompTabbar from './comps/comp-tabbar'
 import CompHelpCenter from './comps/comp-helpcenter'
-
 import './member.scss'
 
 const initialConfigState = {
@@ -156,7 +147,7 @@ function MemberIndex(props) {
 
   useDidShow(() => {
     if (S.get(MERCHANT_TOKEN, true)) {
-      S.delete(MERCHANT_TOKEN, true)
+      S?.delete(MERCHANT_TOKEN, true)
     }
     if (S.get(SG_TOKEN)) {
       setHeaderBlock()
@@ -230,7 +221,7 @@ function MemberIndex(props) {
     }
     // if (S.getAuthToken() && (VERSION_PLATFORM || VERSION_IN_PURCHASE)) {
     //   const { result, status } = await dianwuApi.is_admin()
-    //   S.set('DIANWU_CONFIG', result, status)
+    //   S?.set('DIANWU_CONFIG', result, status)
     //   menu = {
     //     ...menu,
     //     dianwu: status
@@ -272,7 +263,7 @@ function MemberIndex(props) {
 
   const setMemberBackground = async () => {
     let params = {}
-    const activity_id = purchase_share_info?.activity_id || S.get(INVITE_ACTIVITY_ID, true)
+    const activity_id = purchase_share_info?.activity_id || S?.get(INVITE_ACTIVITY_ID, true)
 
     if (activity_id) {
       params = { activity_id }

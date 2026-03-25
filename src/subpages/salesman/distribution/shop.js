@@ -10,14 +10,13 @@ import api from '@/api'
 import { SpPage } from '@/components'
 import { log } from '@/utils'
 // import { Tracker } from '@/service'
-
 import './shop.scss'
 
 @connect(({ colors }) => ({
   colors: colors.current
 }))
 export default class DistributionShop extends Component {
-  $instance = getCurrentInstance()
+  $instance = getCurrentInstance() || {}
   constructor(props) {
     super(props)
 

@@ -5,14 +5,14 @@
 import React, { Component } from 'react'
 import Taro, { getCurrentInstance } from '@tarojs/taro'
 import { Input, View, Picker, Image } from '@tarojs/components'
-import { SpPage, SpNavBar, SpCheckbox, SpFloatPrivacy } from '@/components'
+import { SpPage, SpNavBar, SpCheckbox } from '@/components'
+import { SpFloatPrivacy } from '@/subpages/components'
 import api from '@/api'
 import { connect } from 'react-redux'
 import S from '@/spx'
 import { showToast, tokenParse, tokenParseH5, isWeixin, isWxWeb } from '@/utils'
 import userIcon from '@/assets/imgs/user-icon.png'
 import imgUploader from '@/utils/upload'
-
 import './userinfo.scss'
 
 @connect(
@@ -80,7 +80,7 @@ export default class UserInfo extends Component {
       }
     } else {
       // if (isAgree == 1) {
-      S.OAuthWxUserProfile(() => {
+      S?.OAuthWxUserProfile(() => {
         // this.setState({
         //   showTimes: this.state.showTimes + 1
         // })
@@ -251,7 +251,7 @@ export default class UserInfo extends Component {
       })
       showToast('修改成功')
 
-      await S.getMemberInfo()
+      await S?.getMemberInfo()
 
       Taro.reLaunch({
         url: '/subpages/member/index'

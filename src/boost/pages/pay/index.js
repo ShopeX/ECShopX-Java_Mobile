@@ -10,7 +10,6 @@ import { pickBy } from '@/utils'
 import api from '@/api'
 import * as boostApi from '@/api/boost'
 import { SpNavBar, AddressChoose } from '@/components'
-
 import './index.scss'
 
 @connect(
@@ -23,7 +22,7 @@ import './index.scss'
   })
 )
 export default class Pay extends Component {
-  $instance = getCurrentInstance()
+  $instance = getCurrentInstance() || {}
   constructor(props) {
     super(props)
     this.state = {

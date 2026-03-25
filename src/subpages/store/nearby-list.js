@@ -4,7 +4,7 @@
  */
 import React, { useEffect, useRef } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
-import { View, Text, Input, Picker, Image } from '@tarojs/components'
+import { View, Text, Input, Picker } from '@tarojs/components'
 import Taro from '@tarojs/taro'
 import { SpPage, SpScrollView, SpNote } from '@/components'
 import { updateLocation } from '@/store/slices/user'
@@ -14,6 +14,7 @@ import doc from '@/doc'
 import { entryLaunch, pickBy, classNames } from '@/utils'
 import { useImmer } from 'use-immer'
 
+import ConsultModal from './comps/consult-modal'
 import './nearby-list.scss'
 
 const initialState = {
@@ -62,6 +63,7 @@ function NearbyList() {
     consultModalData
   } = state
   const { location = {} } = useSelector((state) => state.user)
+  const { salespersonInfo } = useSelector((state) => state.shop)
   const dispatch = useDispatch()
   const listRef = useRef(null)
 
@@ -198,6 +200,7 @@ function NearbyList() {
 
     setState((draft) => {
       const normalList = pickBy(list, doc.shop.SHOP_ITEM)
+
       if (pageIndex === 1) {
         // 第一页：专属门店放在最前面
         draft.shopList = binddingShopData ? [binddingShopData, ...normalList] : normalList
@@ -362,7 +365,8 @@ function NearbyList() {
         draft.consultModalData = {
           qrcodeUrl: info.work_qrcode,
           salespersonName: info.salesperson_name,
-          salespersonAvatar: info.salesperson_avatar
+          salespersonAvatar: info.salesperson_avatar,
+          bgAvatarUrl: salespersonInfo?.bg_avatar_url
         }
       })
     }
@@ -513,23 +517,28 @@ function NearbyList() {
                   <Text className='shop-name'>{item.store_name}</Text>
                   <Text className='shop-distance'>{formatDistance(item.distance)}</Text>
                 </View>
-                <View
-                  className={classNames('action-btns', {
-                    'action-btns-bindding': item.isBinddingShop
-                  })}
-                >
-                  <View
-                    className='action-btn-item'
-                    onClick={(e) => handlePhoneCall(e, item.mobile)}
-                  >
-                    <Text className='iconfont icon-mobile action-icon'></Text>
-                    <Text className='action-text'>电话咨询</Text>
-                  </View>
-                  {item.show_salesperson !== '0' && (
-                    <View className='action-btn-item' onClick={(e) => handleConsult(e, item)}>
-                      <Text className='iconfont icon-zixun action-icon'></Text>
-                      <Text className='action-text'>联系顾问</Text>
+                <View className={classNames('action-btns', { 'action-btns-bindding': item.isBinddingShop })}>
+                  {item.show_mobile === '1' && (
+                    <View className='action-btn-item' onClick={(e) => handlePhoneCall(e, item.mobile)}>
+                      <Text className='iconfont icon-mobile action-icon'></Text>
+                      <Text className='action-text'>电话咨询</Text>
                     </View>
+                  )}
+                  {item.show_salesperson !== '0' && (<View className='action-btn-item' onClick={(e) => handleConsult(e, item)}>
+                    <Text className='iconfont icon-zixun action-icon'></Text>
+                    <Text className='action-text'>联系顾问</Text>
+                  </View>
+                    // item.work_qrcode_configid ? (
+                    //   <View className='action-btn-item action-btn-cell'>
+                    //     <cell plugid={item.work_qrcode_configid} styleType={2} />
+                    //     <Text className='action-text'>联系顾问</Text>
+                    //   </View>
+                    // ) : (
+                    //   <View className='action-btn-item' onClick={(e) => handleConsult(e, item)}>
+                    //     <Text className='iconfont icon-zixun action-icon'></Text>
+                    //     <Text className='action-text'>联系顾问</Text>
+                    //   </View>
+                    // )
                   )}
                 </View>
               </View>
@@ -557,62 +566,14 @@ function NearbyList() {
       </SpScrollView>
 
       {/* 联系顾问弹框 */}
-      {showConsultModal && consultModalData && (
-        <View className='consult-modal-overlay' onClick={closeConsultModal}>
-          <View className='consult-modal' onClick={(e) => e.stopPropagation()}>
-            <View className='consult-modal-content'>
-              {consultModalType === '1' ? (
-                <>
-                  <Text className='modal-title'>{consultModalData.storeName}</Text>
-                  <View className='qrcode-wrap'>
-                    <View className='qrcode-border-outer'>
-                      <View className='qrcode-border-inner'>
-                        <Image
-                          className='qrcode-image'
-                          src={consultModalData.qrcodeUrl}
-                          mode='aspectFit'
-                        />
-                      </View>
-                    </View>
-                    <Text className='qrcode-tip'>长按识别二维码</Text>
-                  </View>
-                </>
-              ) : (
-                <>
-                  <Text className='modal-title'>添加导购</Text>
-                  <View className='qrcode-wrap'>
-                    <View className='qrcode-border-outer'>
-                      <View className='qrcode-border-inner'>
-                        <Image
-                          className='qrcode-image'
-                          src={consultModalData.qrcodeUrl}
-                          mode='aspectFit'
-                        />
-                      </View>
-                    </View>
-                    <Text className='qrcode-tip'>长按扫码联系您的专属顾问</Text>
-                  </View>
-                  <View className='salesperson-info'>
-                    <Image
-                      className='salesperson-avatar'
-                      src={consultModalData.salespersonAvatar}
-                      mode='aspectFill'
-                    />
-                    <View className='salesperson-text'>
-                      <Text className='salesperson-label'>您的顾问</Text>
-                      <Text className='salesperson-name'>{consultModalData.salespersonName}</Text>
-                    </View>
-                  </View>
-                </>
-              )}
-            </View>
-            <View className='close-btn' onClick={closeConsultModal}>
-              <Text className='iconfont icon-guanbi'></Text>
-            </View>
-          </View>
-        </View>
-      )}
-    </SpPage>
+      <ConsultModal
+        visible={showConsultModal}
+        type={consultModalType}
+        data={consultModalData}
+        onClose={closeConsultModal}
+      />
+
+    </SpPage >
   )
 }
 
