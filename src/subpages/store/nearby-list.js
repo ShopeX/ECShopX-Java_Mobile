@@ -420,7 +420,8 @@ function NearbyList() {
           qrcodeUrl: info.work_qrcode,
           salespersonName: info.salesperson_name,
           salespersonAvatar: info.salesperson_avatar,
-          bgAvatarUrl: salespersonInfo?.bg_avatar_url
+          bgAvatarUrl: salespersonInfo?.bg_avatar_url,
+          storeName: info.store_name
         }
       })
     }
