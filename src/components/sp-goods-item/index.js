@@ -114,7 +114,7 @@ function SpGoodsItem(props) {
 
     const url = `${!!point || goodsType == 'point'
       ? '/subpages/pointshop/espier-detail'
-      : '/pages/item/espier-detail'
+      : '/subpages/item/espier-detail'
       }?${qs.stringify(query)}`
     Taro.navigateTo({
       url

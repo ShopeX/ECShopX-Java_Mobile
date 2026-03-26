@@ -484,6 +484,7 @@ class EntryLaunch {
     const paths = customPath || path
     const routePath = {
       '/pages/item/espier-detail': 'activeItemDetail',
+      '/subpages/item/espier-detail': 'activeItemDetail',
       '/pages/custom/custom-page': 'activeCustomPage',
       '/subpage/pages/recommend/detail': 'activeSeedingDetail',
       '/subpages/marketing/coupon-center': 'activeDiscountCoupon',

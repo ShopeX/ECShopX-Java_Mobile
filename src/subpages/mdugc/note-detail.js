@@ -495,7 +495,7 @@ function UgcNoteDetail(props) {
               }}
               onClick={({ itemId }) => {
                 Taro.navigateTo({
-                  url: `/pages/item/espier-detail?id=${itemId}`
+                  url: `/subpages/item/espier-detail?id=${itemId}`
                 })
               }}
               isShowDistributor
