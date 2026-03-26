@@ -66,6 +66,44 @@ function NearbyList() {
   const { salespersonInfo } = useSelector((state) => state.shop)
   const dispatch = useDispatch()
   const listRef = useRef(null)
+  /** 列表请求代次：刷新/重搜/定位更新时递增，丢弃过期的异步回写，避免分页 concat 重复 */
+  const listFetchGenRef = useRef(0)
+  /** 最近一次成功写入列表的 total，供被丢弃的请求回传给 usePage，避免 hasMore 错乱 */
+  const lastListTotalRef = useRef(0)
+
+  const bumpListFetchGen = () => {
+    listFetchGenRef.current += 1
+  }
+
+  /** 按 distributor_id 去重，保留先出现的项（避免接口/竞态导致同一页重复） */
+  const uniqByDistributor = (rows) => {
+    const seen = new Set()
+    return rows.filter((row) => {
+      const id = row?.distributor_id
+      if (id == null || id === '') return true
+      if (seen.has(id)) return false
+      seen.add(id)
+      return true
+    })
+  }
+
+  const mergeUniqueAppend = (baseList, incoming) => {
+    const seen = new Set()
+    for (const row of baseList) {
+      const id = row?.distributor_id
+      if (id != null && id !== '') seen.add(id)
+    }
+    const out = [...baseList]
+    for (const row of incoming) {
+      const id = row?.distributor_id
+      if (id != null && id !== '') {
+        if (seen.has(id)) continue
+        seen.add(id)
+      }
+      out.push(row)
+    }
+    return out
+  }
 
   useEffect(() => {
     initLocationPicker()
@@ -116,6 +154,7 @@ function NearbyList() {
 
   const getLocationInfo = async () => {
     await entryLaunch.isOpenPosition(async (res) => {
+      bumpListFetchGen()
       if (res.lat) {
         dispatch(updateLocation(res))
         setState((draft) => {
@@ -131,6 +170,7 @@ function NearbyList() {
   }
 
   const fetchShopList = async ({ pageIndex, pageSize }) => {
+    const gen = listFetchGenRef.current
     // 构建基础参数
     const buildParams = (extraParams = {}) => {
       let params = {
@@ -180,6 +220,9 @@ function NearbyList() {
       try {
         const binddingParams = buildParams({ bind: 1 })
         const binddingRes = await api.shop.list(binddingParams)
+        if (gen !== listFetchGenRef.current) {
+          return { total: lastListTotalRef.current }
+        }
         if (binddingRes?.list?.length > 0) {
           binddingShopData = {
             ...pickBy(binddingRes.list, doc.shop.SHOP_ITEM)[0],
@@ -198,27 +241,37 @@ function NearbyList() {
     )
     const { list, total_count: total, background_url } = await api.shop.list(normalParams)
 
+    if (gen !== listFetchGenRef.current) {
+      return { total: lastListTotalRef.current }
+    }
+
+    const totalOut = binddingShopData ? total + 1 : total
+
     setState((draft) => {
-      const normalList = pickBy(list, doc.shop.SHOP_ITEM)
+      const normalList = uniqByDistributor(pickBy(list, doc.shop.SHOP_ITEM))
 
       if (pageIndex === 1) {
         // 第一页：专属门店放在最前面
-        draft.shopList = binddingShopData ? [binddingShopData, ...normalList] : normalList
+        const merged = binddingShopData ? [binddingShopData, ...normalList] : normalList
+        draft.shopList = uniqByDistributor(merged)
         draft.binddingShop = binddingShopData
         if (background_url) {
           draft.backgroundUrl = background_url
         }
       } else {
-        draft.shopList = draft.shopList.concat(normalList)
+        draft.shopList = mergeUniqueAppend(draft.shopList, normalList)
       }
       draft.refresh = false
     })
 
+    lastListTotalRef.current = totalOut
+
     // 返回总数时，如果有专属门店需要加1
-    return { total: binddingShopData ? total + 1 : total }
+    return { total: totalOut }
   }
 
   const refreshList = () => {
+    bumpListFetchGen()
     setState((draft) => {
       draft.shopList = []
       draft.refresh = true
@@ -366,7 +419,8 @@ function NearbyList() {
           qrcodeUrl: info.work_qrcode,
           salespersonName: info.salesperson_name,
           salespersonAvatar: info.salesperson_avatar,
-          bgAvatarUrl: salespersonInfo?.bg_avatar_url
+          bgAvatarUrl: salespersonInfo?.bg_avatar_url,
+          storeName: info.store_name
         }
       })
     }
@@ -501,7 +555,7 @@ function NearbyList() {
         {shopList.map((item, index) => (
           <View
             className={classNames('shop-card', { 'shop-card-bindding': item.isBinddingShop })}
-            key={`shop-${index}`}
+            key={item.distributor_id != null ? `shop-${item.distributor_id}` : `shop-idx-${index}`}
           >
             <View className='shop-card-content'>
               {/* 专属门店标签 */}
@@ -524,21 +578,11 @@ function NearbyList() {
                       <Text className='action-text'>电话咨询</Text>
                     </View>
                   )}
-                  {item.show_salesperson !== '0' && (<View className='action-btn-item' onClick={(e) => handleConsult(e, item)}>
-                    <Text className='iconfont icon-zixun action-icon'></Text>
-                    <Text className='action-text'>联系顾问</Text>
-                  </View>
-                    // item.work_qrcode_configid ? (
-                    //   <View className='action-btn-item action-btn-cell'>
-                    //     <cell plugid={item.work_qrcode_configid} styleType={2} />
-                    //     <Text className='action-text'>联系顾问</Text>
-                    //   </View>
-                    // ) : (
-                    //   <View className='action-btn-item' onClick={(e) => handleConsult(e, item)}>
-                    //     <Text className='iconfont icon-zixun action-icon'></Text>
-                    //     <Text className='action-text'>联系顾问</Text>
-                    //   </View>
-                    // )
+                  {item.show_salesperson !== '0' && (
+                    <View className='action-btn-item' onClick={(e) => handleConsult(e, item)}>
+                      <Text className='iconfont icon-zixun action-icon'></Text>
+                      <Text className='action-text'>联系顾问</Text>
+                    </View>
                   )}
                 </View>
               </View>
