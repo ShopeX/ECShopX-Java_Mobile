@@ -89,6 +89,7 @@ function Home() {
     useSelector((state) => state.sys)
 
   const showAdv = useSelector((member) => member.user.showAdv)
+  const { shopInfo } = useSelector((state) => state.shop)
   const { location, address } = useSelector((state) => state.user)
   const nearbyText = address?.adrdetail
     ? address?.city || address?.province || ''
