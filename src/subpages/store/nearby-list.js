@@ -368,7 +368,7 @@ function NearbyList() {
       const district = districtIndex === 0 ? null : city?.children?.[districtIndex - 1]
       draft.selectedProvince = province?.label || '选择省'
       draft.selectedCity = city?.label || '选择市'
-      draft.selectedDistrict = districtIndex === 0 ? '不限' : district?.label || '选择区'
+      draft.selectedDistrict = districtIndex === 0 ? '不限' : (district?.label || '选择区')
       draft.locationValue = [provinceIndex, cityIndex, districtIndex]
     })
     refreshList()
@@ -479,7 +479,10 @@ function NearbyList() {
             <View className='store-type-dropdown'>
               <View className='dropdown-content'>
                 {/* 全部门店选项 */}
-                <View className='dropdown-item' onClick={() => selectStoreType(0, null)}>
+                <View
+                  className='dropdown-item'
+                  onClick={() => selectStoreType(0, null)}
+                >
                   <Text className='item-text'>全部门店</Text>
                   <View className={classNames('item-radio', { active: storeTypeIndex === 0 })}>
                     {storeTypeIndex === 0 && <Text className='iconfont icon-gou'></Text>}
@@ -493,18 +496,13 @@ function NearbyList() {
                     onClick={() => selectStoreType(index + 1, item.category_id)}
                   >
                     <Text className='item-text'>{item.category_name}</Text>
-                    <View
-                      className={classNames('item-radio', {
-                        active: selectedCategoryId === item.category_id
-                      })}
-                    >
-                      {selectedCategoryId === item.category_id && (
-                        <Text className='iconfont icon-gou'></Text>
-                      )}
+                    <View className={classNames('item-radio', { active: selectedCategoryId === item.category_id })}>
+                      {selectedCategoryId === item.category_id && <Text className='iconfont icon-gou'></Text>}
                     </View>
                   </View>
-                ))}
-              </View>
+                ))
+                }
+              </View >
               <View className='dropdown-actions'>
                 <View className='action-btn reset' onClick={handleResetStoreType}>
                   取消
@@ -513,12 +511,12 @@ function NearbyList() {
                   确定
                 </View>
               </View>
-            </View>
+            </View >
           )}
-        </View>
+        </View >
 
         {/* 省市区选择 */}
-        <View className='location-row'>
+        < View className='location-row' >
           <Picker
             mode='multiSelector'
             range={locationRange}
@@ -541,83 +539,85 @@ function NearbyList() {
               </View>
             </View>
           </Picker>
-        </View>
-      </View>
+        </View >
+      </View >
 
       {/* 门店列表 */}
-      <SpScrollView
+      < SpScrollView
         ref={listRef}
         auto={false}
         className='shop-list-scroll'
         fetch={fetchShopList}
-        renderEmpty={<SpNote img='empty_activity.png' title='搜索暂无匹配的门店' />}
+        renderEmpty={< SpNote img='empty_activity.png' title='搜索暂无匹配的门店' />}
       >
-        {shopList.map((item, index) => (
-          <View
-            className={classNames('shop-card', { 'shop-card-bindding': item.isBinddingShop })}
-            key={item.distributor_id != null ? `shop-${item.distributor_id}` : `shop-idx-${index}`}
-          >
-            <View className='shop-card-content'>
-              {/* 专属门店标签 */}
-              {item.isBinddingShop && (
-                <View className='bindding-tag'>
-                  <Text className='bindding-tag-text'>专属门店</Text>
-                </View>
-              )}
-
-              {/* 门店信息头部 */}
-              <View className='shop-header'>
-                <View className='shop-info'>
-                  <Text className='shop-name'>{item.store_name}</Text>
-                  <Text className='shop-distance'>{formatDistance(item.distance)}</Text>
-                </View>
-                <View className={classNames('action-btns', { 'action-btns-bindding': item.isBinddingShop })}>
-                  {item.show_mobile === '1' && (
-                    <View className='action-btn-item' onClick={(e) => handlePhoneCall(e, item.mobile)}>
-                      <Text className='iconfont icon-mobile action-icon'></Text>
-                      <Text className='action-text'>电话咨询</Text>
-                    </View>
-                  )}
-                  {item.show_salesperson !== '0' && (
-                    <View className='action-btn-item' onClick={(e) => handleConsult(e, item)}>
-                      <Text className='iconfont icon-zixun action-icon'></Text>
-                      <Text className='action-text'>联系顾问</Text>
-                    </View>
-                  )}
-                </View>
-              </View>
-
-              {/* 门店地址 */}
-              <View className='shop-address'>
-                <Text className='address-text'>{item.store_address}</Text>
-              </View>
-
-              {/* 底部操作栏 */}
-              <View className='shop-footer'>
-                {item.hour && (
-                  <View className='business-hours'>
-                    <Text className='hours-text'>营业时间：{item.hour}</Text>
+        {
+          shopList.map((item, index) => (
+            <View
+              className={classNames('shop-card', { 'shop-card-bindding': item.isBinddingShop })}
+              key={item.distributor_id != null ? `shop-${item.distributor_id}` : `shop-idx-${index}`}
+            >
+              <View className='shop-card-content'>
+                {/* 专属门店标签 */}
+                {item.isBinddingShop && (
+                  <View className='bindding-tag'>
+                    <Text className='bindding-tag-text'>专属门店</Text>
                   </View>
                 )}
-                <View className='nav-btn' onClick={(e) => handleNavigation(e, item)}>
-                  <Text className='nav-text'>到这去</Text>
-                  <Text className='iconfont icon-quzheli nav-icon'></Text>
+
+                {/* 门店信息头部 */}
+                <View className='shop-header'>
+                  <View className='shop-info'>
+                    <Text className='shop-name'>{item.store_name}</Text>
+                    <Text className='shop-distance'>{formatDistance(item.distance)}</Text>
+                  </View>
+                  <View className={classNames('action-btns', { 'action-btns-bindding': item.isBinddingShop })}>
+                    {item.show_mobile === '1' && (
+                      <View className='action-btn-item' onClick={(e) => handlePhoneCall(e, item.mobile)}>
+                        <Text className='iconfont icon-mobile action-icon'></Text>
+                        <Text className='action-text'>电话咨询</Text>
+                      </View>
+                    )}
+                    {item.show_salesperson !== '0' && (
+                      <View className='action-btn-item' onClick={(e) => handleConsult(e, item)}>
+                        <Text className='iconfont icon-zixun action-icon'></Text>
+                        <Text className='action-text'>联系顾问</Text>
+                      </View>
+                    )}
+                  </View>
+                </View>
+
+                {/* 门店地址 */}
+                <View className='shop-address'>
+                  <Text className='address-text'>{item.store_address}</Text>
+                </View>
+
+                {/* 底部操作栏 */}
+                <View className='shop-footer'>
+                  {item.hour && (
+                    <View className='business-hours'>
+                      <Text className='hours-text'>营业时间：{item.hour}</Text>
+                    </View>
+                  )}
+                  <View className='nav-btn' onClick={(e) => handleNavigation(e, item)}>
+                    <Text className='nav-text'>到这去</Text>
+                    <Text className='iconfont icon-quzheli nav-icon'></Text>
+                  </View>
                 </View>
               </View>
             </View>
-          </View>
-        ))}
-      </SpScrollView>
+          ))
+        }
+      </SpScrollView >
 
       {/* 联系顾问弹框 */}
-      <ConsultModal
+      < ConsultModal
         visible={showConsultModal}
         type={consultModalType}
         data={consultModalData}
         onClose={closeConsultModal}
       />
 
-    </SpPage >
+    </SpPage>
   )
 }
 
