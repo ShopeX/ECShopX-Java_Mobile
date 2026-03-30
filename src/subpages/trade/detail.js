@@ -604,19 +604,19 @@ function TradeDetail(props) {
               <View className='block-container ziti-info'>
                 <View>
                   <Text className='label'>自提点:</Text>
-                  <Text className='value'>{info.zitiInfo.name}</Text>
+                  <Text className='value'>{info?.zitiInfo?.name}</Text>
                 </View>
                 <View>
                   <Text className='label'>自提地址:</Text>
-                  <Text className='value'>{`${info.zitiInfo.province}${info.zitiInfo.city}${info.zitiInfo.area}${info.zitiInfo.address}`}</Text>
+                  <Text className='value'>{`${info?.zitiInfo?.province ?? ''}${info?.zitiInfo?.city ?? ''}${info?.zitiInfo?.area ?? ''}${info?.zitiInfo?.address ?? ''}`}</Text>
                 </View>
                 <View>
                   <Text className='label'>联系电话:</Text>
-                  <Text className='value'>{info.zitiInfo.contract_phone}</Text>
+                  <Text className='value'>{info?.zitiInfo?.contract_phone}</Text>
                   <Text
                     className='iconfont icon-dianhua'
                     onClick={() => {
-                      const { contract_phone } = info.zitiInfo
+                      const { contract_phone } = info?.zitiInfo || {}
                       handleCallPhone(contract_phone)
                     }}
                   />
@@ -627,7 +627,7 @@ function TradeDetail(props) {
                 </View>
                 <View>
                   <Text className='label'>提货时间:</Text>
-                  <Text className='value'>{`${info.zitiInfo.pickup_date} ${info.zitiInfo.pickup_time[0]}-${info.zitiInfo.pickup_time[1]}`}</Text>
+                  <Text className='value'>{`${info?.zitiInfo?.pickup_date ?? ''} ${info?.zitiInfo?.pickup_time?.[0] ?? ''}-${info?.zitiInfo?.pickup_time?.[1] ?? ''}`}</Text>
                 </View>
                 <View>
                   <Text className='label'>提货人手机:</Text>
