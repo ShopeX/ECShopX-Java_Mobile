@@ -401,7 +401,7 @@ function NearbyList() {
 
   const handleConsult = (e, info) => {
     e.stopPropagation()
-    if (info.show_salesperson === '1') {
+    if (info.show_salesperson == '1') {
       // 显示门店二维码弹框
       setState((draft) => {
         draft.showConsultModal = true
@@ -411,7 +411,7 @@ function NearbyList() {
           qrcodeUrl: info.fixed_salesperson_qrcode_url
         }
       })
-    } else if (info.show_salesperson === '2') {
+    } else if (info.show_salesperson == '2') {
       // 显示导购二维码弹框
       setState((draft) => {
         draft.showConsultModal = true
