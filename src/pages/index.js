@@ -321,6 +321,7 @@ function Home() {
       pageConfig={pageData?.base || {}}
       renderFloat={wgts.length > 0 && <><CompFloatMenu /><FloatSalesperson /></>}
       renderFooter={<SpTabbar />}
+      nearbyText={nearbyText}
       onScrollToTop={() => {
         // 先设置为一个很小的非0值，确保触发滚动变化
         setState((draft) => {
