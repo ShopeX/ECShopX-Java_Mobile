@@ -35,7 +35,9 @@ function SpInput(props) {
       const isEnter = keyCode === 13 || keyCode === 'Enter'
       if (isEnter && !isWeb) {
         const clean =
-          typeof value === 'string' ? value.replace(/\r\n/g, '').replace(/\r/g, '').replace(/\n/g, '') : value
+          typeof value === 'string'
+            ? value.replace(/\r\n/g, '').replace(/\r/g, '').replace(/\n/g, '')
+            : value
         safeOnConfirm({
           detail: {
             value: clean ?? ''
