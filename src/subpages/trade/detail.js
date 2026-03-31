@@ -479,6 +479,7 @@ function TradeDetail(props) {
     }, 0)
     return <SpPrice unit='cent' value={marketPrice} size={28} />
   }, [info?.items])
+  const markDownDiscount = info?.discountInfo?.find((i) => i?.type === 'mark_down')
 
   return (
     <SpPage
@@ -758,6 +759,12 @@ function TradeDetail(props) {
                   title='促销'
                   value={<SpPrice value={info?.promotionDiscount} size={28} />}
                 />
+                {markDownDiscount?.discount_fee > 0 && (
+                  <SpCell
+                    title='改价优惠'
+                    value={<SpPrice value={markDownDiscount?.discount_fee} size={28} />}
+                  />
+                )}
                 <SpCell title='优惠券' value={<SpPrice value={info?.couponDiscount} size={28} />} />
                 <SpCell
                   title='支付方式'

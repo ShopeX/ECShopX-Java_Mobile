@@ -91,6 +91,12 @@ export const TRADE_ITEM = {
   ordersDeliveryId: 'orders_delivery_id',
   point: 'point',
   promotionDiscount: ({ promotion_discount }) => promotion_discount / 100,
+  discountInfo: ({ discount_info = [] }) => {
+    return discount_info.map((item) => ({
+      ...item,
+      discount_fee: Number(item?.discount_fee || 0) / 100
+    }))
+  },
   payChannel: 'pay_channel',
   payType: 'pay_type',
   receiptType: 'receipt_type',
