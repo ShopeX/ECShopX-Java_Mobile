@@ -70,7 +70,8 @@ function DianwuCollectionResult(props) {
       offline_pay_check_status,
       remark,
       user_id,
-      pay_status
+      pay_status,
+      price_adjustment
     } = orderInfo
     let username, mobile
     if (user_id != 0) {
@@ -94,6 +95,7 @@ function DianwuCollectionResult(props) {
         memberDiscount: member_discount ? member_discount / 100 : 0,
         couponDiscount: coupon_discount ? coupon_discount / 100 : 0,
         promotionDiscount: promotion_discount ? promotion_discount / 100 : 0,
+        priceAdjustment: price_adjustment ? price_adjustment / 100 : 0,
         remark: remark,
         username: username,
         mobile: mobile,
@@ -209,6 +211,11 @@ function DianwuCollectionResult(props) {
             <SpCell title='券优惠' border>
               <SpPrice value={`-${info.couponDiscount}`}></SpPrice>
             </SpCell>
+            {info.priceAdjustment > 0 && (
+              <SpCell title='改价优惠' border>
+                <SpPrice value={`-${info.priceAdjustment}`}></SpPrice>
+              </SpCell>
+            )}
             {/* <SpCell title='积分抵扣' border>
           <SpPrice value={-50}></SpPrice>
         </SpCell> */}

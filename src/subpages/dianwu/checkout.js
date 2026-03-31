@@ -51,7 +51,8 @@ const initialState = {
   distributor_id: null,
   prescriptionStatus: 0,
   codeStatus: false,
-  checkout_order_id: null
+  checkout_order_id: null,
+  priceAdjustment: 0
 }
 function DianwuCheckout(props) {
   const [state, setState] = useImmer(initialState)
@@ -75,7 +76,8 @@ function DianwuCheckout(props) {
     distributor_id,
     prescriptionStatus,
     codeStatus,
-    checkout_order_id
+    checkout_order_id,
+    priceAdjustment
   } = state
   const pageRef = useRef()
   const $instance = getCurrentInstance() || {}
@@ -236,7 +238,8 @@ function DianwuCheckout(props) {
       couponDiscount: _couponDiscount,
       promotionDiscount: _promotionDiscount,
       couponInfo: _couponInfo,
-      prescriptionStatus: _prescriptionStatus
+      prescriptionStatus: _prescriptionStatus,
+      priceAdjustment: _priceAdjustment
     } = pickBy(res, doc.dianwu.CHECKOUT_GOODS_ITEM)
     setState((draft) => {
       draft.itemList = items.filter((item) => item.orderItemType != 'gift')
@@ -251,6 +254,7 @@ function DianwuCheckout(props) {
       draft.couponInfo = _couponInfo
       draft.selectCoupon = _couponInfo ? _couponInfo.coupon_code : null
       ;(draft.markdown = markdown), (draft.prescriptionStatus = _prescriptionStatus)
+      draft.priceAdjustment = _priceAdjustment || 0
     })
   }
 
@@ -558,6 +562,11 @@ function DianwuCheckout(props) {
         <SpCell title='券优惠' border>
           <SpPrice value={`-${couponDiscount}`} />
         </SpCell>
+        {priceAdjustment > 0 && (
+          <SpCell title='改价优惠' border>
+            <SpPrice value={`-${priceAdjustment}`} />
+          </SpCell>
+        )}
         {/* <SpCell title='积分抵扣' border>
           <SpPrice value={-50} />
         </SpCell> */}
@@ -593,8 +602,13 @@ function DianwuCheckout(props) {
         <AtModalHeader>应收款</AtModalHeader>
         <AtModalContent>
           <View className='total-mount'>
-            <SpPrice size={48} value={totalFee} />
-            <Text className='iconfont icon-edit' onClick={handleChangePrice}></Text>
+            <View className='total-mount__row'>
+              <SpPrice size={48} value={totalFee} />
+              <View className='change-price-btn' onClick={handleChangePrice}>
+                <Text className='iconfont icon-edit' />
+                <Text className='change-price-btn__txt'>改价</Text>
+              </View>
+            </View>
           </View>
           {/* <SpCell isLink border>
             <Text className='iconfont icon-weixinzhifu'></Text>

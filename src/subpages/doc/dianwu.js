@@ -128,6 +128,8 @@ export const CHECKOUT_GOODS_ITEM = {
   couponDiscount: ({ coupon_discount }) => (coupon_discount ? coupon_discount / 100 : 0),
   promotionDiscount: ({ promotion_discount }) =>
     promotion_discount ? promotion_discount / 100 : 0,
+  /** 改价优惠金额，接口为分，映射为元 */
+  priceAdjustment: ({ price_adjustment }) => (price_adjustment ? price_adjustment / 100 : 0),
   prescriptionStatus: 'prescription_status'
 }
 
