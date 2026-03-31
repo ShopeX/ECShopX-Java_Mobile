@@ -3,6 +3,7 @@
  * See LICENSE file for license details.
  */
 import { pickBy } from '@/utils'
+import { $t } from '@/i18n'
 
 export const GOODS_DETAIL_PROMOTION_TAG = (
   { promotion_activity = [], discount_rate, specific_crowd = {}, activity_info = {} },
@@ -249,10 +250,10 @@ export const GOODS_INFO = {
       regions = [regions]
     }
     if (item_unit) {
-      res.push({ attribute_name: '计量单位', attribute_value_name: item_unit })
+      res.push({ attribute_name: $t('a12c9ae6.251549'), attribute_value_name: item_unit })
     }
     if (regions) {
-      res.push({ attribute_name: '产地', attribute_value_name: regions.join(' ') })
+      res.push({ attribute_name: $t('a12c9ae6.2b6d31'), attribute_value_name: regions.join(' ') })
     }
     return res.concat(item_params)
   },

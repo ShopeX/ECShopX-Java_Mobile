@@ -3,6 +3,7 @@
  * See LICENSE file for license details.
  */
 import React, { useEffect } from 'react'
+import { useTranslation, $t } from '@/i18n'
 import { useSelector } from 'react-redux'
 import { useImmer } from 'use-immer'
 import Taro, { getCurrentInstance } from '@tarojs/taro'
@@ -19,6 +20,7 @@ const initialState = {
   couponList: []
 }
 function CouponCenter(props) {
+  const { i18n } = useTranslation()
   const $instance = getCurrentInstance() || {}
   const [state, setState] = useImmer(initialState)
   const { couponList } = state
@@ -31,6 +33,10 @@ function CouponCenter(props) {
     entryLaunch.postGuideUV()
     entryLaunch.postGuideTask()
   }, [])
+
+  useEffect(() => {
+    Taro.setNavigationBarTitle({ title: $t('da22a25b.9c356b') })
+  }, [i18n.language])
 
   const fetch = async ({ pageIndex, pageSize }) => {
     const {
@@ -66,7 +72,7 @@ function CouponCenter(props) {
 
   const handleClickCouponItem = async (item, index) => {
     if (item.couponStatus == 0) {
-      showToast('优惠券已领完')
+      showToast($t('357159b6.ca9852'))
     } else if (item.couponStatus == 1) {
       if (isWeixin) {
         const templeparams = {
@@ -91,7 +97,7 @@ function CouponCenter(props) {
         getCoupon(item, index)
       }
     } else {
-      showToast('优惠券领取机会已用完')
+      showToast($t('357159b6.cd2b19'))
     }
   }
 
@@ -113,9 +119,9 @@ function CouponCenter(props) {
           draft.couponList[index].couponStatus = 2
         })
       }
-      showToast('优惠券领取成功')
+      showToast($t('357159b6.ed4e1b'))
     } else {
-      showToast('优惠券领取失败')
+      showToast($t('357159b6.643aa4'))
     }
   }
 
@@ -128,9 +134,9 @@ function CouponCenter(props) {
               <Text>
                 {
                   {
-                    0: '已领完',
-                    1: '立即领取',
-                    2: '已领取'
+                    0: $t('357159b6.c6055e'),
+                    1: $t('357159b6.d67527'),
+                    2: $t('357159b6.0b7e8d')
                   }[item.couponStatus]
                 }
                 {/* {time > item.send_begin_time && item.getted !== 2 && item.getted !== 1

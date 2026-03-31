@@ -14,6 +14,7 @@ import { platformTemplateName } from '@/utils/platform'
 import { SpPage, SpTabbar } from '@/components'
 import { useQwLogin } from '@/hooks'
 import { BaTabBar, BaNavBar } from '@/subpages/guide/components'
+import { useTranslation, $t } from '@/i18n'
 import CompSeries from './comps/comp-series'
 import './index.scss'
 
@@ -38,6 +39,10 @@ const CategoryIndex = (props) => {
   useEffect(() => {
     getConfig()
   }, [])
+
+  useEffect(() => {
+    Taro.setNavigationBarTitle({ title: $t('a2fd850f.c3ece5') })
+  }, [i18n.language])
 
   // useDidShow(() => {
   //   setTimeout(() => {
@@ -126,21 +131,21 @@ const CategoryIndex = (props) => {
         })
       }}
     >
-    <View style={{ height: `calc(100vh - ${state.footerHeight} - ${state.gNavbarH}px)` }}>
-      {tabList.length > 1 && (
-        <AtTabs current={activeIndex} tabList={tabList} onClick={fnSwitchSeries}>
-          {tabList.map((item, index) => (
-            <AtTabsPane current={activeIndex} index={index} key={item.status}></AtTabsPane>
-          ))}
-        </AtTabs>
-      )}
-      <View
-        id='category-wrap'
-        className={`${hasSeries && tabList.length > 1 ? 'category-comps' : 'category-comps-not'}`}
-      >
-        <CompSeries info={currentList} />
+      <View style={{ height: `calc(100vh - ${state.footerHeight} - ${state.gNavbarH}px)` }}>
+        {tabList.length > 1 && (
+          <AtTabs current={activeIndex} tabList={tabList} onClick={fnSwitchSeries}>
+            {tabList.map((item, index) => (
+              <AtTabsPane current={activeIndex} index={index} key={item.status}></AtTabsPane>
+            ))}
+          </AtTabs>
+        )}
+        <View
+          id='category-wrap'
+          className={`${hasSeries && tabList.length > 1 ? 'category-comps' : 'category-comps-not'}`}
+        >
+          <CompSeries info={currentList} />
+        </View>
       </View>
-    </View>
     </SpPage>
   )
 }

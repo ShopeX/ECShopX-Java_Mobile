@@ -5,6 +5,7 @@
 import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit'
 import { getDistributorId } from '@/utils'
 import { defaultLang } from '@/utils/lang'
+import { $t } from '@/i18n'
 import api from '@/api'
 
 console.log('defaultLang', defaultLang)
@@ -26,9 +27,9 @@ const initialState = {
   chiefInfo: {}, // 团长信息
   checkIsChief: true, // 检查是否是团长
   address: {
-    province: '北京市',
-    city: '北京市',
-    area: '昌平区',
+    province: $t('c70dbd79.a8e562'),
+    city: $t('c70dbd79.a8e562'),
+    area: $t('c70dbd79.7470a9'),
     lat: '40.220415',
     lng: '116.234890'
   }

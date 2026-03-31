@@ -6,6 +6,7 @@ import SpTag from '@/components/sp-tag/index'
 import { SpImage, SpLogin, SpPrice } from '@/components'
 import api from '@/api'
 import { pickBy, showToast, navigateToStoreByDistributorId, classNames } from '@/utils'
+import { useTranslation, $t, ti } from '@/i18n'
 import S from '@/spx'
 import doc from '@/doc'
 import './index.scss'
@@ -16,6 +17,7 @@ const initialState = {
   loading: true
 }
 function SpShop(props) {
+  useTranslation()
   const { info, style, isActive, id = 0 } = props
   const [state, setState] = useImmer(initialState)
   const { isFav, items, loading } = state
@@ -43,7 +45,6 @@ function SpShop(props) {
   }
 
   const getItems = async () => {
-
     try {
       const res = await api.seckill.getWidgetItems({
         data_type: 'distributor',
@@ -75,7 +76,7 @@ function SpShop(props) {
         draft.isFav = is_fav
       })
     } else {
-      showToast('店铺已注销，去别的店铺看看吧')
+      showToast($t('a1e2493f.542f83'))
     }
   }
 
@@ -85,21 +86,20 @@ function SpShop(props) {
     if (status) {
       await navigateToStoreByDistributorId(distributor_id)
     } else {
-      showToast('店铺已注销，去别的店铺看看吧')
+      showToast($t('a1e2493f.542f83'))
     }
   }
   const handleClickItem = (item) => {
     Taro.navigateTo({
       url: `/subpages/item/espier-detail?id=${item.itemId}&dtid=${distributor_id}`
     })
-
   }
   return (
     <View className='sp-shop' style={style}>
       <View className='sp-shop__wrap'>
         <View className='sp-shop__bd'>
           <View className='sp-shop__info'>
-            <View className='sp-shop__info-left' onClick={() => handleToStore('进入店铺', 1)}>
+            <View className='sp-shop__info-left' onClick={() => handleToStore()}>
               <View className='sp-shop__img'>
                 <SpImage
                   width={108}
@@ -125,8 +125,8 @@ function SpShop(props) {
                   />
                 </View>
               </SpLogin>
-              <View className='sp-shop__link' onClick={() => handleToStore('进店逛逛', 3)}>
-                <Text>进店逛逛</Text>
+              <View className='sp-shop__link' onClick={() => handleToStore()}>
+                <Text>{$t('a1e2493f.0f2d3a')}</Text>
               </View>
             </View>
           </View>
@@ -157,16 +157,13 @@ function SpShop(props) {
         {items.length > 0 && !loading && (
           <ScrollView scrollX className='sp-shop__goods-list' enableFlex>
             {items.map((item) => (
-              <View
-                className='sp-shop__goods-item'
-                onClick={() => handleClickItem(item)}
-              >
+              <View className='sp-shop__goods-item' onClick={() => handleClickItem(item)}>
                 <View className='sp-shop__goods-item-image'>
                   <SpImage src={item.pic} placeholderColor='#f2f3f5' mode='aspectFill' />
                   {item.store === 0 && (
                     <View className='sp-shop__goods-item-sold-out'>
                       <View className='sp-shop__goods-item-sold-out-text'>
-                        <Text>已售罄</Text>
+                        <Text>{$t('8a5d1351.b12876')}</Text>
                       </View>
                     </View>
                   )}
@@ -177,17 +174,29 @@ function SpShop(props) {
                     <View className='sp-shop__goods-item-title-wrapper'>
                       {item.promotionSkill && (
                         <View className='sp-shop__goods-item-title-wrapper-img'>
-                          <SpImage src='fv_activity_seckill.png' mode='heightFix' width={62} height={31} />
+                          <SpImage
+                            src='fv_activity_seckill.png'
+                            mode='heightFix'
+                            width={62}
+                            height={31}
+                          />
                         </View>
                       )}
                       {item.memberPreference?.marketing_name && (
                         <View className='sp-shop__goods-item-title-wrapper-img'>
-                          <SpImage src='fv_member_preference.png' mode='heightFix' width={62} height={31} />
+                          <SpImage
+                            src='fv_member_preference.png'
+                            mode='heightFix'
+                            width={62}
+                            height={31}
+                          />
                         </View>
                       )}
                       <Text
                         className={classNames(
-                          item.tags?.length > 0 || item.discount_rate || item?.couponList?.length > 0
+                          item.tags?.length > 0 ||
+                            item.discount_rate ||
+                            item?.couponList?.length > 0
                             ? 'sp-shop__goods-item-title'
                             : 'sp-shop__goods-item-title-two',
                           {
@@ -203,29 +212,40 @@ function SpShop(props) {
                   {((item.tags && item.tags.length > 0) ||
                     (item?.couponList && item?.couponList?.length > 0) ||
                     item.discount_rate) && (
-                        <View className='sp-shop__goods-item-tags'>
-                        {item.discount_rate && <SpTag label={`${item.discount_rate}折`} type='secondary' />}
-                        {item.tags.slice(0, 3)?.map((tag, index) => (
-                          <SpTag
-                            key={index}
-                            label={tag.tag_name}
-                            type={tag.type || 'primary'}
-                            className='item-three__tag'
-                          />
-                        ))}
-                        {item.couponList?.map((coupon, index) => (
-                          <SpTag
-                            key={index}
-                            label={coupon.discount_rule}
-                            type='warning'
-                            className='sp-shop__goods-item-tag'
-                          />
-                        ))}
-                      </View>
-                    )}
+                    <View className='sp-shop__goods-item-tags'>
+                      {item.discount_rate && (
+                        <SpTag
+                          label={ti('bfc5ccea.2fb189', [item.discount_rate])}
+                          type='secondary'
+                        />
+                      )}
+                      {item.tags.slice(0, 3)?.map((tag, index) => (
+                        <SpTag
+                          key={index}
+                          label={tag.tag_name}
+                          type={tag.type || 'primary'}
+                          className='item-three__tag'
+                        />
+                      ))}
+                      {item.couponList?.map((coupon, index) => (
+                        <SpTag
+                          key={index}
+                          label={coupon.discount_rule}
+                          type='warning'
+                          className='sp-shop__goods-item-tag'
+                        />
+                      ))}
+                    </View>
+                  )}
                   <View className='sp-shop__goods-item-price-container'>
                     <View className='sp-shop__goods-item-price-wrapper'>
-                      <SpPrice value={item?.mainPrice} primary color='#1A1A1A' size={30} weight={600} />
+                      <SpPrice
+                        value={item?.mainPrice}
+                        primary
+                        color='#1A1A1A'
+                        size={30}
+                        weight={600}
+                      />
                       {Number(item?.originalPrice || 0) / 100 > Number(item?.mainPrice || 0) && (
                         <View className='sp-shop__goods-item-original-price-wrapper ml-8'>
                           <SpPrice

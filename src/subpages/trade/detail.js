@@ -21,7 +21,8 @@ import {
   VERSION_STANDARD,
   entryLaunch
 } from '@/utils'
-import { usePayment } from '@/hooks'
+import { usePayment, useNavigation } from '@/hooks'
+import { useTranslation, $t, i18n } from '@/i18n'
 import S from '@/spx'
 import FloatSalesperson from '@/subpages/store/comps/float-salesperson'
 import tradeHooks from './hooks'
@@ -49,6 +50,8 @@ const initialState = {
   openingTime: 'squareRoots'
 }
 function TradeDetail(props) {
+  useTranslation()
+  const { setNavigationBarTitle } = useNavigation()
   const [state, setState] = useImmer(initialState)
   const {
     info,
@@ -81,6 +84,13 @@ function TradeDetail(props) {
   const isMounted = useRef(true) // 添加组件挂载状态标志
 
   useDidShow(() => {})
+
+  useEffect(() => {
+    const syncTitle = () => setNavigationBarTitle($t('3d2de2c2.8054f7'))
+    syncTitle()
+    i18n.on('languageChanged', syncTitle)
+    return () => i18n.off('languageChanged', syncTitle)
+  }, [setNavigationBarTitle])
 
   useEffect(() => {
     fetch()
@@ -170,7 +180,7 @@ function TradeDetail(props) {
       websocketRef.current.onMessage((res) => {
         const { status } = JSON.parse(res.data)
         if (status == 'success') {
-          showToast('核销成功')
+          showToast($t('34d31722.065407'))
           setTimeout(() => {
             fetch()
           }, 200)
@@ -187,7 +197,7 @@ function TradeDetail(props) {
 
   const hanldeCopy = async (val) => {
     await copyText(val)
-    showToast('复制成功')
+    showToast($t('34d31722.20a495'))
   }
 
   const handleClickItem = async ({ key, action }) => {

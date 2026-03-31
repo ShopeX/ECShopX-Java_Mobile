@@ -9,7 +9,8 @@ import Taro from '@tarojs/taro'
 import { SpPage, SpScrollView, SpNote } from '@/components'
 import { updateLocation } from '@/store/slices/user'
 import api from '@/api'
-import { useLogin } from '@/hooks'
+import { useLogin, useNavigation } from '@/hooks'
+import { useTranslation, $t, i18n } from '@/i18n'
 import doc from '@/doc'
 import { entryLaunch, pickBy, classNames } from '@/utils'
 import { useImmer } from 'use-immer'
@@ -40,6 +41,8 @@ const initialState = {
 }
 
 function NearbyList() {
+  useTranslation()
+  const { setNavigationBarTitle } = useNavigation()
   const { isLogin } = useLogin({ autoLogin: false })
   const [state, setState] = useImmer(initialState)
   const {
@@ -106,6 +109,13 @@ function NearbyList() {
   }
 
   useEffect(() => {
+    const syncTitle = () => setNavigationBarTitle($t('678873b3.9f3102'))
+    syncTitle()
+    i18n.on('languageChanged', syncTitle)
+    return () => i18n.off('languageChanged', syncTitle)
+  }, [setNavigationBarTitle])
+
+  useEffect(() => {
     initLocationPicker()
     getLocationInfo()
     fetchCategoryList()
@@ -130,7 +140,6 @@ function NearbyList() {
       listRef.current?.reset()
     }
   }, [refresh])
-
 
   const initLocationPicker = async () => {
     try {
@@ -369,7 +378,7 @@ function NearbyList() {
       const district = districtIndex === 0 ? null : city?.children?.[districtIndex - 1]
       draft.selectedProvince = province?.label || '选择省'
       draft.selectedCity = city?.label || '选择市'
-      draft.selectedDistrict = districtIndex === 0 ? '不限' : (district?.label || '选择区')
+      draft.selectedDistrict = districtIndex === 0 ? '不限' : district?.label || '选择区'
       draft.locationValue = [provinceIndex, cityIndex, districtIndex]
     })
     refreshList()
@@ -480,10 +489,7 @@ function NearbyList() {
             <View className='store-type-dropdown'>
               <View className='dropdown-content'>
                 {/* 全部门店选项 */}
-                <View
-                  className='dropdown-item'
-                  onClick={() => selectStoreType(0, null)}
-                >
+                <View className='dropdown-item' onClick={() => selectStoreType(0, null)}>
                   <Text className='item-text'>全部门店</Text>
                   <View className={classNames('item-radio', { active: storeTypeIndex === 0 })}>
                     {storeTypeIndex === 0 && <Text className='iconfont icon-gou'></Text>}
@@ -497,8 +503,14 @@ function NearbyList() {
                     onClick={() => selectStoreType(index + 1, item.category_id)}
                   >
                     <Text className='item-text'>{item.category_name}</Text>
-                    <View className={classNames('item-radio', { active: selectedCategoryId === item.category_id })}>
-                      {selectedCategoryId === item.category_id && <Text className='iconfont icon-gou'></Text>}
+                    <View
+                      className={classNames('item-radio', {
+                        active: selectedCategoryId === item.category_id
+                      })}
+                    >
+                      {selectedCategoryId === item.category_id && (
+                        <Text className='iconfont icon-gou'></Text>
+                      )}
                     </View>
                   </View>
                 ))}
@@ -569,9 +581,16 @@ function NearbyList() {
                   <Text className='shop-name'>{item.store_name}</Text>
                   <Text className='shop-distance'>{formatDistance(item.distance)}</Text>
                 </View>
-                <View className={classNames('action-btns', { 'action-btns-bindding': item.isBinddingShop })}>
+                <View
+                  className={classNames('action-btns', {
+                    'action-btns-bindding': item.isBinddingShop
+                  })}
+                >
                   {item.show_mobile === '1' && (
-                    <View className='action-btn-item' onClick={(e) => handlePhoneCall(e, item.mobile)}>
+                    <View
+                      className='action-btn-item'
+                      onClick={(e) => handlePhoneCall(e, item.mobile)}
+                    >
                       <Text className='iconfont icon-mobile action-icon'></Text>
                       <Text className='action-text'>电话咨询</Text>
                     </View>
@@ -614,7 +633,6 @@ function NearbyList() {
         data={consultModalData}
         onClose={closeConsultModal}
       />
-
     </SpPage>
   )
 }

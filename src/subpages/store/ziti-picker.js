@@ -12,6 +12,8 @@ import { View } from '@tarojs/components'
 import { VERSION_PLATFORM, VERSION_STANDARD } from '@/utils'
 import { changeZitiAddress } from '@/store/slices/cart'
 import { SpPage, SpCheckboxNew } from '@/components'
+import { useTranslation, $t, i18n } from '@/i18n'
+import { useNavigation } from '@/hooks'
 import './ziti-picker.scss'
 
 const initialState = {
@@ -20,11 +22,20 @@ const initialState = {
   isDefault: false
 }
 function StoreZitiPicker(props) {
+  useTranslation()
+  const { setNavigationBarTitle } = useNavigation()
   const $instance = getCurrentInstance() || {}
   const [state, setState] = useImmer(initialState)
   const { zitiList, zitiId, isDefault } = state
   const dispatch = useDispatch()
   const { entryStoreByLBS } = useSelector((state) => state.sys)
+
+  useEffect(() => {
+    const syncTitle = () => setNavigationBarTitle($t('f5f607aa.47c2de'))
+    syncTitle()
+    i18n.on('languageChanged', syncTitle)
+    return () => i18n.off('languageChanged', syncTitle)
+  }, [setNavigationBarTitle])
 
   useEffect(() => {
     fetchZitiList()

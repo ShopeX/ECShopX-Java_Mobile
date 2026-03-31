@@ -2,20 +2,15 @@
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
  */
-import React, { useEffect } from 'react'
-import { useSelector } from 'react-redux'
-import { useImmer } from 'use-immer'
-import Taro from '@tarojs/taro'
-import api from '@/api'
-import doc from '@/doc'
-import { AtButton } from 'taro-ui'
+import React from 'react'
 import { View, Text } from '@tarojs/components'
-import { SpImage, SpPrice, SpVipLabel } from '@/components'
-import { classNames } from '@/utils'
+import { SpImage } from '@/components'
+import { useTranslation, $t } from '@/i18n'
 import CompGoodsPrice from './comp-goods-price'
 import './comp-goods.scss'
 
 function CompGoods(props) {
+  useTranslation()
   const { children, info } = props
   if (!info) {
     return null
@@ -30,7 +25,7 @@ function CompGoods(props) {
         <View className='item-bd-bd'>
           <View className='title'>
             {info.isPrescription == 1 && info.isMedicine && (
-              <Text className='prescription-drug'>处方药</Text>
+              <Text className='prescription-drug'>{$t('982aa174.e8b7e1')}</Text>
             )}
             {info.name}
           </View>
@@ -51,13 +46,13 @@ function CompGoods(props) {
             <View className='kc-bn'>
               {info.store && (
                 <View className='kc'>
-                  <Text className='label'>库存：</Text>
+                  <Text className='label'>{$t('982aa174.b008bd')}</Text>
                   {info.store}
                 </View>
               )}
               {info.barcode && (
                 <View className='bn'>
-                  <Text className='label'>条码：</Text>
+                  <Text className='label'>{$t('982aa174.5b69d5')}</Text>
                   {info.barcode}
                 </View>
               )}

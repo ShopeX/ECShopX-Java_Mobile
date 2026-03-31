@@ -2,7 +2,7 @@
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
  */
-import React, { useRef, useEffect, useState } from 'react'
+import React, { useRef, useEffect, useState, useMemo } from 'react'
 import { View, Text } from '@tarojs/components'
 import Taro, { getCurrentInstance } from '@tarojs/taro'
 import { useSelector, useDispatch } from 'react-redux'
@@ -22,6 +22,7 @@ import {
   showToast
 } from '@/utils'
 import S from '@/spx'
+import { $t, useTranslation } from '@/i18n'
 
 import FloatSalesperson from '@/subpages/store/comps/float-salesperson'
 
@@ -34,12 +35,6 @@ const initialState = {
   rightList: [],
   brandList: [],
   brandSelect: [],
-  filterList: [
-    { title: '综合' },
-    { title: '销量' },
-    { title: '价格', icon: 'icon-shengxu-01' },
-    { title: '价格', icon: 'icon-jiangxu-01' }
-  ],
   curFilterIdx: 0,
   tagList: [],
   curTagIdx: 0,
@@ -55,6 +50,7 @@ const initialState = {
 }
 
 function ItemList() {
+  const { i18n } = useTranslation()
   const $instance = getCurrentInstance() || {}
   const [state, setState] = useImmer(initialState)
   const {
@@ -65,12 +61,12 @@ function ItemList() {
     skuPanelOpen,
     brandSelect,
     curFilterIdx,
-    filterList,
     tagList,
     curTagIdx,
     info,
     fixTop,
-    routerParams } = state
+    routerParams
+  } = state
   const [isShowSearch, setIsShowSearch] = useState(false)
   const { cat_id, main_cat_id, tag_id, card_id, user_card_id } = routerParams || {}
   const { shopInfo } = useSelector((state) => state.shop)
@@ -78,7 +74,30 @@ function ItemList() {
 
   const goodsRef = useRef()
   const pageRef = useRef()
+
+  const filterListForView = useMemo(
+    () => [
+      { title: $t('ddb371f2.88e7de') },
+      { title: $t('ddb371f2.44e7eb') },
+      { title: $t('ddb371f2.0e9fd9'), icon: 'icon-shengxu-01' },
+      { title: $t('ddb371f2.0e9fd9'), icon: 'icon-jiangxu-01' }
+    ],
+    [i18n.language]
+  )
+
+  const tagListForView = useMemo(
+    () =>
+      tagList.map((item) =>
+        item.tag_id === 0 ? { ...item, tag_name: $t('f1d3181c.a8b0c2') } : item
+      ),
+    [tagList, i18n.language]
+  )
+
   // console.log('$instance?.router?.params', $instance?.router?.params)
+  useEffect(() => {
+    Taro.setNavigationBarTitle({ title: $t('ddb371f2.437974') })
+  }, [i18n.language])
+
   useEffect(() => {
     if (S.getAuthToken()) {
       dispatch(fetchUserFavs())
@@ -173,12 +192,7 @@ function ItemList() {
       // }
     }
 
-    const {
-      list,
-      total_count,
-      select_tags_list = [],
-      brand_list
-    } = await api.item.search(params)
+    const { list, total_count, select_tags_list = [], brand_list } = await api.item.search(params)
     console.time('list render')
     const n_list = pickBy(list, doc.goods.ITEM_LIST_GOODS)
     const resLeftList = n_list.filter((item, index) => {
@@ -201,7 +215,7 @@ function ItemList() {
         if (select_tags_list.length > 0) {
           v.tagList = [
             {
-              tag_name: '全部',
+              tag_name: '',
               tag_id: 0
             }
           ].concat(select_tags_list)
@@ -268,9 +282,6 @@ function ItemList() {
     goodsRef.current.reset()
   }
 
-
-
-
   const handleClickStore = (item) => {
     const url = `/subpages/store/index?id=${item.distributor_info.distributor_id}`
     Taro.navigateTo({
@@ -322,7 +333,7 @@ function ItemList() {
         )} */}
         <SpSearchBar
           keyword={keywords}
-          placeholder='搜索'
+          placeholder={$t('ddb371f2.e5f71f')}
           onFocus={handleOnFocus}
           onChange={handleOnChange}
           onClear={handleOnClear}
@@ -332,13 +343,18 @@ function ItemList() {
       </View>
       <View className='item-list-head'>
         {tagList.length > 0 && (
-          <SpTagBar className='tag-list' list={tagList} value={curTagIdx} onChange={onChangeTag} />
+          <SpTagBar
+            className='tag-list'
+            list={tagListForView}
+            value={curTagIdx}
+            onChange={onChangeTag}
+          />
         )}
 
         <SpFilterBar
           custom
           current={curFilterIdx}
-          list={filterList}
+          list={filterListForView}
           onChange={handleFilterChange}
         />
       </View>

@@ -3,6 +3,7 @@
  * See LICENSE file for license details.
  */
 import { formatDateTime } from '@/utils'
+import { $t } from '@/i18n'
 
 export const ACTIVITY_ITEM = {
   enterpriseId: 'enterprise_id',
@@ -18,9 +19,9 @@ export const ACTIVITY_ITEM = {
   pages_template_id: 'pages_template_id',
   role: ({ is_employee, is_relative }) => {
     if (is_employee == 1) {
-      return '员工'
+      return $t('00c5cea6.2ed392')
     } else if (is_relative == 1) {
-      return '亲友'
+      return $t('00c5cea6.4eca5b')
     }
   },
   isDiscountDescriptionEnabled: ({ is_discount_description_enabled }) =>

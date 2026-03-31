@@ -2,7 +2,7 @@
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
  */
-import React, { Component } from 'react'
+import React, { useEffect } from 'react'
 import Taro, { getCurrentInstance } from '@tarojs/taro'
 import { View, Text, ScrollView, Picker } from '@tarojs/components'
 import {
@@ -26,6 +26,7 @@ import api from '@/api'
 import { classNames, pickBy } from '@/utils'
 import doc from '@/doc'
 import S from '@/spx'
+import { useTranslation, $t } from '@/i18n'
 
 import './list.scss'
 
@@ -36,8 +37,13 @@ const initialState = {
 }
 
 function RecommendList() {
+  const { i18n } = useTranslation()
   const [state, setState] = useImmer(initialState)
   const { leftList, rightList } = state
+
+  useEffect(() => {
+    Taro.setNavigationBarTitle({ title: $t('35994bc0.c75625') })
+  }, [i18n.language])
 
   const fetch = async ({ pageIndex, pageSize }) => {
     const queryParams = {
@@ -94,7 +100,7 @@ function RecommendList() {
     >
       <View className='search-container'>
         <SpSearchInput
-          placeholder='搜索'
+          placeholder={$t('35994bc0.e5f71f')}
           onConfirm={(val) => {
             setState((draft) => {
               draft.keywords = val

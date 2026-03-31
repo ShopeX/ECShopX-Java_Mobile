@@ -2,6 +2,8 @@
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
  */
+import { $t } from '@/i18n'
+
 export default {
-  navigationBarTitleText: '我的助力订单'
+  navigationBarTitleText: $t('c44418d3.ac9b6d')
 }

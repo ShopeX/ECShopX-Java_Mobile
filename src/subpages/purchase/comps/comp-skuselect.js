@@ -2,25 +2,18 @@
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
  */
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useMemo, useRef } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import Taro, { useRouter } from '@tarojs/taro'
 import { AtButton } from 'taro-ui'
 import { View, Text } from '@tarojs/components'
-import { useImmer } from 'use-immer'
-import {
-  SpFloatLayout,
-  SpButton,
-  SpImage,
-  SpPrice,
-  SpInputNumber,
-  SpGoodsPrice
-} from '@/components'
+import { SpFloatLayout, SpImage, SpInputNumber, SpGoodsPrice } from '@/components'
 import { addCart, updateCount } from '@/store/slices/purchase'
 import { BUY_TOOL_BTNS } from '@/consts'
 import api from '@/api'
 import { useAsyncCallback } from '@/hooks'
 import { classNames, showToast } from '@/utils'
+import { useTranslation, $t, ti } from '@/i18n'
 import './comp-skuselect.scss'
 
 // 数据类型
@@ -37,12 +30,19 @@ const initialState = {
   selection: [],
   disabledSet: new Set(),
   curItem: null,
-  skuText: '',
   num: 1,
   loading: false
 }
 
+function skuSummaryText(selection, skuDict) {
+  const cur = skuDict[selection.join('_')]
+  if (!cur) return $t('d95e19a2.4fd966')
+  const detail = cur.specItem.map((item) => `${item.skuName}:${item.specName}`).join(',')
+  return ti('47ac6066.aa995b', [detail])
+}
+
 function SpSkuSelect(props) {
+  const { i18n } = useTranslation()
   const {
     info,
     open = false,
@@ -54,10 +54,15 @@ function SpSkuSelect(props) {
   // const [state, setState] = useImmer(initialState)
   const [state, setState] = useAsyncCallback(initialState)
   const { purchase_share_info = {} } = useSelector((state) => state.purchase)
-  const { selection, curImage, disabledSet, curItem, skuText, num, loading } = state
+  const { selection, curImage, disabledSet, curItem, num, loading } = state
   const dispatch = useDispatch()
   const skuDictRef = useRef({})
   const router = useRouter()
+
+  const skuText = useMemo(
+    () => skuSummaryText(selection, skuDictRef.current),
+    [selection, i18n.language]
+  )
 
   useEffect(() => {
     if (info && !info.nospec) {
@@ -125,18 +130,15 @@ function SpSkuSelect(props) {
     )
 
     const curItem = skuDictRef.current[selection.join('_')]
-    const skuText = curItem
-      ? `已选：${curItem.specItem.map((item) => `${item.skuName}:${item.specName}`).join(',')}`
-      : '请选择规格'
+    const nextSkuText = skuSummaryText(selection, skuDictRef.current)
 
     setState((draft) => {
       draft.selection = selection
       draft.disabledSet = disabledSet
       draft.curItem = curItem
-      draft.skuText = skuText
     })
 
-    onChange(skuText, curItem)
+    onChange(nextSkuText, curItem)
   }
 
   // calcDisabled(initSelection)
@@ -199,7 +201,7 @@ function SpSkuSelect(props) {
 
     const { nospec } = info
     if (!nospec && !curItem) {
-      showToast('请选择规格')
+      showToast($t('d95e19a2.4fd966'))
       return
     }
     Taro.showLoading({ title: '' })
@@ -229,7 +231,7 @@ function SpSkuSelect(props) {
   const fastBuy = async () => {
     const { nospec } = info
     if (!nospec && !curItem) {
-      showToast('请选择规格')
+      showToast($t('d95e19a2.4fd966'))
       return
     }
     Taro.showLoading({ title: '' })
@@ -294,7 +296,7 @@ function SpSkuSelect(props) {
     if (type == 'picker') {
       return (
         <AtButton circle type='primary' onClick={onClose}>
-          确定
+          {$t('b232790d.38cf16')}
         </AtButton>
       )
     } else if (type == 'addcart') {
@@ -322,9 +324,9 @@ function SpSkuSelect(props) {
       if (activityType == 'limited_buy') {
         limitNum = activityInfo.rule.limit
         if (activityInfo.rule.day == 0) {
-          limitTxt = `（限购${limitNum}件）`
+          limitTxt = ti('47ac6066.244ae6', [limitNum])
         } else {
-          limitTxt = `（每${activityInfo.rule.day}天，限购${limitNum}件）`
+          limitTxt = ti('47ac6066.21bb9b', [activityInfo.rule.day, limitNum])
         }
       } else if (activityType == 'seckill' || activityType == 'limited_time_sale') {
         if (nospec) {
@@ -334,7 +336,7 @@ function SpSkuSelect(props) {
             limitNum = curItem.limitNum
           }
         }
-        limitTxt = `（限购${limitNum}件）`
+        limitTxt = ti('47ac6066.244ae6', [limitNum])
       } else if (activityType == 'group') {
         limitNum = 1
       }
@@ -343,12 +345,12 @@ function SpSkuSelect(props) {
     // 内购加购限制 + 内购立即购买限制
     if (type == 'addcart' && purlimitByCart) {
       limitNum = purlimitByCart
-      limitTxt = `（限购${purlimitByCart}件）`
+      limitTxt = ti('47ac6066.244ae6', [purlimitByCart])
     }
 
     if (type == 'fastbuy' && purlimitByFastbuy) {
       limitNum = purlimitByFastbuy
-      limitTxt = `（限购${purlimitByFastbuy}件）`
+      limitTxt = ti('47ac6066.244ae6', [purlimitByFastbuy])
     }
 
     if (limitNum) {
@@ -360,7 +362,7 @@ function SpSkuSelect(props) {
     return (
       <View className='buy-count'>
         <View className='label'>
-          购买数量 {limitNum && <Text className='limit-count'>{limitTxt}</Text>}
+          {$t('47ac6066.548ef4')} {limitNum && <Text className='limit-count'>{limitTxt}</Text>}
         </View>
 
         <SpInputNumber
@@ -401,7 +403,9 @@ function SpSkuSelect(props) {
           <SpGoodsPrice isPurchase info={curItem || info} />
           <View className='goods-sku-txt'>{skuText}</View>
           {info.store_setting && (
-            <View className='goods-sku-store'>库存：{curItem ? curItem.store : info.store}</View>
+            <View className='goods-sku-store'>
+              {ti('a8427e1f.e203b0', [curItem ? curItem.store : info.store])}
+            </View>
           )}
         </View>
       </View>

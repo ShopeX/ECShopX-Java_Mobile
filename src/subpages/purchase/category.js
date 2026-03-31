@@ -2,6 +2,7 @@
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
  */
+import Taro from '@tarojs/taro'
 import React, { useEffect } from 'react'
 import { View } from '@tarojs/components'
 import { useImmer } from 'use-immer'
@@ -13,6 +14,7 @@ import { useSelector } from 'react-redux'
 import { platformTemplateName } from '@/utils/platform'
 import { SpPage, SpTabbar } from '@/components'
 import CompSeries from '@/pages/category/comps/comp-series'
+import { useTranslation, $t } from '@/i18n'
 import CompTabbar from './comps/comp-tabbar'
 import './category.scss'
 
@@ -25,9 +27,15 @@ const initialState = {
 }
 
 const CategoryIndex = (props) => {
+  const { i18n } = useTranslation()
   const [state, setState] = useImmer(initialState)
   const { currentList, activeIndex, tabList, contentList, hasSeries } = state
   const { purchase_share_info = {} } = useSelector((state) => state.purchase)
+
+  useEffect(() => {
+    Taro.setNavigationBarTitle({ title: $t('dcbb7f83.c3ece5') })
+  }, [i18n.language])
+
   // 获取数据
   useEffect(() => {
     getConfig()

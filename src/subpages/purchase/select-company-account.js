@@ -3,7 +3,7 @@
  * See LICENSE file for license details.
  */
 import Taro, { getCurrentInstance, useRouter } from '@tarojs/taro'
-import React, { useCallback, useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useMemo } from 'react'
 import { useDispatch } from 'react-redux'
 import { useImmer } from 'use-immer'
 import { View, Text, ScrollView, Image, Input, Picker } from '@tarojs/components'
@@ -14,11 +14,13 @@ import { classNames, showToast, VERSION_IN_PURCHASE, getDistributorId, isWeb } f
 import qs from 'qs'
 import { SpForm, SpFormItem, SpPage, SpInput as AtInput, SpPrivacyModal } from '@/components'
 import { updateEnterpriseId, updateCurDistributorId } from '@/store/slices/purchase'
+import { useTranslation, $t } from '@/i18n'
 import CompBottomTip from './comps/comp-bottomTip'
 import CompSelectCompany from './comps/comp-select-company'
 import './select-company-account.scss'
 
 function PurchaseAuthAccount() {
+  const { i18n } = useTranslation()
   const { isNewUser, login } = useLogin({
     autoLogin: true,
     policyUpdateHook: (isUpdate) => {
@@ -31,20 +33,27 @@ function PurchaseAuthAccount() {
       account: '',
       auth_code: ''
     },
-    rules: {
-      account: [{ required: true, message: '账号不能为空' }],
-      auth_code: [{ required: true, message: '请输入登录密码' }]
-    },
     isOpened: false,
     companyList: [],
     curActiveIndex: undefined
   })
   const formRef = useRef()
-  const { form, rules, isOpened, companyList, curActiveIndex } = state
+  const { form, isOpened, companyList, curActiveIndex } = state
+  const rules = useMemo(
+    () => ({
+      account: [{ required: true, message: $t('91841acd.b1a5e1') }],
+      auth_code: [{ required: true, message: $t('74b954b7.209f2b') }]
+    }),
+    [i18n.language]
+  )
   const { params } = useRouter()
   const { enterprise_id, enterprise_name, enterprise_sn, activity_id, is_activity = '' } = params
   const { showModal } = useModal()
   const dispatch = useDispatch()
+
+  useEffect(() => {
+    Taro.setNavigationBarTitle({ title: $t('899687f0.35a9ee') })
+  }, [i18n.language])
 
   const onInputChange = (key, value) => {
     setState((draft) => {
@@ -135,7 +144,7 @@ function PurchaseAuthAccount() {
     try {
       await api.purchase.setEmployeeAuth({ ..._params, showError: false })
       await getQrCodeDtid()
-      showToast('验证成功')
+      showToast($t('ace75665.45001d'))
       dispatch(updateEnterpriseId(_params.enterprise_id))
       if (isOpened) {
         setState((draft) => {
@@ -154,10 +163,10 @@ function PurchaseAuthAccount() {
         dispatch(updateEnterpriseId(_params.enterprise_id))
         await getQrCodeDtid()
         await showModal({
-          title: '验证失败',
+          title: $t('e441b11e.e8c3ea'),
           content: e.message,
           showCancel: false,
-          confirmText: '我知道了',
+          confirmText: $t('20b64b82.fe0337'),
           contentAlign: 'center'
         })
         Taro.reLaunch({
@@ -193,13 +202,13 @@ function PurchaseAuthAccount() {
 
   return (
     <SpPage className='page-purchase-auth-account select-component'>
-      <View className='select-component-title'>账号登录</View>
-      <View className='select-component-prompt'>使用已注册账号密码进行验证</View>
+      <View className='select-component-title'>{$t('efae7764.acb450')}</View>
+      <View className='select-component-prompt'>{$t('5fff4865.0426fb')}</View>
       <View className='selecte-box'>
         <SpForm ref={formRef} className='login-form' formData={form} rules={rules}>
           <SpFormItem prop='account'>
             <AtInput
-              placeholder='请输入完整登录账号'
+              placeholder={$t('a12c1366.a6790e')}
               value={form.account}
               onChange={onInputChange.bind(this, 'account')}
               clear
@@ -209,7 +218,7 @@ function PurchaseAuthAccount() {
           </SpFormItem>
           <SpFormItem prop='auth_code'>
             <AtInput
-              placeholder='请输入登录密码'
+              placeholder={$t('74b954b7.209f2b')}
               value={form.auth_code}
               onChange={onInputChange.bind(this, 'auth_code')}
               name='auth_code'
@@ -221,7 +230,7 @@ function PurchaseAuthAccount() {
       </View>
       <View className='info'>
         <Text className='iconfont icon-info icon'></Text>
-        <Text>如忘记密码，请联系企业管理员处理</Text>
+        <Text>{$t('0e27f608.cb9ff5')}</Text>
       </View>
 
       <AtButton
@@ -230,7 +239,7 @@ function PurchaseAuthAccount() {
         disabled={!(form.account || form.auth_code)}
         onClick={onFormSubmit}
       >
-        验证
+        {$t('cd8992b6.44e6c1')}
       </AtButton>
       <CompBottomTip />
 

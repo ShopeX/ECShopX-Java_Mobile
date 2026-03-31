@@ -20,6 +20,7 @@ import _remove from 'lodash/remove'
 import debounce from 'lodash/debounce'
 import throttle from 'lodash/throttle'
 import parse from 'mini-html-parser2'
+import { $t } from '@/i18n'
 import log from './log'
 import canvasExp from './canvasExp'
 import calCommonExp from './calCommonExp'
@@ -266,7 +267,7 @@ export function formatDateTime(time, formatter = 'YYYY-MM-DD HH:mm:ss') {
   return dayjs(newTime).format(formatter)
 }
 
-export function copyText(text, msg = '内容已复制') {
+export function copyText(text, msg = $t('8968c625.a81a86')) {
   return new Promise((resolve, reject) => {
     if (process.env.TARO_ENV === 'weapp') {
       Taro.setClipboardData({
@@ -393,13 +394,13 @@ export const browser = (() => {
 
 // 注入美洽客服插件
 export const meiqiaInit = () => {
-  ; (function (m, ei, q, i, a, j, s) {
+  ;(function (m, ei, q, i, a, j, s) {
     m[i] =
       m[i] ||
       function () {
-        ; (m[i].a = m[i].a || []).push(arguments)
+        ;(m[i].a = m[i].a || []).push(arguments)
       }
-      ; (j = ei.createElement(q)), (s = ei.getElementsByTagName(q)[0])
+    ;(j = ei.createElement(q)), (s = ei.getElementsByTagName(q)[0])
     j.async = true
     j.charset = 'UTF-8'
     j.src = 'https://static.meiqia.com/dist/meiqia.js?_=t'
@@ -631,7 +632,7 @@ export function showToast(title, callback) {
 
 export function hex2rgb(hex) {
   if (![4, 7].includes(hex.length)) {
-    throw new Error('格式错误')
+    throw new Error($t('8968c625.0257f0'))
   }
   let result = hex.slice(1)
   // 如果是颜色叠值, 统一转换成6位颜色值

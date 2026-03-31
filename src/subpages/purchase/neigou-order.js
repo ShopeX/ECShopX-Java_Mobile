@@ -3,58 +3,75 @@
  * See LICENSE file for license details.
  */
 import Taro from '@tarojs/taro'
-import React, { useCallback, useState, useEffect } from 'react'
-import { useSelector, useDispatch } from 'react-redux'
-import { useImmer } from 'use-immer'
-import { View, Text, ScrollView, Image, Input, Picker, Button } from '@tarojs/components'
-import api from '@/api'
+import React, { useState, useEffect, useMemo } from 'react'
+import { View, Text, Image } from '@tarojs/components'
 import { classNames } from '@/utils'
 import { SpPage, SpTabbar } from '@/components'
+import { useTranslation, $t, ti } from '@/i18n'
 import CompBottomTip from './comps/comp-bottomTip'
 import CompTabbar from './comps/comp-tabbar'
 import './neigou-order.scss'
 
-const tabbarState = [{ title: '全部' }, { title: '待支付' }, { title: '待收货' }]
+const MOCK_ORDERS = [
+  {
+    id: 1,
+    titleKey: '023f641f.6651a4',
+    isNeiGou: true,
+    orderNum: '338341400246090',
+    orderTime: '2021.4.30 12:00:00',
+    status: 'waitPay',
+    goods: {
+      url: '',
+      nameKey: 'c34a58f0.d47adb',
+      introKey: '5f8810a1.a20bf1',
+      price: '402.00',
+      count: 10
+    }
+  },
+  {
+    id: 2,
+    titleKey: '023f641f.6651a4',
+    isNeiGou: true,
+    orderNum: '338341400246090',
+    orderTime: '2021.4.30 12:00:00',
+    status: 'waitReceive',
+    goods: {
+      url: '',
+      nameKey: 'c34a58f0.d47adb',
+      introKey: '5f8810a1.a20bf1',
+      price: '402.00',
+      count: 10
+    }
+  }
+]
 
 function SelectComponent(props) {
+  const { i18n } = useTranslation()
   const [activeIndex, setActiveIndex] = useState(0)
 
-  const [orders, setOrders] = useState([
-    {
-      id: 1,
-      title: '上海商派员工亲友购',
-      isNeiGou: true,
-      orderNum: '338341400246090',
-      orderTime: '2021.4.30 12:00:00',
-      status: '待支付',
-      goods: {
-        url: '',
-        name: '水晶石无火香薰昆仑煮雪',
-        intro: '昆仑煮雪',
-        price: '402.00',
-        count: 10
-      }
-    },
-    {
-      id: 2,
-      title: '上海商派员工亲友购',
-      isNeiGou: true,
-      orderNum: '338341400246090',
-      orderTime: '2021.4.30 12:00:00',
-      status: '待收货',
-      goods: {
-        url: '',
-        name: '水晶石无火香薰昆仑煮雪',
-        intro: '昆仑煮雪',
-        price: '402.00',
-        count: 10
-      }
-    }
-  ])
-  const { colorPrimary, pointName } = useSelector((state) => state.sys)
+  const [orders] = useState(MOCK_ORDERS)
+
+  const tabbarState = useMemo(
+    () => [
+      { title: $t('f1d3181c.a8b0c2') },
+      { title: $t('16726e8e.9246fe') },
+      { title: $t('16726e8e.4933ca') }
+    ],
+    [i18n.language]
+  )
+
+  useEffect(() => {
+    Taro.setNavigationBarTitle({ title: $t('d753bc5e.22fa05') })
+  }, [i18n.language])
 
   const handleTitleClick = (index) => {
     setActiveIndex(index)
+  }
+
+  const statusLabel = (status) => {
+    if (status === 'waitPay') return $t('16726e8e.9246fe')
+    if (status === 'waitReceive') return $t('16726e8e.4933ca')
+    return ''
   }
 
   return (
@@ -64,7 +81,7 @@ function SelectComponent(props) {
           return (
             <View
               key={index}
-              className={classNames('order-item', { 'active': activeIndex === index })}
+              className={classNames('order-item', { active: activeIndex === index })}
               onClick={() => handleTitleClick(index)}
             >
               {item.title}
@@ -73,20 +90,22 @@ function SelectComponent(props) {
         })}
       </View>
       <SpPage className='neigou-order' renderFooter={<CompTabbar />}>
-        {orders?.map((item, index) => {
+        {orders?.map((item) => {
           return (
             <View key={item.id} className='good-item'>
-              <View className='item-title'>{item.title}</View>
+              <View className='item-title'>{$t(item.titleKey)}</View>
               <View className='item-content'>
                 <View className='content-head'>
                   <View className='head-top'>
                     <View className='head-top-left'>
-                      {item.isNeiGou && <Text className='neigou'>内购</Text>}
-                      <Text className='order-num'>订单编号：&nbsp;{item.orderNum}</Text>
+                      {item.isNeiGou && <Text className='neigou'>{$t('d0465c10.36d204')}</Text>}
+                      <Text className='order-num'>{ti('12f07f54.78f59a', [item.orderNum])}</Text>
                     </View>
-                    <View className='order-status'>{item.status}</View>
+                    <View className='order-status'>{statusLabel(item.status)}</View>
                   </View>
-                  <View className='order-time'>下单时间：{item.orderTime}</View>
+                  <View className='order-time'>
+                    {$t('30644393.2240cc')}：{item.orderTime}
+                  </View>
                 </View>
                 <View className='content-good'>
                   <View>
@@ -94,18 +113,18 @@ function SelectComponent(props) {
                   </View>
                   <View className='good-content'>
                     <View className='good-content-top'>
-                      <View>{item.goods?.name}</View>
+                      <View>{$t(item.goods.nameKey)}</View>
                       <View className='good-price'>¥{item.goods?.price}</View>
                     </View>
                     <View className='good-content-bottom'>
-                      <View>{item.goods?.intro}</View>
+                      <View>{$t(item.goods.introKey)}</View>
                       <View>x&nbsp;{item.goods?.count}</View>
                     </View>
                   </View>
                 </View>
                 <View className='content-pay'>
-                  <Text className='all-count'>共{item.goods?.count}件</Text>
-                  <Text className='actual-price'>实付金额</Text>
+                  <Text className='all-count'>{ti('12f07f54.17d01f', [item.goods?.count])}</Text>
+                  <Text className='actual-price'>{$t('12f07f54.94a7de')}</Text>
                   <Text className='price'>
                     ¥<Text className='price-account'>{item.goods?.price * item.goods?.count}</Text>
                     .00
@@ -113,10 +132,10 @@ function SelectComponent(props) {
                 </View>
                 <View className='item-option'>
                   <View className='option-order'>
-                    {item.status === '待支付' ? '取消订单' : '查看物流'}
+                    {item.status === 'waitPay' ? $t('16726e8e.b21b5e') : $t('64c107ec.edf4b2')}
                   </View>
                   <View className='option-pay'>
-                    {item.status === '待支付' ? '立即支付' : '确认收货'}
+                    {item.status === 'waitPay' ? $t('16726e8e.747349') : $t('2715dbf7.775b01')}
                   </View>
                 </View>
               </View>

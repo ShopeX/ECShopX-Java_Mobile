@@ -12,7 +12,15 @@ import Taro, {
 } from '@tarojs/taro'
 import { View, Image, ScrollView, Button } from '@tarojs/components'
 import { useSelector, useDispatch } from 'react-redux'
-import { SpPage, SpSearch, SpPrivacyModal, SpTabbar, SpFloatMenus, SpPoster, SpImage } from '@/components'
+import {
+  SpPage,
+  SpSearch,
+  SpPrivacyModal,
+  SpTabbar,
+  SpFloatMenus,
+  SpPoster,
+  SpImage
+} from '@/components'
 import { SharePurchase } from '@/subpages/components'
 import api from '@/api'
 import {
@@ -34,6 +42,7 @@ import {
 import doc from '@/doc'
 import { useImmer } from 'use-immer'
 import { useLogin, useNavigation } from '@/hooks'
+import { useTranslation, $t } from '@/i18n'
 import HomeWgts from '@/pages/home/comps/home-wgts'
 import { WgtHomeHeader } from '@/pages/home/wgts'
 import configStore from '@/store'
@@ -59,6 +68,7 @@ const initialState = {
 const { store } = configStore()
 
 function Home() {
+  useTranslation()
   const [state, setState] = useImmer(initialState)
   const { initState, entryStoreByLBS, appName } = useSelector((state) => state.sys)
   const { purchase_share_info = {}, curDistributorId } = useSelector((state) => state.purchase)
@@ -241,7 +251,7 @@ function Home() {
   const showInfo = () => {
     if (purchase_share_info.surplus_share_limitnum == '0') {
       Taro.showToast({
-        title: '分享次数为0',
+        title: $t('63b11dbe.ce0559'),
         icon: 'none'
       })
       return

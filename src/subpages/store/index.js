@@ -13,7 +13,15 @@ import { View, Text, ScrollView } from '@tarojs/components'
 import { useSelector, useDispatch } from 'react-redux'
 import { SG_ROUTER_PARAMS } from '@/consts'
 import S from '@/spx'
-import { SpFloatMenuItem, SpPage, SpSearch, SpRecommend, SpSkuSelect, SpLogin, SpPoweredBy } from '@/components'
+import {
+  SpFloatMenuItem,
+  SpPage,
+  SpSearch,
+  SpRecommend,
+  SpSkuSelect,
+  SpLogin,
+  SpPoweredBy
+} from '@/components'
 import api from '@/api'
 import doc from '@/doc'
 import * as shopDoc from '@/doc/shop'
@@ -28,6 +36,7 @@ import {
 } from '@/utils'
 import { useImmer } from 'use-immer'
 import { useNavigation } from '@/hooks'
+import { useTranslation, $t } from '@/i18n'
 import _toString from 'lodash/toString'
 import HomeWgts from '@/pages/home/comps/home-wgts'
 import { WgtsContext } from '@/pages/home/wgts/wgts-context'
@@ -59,6 +68,7 @@ const initState = {
 }
 
 function StoreIndex() {
+  useTranslation()
   const [state, setState] = useImmer(initState)
   const [likeList, setLikeList] = useImmer([])
   const { openRecommend, colorPrimary } = useSelector((state) => state.sys)
@@ -230,7 +240,7 @@ function StoreIndex() {
   const addPurchases = async (id) => {
     let data
     Taro.showLoading({
-      title: '加载中'
+      title: $t('17670153.f013ea')
     })
     const { dtid } = await parameter()
     const itemDetail = await api.item.detail(id, {
@@ -324,7 +334,7 @@ function StoreIndex() {
         draft.open = true
       })
     } else {
-      showToast('购物车暂无数据，请先加购')
+      showToast($t('17670153.a590f1'))
     }
   }
 
@@ -343,7 +353,7 @@ function StoreIndex() {
     <SpPage
       className='page-store-index'
       isDefault={isDefault}
-      defaultMsg='该店铺已注销，在别的店铺看看吧'
+      defaultMsg={$t('17670153.03b176')}
       loading={loading}
       scrollToTopBtn
       ref={pageRef}
@@ -381,99 +391,99 @@ function StoreIndex() {
           })
         }}
       >
-      {searchComp && (
+        {searchComp && (
+          <View
+            className={classNames('search', {
+              'search--solid': searchSolidBg
+            })}
+          >
+            <SpSearch
+              // isFixTop={searchComp?.config?.fixTop}
+              info={searchComp}
+              onClick={() => {
+                Taro.navigateTo({
+                  url: `/subpages/store/item-list?dtid=${distributorId}`
+                })
+              }}
+            />
+          </View>
+        )}
+
         <View
-          className={classNames('search', {
-            'search--solid': searchSolidBg
-          })}
+          className={searchComp ? 'header-block' : 'header-block-pad'}
+          style={{ background: `url('${storeInfo?.banner}') no-repeat center center / cover` }}
         >
-          <SpSearch
-            // isFixTop={searchComp?.config?.fixTop}
-            info={searchComp}
-            onClick={() => {
-              Taro.navigateTo({
-                url: `/subpages/store/item-list?dtid=${distributorId}`
-              })
-            }}
-          />
+          <CompShopBrand storeInfo={storeInfo} dtid={distributorId} />
         </View>
-      )}
 
-      <View
-        className={searchComp ? 'header-block' : 'header-block-pad'}
-        style={{ background: `url('${storeInfo?.banner}') no-repeat center center / cover` }}
-      >
-        <CompShopBrand storeInfo={storeInfo} dtid={distributorId} />
-      </View>
-
-      <View
-        className='switchs'
-        style={{
-          background: `${pageData?.base?.pageBackgroundColor || '#fff'}`,
-          top: `${statusBarHeight + 40}px`
-        }}
-      >
-        <Text
-          className={classNames(productSwitching ? 'switchings' : 'switching')}
-          onClick={() => tabbarSwitching(true)}
-        >
-          首页
-        </Text>
-        <Text
-          className={classNames('switched', productSwitching ? 'switching' : 'switchings')}
-          onClick={() => tabbarSwitching(false)}
-        >
-          商品分类
-        </Text>
-      </View>
-
-      {productSwitching && wgts.length > 0 ? (
-        <WgtsContext.Provider
-          value={{
-            onAddToCart
+        <View
+          className='switchs'
+          style={{
+            background: `${pageData?.base?.pageBackgroundColor || '#fff'}`,
+            top: `${statusBarHeight + 40}px`
           }}
         >
-          <HomeWgts wgts={filterWgts} dtid={distributorId} onLoad={fetchLikeList}>
-            {/* 猜你喜欢 */}
-            <SpRecommend className='recommend-block' info={likeList} />
-          </HomeWgts>
-        </WgtsContext.Provider>
-      ) : (
-        <Categorys addPurchases={addPurchases} dtid={distributorId} />
-      )}
-      <View className='sp-page__powered-by w-full'>
-        <SpPoweredBy />
-      </View>
-      {/* Sku选择器 */}
-      <MSpSkuSelect
-        open={skuPanelOpen}
-        type={selectType}
-        info={info}
-        onClose={() => {
-          setState((draft) => {
-            draft.skuPanelOpen = false
-          })
-        }}
-        onChange={(skuText, curItem) => {
-          setState((draft) => {
-            draft.skuText = skuText
-            draft.curItem = curItem
-          })
-        }}
-      />
+          <Text
+            className={classNames(productSwitching ? 'switchings' : 'switching')}
+            onClick={() => tabbarSwitching(true)}
+          >
+            {$t('17670153.db1c89')}
+          </Text>
+          <Text
+            className={classNames('switched', productSwitching ? 'switching' : 'switchings')}
+            onClick={() => tabbarSwitching(false)}
+          >
+            {$t('17670153.c3ece5')}
+          </Text>
+        </View>
 
-      {/* 购物车弹框 */}
-      <CompAddCart
-        open={open}
-        onMaskCloses={() =>
-          setState((draft) => {
-            draft.open = false
-          })
-        }
-        parameter={parameter}
-      />
+        {productSwitching && wgts.length > 0 ? (
+          <WgtsContext.Provider
+            value={{
+              onAddToCart
+            }}
+          >
+            <HomeWgts wgts={filterWgts} dtid={distributorId} onLoad={fetchLikeList}>
+              {/* 猜你喜欢 */}
+              <SpRecommend className='recommend-block' info={likeList} />
+            </HomeWgts>
+          </WgtsContext.Provider>
+        ) : (
+          <Categorys addPurchases={addPurchases} dtid={distributorId} />
+        )}
+        <View className='sp-page__powered-by w-full'>
+          <SpPoweredBy />
+        </View>
+        {/* Sku选择器 */}
+        <MSpSkuSelect
+          open={skuPanelOpen}
+          type={selectType}
+          info={info}
+          onClose={() => {
+            setState((draft) => {
+              draft.skuPanelOpen = false
+            })
+          }}
+          onChange={(skuText, curItem) => {
+            setState((draft) => {
+              draft.skuText = skuText
+              draft.curItem = curItem
+            })
+          }}
+        />
 
-      <SpLogin ref={loginRef} />
+        {/* 购物车弹框 */}
+        <CompAddCart
+          open={open}
+          onMaskCloses={() =>
+            setState((draft) => {
+              draft.open = false
+            })
+          }
+          parameter={parameter}
+        />
+
+        <SpLogin ref={loginRef} />
       </ScrollView>
     </SpPage>
   )

@@ -2,7 +2,7 @@
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
  */
-import React, { useRef, useEffect, useState } from 'react'
+import React, { useRef, useEffect, useState, useMemo } from 'react'
 import { View, Text, ScrollView } from '@tarojs/components'
 import Taro, { getCurrentInstance, useDidShow } from '@tarojs/taro'
 import { useSelector, useDispatch } from 'react-redux'
@@ -23,6 +23,7 @@ import {
   VERSION_STANDARD
 } from '@/utils'
 import S from '@/spx'
+import { useTranslation, $t } from '@/i18n'
 import './list.scss'
 
 const initialState = {
@@ -30,12 +31,6 @@ const initialState = {
   rightList: [],
   brandList: [],
   brandSelect: [],
-  filterList: [
-    { title: '综合' },
-    { title: '销量' },
-    { title: '价格', icon: 'icon-shengxu-01' },
-    { title: '价格', icon: 'icon-jiangxu-01' }
-  ],
   curFilterIdx: 0,
   tagList: [],
   curTagIdx: 0,
@@ -47,6 +42,7 @@ const initialState = {
 }
 
 function ItemList() {
+  const { i18n } = useTranslation()
   const $instance = getCurrentInstance() || {}
   const [state, setState] = useImmer(initialState)
   const {
@@ -56,7 +52,6 @@ function ItemList() {
     brandList,
     brandSelect,
     curFilterIdx,
-    filterList,
     tagList,
     curTagIdx,
     show,
@@ -69,7 +64,21 @@ function ItemList() {
   const { purchase_share_info = {}, curDistributorId } = useSelector((state) => state.purchase)
   const dispatch = useDispatch()
 
+  const filterList = useMemo(
+    () => [
+      { title: $t('ddb371f2.88e7de') },
+      { title: $t('ddb371f2.44e7eb') },
+      { title: $t('ddb371f2.0e9fd9'), icon: 'icon-shengxu-01' },
+      { title: $t('ddb371f2.0e9fd9'), icon: 'icon-jiangxu-01' }
+    ],
+    [i18n.language]
+  )
+
   const goodsRef = useRef()
+
+  useEffect(() => {
+    Taro.setNavigationBarTitle({ title: $t('ddb371f2.437974') })
+  }, [i18n.language])
   // console.log('$instance?.router?.params', $instance?.router?.params)
   useEffect(() => {
     if (S.getAuthToken()) {
@@ -217,7 +226,7 @@ function ItemList() {
       if (select_tags_list.length > 0) {
         v.tagList = [
           {
-            tag_name: '全部',
+            tag_name: $t('f1d3181c.a8b0c2'),
             tag_id: 0
           }
         ].concat(select_tags_list)
@@ -332,13 +341,13 @@ function ItemList() {
               })
             }}
           >
-            <View className='shop-name'>{shopInfo.store_name || '暂无店铺信息'}</View>
+            <View className='shop-name'>{shopInfo.store_name || $t('e3bdb7a0.895d7d')}</View>
             <Text className='iconfont icon-qianwang-01'></Text>
           </View>
         )}
         <SpSearchBar
           keyword={keywords}
-          placeholder='搜索'
+          placeholder={$t('ddb371f2.e5f71f')}
           onFocus={handleOnFocus}
           onChange={handleOnChange}
           onClear={handleOnClear}

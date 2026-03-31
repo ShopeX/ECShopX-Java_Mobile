@@ -12,6 +12,7 @@ import dayjs from 'dayjs'
 import { connect } from 'react-redux'
 import { withPager } from '@/hocs'
 import { styleNames, formatDateTime, log } from '@/utils'
+import { $t, ti, i18n } from '@/i18n'
 import './share.scss'
 
 @connect(({ user, purchase }) => ({
@@ -40,8 +41,19 @@ export default class PurchaseIndex extends Component {
     Taro.hideShareMenu({
       menus: ['shareAppMessage', 'shareTimeline']
     })
+    this._setShareNavTitle = () => {
+      Taro.setNavigationBarTitle({ title: $t('d0465c10.36d204') })
+    }
+    this._setShareNavTitle()
+    i18n.on('languageChanged', this._setShareNavTitle)
     this.nextPage()
     this.getActivitydata()
+  }
+
+  componentWillUnmount() {
+    if (this._setShareNavTitle) {
+      i18n.off('languageChanged', this._setShareNavTitle)
+    }
   }
 
   onShareAppMessage() {
@@ -85,7 +97,7 @@ export default class PurchaseIndex extends Component {
     const { info } = this.state
     if (info.invite_limit == info.invited_num) {
       Taro.showToast({
-        title: '分享次数为0',
+        title: $t('63b11dbe.ce0559'),
         icon: 'none'
       })
       return
@@ -121,7 +133,9 @@ export default class PurchaseIndex extends Component {
               <View className='username-wrap'>
                 <View className='left-wrap'>
                   <View className='username'>{userInfo.username}</View>
-                  <View className='userRole'>{info.is_employee == 1 ? '员工' : '家属'}</View>
+                  <View className='userRole'>
+                    {info.is_employee == 1 ? $t('2ed39222.055f8a') : $t('3b6fe43d.d44fdf')}
+                  </View>
                 </View>
                 {info.is_employee == 1 && (
                   <Button
@@ -130,21 +144,27 @@ export default class PurchaseIndex extends Component {
                     className='shareBtn'
                     disabled={info.invite_limit == info.invited_num}
                   >
-                    <Text onClick={this.showInfo.bind(this)}>分享</Text>
+                    <Text onClick={this.showInfo.bind(this)}>{$t('593377c2.c31f48')}</Text>
                   </Button>
                 )}
               </View>
             </View>
           </View>
           <View className='share-info'>
-            <View className='title'>分享额度</View>
-            <View className='limitnum'>{`共计：${info.invite_limit}；已使用：${
-              info.invited_num
-            }；可分享：${info.invite_limit - info.invited_num}`}</View>
+            <View className='title'>{$t('c57fe3e9.ec441a')}</View>
+            <View className='limitnum'>
+              {ti('187d55e5.ab8f39', [
+                info.invite_limit,
+                info.invited_num,
+                info.invite_limit - info.invited_num
+              ])}
+            </View>
           </View>
           <View className='relative-time'>
-            亲友参与时间：{formatDateTime(info?.relative_begin_time * 1000)} -{' '}
-            {formatDateTime(info?.relative_end_time * 1000)}
+            {ti('efc43b43.dec226', [
+              formatDateTime(info?.relative_begin_time * 1000),
+              formatDateTime(info?.relative_end_time * 1000)
+            ])}
           </View>
           {/* <View className='header-bd'>
             <View className='bd-item'>
@@ -171,7 +191,7 @@ export default class PurchaseIndex extends Component {
           <View>
             <View className='line-wrap'>
               <Text className='line'></Text>
-              <Text className='line-title'>全部亲友</Text>
+              <Text className='line-title'>{$t('a702ec6d.f31042')}</Text>
               <Text className='line'></Text>
             </View>
             <ScrollView
@@ -199,7 +219,7 @@ export default class PurchaseIndex extends Component {
                         </View>
                       </View>
                       <View>
-                        <View>使用额度</View>
+                        <View>{$t('7a87bf63.a9b796')}</View>
                         <View className='list-item-count'>
                           {item.used_limitfee ? (item.used_limitfee / 100).toFixed(2) : '0.00'}
                         </View>
@@ -209,7 +229,9 @@ export default class PurchaseIndex extends Component {
                 })}
               </View>
             </ScrollView>
-            {relative_list.length === 0 && <View className='centerText'>暂无数据</View>}
+            {relative_list.length === 0 && (
+              <View className='centerText'>{$t('c575112f.f1f45e')}</View>
+            )}
 
             <SharePurchase
               open={isOpened}

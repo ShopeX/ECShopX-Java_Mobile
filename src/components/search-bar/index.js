@@ -8,6 +8,7 @@ import { View, Form, Text, Image } from '@tarojs/components'
 import { AtSearchBar } from 'taro-ui'
 import { isWeb, classNames } from '@/utils'
 import { toggleTouchMove } from '@/utils/dom'
+import { $t } from '@/i18n'
 
 import './index.scss'
 
@@ -137,8 +138,8 @@ export default class SearchBar extends Component {
           <AtSearchBar
             className='search-input__bar'
             value={keyword}
-            placeholder={!placeholder ? '请输入关键词' : placeholder}
-            actionName='取消'
+            placeholder={!placeholder ? $t('377a1681.cd11be') : placeholder}
+            actionName={$t('61e2d21a.625fb2')}
             showActionButton={isShowAction}
             onFocus={this.handleFocusSearchHistory.bind(this, true)}
             onBlur={this.handleBlurSearch.bind(this)}
@@ -156,9 +157,9 @@ export default class SearchBar extends Component {
             )}
           >
             <View className='search-input__history-title'>
-              <Text>最近搜索</Text>
+              <Text>{$t('7fa435fc.e8cb95')}</Text>
               <Text className='clear-history' onClick={this.handleClickDelete.bind(this)}>
-                清除搜索历史
+                {$t('7fa435fc.4bf6fd')}
               </Text>
             </View>
             <View className='search-input__history-list'>

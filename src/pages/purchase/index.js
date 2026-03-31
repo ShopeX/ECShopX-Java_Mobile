@@ -30,6 +30,7 @@ import {
   SpImage,
   SpTabs
 } from '@/components'
+import { useTranslation, $t, ti } from '@/i18n'
 import CompTabbar from './comps/comp-tabbar'
 import './index.scss'
 
@@ -38,21 +39,26 @@ const initialState = {
   activity_name: '',
   currentIndex: 0,
   tabList: [
-    { title: '全部', value: 0 },
-    { title: '活动进行中', value: 1 },
-    { title: '未开始', value: 2 },
-    { title: '已结束', value: 3 }
+    { titleKey: 'e32a7439.a8b0c2', value: 0 },
+    { titleKey: 'e32a7439.a8bcd6', value: 1 },
+    { titleKey: 'e32a7439.dd4e55', value: 2 },
+    { titleKey: 'e32a7439.047fab', value: 3 }
   ],
   loading: true
 }
 
 function PurchaseActivityList() {
+  const { i18n } = useTranslation()
   const [state, setState] = useImmer(initialState)
   const { activityList, activity_name, tabList, currentIndex, loading } = state
   const { curEnterpriseId } = useSelector((_state) => _state.purchase)
 
   const scrollRef = useRef()
   const dispatch = useDispatch()
+
+  useEffect(() => {
+    Taro.setNavigationBarTitle({ title: $t('e32a7439.dc7202') })
+  }, [i18n.language])
 
   const { params } = useRouter()
   let { activity_id, is_redirt } = params
@@ -157,7 +163,7 @@ function PurchaseActivityList() {
   const renderFooter = () => {
     return (
       <View className='select-company-footer' onClick={handleToggleRole}>
-        身份管理
+        {$t('e32a7439.e33d3e')}
       </View>
     )
   }
@@ -238,7 +244,7 @@ function PurchaseActivityList() {
     >
       <View className='user-box'>
         <View className='user-serach'>
-          <SpSearchInput placeholder='活动名称' onConfirm={onConfirm} />
+          <SpSearchInput placeholder={$t('e32a7439.39834b')} onConfirm={onConfirm} />
         </View>
       </View>
       {/* <SpTabs current={currentIndex} tablist={tabList} onChange={handleTypeChange} /> */}
@@ -248,7 +254,7 @@ function PurchaseActivityList() {
           className=''
           auto={false}
           fetch={fetch}
-          renderEmpty={<SpNote img='empty_activity.png' title='没有查询到内购活动' />}
+          renderEmpty={<SpNote img='empty_activity.png' title={$t('e32a7439.dd530e')} />}
         >
           <View className='scroll-view-container'>
             {activityList.map((item, index) => (
@@ -258,7 +264,7 @@ function PurchaseActivityList() {
                   {/* <View className='role'>{item.role}</View> */}
                 </View>
                 <View className='activity-time'>
-                  {`活动时间：${item.employeeBeginTime} - ${item.employeeEndTime}`}
+                  {ti('e32a7439.b5e0b5', [item.employeeBeginTime, item.employeeEndTime])}
                 </View>
                 <SpImage className='activity-pic' circle={36} src={item.pic} />
               </View>

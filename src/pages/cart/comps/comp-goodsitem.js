@@ -8,6 +8,7 @@ import { useSelector } from 'react-redux'
 import { View, Text, Image } from '@tarojs/components'
 import { SpPrice, SpInputNumber, SpImage } from '@/components'
 import { VERSION_IN_PURCHASE } from '@/utils'
+import { useTranslation, $t, ti } from '@/i18n'
 
 import './comp-goodsitem.scss'
 
@@ -15,6 +16,7 @@ const initialState = {
   localNum: 0
 }
 function CompGoodsItem(props) {
+  useTranslation()
   const {
     info,
     children,
@@ -70,9 +72,9 @@ function CompGoodsItem(props) {
   if (info?.limitedBuy?.marketing_type == 'limited_buy') {
     limitNum = info?.limitedBuy?.rule.limit
     if (info?.limitedBuy?.rule.day == 0) {
-      limitTxt = `限购${limitNum}件`
+      limitTxt = ti('7d82f6d2.ffad24', [limitNum])
     } else {
-      limitTxt = `每${info?.limitedBuy?.rule.day}天，限购${limitNum}件`
+      limitTxt = ti('7d82f6d2.43357c', [info?.limitedBuy?.rule.day, limitNum])
     }
   }
 
@@ -93,9 +95,11 @@ function CompGoodsItem(props) {
           <View className='item-hd'>
             <View className='goods-title'>
               {/* {info.activity_type == 'package' && <Text className='goods-title__tag'>组合商品</Text>} */}
-              {info.is_plus_buy && <Text className='goods-title__tag'>加价购</Text>}
+              {info.is_plus_buy && (
+                <Text className='goods-title__tag'>{$t('7d82f6d2.54e654')}</Text>
+              )}
               {info?.is_medicine == 1 && info?.is_prescription == 1 && (
-                <Text className='prescription-drug'>处方药</Text>
+                <Text className='prescription-drug'>{$t('7d82f6d2.e8b7e1')}</Text>
               )}
               {info.item_name}
             </View>
@@ -121,7 +125,7 @@ function CompGoodsItem(props) {
                 {vipInfo?.isVip ? vipInfo?.grade_name : userInfo?.gradeInfo?.grade_name}
               </View>
             )}
-            {goodType == 'packages' && <View className='item-tag'>组合商品</View>}
+            {goodType == 'packages' && <View className='item-tag'>{$t('7d82f6d2.159f49')}</View>}
             {limitTxt && <View className='item-tag'>{limitTxt}</View>}
           </View>
 

@@ -2,42 +2,50 @@
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
  */
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useMemo, useRef } from 'react'
 import { useImmer } from 'use-immer'
-import Taro, { useDidShow, useRouter } from '@tarojs/taro'
-import { View, ScrollView, Button } from '@tarojs/components'
+import Taro, { useDidShow } from '@tarojs/taro'
+import { View } from '@tarojs/components'
 import { SpPage, SpScrollView, SpSearchBar } from '@/components'
 import { SpTagBar, SpSelectModal } from '@/subpages/components'
+import { useTranslation, $t } from '@/i18n'
 import api from '@/api'
-import doc from '@/doc'
 import * as activityDoc from '@/doc/activity'
 import { pickBy } from '@/utils'
 import CompActivityItem from './comps/comp-activity-item'
 import './activity-list.scss'
 
 const initialState = {
-  tradeStatus: [
-    { tag_name: '当前活动', value: '1' },
-    { tag_name: '精彩回顾', value: '2' }
-  ],
   status: '1',
   recordList: [],
   trackDetailList: [],
   openTrackDetail: false,
   info: null,
   isOpened: false,
-  selectOptions: [
-    { label: '编辑报名信息', value: '0' },
-    { label: '代他人报名', value: '1' }
-  ],
   activityInfo: {},
   keyword: ''
 }
 function ActivityIist(props) {
+  const { i18n } = useTranslation()
   const [state, setState] = useImmer(initialState)
-  const { tradeStatus, status, recordList, isOpened, selectOptions, activityInfo, keyword } = state
+  const { status, recordList, isOpened, activityInfo, keyword } = state
   const recordRef = useRef()
-  const router = useRouter()
+
+  const tradeStatus = useMemo(
+    () => [
+      { tag_name: $t('c012603a.1c627a'), value: '1' },
+      { tag_name: $t('c012603a.f4724e'), value: '2' }
+    ],
+    [i18n.language]
+  )
+
+  const selectOptions = useMemo(
+    () => [
+      { label: $t('c012603a.1f8f1b'), value: '0' },
+      { label: $t('c012603a.78206f'), value: '1' }
+    ],
+    [i18n.language]
+  )
 
   useDidShow(() => {
     setState((draft) => {
@@ -87,7 +95,7 @@ function ActivityIist(props) {
     await api.user.joinActivity({ activity_id: activityId })
     Taro.showToast({
       icon: 'none',
-      title: '报名成功'
+      title: $t('c012603a.b90d81')
     })
     setTimeout(() => {
       Taro.navigateTo({
@@ -167,7 +175,7 @@ function ActivityIist(props) {
     <SpPage scrollToTopBtn className='page-activity-list'>
       <SpSearchBar
         keyword={keyword}
-        placeholder='搜索活动'
+        placeholder={$t('c012603a.853068')}
         showDailog={false}
         onFocus={() => {}}
         onChange={() => {}}
@@ -181,7 +189,7 @@ function ActivityIist(props) {
         auto={false}
         ref={recordRef}
         fetch={fetch}
-        emptyMsg='没有查询到订单'
+        emptyMsg={$t('11f15792.082a19')}
       >
         <View className='trade-item-wrap'>
           {recordList.map((item, index) => (
