@@ -25,7 +25,7 @@ import {
 import qs from 'qs'
 import { PROMOTION_TAG } from '@/consts'
 import { selectMember } from '@/store/slices/dianwu'
-import { pickBy, showToast } from '@/utils'
+import { pickBy, showToast, emitOpenerEvent } from '@/utils'
 import CompGoodsPrice from './comps/comp-goods-price'
 import CompGift from './comps/comp-gift'
 import CompCoupon from './comps/comp-coupon'
@@ -80,6 +80,7 @@ function DianwuCheckout(props) {
     priceAdjustment
   } = state
   const pageRef = useRef()
+  const resloveResWrapRef = useRef(() => {})
   const $instance = getCurrentInstance() || {}
 
   const { member } = useSelector((state) => state.dianwu)
@@ -162,6 +163,19 @@ function DianwuCheckout(props) {
       pageRef.current.pageUnLock()
     }
   }, [isOpened, couponLayout])
+
+  /** EventChannel.emit 在部分运行时不可用时，改价页会通过 eventCenter 回传 */
+  useEffect(() => {
+    const fn = (payload) => {
+      if (payload?.res) {
+        resloveResWrapRef.current(payload.res, payload.markdown)
+      }
+    }
+    Taro.eventCenter.on('onEventChangePrice', fn)
+    return () => {
+      Taro.eventCenter.off('onEventChangePrice', fn)
+    }
+  }, [])
 
   const getUserCardList = async () => {
     const { list } = await dianwuApi.getUserCardList({
@@ -257,6 +271,7 @@ function DianwuCheckout(props) {
       draft.priceAdjustment = _priceAdjustment || 0
     })
   }
+  resloveResWrapRef.current = resloveResWrap
 
   const handleChangePrice = () => {
     let params = {
@@ -392,10 +407,7 @@ function DianwuCheckout(props) {
   }
 
   const onEventCreateOrder = () => {
-    const pages = Taro.getCurrentPages()
-    const current = pages[pages.length - 1]
-    const eventChannel = current.getOpenerEventChannel()
-    eventChannel.emit('onEventFetchOrder')
+    emitOpenerEvent('onEventFetchOrder')
   }
 
   // 使用优惠券
