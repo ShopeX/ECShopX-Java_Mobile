@@ -16,22 +16,13 @@ import S from '@/spx'
 import qs from 'qs'
 import req from '@/api/req'
 import { buildSharePath, getMemberLevel } from '@/utils'
-import { SpLogin, SpImage, SpTabbar, SpPage, SpCell, SpPoweredBy } from '@/components'
+import { SpLogin, SpImage, SpTabbar, SpPage, SpPoweredBy } from '@/components'
 import api from '@/api'
 import * as communityApi from '@/api/community'
 import {
-  navigateTo,
-  getThemeStyle,
-  styleNames,
-  classNames,
-  showToast,
-  showModal,
-  isWeixin,
-  normalizeQuerys,
   log,
   VERSION_PLATFORM,
   VERSION_STANDARD,
-  VERSION_SHUYUN,
   getDistributorId
 } from '@/utils'
 import {
@@ -42,7 +33,6 @@ import {
 } from '@/store/slices/purchase'
 import { useLogin, useLocation } from '@/hooks'
 import { updateDeliveryPersonnel } from '@/store/slices/cart'
-import SpPoweredBy from '@/components/sp-powered-by'
 import { useTranslation, $t } from '@/i18n'
 import CompMenu from './comps/comp-menu'
 import './index.scss'
