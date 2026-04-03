@@ -13,12 +13,7 @@ import { View, Text, ScrollView } from '@tarojs/components'
 import { SpPage, SpCell, SpPrice, SpTradeItem, SpImage, SpCashier } from '@/components'
 import { ORDER_STATUS_INFO, PAYMENT_TYPE, ORDER_DADA_STATUS, SG_ROUTER_PARAMS } from '@/consts'
 import dayjs from 'dayjs'
-import {
-  pickBy,
-  copyText,
-  showToast,
-  isArray,
-  VERSION_STANDARD} from '@/utils'
+import { pickBy, copyText, showToast, isArray, VERSION_STANDARD } from '@/utils'
 import { usePayment } from '@/hooks'
 import S from '@/spx'
 import FloatSalesperson from '@/subpages/store/comps/float-salesperson'
@@ -605,34 +600,53 @@ function TradeDetail(props) {
               <View className='block-container ziti-info'>
                 <View>
                   <Text className='label'>自提点:</Text>
-                  <Text className='value'>{info?.zitiInfo?.name || distirbutorInfo?.store_name}</Text>
+                  <Text className='value'>
+                    {info?.zitiInfo?.name || distirbutorInfo?.store_name}
+                  </Text>
                 </View>
                 <View>
                   <Text className='label'>自提地址:</Text>
-                 {info?.zitiInfo ? <Text className='value'>{`${info?.zitiInfo?.province ?? ''}${info?.zitiInfo?.city ?? ''}${info?.zitiInfo?.area ?? ''}${info?.zitiInfo?.address ?? ''}`}</Text> : <Text className='value'>{distirbutorInfo?.store_address ?? ''}</Text>}
+                  {info?.zitiInfo ? (
+                    <Text className='value'>{`${info?.zitiInfo?.province ?? ''}${
+                      info?.zitiInfo?.city ?? ''
+                    }${info?.zitiInfo?.area ?? ''}${info?.zitiInfo?.address ?? ''}`}</Text>
+                  ) : (
+                    <Text className='value'>{distirbutorInfo?.store_address ?? ''}</Text>
+                  )}
                 </View>
                 <View>
                   <Text className='label'>联系电话:</Text>
-                  <Text className='value'>{info?.zitiInfo?.contract_phone ?? distirbutorInfo?.phone ?? ''}</Text>
+                  <Text className='value'>
+                    {info?.zitiInfo?.contract_phone ?? distirbutorInfo?.phone ?? ''}
+                  </Text>
                   <Text
                     className='iconfont icon-dianhua'
                     onClick={() => {
-                      handleCallPhone(info?.zitiInfo?.contract_phone ?? distirbutorInfo?.phone ?? '')
+                      handleCallPhone(
+                        info?.zitiInfo?.contract_phone ?? distirbutorInfo?.phone ?? ''
+                      )
                     }}
                   />
                 </View>
                 <View>
                   <Text className='label'>提货人:</Text>
-                  <Text className='value'>{info.receiverName||userInfo?.username || '' }</Text>
+                  <Text className='value'>{info.receiverName || userInfo?.username || ''}</Text>
                 </View>
                 <View>
                   <Text className='label'>提货时间:</Text>
-                  {info?.zitiInfo ? <Text className='value'>{`${info?.zitiInfo?.pickup_date ?? ''} ${info?.zitiInfo?.pickup_time?.[0] ?? ''}-${info?.zitiInfo?.pickup_time?.[1] ?? ''}`}</Text> 
-                  : <Text className='value'>{`${dayjs(info?.deliveryTime * 1000).format('YYYY-MM-DD HH:mm:ss') ?? ''}`}</Text>}
+                  {info?.zitiInfo ? (
+                    <Text className='value'>{`${info?.zitiInfo?.pickup_date ?? ''} ${
+                      info?.zitiInfo?.pickup_time?.[0] ?? ''
+                    }-${info?.zitiInfo?.pickup_time?.[1] ?? ''}`}</Text>
+                  ) : (
+                    <Text className='value'>{`${
+                      dayjs(info?.deliveryTime * 1000).format('YYYY-MM-DD HH:mm:ss') ?? ''
+                    }`}</Text>
+                  )}
                 </View>
                 <View>
                   <Text className='label'>提货人手机:</Text>
-                  <Text className='value'>{info.receiverMobile||tradeInfo?.mobile || ''}</Text>
+                  <Text className='value'>{info.receiverMobile || tradeInfo?.mobile || ''}</Text>
                 </View>
               </View>
             )
