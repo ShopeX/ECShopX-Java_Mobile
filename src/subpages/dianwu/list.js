@@ -64,21 +64,28 @@ function DianWuList() {
       }
     }
     Taro.showLoading({ title: '' })
-    const { list: _list, total_count } = await dianwuApi.goodsItems(params)
-    Taro.hideLoading()
+    try {
+      const { list: _list, total_count } = await dianwuApi.goodsItems(params)
 
-    setState((draft) => {
-      draft.list[pageIndex - 1] = pickBy(_list, doc.dianwu.GOODS_ITEM)
-    })
+      setState((draft) => {
+        // 首屏请求需清空分页缓存，否则搜索无结果时仍保留上一关键词的多页数据
+        if (pageIndex === 1) {
+          draft.list = []
+        }
+        draft.list[pageIndex - 1] = pickBy(_list, doc.dianwu.GOODS_ITEM)
+      })
 
-    const pageLen = Array.isArray(_list) ? _list.length : 0
-    let total = Number(total_count)
-    if (!Number.isFinite(total) || total < 0) {
-      total = pageLen < pageSize ? (pageIndex - 1) * pageSize + pageLen : pageIndex * pageSize + 1
-    } else if (pageLen < pageSize) {
-      total = Math.min(total, (pageIndex - 1) * pageSize + pageLen)
+      const pageLen = Array.isArray(_list) ? _list.length : 0
+      let total = Number(total_count)
+      if (!Number.isFinite(total) || total < 0) {
+        total = pageLen < pageSize ? (pageIndex - 1) * pageSize + pageLen : pageIndex * pageSize + 1
+      } else if (pageLen < pageSize) {
+        total = Math.min(total, (pageIndex - 1) * pageSize + pageLen)
+      }
+      return { total }
+    } finally {
+      Taro.hideLoading()
     }
-    return { total }
   }
 
   const handleAddToCart = async ({ itemId }) => {
