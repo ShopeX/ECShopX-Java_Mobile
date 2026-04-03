@@ -33,12 +33,15 @@ export default (props = {}) => {
   // const policyTime = useRef(0)
 
   useEffect(() => {
+    // 判断是否为企微环境
+    const isQywx = typeof wx !== 'undefined' && wx.qy
     const token = S?.getAuthToken()
     if (!token) {
       autoLogin && !VERSION_SHUYUN && login()
     } else {
       setIsLogin(true)
-      getUserInfo()
+      // 企微环境不调用 getUserInfo
+      !isQywx && getUserInfo()
     }
   }, [])
 
@@ -58,11 +61,18 @@ export default (props = {}) => {
         const { code } = await getCode()
 
         try {
-          const { token } = await getToken(code, shuyunappid)
+          const res = await getToken(code, shuyunappid)
+          const token = res && res.token
           Taro.hideLoading()
+          // 后端可能 200 但无 token（新用户需走注册），必须抛错让 SpLogin 弹起注册弹窗
+          if (!token) {
+            dispatch(updateIsNewUser(true))
+            throw new Error('NEW_USER_NEED_REGISTER')
+          }
           setToken(token)
           loginSuccess()
         } catch (e) {
+          // code 登录失败（新用户或接口异常）：置新用户并抛出，由 SpLogin handleConfirmModal.catch 弹窗
           dispatch(updateIsNewUser(true))
           Taro.hideLoading()
           console.error('[hooks useLogin] auto login is failed: ', e)

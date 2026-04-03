@@ -125,7 +125,7 @@ function UgcNoteDetail(props) {
     const { list, total_count: total } = await mdugcApi.commentlist(params)
     const _commentList = pickBy(list, mdugcDoc.COMMENT_INFO)
     setState((draft) => {
-      draft.commentList =pageIndex == 1 ? _commentList : [...draft.commentList, ..._commentList]
+      draft.commentList = pageIndex == 1 ? _commentList : [...draft.commentList, ..._commentList]
       draft.commentTotal = total
     })
     return {
@@ -493,7 +493,7 @@ function UgcNoteDetail(props) {
               }}
               onClick={({ itemId }) => {
                 Taro.navigateTo({
-                  url: `/pages/item/espier-detail?id=${itemId}`
+                  url: `/subpages/item/espier-detail?id=${itemId}`
                 })
               }}
               isShowDistributor
@@ -570,9 +570,7 @@ function UgcNoteDetail(props) {
                             </View>
                             <View className='sitem-ft'>
                               <SpLogin
-                                onChange={() =>
-                                  handleCommentLike(citem.commentId, index, cindex)
-                                }
+                                onChange={() => handleCommentLike(citem.commentId, index, cindex)}
                               >
                                 <Text
                                   className={classNames('iconfont', {

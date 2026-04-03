@@ -22,6 +22,9 @@ import {
   showToast
 } from '@/utils'
 import S from '@/spx'
+
+import FloatSalesperson from '@/subpages/store/comps/float-salesperson'
+
 import './list.scss'
 
 const MSpSkuSelect = React.memo(SpSkuSelect)
@@ -67,7 +70,8 @@ function ItemList() {
     curTagIdx,
     info,
     fixTop,
-    routerParams  } = state
+    routerParams
+  } = state
   const [isShowSearch, setIsShowSearch] = useState(false)
   const { cat_id, main_cat_id, tag_id, card_id, user_card_id } = routerParams || {}
   const { shopInfo } = useSelector((state) => state.shop)
@@ -170,12 +174,7 @@ function ItemList() {
       // }
     }
 
-    const {
-      list,
-      total_count,
-      select_tags_list = [],
-      brand_list
-    } = await api.item.search(params)
+    const { list, total_count, select_tags_list = [], brand_list } = await api.item.search(params)
     console.time('list render')
     const n_list = pickBy(list, doc.goods.ITEM_LIST_GOODS)
     const resLeftList = n_list.filter((item, index) => {
@@ -265,9 +264,6 @@ function ItemList() {
     goodsRef.current.reset()
   }
 
-
-
-
   const handleClickStore = (item) => {
     const url = `/subpages/store/index?id=${item.distributor_info.distributor_id}`
     Taro.navigateTo({
@@ -301,9 +297,10 @@ function ItemList() {
         'has-tagbar': tagList.length > 0
       })}
       ref={pageRef}
+      renderFloat={<FloatSalesperson />}
     >
       <View className='search-wrap'>
-        {VERSION_STANDARD && card_id && (
+        {/* {VERSION_STANDARD && card_id && (
           <View
             className='store-picker'
             onClick={() => {
@@ -315,7 +312,7 @@ function ItemList() {
             <View className='shop-name'>{shopInfo.store_name || '暂无店铺信息'}</View>
             <Text className='iconfont icon-qianwang-01'></Text>
           </View>
-        )}
+        )} */}
         <SpSearchBar
           keyword={keywords}
           placeholder='搜索'
