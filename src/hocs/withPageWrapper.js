@@ -181,7 +181,7 @@ function withPageWrapper(Component) {
         // 开启店铺码进店
         const currentShopInfo = await api.shop.getShop(params)
         // 获取导购员信息
-        if ( currentShopInfo.distributor_id && currentShopInfo.distributor_id > 0) {
+        if (currentShopInfo.distributor_id && currentShopInfo.distributor_id > 0) {
           const salespersonInfo = await api.shop.getSalespersonInfo({
             distributor_id: currentShopInfo.distributor_id
           })

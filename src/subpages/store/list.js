@@ -137,7 +137,7 @@ function NearlyShop(props) {
       type,
       search_type: 2, // 1=搜索商品；2=搜索门店
       sort_type: 1,
-      is_valid: true 
+      is_valid: true
     }
 
     // 构建位置相关参数
