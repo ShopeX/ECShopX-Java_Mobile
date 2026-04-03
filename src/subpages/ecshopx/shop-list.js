@@ -3,15 +3,16 @@
  * See LICENSE file for license details.
  */
 import Taro from '@tarojs/taro'
-import { View, ScrollView, Text } from '@tarojs/components'
+import { View, Text } from '@tarojs/components'
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react'
 import { useSelector } from 'react-redux'
 import { useImmer } from 'use-immer'
 import { SpSearchBar, SpPage, SpScrollView, SpSelect } from '@/components'
-import { SpFilterBar, SpShopItem, SpTagBar, SpDrawer } from '@/subpages/components'
+
+import { SpShopItem, SpTagBar, SpDrawer } from '@/subpages/components'
 import doc from '@/doc'
 import * as shopDoc from '@/doc/shop'
-import { classNames, pickBy } from '@/utils'
+import { pickBy } from '@/utils'
 import api from '@/api'
 import { Tracker } from '@/service'
 import { useTranslation, $t } from '@/i18n'

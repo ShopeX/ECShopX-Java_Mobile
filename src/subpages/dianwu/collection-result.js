@@ -6,6 +6,7 @@ import React, { useEffect } from 'react'
 import { useImmer } from 'use-immer'
 import Taro, { getCurrentInstance } from '@tarojs/taro'
 import * as dianwuApi from '@/api/dianwu'
+import { dianwuMarkdownAdjustmentYuan } from '@/subpages/doc/dianwu'
 import { AtButton } from 'taro-ui'
 import { View, Text } from '@tarojs/components'
 import { formatDateTime } from '@/utils'
@@ -57,7 +58,10 @@ function DianwuCollectionResult(props) {
   }
 
   const fetchOrderInfo = async () => {
-    const { distributor, orderInfo, operatorInfo } = await dianwuApi.getTradeDetail(order_id)
+    const raw = (await dianwuApi.getTradeDetail(order_id)) || {}
+    const orderInfo = raw.orderInfo ?? raw.order_info ?? raw
+    const distributor = raw.distributor ?? orderInfo?.distributor_info
+    const operatorInfo = raw.operatorInfo ?? raw.operator_info
     const {
       items,
       pay_type,
@@ -98,6 +102,7 @@ function DianwuCollectionResult(props) {
         memberDiscount: member_discount ? member_discount / 100 : 0,
         couponDiscount: coupon_discount ? coupon_discount / 100 : 0,
         promotionDiscount: promotion_discount ? promotion_discount / 100 : 0,
+        priceAdjustment: dianwuMarkdownAdjustmentYuan(orderInfo, raw),
         remark: remark,
         username: username,
         mobile: mobile,
@@ -134,38 +139,45 @@ function DianwuCollectionResult(props) {
         </View>
       }
     >
-      {(!info || (info && info?.payStatus == 'NOTPAY' && pay_type != 'offline_pay')) && (
+      {!info && (
         <View className='result-hd'>
           <Text>{$t('36c99ee5.c5f45d')}</Text>
         </View>
       )}
 
-      {info && (info?.payStatus == 'PAYED' || pay_type == 'offline_pay') && (
+      {info && (
         <View>
-          <View className='result-hd'>
-            <View className='checkout-result'>
-              {info?.payStatus == 'PAYED' && (
-                <>
-                  <Text className='iconfont icon-correct'></Text>
-                  {$t('36c99ee5.d08ebf')}
-                </>
+          {info?.payStatus == 'NOTPAY' && pay_type != 'offline_pay' && (
+            <View className='result-hd'>
+              <Text>{$t('36c99ee5.c5f45d')}</Text>
+            </View>
+          )}
+          {(info?.payStatus == 'PAYED' || pay_type == 'offline_pay') && (
+            <View className='result-hd'>
+              <View className='checkout-result'>
+                {info?.payStatus == 'PAYED' && (
+                  <>
+                    <Text className='iconfont icon-correct'></Text>
+                    <Text>{$t('36c99ee5.d08ebf')}</Text>
+                  </>
+                )}
+                {pay_type == 'offline_pay' && info.offlinePayCheckStatus == 0 && (
+                  <Text>{$t('36c99ee5.e92d29')}</Text>
+                )}
+              </View>
+              {info.username && (
+                <View className='user-info'>
+                  <Text className='name'>{info.username}</Text>
+                  <Text className='mobile'>{info.mobile}</Text>
+                </View>
               )}
-              {pay_type == 'offline_pay' && info.offlinePayCheckStatus == 0 && (
-                <>{$t('36c99ee5.e92d29')}</>
+              {!info.username && (
+                <View className='user-info'>
+                  <Text className='name'>{$t('36c99ee5.5b47b2')}</Text>
+                </View>
               )}
             </View>
-            {info.username && (
-              <View className='user-info'>
-                <Text className='name'>{info.username}</Text>
-                <Text className='mobile'>{info.mobile}</Text>
-              </View>
-            )}
-            {!info.username && (
-              <View className='user-info'>
-                <Text className='name'>{$t('36c99ee5.5b47b2')}</Text>
-              </View>
-            )}
-          </View>
+          )}
           <View className='block-goods'>
             <View className='label-title'>{$t('edc703ce.08ea4e')}</View>
             <View className='goods-list'>
@@ -214,22 +226,28 @@ function DianwuCollectionResult(props) {
             <SpCell title={$t('2b4b2b4f.ca66f9')} border>
               <SpPrice value={`-${info.couponDiscount}`}></SpPrice>
             </SpCell>
+            {info.priceAdjustment > 0 && (
+              <SpCell title={$t('36c99ee5.aa448f')} border>
+                <SpPrice value={`-${info.priceAdjustment}`}></SpPrice>
+              </SpCell>
+            )}
+            {/* <SpCell title='积分抵扣' border>
+          <SpPrice value={-50}></SpPrice>
+        </SpCell> */}
             <SpCell title={$t('36c99ee5.1e4973')}>
               <SpPrice value={info.totalFee}></SpPrice>
             </SpCell>
           </View>
 
-          <View className='extr-info'>
-            <SpCell border title={$t('36c99ee5.2e8a41')} value={distributor?.name}></SpCell>
-            <SpCell border title={$t('36c99ee5.f9ac4b')} value={operatorInfo?.username}></SpCell>
-            <SpCell border title={$t('250b375e.0c9d2b')} value={payTypeLabel()}></SpCell>
-            <SpCell
-              border
-              title={$t('36c99ee5.7e951d')}
-              value={formatDateTime(info.createTime)}
-            ></SpCell>
-            <SpCell title={$t('36c99ee5.2432b5')} value={info.remark}></SpCell>
-          </View>
+          {(info?.payStatus == 'PAYED' || pay_type == 'offline_pay') && (
+            <View className='extr-info'>
+              <SpCell border title={$t('36c99ee5.2e8a41')} value={distributor?.name}></SpCell>
+              <SpCell border title={$t('36c99ee5.f9ac4b')} value={operatorInfo?.username}></SpCell>
+              <SpCell border title={$t('36c99ee5.0c9d2b')} value={payTypeLabel()}></SpCell>
+              <SpCell border title={$t('36c99ee5.7e951d')} value={formatDateTime(info.createTime)}></SpCell>
+              <SpCell title={$t('36c99ee5.2432b5')} value={info.remark}></SpCell>
+            </View>
+          )}
         </View>
       )}
     </SpPage>

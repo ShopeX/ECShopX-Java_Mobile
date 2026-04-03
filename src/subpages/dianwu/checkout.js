@@ -25,8 +25,8 @@ import {
 import qs from 'qs'
 import { PROMOTION_TAG } from '@/consts'
 import { selectMember } from '@/store/slices/dianwu'
-import { pickBy, showToast } from '@/utils'
 import { useTranslation, $t, ti, i18n } from '@/i18n'
+import { pickBy, showToast, emitOpenerEvent } from '@/utils'
 import CompGoodsPrice from './comps/comp-goods-price'
 import CompGift from './comps/comp-gift'
 import CompCoupon from './comps/comp-coupon'
@@ -52,7 +52,8 @@ const initialState = {
   distributor_id: null,
   prescriptionStatus: 0,
   codeStatus: false,
-  checkout_order_id: null
+  checkout_order_id: null,
+  priceAdjustment: 0
 }
 function DianwuCheckout(props) {
   useTranslation()
@@ -87,9 +88,11 @@ function DianwuCheckout(props) {
     distributor_id,
     prescriptionStatus,
     codeStatus,
-    checkout_order_id
+    checkout_order_id,
+    priceAdjustment
   } = state
   const pageRef = useRef()
+  const resloveResWrapRef = useRef(() => {})
   const $instance = getCurrentInstance() || {}
 
   const { member } = useSelector((state) => state.dianwu)
@@ -173,6 +176,19 @@ function DianwuCheckout(props) {
     }
   }, [isOpened, couponLayout])
 
+  /** EventChannel.emit 在部分运行时不可用时，改价页会通过 eventCenter 回传 */
+  useEffect(() => {
+    const fn = (payload) => {
+      if (payload?.res) {
+        resloveResWrapRef.current(payload.res, payload.markdown)
+      }
+    }
+    Taro.eventCenter.on('onEventChangePrice', fn)
+    return () => {
+      Taro.eventCenter.off('onEventChangePrice', fn)
+    }
+  }, [])
+
   const getUserCardList = async () => {
     const { list } = await dianwuApi.getUserCardList({
       user_id: member?.userId,
@@ -248,7 +264,8 @@ function DianwuCheckout(props) {
       couponDiscount: _couponDiscount,
       promotionDiscount: _promotionDiscount,
       couponInfo: _couponInfo,
-      prescriptionStatus: _prescriptionStatus
+      prescriptionStatus: _prescriptionStatus,
+      priceAdjustment: _priceAdjustment
     } = pickBy(res, doc.dianwu.CHECKOUT_GOODS_ITEM)
     setState((draft) => {
       draft.itemList = items.filter((item) => item.orderItemType != 'gift')
@@ -263,8 +280,10 @@ function DianwuCheckout(props) {
       draft.couponInfo = _couponInfo
       draft.selectCoupon = _couponInfo ? _couponInfo.coupon_code : null
       ;(draft.markdown = markdown), (draft.prescriptionStatus = _prescriptionStatus)
+      draft.priceAdjustment = _priceAdjustment || 0
     })
   }
+  resloveResWrapRef.current = resloveResWrap
 
   const handleChangePrice = () => {
     let params = {
@@ -399,10 +418,7 @@ function DianwuCheckout(props) {
   }
 
   const onEventCreateOrder = () => {
-    const pages = Taro.getCurrentPages()
-    const current = pages[pages.length - 1]
-    const eventChannel = current.getOpenerEventChannel()
-    eventChannel.emit('onEventFetchOrder')
+    emitOpenerEvent('onEventFetchOrder')
   }
 
   // 使用优惠券
@@ -569,6 +585,11 @@ function DianwuCheckout(props) {
         <SpCell title={$t('2b4b2b4f.ca66f9')} border>
           <SpPrice value={`-${couponDiscount}`} />
         </SpCell>
+        {priceAdjustment > 0 && (
+          <SpCell title='改价优惠' border>
+            <SpPrice value={`-${priceAdjustment}`} />
+          </SpCell>
+        )}
         {/* <SpCell title='积分抵扣' border>
           <SpPrice value={-50} />
         </SpCell> */}
@@ -604,8 +625,13 @@ function DianwuCheckout(props) {
         <AtModalHeader>{$t('2b4b2b4f.ba5d3e')}</AtModalHeader>
         <AtModalContent>
           <View className='total-mount'>
-            <SpPrice size={48} value={totalFee} />
-            <Text className='iconfont icon-edit' onClick={handleChangePrice}></Text>
+            <View className='total-mount__row'>
+              <SpPrice size={48} value={totalFee} />
+              <View className='change-price-btn' onClick={handleChangePrice}>
+                <Text className='iconfont icon-edit' />
+                <Text className='change-price-btn__txt'>改价</Text>
+              </View>
+            </View>
           </View>
           {/* <SpCell isLink border>
             <Text className='iconfont icon-weixinzhifu'></Text>

@@ -2,10 +2,9 @@
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
  */
-import React, { useEffect, useMemo } from 'react'
+import React, { useEffect, useMemo, useRef } from 'react'
 import { useTranslation, $t } from '@/i18n'
-import Taro, { getCurrentInstance } from '@tarojs/taro'
-import { View, Text, Icon, Picker } from '@tarojs/components'
+import { View, Picker } from '@tarojs/components'
 import { useImmer } from 'use-immer'
 import { SpInput as AtInput } from '@/components'
 import SpAddress from '../sp-address'
@@ -44,8 +43,13 @@ function SpSearchInput(props) {
     [placeholder, i18n.language]
   )
   const [state, setState] = useImmer(initialState)
+  const keywordsRef = useRef('')
 
   const { keywords, selectArea, isSpAddressOpened, searchCondition, searchConditionVis } = state
+
+  useEffect(() => {
+    keywordsRef.current = keywords
+  }, [keywords])
 
   useEffect(() => {
     if (!isShowSearchCondition) return
@@ -56,16 +60,28 @@ function SpSearchInput(props) {
   }, [searchConditionList, isShowSearchCondition])
 
   const handleChangeSearch = (e) => {
+    keywordsRef.current = e
     setState((draft) => {
       draft.keywords = e
     })
   }
 
-  const handleConfirm = () => {
+  const readConfirmValue = (e) => {
+    if (e == null) return keywordsRef.current
+    const d = e.detail
+    if (d == null) return keywordsRef.current
+    const v = d.value
+    if (typeof v === 'string') return v
+    if (v != null && typeof v !== 'object') return String(v)
+    return keywordsRef.current
+  }
+
+  const handleConfirm = (e) => {
+    const val = readConfirmValue(e)
     if (!isShowSearchCondition) {
-      onConfirm(keywords)
+      onConfirm(val)
     } else {
-      onConfirm({ key: searchCondition, keywords })
+      onConfirm({ key: searchCondition, keywords: val })
     }
   }
 
@@ -148,8 +164,10 @@ function SpSearchInput(props) {
           value={keywords}
           name='keywords'
           placeholder={resolvedPlaceholder}
+          confirmType='search'
           onChange={handleChangeSearch}
-          onBlur={handleConfirm}
+          onBlur={() => handleConfirm()}
+          onConfirm={handleConfirm}
         />
       </View>
 

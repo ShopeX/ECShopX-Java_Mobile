@@ -10,7 +10,7 @@ import throttle from 'lodash/throttle'
 import './index.scss'
 
 function SpInput(props) {
-  const { required, title, type = 'text' } = props
+  const { required, title, type = 'text', confirmType } = props
   const [cursor, setCursor] = useState(-1)
   const inputRef = useRef(null)
   /** 防止 H5 上 keydown 与 Input onConfirm 等对同一次回车重复触发 */
@@ -109,6 +109,9 @@ function SpInput(props) {
           placeholderClass={props.placeholderClass}
           className={classNames('at-input__input', props.className)}
           onConfirm={handleConfirm}
+          confirmType={confirmType}
+          onBlur={props.onBlur}
+          onFocus={props.onFocus}
           nativeProps={isWeb ? { onKeyDown: handleKeyDown } : {}}
         />
         {/* <Input

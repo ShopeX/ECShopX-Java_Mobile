@@ -16,7 +16,7 @@ import S from '@/spx'
 import qs from 'qs'
 import req from '@/api/req'
 import { buildSharePath, getMemberLevel } from '@/utils'
-import { SpLogin, SpImage, SpTabbar, SpPage, SpCell } from '@/components'
+import { SpLogin, SpImage, SpTabbar, SpPage, SpCell, SpPoweredBy } from '@/components'
 import api from '@/api'
 import * as communityApi from '@/api/community'
 import {

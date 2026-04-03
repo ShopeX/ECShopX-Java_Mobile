@@ -13,9 +13,9 @@ import { AtButton } from 'taro-ui'
 import { SG_DIANWU_TOKEN } from '@/consts'
 import { SpPage, SpScrollView, SpImage, SpPrice } from '@/components'
 import { selectMember } from '@/store/slices/dianwu'
-import { classNames, pickBy } from '@/utils'
 import { useTranslation, $t, ti, i18n } from '@/i18n'
 import { useNavigation } from '@/hooks'
+import { classNames, pickBy, emitOpenerEvent } from '@/utils'
 import CompGoods from './comps/comp-goods'
 import CompGift from './comps/comp-gift'
 import CompTabbar from './comps/comp-tabbar'
@@ -117,10 +117,7 @@ function DianwuPendingCheckout(props) {
       })
       return
     }
-    const pages = Taro.getCurrentPages()
-    const current = pages[pages.length - 1]
-    const eventChannel = current.getOpenerEventChannel()
-    eventChannel.emit('onEventFetchOrder')
+    emitOpenerEvent('onEventFetchOrder')
     Taro.navigateBack()
   }
 
