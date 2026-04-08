@@ -4,7 +4,7 @@
  */
 import React, { useEffect, useMemo, useRef } from 'react'
 import { useImmer } from 'use-immer'
-import Taro, { useDidShow } from '@tarojs/taro'
+import Taro, { useDidShow, useRouter } from '@tarojs/taro'
 import { View, ScrollView } from '@tarojs/components'
 import { SpPage, SpScrollView } from '@/components'
 import { SpTagBar, SpSelectModal } from '@/subpages/components'
@@ -28,15 +28,15 @@ function ItemActivity(props) {
   const [state, setState] = useImmer(initialState)
   const { status, recordList, isOpened, activityInfo, hasReFreash } = state
   const recordRef = useRef()
+  const router = useRouter()
+  const filterActivityId = router.params?.activity_id
 
   const tradeStatus = useMemo(
     () => [
-      { tag_name: $t('e32a7439.a8b0c2'), value: '' },
-      { tag_name: $t('1d9cdff5.5cb424'), value: 'pending' },
-      { tag_name: $t('f330b238.4166d8'), value: 'passed' },
-      { tag_name: $t('1d9cdff5.81233d'), value: 'rejected' },
-      { tag_name: $t('1d9cdff5.2111cc'), value: 'canceled' },
-      { tag_name: $t('f330b238.77af84'), value: 'verified' }
+      { tag_name: $t('da5ae518.a8b0c2'), value: '' },
+      { tag_name: $t('da5ae518.dd4e55'), value: '0' },
+      { tag_name: $t('da5ae518.fb852f'), value: '1' },
+      { tag_name: $t('da5ae518.047fab'), value: '2' }
     ],
     [i18n.language]
   )
@@ -48,10 +48,6 @@ function ItemActivity(props) {
     ],
     [i18n.language]
   )
-
-  useEffect(() => {
-    Taro.setNavigationBarTitle({ title: $t('f330b238.2bc045') })
-  }, [i18n.language])
 
   // useEffect(() => {
   //   Taro.eventCenter.on('onEventRecordStatusChange', () => {
@@ -88,7 +84,7 @@ function ItemActivity(props) {
       draft.recordList = []
     })
     recordRef.current.reset()
-  }, [status])
+  }, [status, filterActivityId])
 
   const fetch = async ({ pageIndex, pageSize }) => {
     const params = {
@@ -96,6 +92,9 @@ function ItemActivity(props) {
       pageSize,
       order_type: 'normal',
       status
+    }
+    if (filterActivityId) {
+      params.activity_id = filterActivityId
     }
     const { list, total_count: total } = await api.user.registrationRecordList(params)
     const nList = pickBy(list, activityDoc.RECORD_LIST)

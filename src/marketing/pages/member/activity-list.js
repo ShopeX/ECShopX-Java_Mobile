@@ -12,8 +12,8 @@ import { useTranslation, $t } from '@/i18n'
 import api from '@/api'
 import * as activityDoc from '@/doc/activity'
 import { pickBy } from '@/utils'
-import CompActivityItem from './comps/comp-activity-item'
 import './activity-list.scss'
+import CompActivityItem from './comps/comp-activity-item'
 
 const initialState = {
   status: '1',
@@ -33,8 +33,10 @@ function ActivityIist(props) {
 
   const tradeStatus = useMemo(
     () => [
-      { tag_name: $t('c012603a.1c627a'), value: '1' },
-      { tag_name: $t('c012603a.f4724e'), value: '2' }
+      { tag_name: $t('da5ae518.a8b0c2'), value: '' },
+      { tag_name: $t('da5ae518.dd4e55'), value: '0' },
+      { tag_name: $t('da5ae518.fb852f'), value: '1' },
+      { tag_name: $t('da5ae518.047fab'), value: '2' }
     ],
     [i18n.language]
   )
@@ -88,6 +90,14 @@ function ActivityIist(props) {
   const handleItemClick = ({ activityId }) => {
     Taro.navigateTo({
       url: `/marketing/pages/member/activity-info?activity_id=${activityId}`
+    })
+  }
+
+  const handleViewRecords = (item) => {
+    const id = item?.activityId
+    if (id == null || id === '') return
+    Taro.navigateTo({
+      url: `/marketing/pages/member/item-activity?activity_id=${encodeURIComponent(id)}`
     })
   }
 
@@ -199,6 +209,7 @@ function ActivityIist(props) {
                 info={item}
                 onClick={handleItemClick}
                 onBtnAction={onBtnAction}
+                onViewRecords={handleViewRecords}
               />
             </View>
           ))}
