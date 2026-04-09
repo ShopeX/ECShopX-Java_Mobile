@@ -2,6 +2,8 @@
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
  */
+import { $t } from '@/i18n'
+
 const config = {
   pages: [
     'pages/index', // 首页
@@ -474,7 +476,7 @@ const config = {
   ],
   permission: {
     'scope.userLocation': {
-      desc: '您的位置信息将用于定位附近门店'
+      desc: $t('95285d68.93f311')
     }
   },
   // usingComponents: {
@@ -483,7 +485,7 @@ const config = {
   window: {
     'backgroundTextStyle': 'light',
     'navigationBarBackgroundColor': '#fff',
-    'navigationBarTitleText': '小程序',
+    'navigationBarTitleText': $t('95285d68.0ed510'),
     'navigationBarTextStyle': 'black'
   },
   plugins: {

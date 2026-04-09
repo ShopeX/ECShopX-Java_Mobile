@@ -2,7 +2,7 @@
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
  */
-import React, { useEffect, useRef, useMemo } from 'react'
+import React, { useEffect, useRef } from 'react'
 import { useSelector } from 'react-redux'
 import Taro, { getCurrentInstance, useShareAppMessage, useShareTimeline } from '@tarojs/taro'
 import { View, Text, Swiper, SwiperItem, Video } from '@tarojs/components'
@@ -35,6 +35,7 @@ import entryLaunch from '@/utils/entryLaunch'
 import qs from 'qs'
 import S from '@/spx'
 import { useNavigation, useLogin } from '@/hooks'
+import { useTranslation, $t, ti } from '@/i18n'
 import { ACTIVITY_LIST } from '@/consts'
 import { WgtFilm, WgtSlider, WgtWriting, WgtGoods, WgtHeading } from '@/pages/home/wgts'
 import CompActivityBar from './comps/comp-activitybar'
@@ -83,6 +84,7 @@ const initialState = {
 }
 
 function EspierDetail(props) {
+  useTranslation()
   const $instance = getCurrentInstance() || {}
   // const { type, id, dtid } = $instance?.router?.params
   // const { type, id, dtid } = await entryLaunch.getRouteParams()
@@ -230,7 +232,7 @@ function EspierDetail(props) {
         if (data.approveStatus == 'instock') {
           setState((draft) => {
             draft.isDefault = true
-            draft.defaultMsg = '商品已下架'
+            draft.defaultMsg = $t('a8427e1f.1b81ee')
           })
         }
       } catch (e) {
@@ -345,14 +347,6 @@ function EspierDetail(props) {
 
   const { windowWidth } = Taro.getSystemInfoSync()
 
-  let sessionFrom = {}
-  if (info) {
-    sessionFrom['商品'] = info.itemName
-    if (userInfo) {
-      sessionFrom['昵称'] = userInfo.username
-    }
-  }
-
   return (
     <SpPage
       className='page-item-espierdetail'
@@ -418,7 +412,7 @@ function EspierDetail(props) {
                 }}
               >
                 {!play && <SpImage className='play-icon' src='play2.png' width={50} height={50} />}
-                {play ? '退出视频' : '播放视频'}
+                {play ? $t('a8427e1f.85f859') : $t('a8427e1f.c27cf5')}
               </View>
             )}
           </View>
@@ -445,7 +439,9 @@ function EspierDetail(props) {
               {!ACTIVITY_LIST()[info.activityType] && (
                 <SpGoodsPrice isPurchase info={curItem ? curItem : info} />
               )}
-              {info.store_setting && <View className='kc'>库存：{info.store}</View>}
+              {info.store_setting && (
+                <View className='kc'>{ti('a8427e1f.e203b0', [info.store])}</View>
+              )}
             </View>
 
             <CompVipGuide
@@ -472,11 +468,11 @@ function EspierDetail(props) {
               {info.isMedicine == 1 && info?.medicineData?.is_prescription == 1 && (
                 <View className='item-pre'>
                   <View className='item-pre-title'>
-                    <Text className='medicine'>处方药</Text>
-                    <Text>处方药须凭处方在药师指导下购买和使用</Text>
+                    <Text className='medicine'>{$t('7d82f6d2.e8b7e1')}</Text>
+                    <Text>{$t('3fe32003.40410d')}</Text>
                   </View>
                   <View className='item-pre-content'>
-                    <View className='title'>用药提示</View>
+                    <View className='title'>{$t('88396cb9.2d4b03')}</View>
                     <View className='content'>
                       {/* <Text>功能主治：</Text> */}
                       {/* <Text className='content-title'>根据法规要求，请咨询药师了解处方药详细信息</Text> */}
@@ -485,7 +481,7 @@ function EspierDetail(props) {
                   </View>
                 </View>
               )}
-              <View className='item-bn'>{`货号：${info.itemBn}`}</View>
+              <View className='item-bn'>{ti('dd156143.210681', [info.itemBn])}</View>
             </View>
           </View>
 
@@ -494,7 +490,7 @@ function EspierDetail(props) {
           {!info.nospec && (
             <View className='sku-block'>
               <SpCell
-                title='规格'
+                title={$t('a8427e1f.ea887b')}
                 isLink
                 onClick={() => {
                   setState((draft) => {
@@ -527,7 +523,7 @@ function EspierDetail(props) {
             )} */}
             {promotionActivity.length > 0 && (
               <SpCell
-                title='优惠活动'
+                title={$t('6578cf7b.cd5666')}
                 isLink
                 onClick={() => {
                   setState((draft) => {
@@ -545,7 +541,7 @@ function EspierDetail(props) {
           </View>
 
           <View className='goods-params'>
-            <View className='params-hd'>商品参数</View>
+            <View className='params-hd'>{$t('a8427e1f.8686bb')}</View>
             <View className='params-bd'>
               {info.itemParams.map((item, index) => (
                 <View className='params-item' key={`params-item__${index}`}>
@@ -564,7 +560,7 @@ function EspierDetail(props) {
 
           <View className='goods-desc'>
             <View className='desc-hd'>
-              <Text className='desc-title'>宝贝详情</Text>
+              <Text className='desc-title'>{$t('a8427e1f.002e0a')}</Text>
             </View>
             {isArray(info.intro) ? (
               <View>

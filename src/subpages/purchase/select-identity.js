@@ -16,6 +16,7 @@ import {
   updateCurDistributorId
 } from '@/store/slices/purchase'
 import { useDispatch, useSelector } from 'react-redux'
+import { useTranslation, $t } from '@/i18n'
 import './select-identity.scss'
 
 const initialState = {
@@ -25,6 +26,7 @@ const initialState = {
 }
 
 function SelectIdentity(props) {
+  const { i18n } = useTranslation()
   const [state, setState] = useImmer(initialState)
 
   const { identity, invalidIdentity, loading } = state
@@ -37,6 +39,10 @@ function SelectIdentity(props) {
   useEffect(() => {
     getUserEnterprises()
   }, [])
+
+  useEffect(() => {
+    Taro.setNavigationBarTitle({ title: $t('5f46773c.f0c92e') })
+  }, [i18n.language])
 
   const getUserEnterprises = async () => {
     const data = await api.purchase.getUserEnterprises({
@@ -96,7 +102,7 @@ function SelectIdentity(props) {
           <View className='identity-item-avatar'>
             <Text className='iconfont icon-tianjia1 add-icon avatar'></Text>
           </View>
-          <View className='add-identity'>添加身份</View>
+          <View className='add-identity'>{$t('3d3fcde1.8f40f8')}</View>
         </View>
         <View className='content'>
           <View className='identity'>
@@ -112,13 +118,14 @@ function SelectIdentity(props) {
                     </View>
                     <View className='content-bottom'>
                       <View className={classNames('role', item.is_relative == 1 ? 'friend' : '')}>
-                        {(item.is_employee == 1 && '员工') || (item.is_relative == 1 && '亲友')}
+                        {(item.is_employee == 1 && $t('2ed39222.055f8a')) ||
+                          (item.is_relative == 1 && $t('4eca5be6.983d16'))}
                       </View>
                       <View className='account'>{item.login_account}</View>
                     </View>
                   </View>
                   {curEnterpriseId == item.enterprise_id && (
-                    <View className='identity-item-right'>当前选中</View>
+                    <View className='identity-item-right'>{$t('bf94700b.43c6f8')}</View>
                   )}
                 </View>
               )

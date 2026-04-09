@@ -3,10 +3,12 @@
  * See LICENSE file for license details.
  */
 import React, { Component } from 'react'
+import { withTranslation } from 'react-i18next'
 import Taro, { getCurrentInstance } from '@tarojs/taro'
 import { View, Text } from '@tarojs/components'
 import { SpImg, SpImage } from '@/components'
 import { connect } from 'react-redux'
+import { $t } from '@/i18n'
 // import { Tracker } from '@/service'
 import S from '@/spx'
 import entry from '@/utils/entry'
@@ -15,21 +17,7 @@ import api from '@/api'
 
 import './goods.scss'
 
-@connect(
-  ({ cart, user, shop }) => ({
-    cart,
-    favs: user.favs,
-    shop
-  }),
-  (dispatch) => ({
-    onFastbuy: (item) => dispatch({ type: 'cart/fastbuy', payload: { item } }),
-    onAddCart: (item) => dispatch({ type: 'cart/add', payload: { item } }),
-    onAddFav: ({ item_id }) => dispatch({ type: 'member/addFav', payload: { item_id } }),
-    onDelFav: ({ item_id }) => dispatch({ type: 'member/delFav', payload: { item_id } }),
-    onUpdateCartCount: (count) => dispatch({ type: 'cart/updateCartNum', payload: count })
-  })
-)
-export default class WgtGoods extends Component {
+class WgtGoods extends Component {
   static options = {
     addGlobalClass: true
   }
@@ -94,7 +82,7 @@ export default class WgtGoods extends Component {
     if (!S.getAuthToken()) {
       Taro.showToast({
         icon: 'none',
-        title: '请登录'
+        title: $t('ab76db66.7d1eb0')
       })
       return
     }
@@ -145,14 +133,14 @@ export default class WgtGoods extends Component {
 
         this.props.onAddFav(item_data)
         Taro.showToast({
-          title: '已加入收藏',
+          title: $t('ab76db66.151286'),
           icon: 'none'
         })
       } else {
         await api.member.delFav(item_data.item_id)
         this.props.onDelFav(item_data)
         Taro.showToast({
-          title: '已移出收藏',
+          title: $t('ab76db66.b46077'),
           icon: 'none'
         })
       }
@@ -175,7 +163,7 @@ export default class WgtGoods extends Component {
           shop_type: 'distributor'
         })
         Taro.showToast({
-          title: '成功加入购物车',
+          title: $t('ab76db66.ab91e4'),
           icon: 'success'
         })
         this.fetchCartcount()
@@ -223,7 +211,7 @@ export default class WgtGoods extends Component {
                 <View className='goods-name'>
                   <View className='name'>{item.item_name}</View>
                   <View className='desc'>
-                    {item.itemStatus ? '点击查看产品详情' : '该商品已下架'}
+                    {item.itemStatus ? $t('ab76db66.50cc16') : $t('ab76db66.f0010a')}
                   </View>
                 </View>
               </View>
@@ -234,7 +222,7 @@ export default class WgtGoods extends Component {
                   })}
                   onClick={this.handleClickOperate.bind(this, item, 'collect')}
                 >
-                  {item.favStatus ? '移除心愿' : '加入心愿'}
+                  {item.favStatus ? $t('ab76db66.e2acff') : $t('ab76db66.56d0b8')}
                 </View>
                 <Text>|</Text>
                 <View
@@ -243,7 +231,7 @@ export default class WgtGoods extends Component {
                   })}
                   onClick={this.handleClickOperate.bind(this, item, 'buy')}
                 >
-                  加入购买
+                  {$t('ab76db66.2971f7')}
                 </View>
               </View>
             </View>
@@ -253,3 +241,18 @@ export default class WgtGoods extends Component {
     )
   }
 }
+
+export default connect(
+  ({ cart, user, shop }) => ({
+    cart,
+    favs: user.favs,
+    shop
+  }),
+  (dispatch) => ({
+    onFastbuy: (item) => dispatch({ type: 'cart/fastbuy', payload: { item } }),
+    onAddCart: (item) => dispatch({ type: 'cart/add', payload: { item } }),
+    onAddFav: ({ item_id }) => dispatch({ type: 'member/addFav', payload: { item_id } }),
+    onDelFav: ({ item_id }) => dispatch({ type: 'member/delFav', payload: { item_id } }),
+    onUpdateCartCount: (count) => dispatch({ type: 'cart/updateCartNum', payload: count })
+  })
+)(withTranslation()(WgtGoods))

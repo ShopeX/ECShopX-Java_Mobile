@@ -2,6 +2,8 @@
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
  */
+import { $t } from '@/i18n'
+
 export default {
-  navigationBarTitleText: '结算页面'
+  navigationBarTitleText: $t('68994107.760124')
 }

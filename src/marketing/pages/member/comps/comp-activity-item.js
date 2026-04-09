@@ -2,18 +2,21 @@
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
  */
-import React, { useEffect, useMemo } from 'react'
-import { useSelector } from 'react-redux'
-import Taro from '@tarojs/taro'
+import React, { useMemo } from 'react'
 import { View, Text } from '@tarojs/components'
-import { AtButton } from 'taro-ui'
-import { SpImage, SpPrice, SpTradeItem } from '@/components'
-import { ACTIVITY_STATUS_MAP } from '@/consts'
+import { SpImage } from '@/components'
+import { useTranslation, $t } from '@/i18n'
 import classNames from 'classnames'
 import './comp-activity-item.scss'
 
 function CompActivityItem(props) {
-  const { info = {}, isActivity = false, onClick = () => {}, onBtnAction = () => {} } = props
+  const {
+    info = {},
+    isActivity = false,
+    onClick = () => {},
+    onBtnAction = () => {},
+    onViewRecords = () => {}
+  } = props
 
   if (!info) {
     return null
@@ -58,8 +61,6 @@ function CompActivityItem(props) {
     onBtnAction(info, type)
   }
 
-  console.log('info', info)
-
   return (
     <View
       className={classNames('activity-item', { 'has-end': status == 'end' })}
@@ -78,23 +79,38 @@ function CompActivityItem(props) {
         </View>
         {reason && !isActivity && (
           <View className='activity-item__content-reject'>
-            拒绝原因：
+            {$t('925d1b2b.2624eb')}
             <Text className='activity-item__content-reject-reason'>{reason}</Text>
           </View>
         )}
+  
         <View className='activity-item__content-btns'>
-          {isActivity && <View className='activity-item__content-btn activity-btn'>会员免费</View>}
+          {isActivity && (
+            <View className='activity-item__content-btn activity-btn'>{$t('c012603a.048ca2')}</View>
+          )}
+          <View className='activity-item__content-btn-wrapper'>
+            {isActivity && recordId ? (
+              <View
+                className='activity-item__view-records'
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onViewRecords(info)
+                }}
+              >
+                {$t('c2a4242b.b38ce3')}
+              </View>
+            ) : null}
           {actionEdit && !isActivity && (
             <View
               className='activity-item__content-btn'
               onClick={(e) => handleBtnClick(e, 'reFill')}
             >
-              重新填写
+              {$t('c012603a.a5c7b5')}
             </View>
           )}
           {!isActivity && actionApply && (
             <View className='activity-item__content-btn' onClick={(e) => handleBtnClick(e, 'sign')}>
-              立即报名
+              {$t('c012603a.1e6c87')}
             </View>
           )}
 
@@ -105,9 +121,10 @@ function CompActivityItem(props) {
               })}
               onClick={(e) => handleBtnClick(e, 'sign')}
             >
-              立即报名
+              {$t('c012603a.1e6c87')}
             </View>
           )}
+          </View>
         </View>
       </View>
     </View>

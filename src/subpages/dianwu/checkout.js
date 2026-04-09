@@ -25,7 +25,8 @@ import {
 import qs from 'qs'
 import { PROMOTION_TAG } from '@/consts'
 import { selectMember } from '@/store/slices/dianwu'
-import { pickBy, showToast } from '@/utils'
+import { useTranslation, $t, ti, i18n } from '@/i18n'
+import { pickBy, showToast, emitOpenerEvent } from '@/utils'
 import CompGoodsPrice from './comps/comp-goods-price'
 import CompGift from './comps/comp-gift'
 import CompCoupon from './comps/comp-coupon'
@@ -51,9 +52,21 @@ const initialState = {
   distributor_id: null,
   prescriptionStatus: 0,
   codeStatus: false,
-  checkout_order_id: null
+  checkout_order_id: null,
+  priceAdjustment: 0
 }
 function DianwuCheckout(props) {
+  useTranslation()
+
+  useEffect(() => {
+    const syncNavTitle = () => {
+      Taro.setNavigationBarTitle({ title: $t('2b4b2b4f.89159f') })
+    }
+    syncNavTitle()
+    i18n.on('languageChanged', syncNavTitle)
+    return () => i18n.off('languageChanged', syncNavTitle)
+  }, [])
+
   const [state, setState] = useImmer(initialState)
   const {
     itemList,
@@ -75,9 +88,11 @@ function DianwuCheckout(props) {
     distributor_id,
     prescriptionStatus,
     codeStatus,
-    checkout_order_id
+    checkout_order_id,
+    priceAdjustment
   } = state
   const pageRef = useRef()
+  const resloveResWrapRef = useRef(() => {})
   const $instance = getCurrentInstance() || {}
 
   const { member } = useSelector((state) => state.dianwu)
@@ -86,8 +101,8 @@ function DianwuCheckout(props) {
   // 挂单
   const onPendingOrder = async () => {
     const { confirm } = await Taro.showModal({
-      title: '挂单确认',
-      content: '请确认是否挂单'
+      title: $t('2b4b2b4f.d36db0'),
+      content: $t('2b4b2b4f.a13882')
     })
     if (confirm) {
       try {
@@ -104,9 +119,9 @@ function DianwuCheckout(props) {
       } catch (e) {
         if (e.res.data.data?.code == '42201') {
           const pendingModal = await Taro.showModal({
-            title: '挂单上限提醒',
+            title: $t('2b4b2b4f.6edb46'),
             content: e.res.data.data.message,
-            confirmText: '现在就去'
+            confirmText: $t('2b4b2b4f.6dcf61')
           })
           if (pendingModal.confirm) {
             Taro.redirectTo({
@@ -161,6 +176,19 @@ function DianwuCheckout(props) {
     }
   }, [isOpened, couponLayout])
 
+  /** EventChannel.emit 在部分运行时不可用时，改价页会通过 eventCenter 回传 */
+  useEffect(() => {
+    const fn = (payload) => {
+      if (payload?.res) {
+        resloveResWrapRef.current(payload.res, payload.markdown)
+      }
+    }
+    Taro.eventCenter.on('onEventChangePrice', fn)
+    return () => {
+      Taro.eventCenter.off('onEventChangePrice', fn)
+    }
+  }, [])
+
   const getUserCardList = async () => {
     const { list } = await dianwuApi.getUserCardList({
       user_id: member?.userId,
@@ -190,7 +218,7 @@ function DianwuCheckout(props) {
       Taro.hideLoading()
       await Taro.showModal({
         content: res.extraTips,
-        confirmText: '知道了'
+        confirmText: $t('edc703ce.ce2695')
       })
       Taro.navigateBack()
       return
@@ -236,7 +264,8 @@ function DianwuCheckout(props) {
       couponDiscount: _couponDiscount,
       promotionDiscount: _promotionDiscount,
       couponInfo: _couponInfo,
-      prescriptionStatus: _prescriptionStatus
+      prescriptionStatus: _prescriptionStatus,
+      priceAdjustment: _priceAdjustment
     } = pickBy(res, doc.dianwu.CHECKOUT_GOODS_ITEM)
     setState((draft) => {
       draft.itemList = items.filter((item) => item.orderItemType != 'gift')
@@ -251,8 +280,10 @@ function DianwuCheckout(props) {
       draft.couponInfo = _couponInfo
       draft.selectCoupon = _couponInfo ? _couponInfo.coupon_code : null
       ;(draft.markdown = markdown), (draft.prescriptionStatus = _prescriptionStatus)
+      draft.priceAdjustment = _priceAdjustment || 0
     })
   }
+  resloveResWrapRef.current = resloveResWrap
 
   const handleChangePrice = () => {
     let params = {
@@ -345,12 +376,11 @@ function DianwuCheckout(props) {
   // 现金收款
   const handleClickCash = async () => {
     const res = await Taro.showModal({
-      title: '现金收款确认提示',
-      content: '请确认是否已收到商品款?',
+      title: $t('2b4b2b4f.90f054'),
+      content: $t('2b4b2b4f.90741c'),
       showCancel: true,
-      cancel: '取消',
-      cancelText: '未收到',
-      confirmText: '确认收到'
+      cancelText: $t('2b4b2b4f.64d5f3'),
+      confirmText: $t('2b4b2b4f.755c7e')
     })
     if (!res.confirm) return
     const order_id = await createOrder()
@@ -365,7 +395,7 @@ function DianwuCheckout(props) {
 
   //线下转账
   const handleClickOfflinePay = async () => {
-    Taro.showLoading({ title: '正在创建订单中', mask: true })
+    Taro.showLoading({ title: $t('2b4b2b4f.30ade0'), mask: true })
     const order_id = await createOrder()
     await dianwuApi.orderPayment({
       order_id,
@@ -375,7 +405,7 @@ function DianwuCheckout(props) {
     Taro.hideLoading()
     Taro.showToast({
       icon: 'none',
-      title: '订单创建成功'
+      title: $t('2b4b2b4f.f4cb7f')
     })
 
     setTimeout(() => {
@@ -388,10 +418,7 @@ function DianwuCheckout(props) {
   }
 
   const onEventCreateOrder = () => {
-    const pages = Taro.getCurrentPages()
-    const current = pages[pages.length - 1]
-    const eventChannel = current.getOpenerEventChannel()
-    eventChannel.emit('onEventFetchOrder')
+    emitOpenerEvent('onEventFetchOrder')
   }
 
   // 使用优惠券
@@ -423,8 +450,8 @@ function DianwuCheckout(props) {
       renderFooter={
         <View className='btn-wrap'>
           <SpButton
-            resetText='挂单'
-            confirmText='收款'
+            resetText={$t('2b4b2b4f.ee5b0a')}
+            confirmText={$t('2b4b2b4f.2eee29')}
             onConfirm={onCollection}
             onReset={onPendingOrder}
           ></SpButton>
@@ -435,21 +462,21 @@ function DianwuCheckout(props) {
         <SpImage src={member?.avatar || 'user_icon.png'} width={80} height={80} />
         <View className='user-info'>
           <View className='info-hd'>
-            <Text className='name'>{member?.username || '匿名'}</Text>
+            <Text className='name'>{member?.username || $t('2b4b2b4f.1a75c1')}</Text>
             <Text className='mobile'>{member?.mobile}</Text>
           </View>
           <View className='info-bd'>
             <View className='filed-item'>
-              <Text className='label'>积分:</Text>
+              <Text className='label'>{$t('2b4b2b4f.5498d6')}</Text>
               <Text className='value'>{member?.point || 0}</Text>
             </View>
             <View className='filed-item'>
-              <Text className='label'>券:</Text>
+              <Text className='label'>{$t('2b4b2b4f.0c9cbf')}</Text>
               <Text className='value'>{member?.couponNum || 0}</Text>
             </View>
             {member?.vipDiscount < 10 && (
               <View className='filed-item'>
-                <Text className='label'>会员折扣:</Text>
+                <Text className='label'>{$t('2b4b2b4f.287fa3')}</Text>
                 <Text className='value'>{member?.vipDiscount || 0}</Text>
               </View>
             )}
@@ -465,14 +492,14 @@ function DianwuCheckout(props) {
             <View className='item-bd'>
               <View className='title'>
                 {item?.isMedicine == 1 && item?.isPrescription == 1 && (
-                  <Text className='prescription-drug'>处方药</Text>
+                  <Text className='prescription-drug'>{$t('7d82f6d2.e8b7e1')}</Text>
                 )}
                 {item.name}
               </View>
               {item.itemSpecDesc && <View className='sku'>{item.itemSpecDesc}</View>}
               <View className='ft-info'>
                 <CompGoodsPrice info={item} />
-                <View className='num'>数量：{item.num}</View>
+                <View className='num'>{ti('2b4b2b4f.43ebc8', [item.num])}</View>
               </View>
             </View>
           </View>
@@ -527,7 +554,7 @@ function DianwuCheckout(props) {
       <View className='block-coupon'>
         {couponList.length > 0 && (
           <SpCell
-            title='使用券'
+            title={$t('2b4b2b4f.dd244b')}
             border
             isLink
             onClick={() => {
@@ -536,7 +563,7 @@ function DianwuCheckout(props) {
               })
             }}
           >
-            <Text>{`${couponInfo ? couponInfo.rule : '请选择'}`}</Text>
+            <Text>{couponInfo ? couponInfo.rule : $t('edc703ce.708c9d')}</Text>
           </SpCell>
         )}
 
@@ -546,39 +573,44 @@ function DianwuCheckout(props) {
       </View>
 
       <View className='block-checkout-info'>
-        <SpCell title={`${totalItemNum}件商品合计`} border>
+        <SpCell title={ti('2b4b2b4f.631d07', [totalItemNum])} border>
           <SpPrice value={itemFee} />
         </SpCell>
-        <SpCell title='促销优惠' border>
+        <SpCell title={$t('2b4b2b4f.7d9bcd')} border>
           <SpPrice value={`-${promotionDiscount}`} />
         </SpCell>
-        <SpCell title='会员折扣' border>
+        <SpCell title={$t('2b4b2b4f.eababe')} border>
           <SpPrice value={`-${memberDiscount}`} />
         </SpCell>
-        <SpCell title='券优惠' border>
+        <SpCell title={$t('2b4b2b4f.ca66f9')} border>
           <SpPrice value={`-${couponDiscount}`} />
         </SpCell>
+        {priceAdjustment > 0 && (
+          <SpCell title='改价优惠' border>
+            <SpPrice value={`-${priceAdjustment}`} />
+          </SpCell>
+        )}
         {/* <SpCell title='积分抵扣' border>
           <SpPrice value={-50} />
         </SpCell> */}
-        <SpCell title='应收款'>
+        <SpCell title={$t('2b4b2b4f.ba5d3e')}>
           <SpPrice value={totalFee} />
         </SpCell>
       </View>
 
       <View className='block-remark'>
-        <View className='title'>订单备注</View>
+        <View className='title'>{$t('2b4b2b4f.bb84d6')}</View>
         <AtTextarea
           count
           value={remark}
           onChange={onChangeRemark}
           maxLength={150}
-          placeholder='请输入您的备注'
+          placeholder={$t('2b4b2b4f.4f2387')}
         ></AtTextarea>
       </View>
 
       {!prescriptionStatus == 0 && (
-        <View className='cart-checkout__title'>订单中包含处方药，提交订单后请补充处方信息</View>
+        <View className='cart-checkout__title'>{$t('71426282.417975')}</View>
       )}
 
       <AtModal
@@ -590,11 +622,16 @@ function DianwuCheckout(props) {
           })
         }}
       >
-        <AtModalHeader>应收款</AtModalHeader>
+        <AtModalHeader>{$t('2b4b2b4f.ba5d3e')}</AtModalHeader>
         <AtModalContent>
           <View className='total-mount'>
-            <SpPrice size={48} value={totalFee} />
-            <Text className='iconfont icon-edit' onClick={handleChangePrice}></Text>
+            <View className='total-mount__row'>
+              <SpPrice size={48} value={totalFee} />
+              <View className='change-price-btn' onClick={handleChangePrice}>
+                <Text className='iconfont icon-edit' />
+                <Text className='change-price-btn__txt'>改价</Text>
+              </View>
+            </View>
           </View>
           {/* <SpCell isLink border>
             <Text className='iconfont icon-weixinzhifu'></Text>
@@ -602,11 +639,11 @@ function DianwuCheckout(props) {
           </SpCell> */}
           <SpCell isLink border onClick={handleClickScanCode}>
             <Text className='iconfont icon-saoma'></Text>
-            <Text>微信/支付宝收款</Text>
+            <Text>{$t('2b4b2b4f.1bcb84')}</Text>
           </SpCell>
           <SpCell isLink onClick={handleClickCash}>
             <Text className='iconfont icon-money1'></Text>
-            <Text>现金收款</Text>
+            <Text>{$t('2b4b2b4f.6187a0')}</Text>
           </SpCell>
           {/* <SpCell isLink onClick={handleClickOfflinePay}>
             <Text className='iconfont icon-money1'></Text>
@@ -616,7 +653,7 @@ function DianwuCheckout(props) {
       </AtModal>
 
       <SpFloatLayout
-        title='优惠券'
+        title={$t('2b4b2b4f.2f3635')}
         className='coupon-layout'
         open={couponLayout}
         onClose={() => {
@@ -626,8 +663,8 @@ function DianwuCheckout(props) {
         }}
         renderFooter={
           <SpButton
-            resetText='取消'
-            confirmText='确定'
+            resetText={$t('61e2d21a.625fb2')}
+            confirmText={$t('61e2d21a.e83a25')}
             onConfirm={handleUseCoupon}
             onReset={() => {
               setState((draft) => {

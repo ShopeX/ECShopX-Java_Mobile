@@ -13,6 +13,7 @@ import { usePayment } from '@/hooks'
 import { isArray } from '@/utils'
 import api from '@/api'
 import { updateCount } from '@/store/slices/cart'
+import { useTranslation, $t } from '@/i18n'
 import './cashier-result.scss'
 
 const initialState = {
@@ -22,12 +23,20 @@ const initialState = {
 }
 
 function CashierResult(props) {
+  const { i18n } = useTranslation()
   const $instance = getCurrentInstance() || {}
 
   const { cashierPayment } = usePayment()
   const [state, setState] = useImmer(initialState)
   const { tradeInfo, orderId, czOrder } = state
   const dispatch = useDispatch()
+  useEffect(() => {
+    Taro.setNavigationBarTitle({ title: $t('8b3a17e4.e5dcb3') })
+    const onLang = () => Taro.setNavigationBarTitle({ title: $t('8b3a17e4.e5dcb3') })
+    i18n.on('languageChanged', onLang)
+    return () => i18n.off('languageChanged', onLang)
+  }, [i18n])
+
   useEffect(() => {
     const { order_id } = $instance?.router?.params
     if (order_id) {
@@ -83,25 +92,27 @@ function CashierResult(props) {
         )}
 
         <Text className='trade-txt'>
-          {
-            {
-              'NOTPAY': '等待支付',
-              'SUCCESS': '支付成功'
-            }[tradeInfo.tradeState]
-          }
+          {tradeInfo?.tradeState === 'NOTPAY'
+            ? $t('45ab5834.5e6031')
+            : tradeInfo?.tradeState === 'SUCCESS'
+            ? $t('45ab5834.eb5dc9')
+            : ''}
         </Text>
       </View>
       {tradeInfo && (
         <View className='trade-info'>
           <View>
-            订单编号：<Text className='trade-info-value'>{orderId}</Text>
+            {$t('45ab5834.148237')}
+            <Text className='trade-info-value'>{orderId}</Text>
           </View>
           <View>
-            支付单号：<Text className='trade-info-value'>{tradeInfo.tradeId}</Text>
+            {$t('45ab5834.296b0f')}
+            <Text className='trade-info-value'>{tradeInfo.tradeId}</Text>
           </View>
           {/* <View>{`创建时间：${tradeInfo.orderId}`}</View> */}
           <View>
-            支付时间：<Text className='trade-info-value'>{tradeInfo.payDate}</Text>
+            {$t('45ab5834.ca25d2')}
+            <Text className='trade-info-value'>{tradeInfo.payDate}</Text>
           </View>
         </View>
       )}
@@ -112,8 +123,8 @@ function CashierResult(props) {
           tradeInfo?.tradeSourceType == 'normal_groups') && (
           <View className='btn-wrap'>
             <SpButton
-              resetText='首页'
-              confirmText='订单详情'
+              resetText={$t('45ab5834.db1c89')}
+              confirmText={$t('45ab5834.8054f7')}
               onReset={() => {
                 Taro.redirectTo({ url: '/pages/index' })
               }}
@@ -129,8 +140,8 @@ function CashierResult(props) {
           tradeInfo?.tradeSourceType == 'normal_pointsmall_pointsmall') && (
           <View className='btn-wrap'>
             <SpButton
-              resetText='首页'
-              confirmText='订单详情'
+              resetText={$t('45ab5834.db1c89')}
+              confirmText={$t('45ab5834.8054f7')}
               onReset={() => {
                 Taro.redirectTo({ url: '/pages/index' })
               }}
@@ -153,7 +164,7 @@ function CashierResult(props) {
                 Taro.redirectTo({ url: '/subpages/community/order' })
               }}
             >
-              订单列表
+              {$t('45ab5834.07166e')}
             </AtButton>
           </View>
         )}
@@ -168,7 +179,7 @@ function CashierResult(props) {
                 Taro.redirectTo({ url: '/pages/index' })
               }}
             >
-              首页
+              {$t('45ab5834.db1c89')}
             </AtButton>
           </View>
         )}

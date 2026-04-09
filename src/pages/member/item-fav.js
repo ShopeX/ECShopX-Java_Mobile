@@ -11,6 +11,7 @@ import { withPager, withBackToTop } from '@/hocs'
 import api from '@/api'
 import { pickBy, hasNavbar, isWxWeb, VERSION_PLATFORM } from '@/utils'
 import { BackToTop, Loading, GoodsItem, SpNavBar, SpNote, RecommendItem } from '@/components'
+import { $t, i18n } from '@/i18n'
 import StoreFavItem from './comps/store-fav-item'
 
 import './item-fav.scss'
@@ -24,24 +25,37 @@ export default class ItemFav extends Component {
   constructor(props) {
     super(props)
 
-    const tabList = [
-      { title: '商品', status: '0' },
-      { title: '软文', status: '1' }
-    ]
-
-    if (VERSION_PLATFORM) {
-      tabList.push({ title: '店铺', status: '2' })
-    }
-
     this.state = {
       ...this.state,
       curTabIdx: 0,
-      tabList: tabList,
       list: []
     }
   }
 
+  componentDidMount() {
+    this._onLanguageChanged = () => this.forceUpdate()
+    i18n.on('languageChanged', this._onLanguageChanged)
+  }
+
+  componentWillUnmount() {
+    if (this._onLanguageChanged) {
+      i18n.off('languageChanged', this._onLanguageChanged)
+    }
+  }
+
+  getTabList() {
+    const tabList = [
+      { title: $t('ee4c0c5d.9897d8'), status: '0' },
+      { title: $t('ee4c0c5d.e8f87a'), status: '1' }
+    ]
+    if (VERSION_PLATFORM) {
+      tabList.push({ title: $t('ee4c0c5d.295713'), status: '2' })
+    }
+    return tabList
+  }
+
   componentDidShow() {
+    Taro.setNavigationBarTitle({ title: $t('ee4c0c5d.ae336c') })
     this.resetPage()
     this.setState(
       {
@@ -191,11 +205,12 @@ export default class ItemFav extends Component {
   }
 
   render() {
-    const { list, showBackToTop, scrollTop, page, curTabIdx, tabList } = this.state
+    const { list, showBackToTop, scrollTop, page, curTabIdx } = this.state
+    const tabList = this.getTabList()
     console.log('ItemFav:list', list)
     return (
       <View className='page-goods-fav'>
-        <SpNavBar title='收藏' leftIconType='chevron-left' fixed='true' />
+        <SpNavBar title={$t('ee4c0c5d.ae336c')} leftIconType='chevron-left' fixed='true' />
         <AtTabs
           className={`trade-list__tabs ${hasNavbar && 'navbar_padtop'}`}
           current={curTabIdx}
@@ -261,9 +276,9 @@ export default class ItemFav extends Component {
               })}
             </View>
           )}
-          {page.isLoading ? <Loading>正在加载...</Loading> : null}
+          {page.isLoading ? <Loading>{$t('ee4c0c5d.bd0271')}</Loading> : null}
           {!page.isLoading && !page.hasNext && !list.length && (
-            <SpNote img='trades_empty.png'>暂无数据~</SpNote>
+            <SpNote img='trades_empty.png'>{$t('ee4c0c5d.ba1de9')}</SpNote>
           )}
         </ScrollView>
 

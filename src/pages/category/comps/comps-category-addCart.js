@@ -12,7 +12,15 @@ import api from '@/api'
 import doc from '@/doc'
 import { useDebounce } from '@/hooks'
 import S from '@/spx'
-import { pickBy, classNames, styleNames, showToast, VERSION_PLATFORM, getDistributorId } from '@/utils'
+import {
+  pickBy,
+  classNames,
+  styleNames,
+  showToast,
+  VERSION_PLATFORM,
+  getDistributorId
+} from '@/utils'
+import { useTranslation, $t, ti } from '@/i18n'
 import CompFirstCategory from './comp-first-category'
 import CompSecondCategory from './comp-second-category'
 import CompThirdCategory from './comp-third-category'
@@ -43,6 +51,7 @@ const initialState = {
 }
 
 function CompsCategoryAddCart(props) {
+  useTranslation()
   const $instance = getCurrentInstance() || {}
   const [state, setState] = useImmer(initialState)
   // const { purchase_share_info = {} } = useSelector((state) => state.purchase)
@@ -175,9 +184,13 @@ function CompsCategoryAddCart(props) {
 
   const getCategoryList = async () => {
     // ecsahopex ：商品管理分类   云店/官网/内购：商品销售分类
-    const res = await api.category.get(VERSION_PLATFORM ? { is_main_category: 1 } : {
-      distributor_id: getDistributorId()
-    })
+    const res = await api.category.get(
+      VERSION_PLATFORM
+        ? { is_main_category: 1 }
+        : {
+            distributor_id: getDistributorId()
+          }
+    )
 
     const currentList = pickBy(res, {
       name: 'category_name',
@@ -306,10 +319,10 @@ function CompsCategoryAddCart(props) {
       shop_type: 'distributor'
     }
     if (item.cart_num >= Number(item.activity_store)) {
-      return showToast(`最多加购${item.activity_store}件`)
+      return showToast(ti('16ae64c4.21dd98', [item.activity_store]))
     }
     await api.purchase.addPurchaseCart(params)
-    showToast('加入购物车成功')
+    showToast($t('16ae64c4.54fd8e'))
     // let changeList = JSON.parse(JSON.stringify(newList))
     // changeList?.map(l=>{
     //   if(l.item_id == item.item_id){
@@ -348,7 +361,7 @@ function CompsCategoryAddCart(props) {
   const changeList = async () => {
     const _secondList = [
       {
-        name: '全部',
+        name: $t('16ae64c4.a8b0c2'),
         img: '',
         id: ''
       },
@@ -361,13 +374,13 @@ function CompsCategoryAddCart(props) {
       draft.thirdList =
         _thirdList.length > 0
           ? [
-            {
-              name: '全部',
-              img: '',
-              id: ''
-            },
-            ..._thirdList
-          ]
+              {
+                name: $t('16ae64c4.a8b0c2'),
+                img: '',
+                id: ''
+              },
+              ..._thirdList
+            ]
           : []
     })
   }

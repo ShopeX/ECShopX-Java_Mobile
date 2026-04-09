@@ -8,6 +8,7 @@ import { View, Text } from '@tarojs/components'
 import { classNames } from '@/utils'
 import { useImmer } from 'use-immer'
 import { SpInput as AtInput } from '@/components'
+import { useTranslation, $t } from '@/i18n'
 import './comp-password-input.scss'
 
 const initialValue = {
@@ -16,6 +17,7 @@ const initialValue = {
 }
 
 const CompPasswordInput = (props) => {
+  useTranslation()
   const { onChange = () => {}, disabled, onFocus = () => {}, onBlur = () => {}, value } = props
 
   const [state, setState] = useImmer(initialValue)
@@ -33,7 +35,7 @@ const CompPasswordInput = (props) => {
       <AtInput
         clear
         type={type}
-        placeholder='密码需由6-16位数字或字母组成'
+        placeholder={$t('24f4b47f.c4d0c8')}
         placeholderClass='input-placeholder'
         onChange={onChange}
         onFocus={onFocus}

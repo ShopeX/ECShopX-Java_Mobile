@@ -15,6 +15,7 @@ import doc from '@/doc'
 import S from '@/spx'
 import { pickBy, log, isWeixin, showToast, buildSharePath } from '@/utils'
 import { withPageWrapper } from '@/hocs'
+import { useTranslation, $t, ti } from '@/i18n'
 import { WgtFilm, WgtSlider, WgtWriting, WgtGoods, WgtHeading } from '../home/wgts'
 import './detail.scss'
 
@@ -29,6 +30,7 @@ const initialState = {
   collectArticleStatus: false
 }
 function GuideRecommendDetail(props) {
+  const { i18n } = useTranslation()
   const $instance = getCurrentInstance() || {}
   const [state, setState] = useImmer(initialState)
   const { img, shareImageUrl, itemId, title, content, articleFocusNum, updated } = state
@@ -38,6 +40,10 @@ function GuideRecommendDetail(props) {
   useEffect(() => {
     fetch()
   }, [])
+
+  useEffect(() => {
+    Taro.setNavigationBarTitle({ title: $t('a8e160ea.8d29da') })
+  }, [i18n.language])
 
   useDidShow(() => {
     Taro.hideShareMenu({
@@ -112,7 +118,7 @@ function GuideRecommendDetail(props) {
       setState((draft) => {
         draft.collectArticleStatus = true
       })
-      showToast('已加入心愿单')
+      showToast($t('a8e160ea.bee805'))
     } else {
       await api.article.delCollectArticle({
         article_id: router?.params.id
@@ -120,7 +126,7 @@ function GuideRecommendDetail(props) {
       setState((draft) => {
         draft.collectArticleStatus = false
       })
-      showToast('已移出心愿单')
+      showToast($t('a8e160ea.2cddac'))
     }
   }
 
@@ -134,7 +140,9 @@ function GuideRecommendDetail(props) {
           <View className='recommend-detail__bar-item' onClick={handleLikeClick}>
             <Text className={`iconfont icon-like ${state.isPraise ? 'active' : ''}`} />
             <Text className='bar-item-text'>
-              {`${state.isPraise ? '已赞' : '点赞'} ${state.articlePraiseNum}`}
+              {`${state.isPraise ? $t('a8e160ea.d10f66') : $t('a8e160ea.75f0fa')} ${
+                state.articlePraiseNum
+              }`}
             </Text>
           </View>
           <View className='recommend-detail__bar-item' onClick={handleMarkClick}>
@@ -142,13 +150,13 @@ function GuideRecommendDetail(props) {
               className={`iconfont icon-star_on ${state.collectArticleStatus ? 'active' : ''}`}
             />
             <Text className='bar-item-text'>
-              {state.collectArticleStatus ? '已加入' : '加入心愿'}
+              {state.collectArticleStatus ? $t('a8e160ea.711785') : $t('a8e160ea.56d0b8')}
             </Text>
           </View>
           {isWeixin && (
             <Button openType='share' className='recommend-detail__bar-item'>
               <Text className='iconfont icon-share1'> </Text>
-              <Text className='bar-item-text'>分享</Text>
+              <Text className='bar-item-text'>{$t('a8e160ea.c31f48')}</Text>
             </Button>
           )}
         </View>
@@ -159,7 +167,7 @@ function GuideRecommendDetail(props) {
           <View className='article-title'>{title}</View>
           <View className='article-info'>
             <Text className='update-time'>{updated}</Text>
-            <Text className='focus-num'>{`${articleFocusNum}关注`}</Text>
+            <Text className='focus-num'>{ti('a8e160ea.e3541c', [articleFocusNum])}</Text>
           </View>
         </View>
         <View className='article-bd'>

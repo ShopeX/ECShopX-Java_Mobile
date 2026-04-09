@@ -3,7 +3,7 @@
  * See LICENSE file for license details.
  */
 import Taro, { getCurrentInstance, useRouter } from '@tarojs/taro'
-import React, { useCallback, useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { useImmer } from 'use-immer'
 import { View, Text } from '@tarojs/components'
@@ -13,6 +13,7 @@ import { SpPage, SpPrivacyModal } from '@/components'
 import { useLogin, useModal } from '@/hooks'
 import { showToast, VERSION_IN_PURCHASE, normalizeQuerys, getDistributorId, isWeb } from '@/utils'
 import { updateEnterpriseId, updateCurDistributorId } from '@/store/slices/purchase'
+import { useTranslation, $t } from '@/i18n'
 import CompSelectCompany from './comps/comp-select-company'
 import CompBottomTip from './comps/comp-bottomTip'
 import './select-company-phone.scss'
@@ -25,6 +26,7 @@ const initialState = {
 }
 
 function PurchaseAuthPhone(props) {
+  const { i18n } = useTranslation()
   const { setToken, isNewUser, login } = useLogin({
     autoLogin: true,
     policyUpdateHook: (isUpdate) => {
@@ -57,6 +59,10 @@ function PurchaseAuthPhone(props) {
     getLoginCode()
     // getQrcodeEid()
   }, [])
+
+  useEffect(() => {
+    Taro.setNavigationBarTitle({ title: $t('899687f0.35a9ee') })
+  }, [i18n.language])
 
   // 企业二维码扫码登录
   // const getQrcodeEid = async () => {
@@ -131,7 +137,7 @@ function PurchaseAuthPhone(props) {
             mobile: 'member_mobile'
           })
         } else {
-          showToast('验证成功')
+          showToast($t('ace75665.45001d'))
           await getQrCodeDtid()
           dispatch(updateEnterpriseId(enterprise_id))
           setTimeout(() => {
@@ -182,7 +188,7 @@ function PurchaseAuthPhone(props) {
       await api.purchase.setEmployeeAuth({ ..._params, showError: false })
       await getQrCodeDtid()
       dispatch(updateEnterpriseId(_params.enterprise_id))
-      showToast('验证成功')
+      showToast($t('ace75665.45001d'))
       if (isOpened) {
         setState((draft) => {
           draft.isOpened = false
@@ -202,10 +208,10 @@ function PurchaseAuthPhone(props) {
         await getQrCodeDtid()
       }
       await showModal({
-        title: '验证失败',
+        title: $t('e441b11e.e8c3ea'),
         content: e.message,
         showCancel: false,
-        confirmText: '我知道了',
+        confirmText: $t('20b64b82.fe0337'),
         contentAlign: 'center'
       })
       Taro.reLaunch({
@@ -244,12 +250,12 @@ function PurchaseAuthPhone(props) {
         <View className='select-component-title'>{decodeURIComponent(enterprise_name)}</View>
       )}
       {(auth_type == 'mobile' || auth_type == 'qr_code') && (
-        <View className='select-component-prompt'>使用手机号进行验证</View>
+        <View className='select-component-prompt'>{$t('e7ae89fc.2ff180')}</View>
       )}
       {(!isNewUser || isWeb) && (
         <>
           <View className='phone-box'>
-            <Text>已授权手机号：</Text>
+            <Text>{$t('63c97b50.63276f')}</Text>
             <Text className='phone-number'>{userInfo?.mobile}</Text>
           </View>
           <AtButton
@@ -263,7 +269,7 @@ function PurchaseAuthPhone(props) {
               })
             }
           >
-            使用该号码验证
+            {$t('20c15f67.2369a0')}
           </AtButton>
         </>
       )}
@@ -275,7 +281,7 @@ function PurchaseAuthPhone(props) {
           openType='getPhoneNumber'
           onGetPhoneNumber={handleBindPhone}
         >
-          手机号授权登录
+          {$t('96ada8b8.64a98a')}
         </AtButton>
       )}
       {/* {VERSION_IN_PURCHASE &&

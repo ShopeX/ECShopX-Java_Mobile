@@ -8,6 +8,7 @@ import dayjs from 'dayjs'
 import { SG_ROUTER_PARAMS, SG_GUIDE_PARAMS, SG_GUIDE_PARAMS_UPDATETIME } from '@/consts'
 import qs from 'qs'
 import { entryLaunch, showToast } from '@/utils'
+import { $t } from '@/i18n'
 
 /**
  * 统一分享落地页
@@ -106,7 +107,7 @@ function ShareIand() {
     if (welcomeRoutes[from_scene]) {
       Taro.redirectTo({ url: targetUrl })
     } else {
-      showToast('页面跳转失败')
+      showToast($t('9264688e.6ac521'))
       setTimeout(() => {
         Taro.redirectTo({ url: '/pages/index' })
       }, 1500)
@@ -150,7 +151,7 @@ function ShareIand() {
     if (normalizedPath === '/pages/cart/espier-checkout') {
       filteredParams['launchScene'] = 1
     }
-    
+
     // 构建目标URL
     const queryString = qs.stringify(filteredParams)
     const targetUrl = queryString ? `${normalizedPath}?${queryString}` : normalizedPath

@@ -2,13 +2,14 @@
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
  */
-import React, { useEffect } from 'react'
+import React, { useEffect, useMemo } from 'react'
 import { useImmer } from 'use-immer'
 import Taro from '@tarojs/taro'
 import { View, Text, Video } from '@tarojs/components'
 import imgUploader from '@/utils/upload'
 import { isArray, authSetting, classNames } from '@/utils'
 import { SpImage } from '@/components'
+import { useTranslation, $t } from '@/i18n'
 import './index.scss'
 
 const initialState = {
@@ -25,8 +26,14 @@ function SpUpload(props) {
     mediaType = 'image',
     edit = false,
     onEdit = () => {},
-    placeholder = '添加图片'
+    placeholder
   } = props
+
+  const { i18n } = useTranslation()
+  const resolvedPlaceholder = useMemo(
+    () => (placeholder !== undefined && placeholder !== null ? placeholder : $t('7c40f12d.b89fb3')),
+    [placeholder, i18n.language]
+  )
 
   const [state, setState] = useImmer(initialState)
   const { files } = state
@@ -128,7 +135,7 @@ function SpUpload(props) {
             ></Text>
             {edit && (
               <View className='edit-block' onClick={onEdit.bind(this, item, index)}>
-                编辑
+                {$t('7c40f12d.95b351')}
               </View>
             )}
           </View>
@@ -139,7 +146,7 @@ function SpUpload(props) {
           <View className={classNames('btn-upload-icon', { 'hasBackground': backgroundSrc })}>
             <Text className='iconfont icon-xiangji'></Text>
           </View>
-          {!backgroundSrc && <Text className='btn-upload-txt'>{placeholder}</Text>}
+          {!backgroundSrc && <Text className='btn-upload-txt'>{resolvedPlaceholder}</Text>}
           {!backgroundSrc && max && (
             <Text className='files-length'>{`(${files.length}/${max})`}</Text>
           )}

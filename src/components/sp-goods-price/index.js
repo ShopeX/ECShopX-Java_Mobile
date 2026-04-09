@@ -9,6 +9,7 @@ import { View, Text } from '@tarojs/components'
 import { SpPrice, SpPoint, SpVipLabel } from '@/components'
 import { classNames } from '@/utils'
 import { useLogin } from '@/hooks'
+import { $t } from '@/i18n'
 import './index.scss'
 
 function SpGoodsPrice(props) {
@@ -69,7 +70,7 @@ function SpGoodsPrice(props) {
             {info.memberPrice < info.price && enMemberPrice && isLogin && (
               <View className='vip-price'>
                 <SpPrice value={info.memberPrice} />
-                <SpVipLabel content='会员价' type='member' />
+                <SpVipLabel content={$t('d59e9e9d.8fdd6f')} type='member' />
               </View>
             )}
 

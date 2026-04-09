@@ -13,6 +13,7 @@ import { AtForm, AtButton } from 'taro-ui'
 import api from '@/api'
 import { useImmer } from 'use-immer'
 import { useLogin } from '@/hooks'
+import { useTranslation, $t, ti } from '@/i18n'
 import { CompPasswordInput } from './comps'
 import { setTokenAndRedirect } from './util'
 import './reg.scss'
@@ -31,6 +32,7 @@ const initialValue = {
 const CODE_SYMBOL = 'sign'
 
 const Reg = () => {
+  const { i18n } = useTranslation()
   const [state, setState] = useImmer(initialValue)
 
   const { mobile, yzm, vcode, password, imgInfo, checked, member_register, privacy } = state
@@ -54,11 +56,11 @@ const Reg = () => {
 
   const handleTimerStart = async (resolve) => {
     if (!validate.isMobileNum(mobile)) {
-      showToast('请输入正确的手机号')
+      showToast($t('4e9d53b5.a32ab5'))
       return
     }
     if (!validate.isRequired(yzm)) {
-      showToast('请输入图形验证码')
+      showToast($t('4e9d53b5.e70066'))
       return
     }
     try {
@@ -68,7 +70,7 @@ const Reg = () => {
         yzm: yzm,
         token: imgInfo.imageToken
       })
-      showToast('验证码已发送')
+      showToast($t('4e9d53b5.4d7fb5'))
       resolve()
     } catch (e) {
       getImageVcode()
@@ -78,31 +80,30 @@ const Reg = () => {
   const handleSubmit = async () => {
     if (!checked) {
       const res = await Taro.showModal({
-        title: '提示',
-        content: `请先阅读并同意${member_register}、${privacy}?`,
+        title: $t('4e9d53b5.02d981'),
+        content: ti('4e9d53b5.0ce185', [member_register, privacy]),
         showCancel: true,
-        cancel: '取消',
-        cancelText: '拒绝',
-        confirmText: '同意',
+        cancelText: $t('4e9d53b5.7173f8'),
+        confirmText: $t('4e9d53b5.e61f2c'),
         confirmColor: colorPrimary
       })
       if (!res.confirm) return
     }
 
     if (!validate.isMobileNum(mobile)) {
-      showToast('请输入正确的手机号')
+      showToast($t('4e9d53b5.a32ab5'))
       return
     }
     if (!validate.isRequired(vcode)) {
-      showToast('请输入验证码')
+      showToast($t('4e9d53b5.d0c06a'))
       return
     }
     if (!validate.isRequired(password)) {
-      showToast('请输入密码')
+      showToast($t('4e9d53b5.e39ffe'))
       return
     }
     if (!validate.isPassword(password)) {
-      return showToast('密码格式不正确')
+      return showToast($t('4e9d53b5.eac67a'))
     }
     try {
       //从登陆页跳转过来
@@ -115,7 +116,7 @@ const Reg = () => {
         sex: 0,
         user_type: 'local'
       })
-      showToast('注册成功', async () => {
+      showToast($t('4e9d53b5.6506a9'), async () => {
         await setTokenAndRedirect(token, async () => {
           await getUserInfo()
         })
@@ -143,6 +144,13 @@ const Reg = () => {
   }
 
   useEffect(() => {
+    Taro.setNavigationBarTitle({ title: $t('461de497.fe0e8b') })
+    const onLang = () => Taro.setNavigationBarTitle({ title: $t('461de497.fe0e8b') })
+    i18n.on('languageChanged', onLang)
+    return () => i18n.off('languageChanged', onLang)
+  }, [i18n])
+
+  useEffect(() => {
     getImageVcode()
     fetchPrivacyData()
   }, [])
@@ -157,7 +165,7 @@ const Reg = () => {
       })}
     >
       <View className='auth-hd'>
-        <View className='title'>欢迎注册</View>
+        <View className='title'>{$t('4e9d53b5.8c4312')}</View>
       </View>
       <View className='auth-bd'>
         <AtForm className='form'>
@@ -168,7 +176,7 @@ const Reg = () => {
               maxLength={11}
               type='tel'
               value={state.mobile}
-              placeholder='请输入您的手机号码'
+              placeholder={$t('4e9d53b5.787a47')}
               onChange={handleInputChange('mobile')}
             />
           </View>
@@ -180,7 +188,7 @@ const Reg = () => {
                 clear
                 name='yzm'
                 value={state.yzm}
-                placeholder='请输入图形验证码'
+                placeholder={$t('4e9d53b5.e70066')}
                 onChange={handleInputChange('yzm')}
               />
             </View>
@@ -197,7 +205,7 @@ const Reg = () => {
                 clear
                 name='vcode'
                 value={state.vcode}
-                placeholder='请输入验证码'
+                placeholder={$t('4e9d53b5.d0c06a')}
                 onChange={handleInputChange('vcode')}
               />
             </View>
@@ -222,14 +230,14 @@ const Reg = () => {
               className='login-button'
               onClick={handleSubmit}
             >
-              同意协议并注册
+              {$t('4e9d53b5.3179ba')}
             </AtButton>
           </View>
 
           <View className='form-text'>
             <SpCheckbox checked={checked} onChange={handleSelect} />
             <View>
-              已阅读并同意
+              {$t('4e9d53b5.b840cb')}
               <Text
                 className='primary-color'
                 onClick={() =>

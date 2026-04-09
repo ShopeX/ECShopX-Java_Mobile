@@ -13,6 +13,7 @@ import { connect } from 'react-redux'
 import S from '@/spx'
 import api from '@/api'
 import { classNames, navigateTo, validate, showToast, tokenParseH5 } from '@/utils'
+import { $t, i18n } from '@/i18n'
 import { CompOtherLogin, CompPasswordInput, CompInputPhone } from './comps'
 import { navigationToReg, setToken, setTokenAndRedirect, addListener } from './util'
 import './login.scss'
@@ -41,10 +42,19 @@ export default class Login extends Component {
   }
 
   componentDidMount() {
+    this._onLanguageChanged = () => this.forceUpdate()
+    i18n.on('languageChanged', this._onLanguageChanged)
     this.getImageVcode()
   }
 
+  componentWillUnmount() {
+    if (this._onLanguageChanged) {
+      i18n.off('languageChanged', this._onLanguageChanged)
+    }
+  }
+
   componentDidShow() {
+    Taro.setNavigationBarTitle({ title: $t('aa1b799d.402d19') })
     const { redirect } = this.$instance?.router?.params
     if (S.getAuthToken()) {
       const url = redirect ? decodeURIComponent(redirect) : '/subpages/member/index'
@@ -58,10 +68,10 @@ export default class Login extends Component {
     const { imgInfo } = this.state
     const { mobile, yzm } = this.state.info
     if (!validate.isMobileNum(mobile)) {
-      return showToast('请输入正确的手机号')
+      return showToast($t('3ca883d0.a32ab5'))
     }
     if (!validate.isRequired(yzm)) {
-      return showToast('请输入图形验证码')
+      return showToast($t('3ca883d0.e70066'))
     }
     try {
       await api.user.regSmsCode({
@@ -70,7 +80,7 @@ export default class Login extends Component {
         yzm: yzm,
         token: imgInfo.imageToken
       })
-      showToast('验证码已发送')
+      showToast($t('3ca883d0.4d7fb5'))
       resolve()
     } catch (e) {
       this.getImageVcode()
@@ -124,17 +134,17 @@ export default class Login extends Component {
       username: mobile
     }
     if (!validate.isMobileNum(mobile)) {
-      showToast('请输入正确的手机号')
+      showToast($t('3ca883d0.a32ab5'))
       return
     }
 
     if (loginType == 1) {
       if (!validate.isRequired(password)) {
-        showToast('请输入密码')
+        showToast($t('3ca883d0.e39ffe'))
         return
       }
       if (!validate.isPassword(password)) {
-        return showToast('密码格式不正确')
+        return showToast($t('3ca883d0.eac67a'))
       }
       params['password'] = password
       params['check_type'] = 'password'
@@ -142,7 +152,7 @@ export default class Login extends Component {
       params['auto_register'] = 0
     } else {
       if (!validate.isRequired(vcode)) {
-        showToast('请输入验证码')
+        showToast($t('3ca883d0.d0c06a'))
         return
       }
       params['vcode'] = vcode
@@ -172,7 +182,7 @@ export default class Login extends Component {
 
       if (is_new === 1) {
         if (loginType === 1) {
-          return showToast('当前手机号未注册，请先注册！')
+          return showToast($t('3ca883d0.3bfe03'))
         } else {
           setToken(token)
           Taro.navigateTo({
@@ -320,7 +330,7 @@ export default class Login extends Component {
       >
         <View style={{ padding: '0 32px' }}>
           <View className='auth-hd'>
-            <View className='title'>欢迎登录</View>
+            <View className='title'>{$t('3ca883d0.04b015')}</View>
             {/* <View className='desc'>使用已注册的手机号登录</View> */}
           </View>
           <View className='auth-bd'>
@@ -354,7 +364,7 @@ export default class Login extends Component {
                       clear
                       name='yzm'
                       value={info.yzm}
-                      placeholder='请输入图形验证码'
+                      placeholder={$t('3ca883d0.e70066')}
                       onChange={this.handleInputChange.bind(this, 'yzm')}
                       placeholderClass='input-placeholder'
                       {...inputProp}
@@ -378,7 +388,7 @@ export default class Login extends Component {
                       clear
                       name='vcode'
                       value={info.vcode}
-                      placeholder='请输入验证码'
+                      placeholder={$t('3ca883d0.d0c06a')}
                       onChange={this.handleInputChange.bind(this, 'vcode')}
                       placeholderClass='input-placeholder'
                       {...inputProp}
@@ -395,11 +405,11 @@ export default class Login extends Component {
               {/* {passwordLogin && <View className='form-tip'>{PASSWORD_TIP()}</View>} */}
               <View className='btn-text-group'>
                 <Text className='btn-text' onClick={this.handleToggleLogin.bind(this)}>
-                  {passwordLogin ? '验证码登录' : '密码登录'}
+                  {passwordLogin ? $t('3ca883d0.4bc8be') : $t('3ca883d0.0d9631')}
                 </Text>
                 {passwordLogin && (
                   <Text className='btn-text forgot-password' onClick={this.handleForgotPsd}>
-                    忘记密码？
+                    {$t('3ca883d0.804890')}
                   </Text>
                 )}
               </View>
@@ -411,7 +421,7 @@ export default class Login extends Component {
                   className='login-button'
                   onClick={this.handleSubmit.bind(this)}
                 >
-                  登 录
+                  {$t('3ca883d0.e43613')}
                 </AtButton>
                 <AtButton
                   circle
@@ -419,7 +429,7 @@ export default class Login extends Component {
                   className='reg-button'
                   onClick={this.handleNavigateReg}
                 >
-                  注 册
+                  {$t('3ca883d0.495d84')}
                 </AtButton>
               </View>
             </AtForm>

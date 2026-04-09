@@ -22,6 +22,7 @@ import api from '@/api'
 import { INVITE_ACTIVITY_ID } from '@/consts'
 import { useImmer } from 'use-immer'
 import { useSelector, useDispatch } from 'react-redux'
+import { useTranslation, $t } from '@/i18n'
 import CompBottomTip from '@/subpages/purchase/comps/comp-bottomTip'
 import {
   updateInviteCode,
@@ -236,7 +237,7 @@ function PurchaseAuth() {
       }
       const { token } = await api.wx.newlogin(sparams)
       setToken(token)
-      showToast('验证成功')
+      showToast($t('ace75665.45001d'))
       await getDtidToEnterid(enterprise_id)
       setTimeout(() => {
         Taro.reLaunch({ url: `/pages/purchase/index?is_redirt=1` })
@@ -247,7 +248,7 @@ function PurchaseAuth() {
   const validatePhone = async () => {
     try {
       await api.purchase.getEmployeeRelativeBind({ invite_code, showError: false })
-      showToast('验证成功')
+      showToast($t('ace75665.45001d'))
       await getDtidToEnterid(enterprise_id)
       setTimeout(() => {
         Taro.reLaunch({ url: `/pages/purchase/index?is_redirt=1` })
@@ -256,7 +257,7 @@ function PurchaseAuth() {
       console.log(e)
       Taro.showModal({
         content: e.message || e,
-        confirmText: '我知道了',
+        confirmText: $t('ace75665.fe0337'),
         showCancel: false,
         success: async () => {
           await getDtidToEnterid(enterprise_id)
@@ -296,7 +297,7 @@ function PurchaseAuth() {
 
       <View className='header'>
         <Image className='header-avatar' src={appLogo} mode='aspectFill' />
-        <Text className='welcome'>欢迎登录</Text>
+        <Text className='welcome'>{$t('ace75665.04b015')}</Text>
         <Text className='title'>{appName}</Text>
       </View>
       <View className='btns'>
@@ -308,7 +309,7 @@ function PurchaseAuth() {
               className='button btns-phone'
               onClick={() => handleConfirmClick('mobile')}
             >
-              手机号登录&nbsp;
+              {$t('ace75665.cbbfff')}&nbsp;
               <Text className='iconfont icon-shuangjiantou'></Text>
             </AtButton>
             <AtButton
@@ -317,7 +318,7 @@ function PurchaseAuth() {
               className='button btns-account'
               onClick={() => handleConfirmClick('account')}
             >
-              账号密码登录&nbsp;
+              {$t('ace75665.338535')}&nbsp;
               <Text className='iconfont icon-shuangjiantou'></Text>
             </AtButton>
             <AtButton
@@ -326,7 +327,7 @@ function PurchaseAuth() {
               className='button btns-email'
               onClick={() => handleConfirmClick('email')}
             >
-              使用邮箱登录
+              {$t('ace75665.d21032')}
             </AtButton>
           </>
         )}
@@ -335,16 +336,16 @@ function PurchaseAuth() {
           isLogin &&
           userInfo?.is_relative && ( // 有/无商城，已登录亲友验证、绑定
             <>
-              <View className='validate-pass'>验证通过</View>
+              <View className='validate-pass'>{$t('ace75665.d1ca61')}</View>
               <AtButton circle className='button btns-phone' onClick={handlePassClick}>
-                继续
+                {$t('ace75665.27ca56')}
               </AtButton>
             </>
           )}
 
         {invite_code && isLogin && !isNewUser && !userInfo?.is_relative && (
           <AtButton circle className='button btns-phone' onClick={validatePhone}>
-            手机号授权登录
+            {$t('ace75665.96ada8')}
           </AtButton>
         )}
 
@@ -356,7 +357,7 @@ function PurchaseAuth() {
               circle
               className='button btns-phone'
             >
-              手机号授权登录
+              {$t('ace75665.96ada8')}
             </AtButton>
           )}
       </View>
@@ -364,13 +365,13 @@ function PurchaseAuth() {
       <View className='auth--footer'>
         <SpCheckbox onChange={handleSelectPrivacy} checked={checked} />
         <Text className='auth--footer-text'>
-          我已阅读并接受{' '}
+          {$t('ace75665.47b66c')}{' '}
           <Text onClick={() => handleClickPrivacy('privacy')} className='content'>
-            隐私政策
+            {$t('ace75665.cc953a')}
           </Text>
-          及
+          {$t('ace75665.e1df1c')}
           <Text className='content' onClick={() => handleClickPrivacy('member_register')}>
-            用户协议
+            {$t('ace75665.c96e43')}
           </Text>
         </Text>
       </View>

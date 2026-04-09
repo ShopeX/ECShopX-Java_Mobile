@@ -3,52 +3,48 @@
  * See LICENSE file for license details.
  */
 import React, { useEffect, useRef } from 'react'
-import { useSelector } from 'react-redux'
 import { useImmer } from 'use-immer'
 import Taro, { getCurrentInstance, useDidShow } from '@tarojs/taro'
-import { AtButton, AtTabs, AtTabsPane } from 'taro-ui'
-import api from '@/api'
+import { AtButton } from 'taro-ui'
 import * as dianwuApi from '@/api/dianwu'
 import doc from '@/subpages/doc'
-import { useDianWuLogin } from '@/hooks'
-import { View, Text } from '@tarojs/components'
-import { SpPage, SpScrollView, SpPrice, SpImage, SpSearchInput, SpVipLabel } from '@/components'
+import { View } from '@tarojs/components'
+import { SpPage, SpScrollView, SpPrice, SpSearchInput } from '@/components'
 import { classNames, pickBy, showToast } from '@/utils'
-import { SG_ROUTER_PARAMS } from '@/consts'
+import { useTranslation, $t, ti, i18n } from '@/i18n'
+import { useNavigation } from '@/hooks'
 import CompGoods from './comps/comp-goods'
 import CompTabbar from './comps/comp-tabbar'
 import './list.scss'
 
 const initialState = {
   keywords: '',
-  typeList: [
-    { title: '全部商品', value: '2' },
-    { title: '促销商品', value: '3' }
-  ],
   list: [],
-  current: 0,
   cartList: []
 }
 
 function DianWuList() {
+  useTranslation()
   const [state, setState] = useImmer(initialState)
-  const { keywords, typeList, current, list, cartList } = state
+  const { keywords, list, cartList } = state
   const goodsRef = useRef()
   const $instance = getCurrentInstance() || {}
   const { distributor_id } = $instance?.router?.params
+  const { setNavigationBarTitle } = useNavigation()
 
-  // useDianWuLogin()
-
-  // useEffect(() => {
-  //   getCashierList()
-  // }, [])
+  useEffect(() => {
+    const syncTitle = () => setNavigationBarTitle($t('3ca07631.437974'))
+    syncTitle()
+    i18n.on('languageChanged', syncTitle)
+    return () => i18n.off('languageChanged', syncTitle)
+  }, [setNavigationBarTitle])
 
   useDidShow(() => {
     getCashierList()
   })
 
   useEffect(() => {
-    goodsRef.current.reset()
+    goodsRef.current?.reset?.()
   }, [keywords])
 
   const fetch = async ({ pageIndex, pageSize }) => {
@@ -64,15 +60,27 @@ function DianWuList() {
       }
     }
     Taro.showLoading({ title: '' })
-    const { list: _list, total_count } = await dianwuApi.goodsItems(params)
-    Taro.hideLoading()
+    try {
+      const { list: _list, total_count } = await dianwuApi.goodsItems(params)
 
-    setState((draft) => {
-      draft.list[pageIndex - 1] = pickBy(_list, doc.dianwu.GOODS_ITEM)
-    })
+      setState((draft) => {
+        // 首屏请求需清空分页缓存，否则搜索无结果时仍保留上一关键词的多页数据
+        if (pageIndex === 1) {
+          draft.list = []
+        }
+        draft.list[pageIndex - 1] = pickBy(_list, doc.dianwu.GOODS_ITEM)
+      })
 
-    return {
-      total: total_count
+      const pageLen = Array.isArray(_list) ? _list.length : 0
+      let total = Number(total_count)
+      if (!Number.isFinite(total) || total < 0) {
+        total = pageLen < pageSize ? (pageIndex - 1) * pageSize + pageLen : pageIndex * pageSize + 1
+      } else if (pageLen < pageSize) {
+        total = Math.min(total, (pageIndex - 1) * pageSize + pageLen)
+      }
+      return { total }
+    } finally {
+      Taro.hideLoading()
     }
   }
 
@@ -83,7 +91,7 @@ function DianWuList() {
       distributor_id
     })
     getCashierList()
-    showToast('加入收银台成功')
+    showToast($t('8cac8565.edd566'))
   }
 
   const getCashierList = async () => {
@@ -105,7 +113,7 @@ function DianWuList() {
           <View className='footer-wrap'>
             <View className='total-info'>
               <SpPrice value={cartList[0]?.totalPrice || 0} size={38} />
-              <View className='txt'>已选择 {cartList[0]?.totalNum || 0} 件商品</View>
+              <View className='txt'>{ti('8cac8565.9d9062', [cartList[0]?.totalNum || 0])}</View>
             </View>
             <View
               className='btn-confirm'
@@ -115,7 +123,7 @@ function DianWuList() {
                 })
               }}
             >
-              进入收银台
+              {$t('8cac8565.2443e2')}
             </View>
           </View>
           <CompTabbar />
@@ -124,7 +132,7 @@ function DianWuList() {
     >
       <View className='search-block'>
         <SpSearchInput
-          placeholder='商品名称/商品货号/商品条形码'
+          placeholder={$t('8cac8565.367cc1')}
           onConfirm={(val) => {
             setState((draft) => {
               draft.keywords = val
@@ -132,7 +140,6 @@ function DianWuList() {
           }}
         />
       </View>
-      {/* <AtTabs current={current} tabList={typeList} onClick={() => {}}></AtTabs> */}
       <SpScrollView className='item-list-scroll' auto={false} ref={goodsRef} fetch={fetch}>
         {list.map((items, idx) => {
           return items.map((item, sidx) => (
@@ -140,16 +147,6 @@ function DianWuList() {
               className={classNames('item-wrap', { 'item-disabled': item.store == 0 })}
               key={`item-wrap__${idx}_${sidx}`}
             >
-              {/* <View className='item-hd'>
-                <View className='promotion-list'>
-                  <Text className='promotion-tag'>满1000减100</Text>
-                  <Text className='promotion-tag'>满1000赠小样</Text>
-                  <Text className='promotion-tag'>满1000赠小样</Text>
-                </View>
-                <View className='view-discount'>
-                  查看<Text className='iconfont icon-qianwang-01'></Text>
-                </View>
-              </View> */}
               <CompGoods info={item}>
                 {item.store > 0 && (
                   <AtButton
@@ -157,7 +154,7 @@ function DianWuList() {
                     circle
                     onClick={handleAddToCart.bind(this, item)}
                   >
-                    加入收银
+                    {$t('8cac8565.cd2240')}
                   </AtButton>
                 )}
               </CompGoods>
