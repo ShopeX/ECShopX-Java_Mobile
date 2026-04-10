@@ -409,11 +409,11 @@ const SpPage = memo(
                 </View>
               )}
               {/* If you remove or alter Shopex brand identifiers, you must obtain a branding removal license from Shopex.  Contact us at:  http://www.shopex.cn to purchase a branding removal license. */}
-              {props.showpoweredBy && (
+              {/* {props.showpoweredBy && (
                 <View className='sp-page__powered-by w-full'>
                   <SpPoweredBy />
                 </View>
-              )}
+              )} */}
             </View>
           </View>
         )}
