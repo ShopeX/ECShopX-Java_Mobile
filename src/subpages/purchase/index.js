@@ -10,14 +10,12 @@ import Taro, {
   useShareAppMessage,
   useShareTimeline
 } from '@tarojs/taro'
-import { View, Image, ScrollView, Button } from '@tarojs/components'
+import { View, Text, ScrollView, Button } from '@tarojs/components'
 import { useSelector, useDispatch } from 'react-redux'
 import {
   SpPage,
   SpSearch,
   SpPrivacyModal,
-  SpTabbar,
-  SpFloatMenus,
   SpPoster,
   SpImage
 } from '@/components'
@@ -47,7 +45,6 @@ import { WgtHomeHeader } from '@/pages/home/wgts'
 import configStore from '@/store'
 import { WgtsContext } from '@/pages/home/wgts/wgts-context'
 import CompSkuSelect from './comps/comp-skuselect'
-import CompTabbar from './comps/comp-tabbar'
 import './index.scss'
 
 const MSpPrivacyModal = React.memo(SpPrivacyModal)
@@ -246,6 +243,8 @@ function Home() {
     }
   }
 
+  const enterpriseTitle = activityInfo?.name || appName || ''
+
   const showInfo = () => {
     if (purchase_share_info.surplus_share_limitnum == '0') {
       Taro.showToast({
@@ -269,7 +268,6 @@ function Home() {
     })
   }
 
-  console.log('pageData:', pageData)
   return (
     <SpPage
       className='page-purchase-index'
@@ -277,7 +275,6 @@ function Home() {
       ref={pageRef}
       // renderNavigation={renderNavigation()}
       pageConfig={pageData?.base}
-      renderFooter={<CompTabbar />}
       renderFloat={
         false &&
         isPurchaseShare && (
@@ -289,23 +286,38 @@ function Home() {
       loading={loading}
     >
       <ScrollView
-        className={classNames('home-body', {
+        className={classNames('purchase-page__scroll', 'home-body', {
           'has-home-header': isShowHomeHeader && isWeixin
         })}
         scrollY
       >
-        {isShowHomeHeader && process.env.APP_PLATFORM === 'platform' && (
-          <WgtHomeHeader>{fixedTop && <SpSearch info={searchComp} />}</WgtHomeHeader>
-        )}
-        {filterWgts.length > 0 && (
-          <WgtsContext.Provider
-            value={{
-              onAddToCart
-            }}
-          >
-            <HomeWgts wgts={filterWgts} />
-          </WgtsContext.Provider>
-        )}
+        <View className='purchase-page'>
+          <View className='purchase-page__hero'>
+            <View className='purchase-page__hero-bg' />
+            <View className='purchase-page__hero-content'>
+              <Text className='purchase-page__hero-title'>{enterpriseTitle || '企业购'}</Text>
+              <Text className='purchase-page__hero-sub'>甄选好物 · 一站采购</Text>
+            </View>
+          </View>
+
+          {isShowHomeHeader && process.env.APP_PLATFORM === 'platform' && (
+            <View className='purchase-page__toolbar'>
+              <WgtHomeHeader>{fixedTop && <SpSearch info={searchComp} />}</WgtHomeHeader>
+            </View>
+          )}
+
+          {filterWgts.length > 0 && (
+            <View className='purchase-page__wgts'>
+              <WgtsContext.Provider
+                value={{
+                  onAddToCart
+                }}
+              >
+                <HomeWgts wgts={filterWgts} />
+              </WgtsContext.Provider>
+            </View>
+          )}
+        </View>
       </ScrollView>
 
       {/* Sku选择器 */}

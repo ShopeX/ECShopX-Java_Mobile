@@ -35,12 +35,10 @@ import {
 } from '@/utils'
 import { useLogin, useLocation } from '@/hooks'
 import S from '@/spx'
-import CompTabbarActivity from '@/pages/purchase/comps/comp-tabbar'
 import CompVipCard from './comps/comp-vipcard'
 import CompBanner from './comps/comp-banner'
 import CompPanel from './comps/comp-panel'
 import CompMenu from './comps/comp-menu'
-import CompTabbar from './comps/comp-tabbar'
 import CompHelpCenter from './comps/comp-helpcenter'
 import './member.scss'
 
@@ -419,10 +417,7 @@ function MemberIndex(props) {
   console.log('====config===', config.menu)
 
   return (
-    <SpPage
-      className='page-purchase-member'
-      renderFooter={isPurchaseHome || !S.getAuthToken() ? <CompTabbarActivity /> : <CompTabbar />}
-    >
+    <SpPage className='page-purchase-member'>
       <View
         className='header-block'
         style={styleNames({

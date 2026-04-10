@@ -13,7 +13,6 @@ import { useSelector } from 'react-redux'
 import { platformTemplateName } from '@/utils/platform'
 import { SpPage, SpTabbar } from '@/components'
 import CompSeries from '@/pages/category/comps/comp-series'
-import CompTabbar from './comps/comp-tabbar'
 import './category.scss'
 
 const initialState = {
@@ -96,7 +95,7 @@ const CategoryIndex = (props) => {
   console.log('==currentList==', currentList, tabList)
 
   return (
-    <SpPage className='page-category-index' renderFooter={<CompTabbar />}>
+    <SpPage className='page-category-index'>
       {tabList.length > 1 && (
         <AtTabs current={activeIndex} tabList={tabList} onClick={fnSwitchSeries}>
           {tabList.map((item, index) => (

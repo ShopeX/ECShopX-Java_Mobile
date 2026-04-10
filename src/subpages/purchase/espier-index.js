@@ -11,7 +11,7 @@ import { useImmer } from 'use-immer'
 import qs from 'qs'
 import api from '@/api'
 import doc from '@/doc'
-import { navigateTo, pickBy, classNames, throttle, getDistributorId } from '@/utils'
+import { navigateTo, pickBy, throttle, getDistributorId } from '@/utils'
 import { useLogin, useDepChange, useDebounce } from '@/hooks'
 import {
   fetchCartList,
@@ -21,7 +21,6 @@ import {
 } from '@/store/slices/purchase'
 import { SpPage, SpPrice, SpLogin, SpDefault, SpCheckboxNew, SpPrivacyModal } from '@/components'
 import CompGoodsItem from '@/pages/cart/comps/comp-goodsitem'
-import CompTabbar from './comps/comp-tabbar'
 import './espier-index.scss'
 
 const initialState = {
@@ -51,8 +50,6 @@ function CartIndex() {
     purchase_share_info = {},
     curDistributorId
   } = useSelector((state) => state.purchase)
-  const { tabbar = 1 } = router?.params || {}
-
   useEffect(() => {
     if (isLogin) fetch()
   }, [isLogin])
@@ -246,12 +243,7 @@ function CartIndex() {
   console.log(groupsList, 'list')
 
   return (
-    <SpPage
-      className={classNames('page-cart-index', {
-        'has-tabbar': tabbar == 1
-      })}
-      renderFooter={tabbar == 1 && <CompTabbar />}
-    >
+    <SpPage className='page-cart-index'>
       {!isLogin && (
         <View className='login-header'>
           <View className='login-txt'>授权登录后同步购物车的商品</View>

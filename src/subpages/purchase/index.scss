@@ -2,10 +2,87 @@
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
  */
+
+/* 企业购首页：页面壳层（与 Figma「企业购」稿对齐时，主要改此文件色值与间距） */
+
+$page-bg: #eef1f7;
+$hero-text: #ffffff;
+$hero-sub: rgba(255, 255, 255, 0.82);
+
 .page-purchase-index {
+  /* 与 SpPage 内容区衔接，避免默认白底断层 */
+  .sp-page__body-children {
+    background: $page-bg;
+  }
+
+  .purchase-page__scroll {
+    box-sizing: border-box;
+    height: 100%;
+    background: $page-bg;
+  }
+
   .home-body {
     height: 100%;
   }
+
+  .purchase-page {
+    box-sizing: border-box;
+    min-height: 100%;
+    padding-bottom: 24px;
+  }
+
+  /* 顶区：深蓝渐变 + 大标题（企业购常见首屏） */
+  .purchase-page__hero {
+    position: relative;
+    overflow: hidden;
+    padding: 28px 28px 32px;
+    margin: 0 0 8px;
+  }
+
+  .purchase-page__hero-bg {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(128deg, #152238 0%, #1e3a5c 48%, #243d5c 100%);
+    border-radius: 0 0 28px 28px;
+    box-shadow: 0 12px 40px rgba(21, 34, 56, 0.22);
+  }
+
+  .purchase-page__hero-content {
+    position: relative;
+    z-index: 1;
+  }
+
+  .purchase-page__hero-title {
+    display: block;
+    font-size: 40px;
+    font-weight: 600;
+    line-height: 1.25;
+    letter-spacing: 0.02em;
+    color: $hero-text;
+  }
+
+  .purchase-page__hero-sub {
+    display: block;
+    margin-top: 12px;
+    font-size: 24px;
+    font-weight: 400;
+    line-height: 1.4;
+    color: $hero-sub;
+  }
+
+  /* 平台顶栏 + 搜索与首屏区分 */
+  .purchase-page__toolbar {
+    margin: 0 16px 12px;
+    padding: 0 4px;
+    border-radius: 16px;
+    background: #fff;
+    box-shadow: 0 4px 18px rgba(21, 34, 56, 0.06);
+  }
+
+  .purchase-page__toolbar .home-header {
+    border-radius: 16px;
+  }
+
   .float-share {
     display: flex;
     flex-wrap: wrap;
@@ -20,7 +97,7 @@
     box-shadow: 0px 8px 15px 0px #fac2d0;
     border-radius: 50%;
     margin-bottom: 12px;
-    // height: 112px;
+
     .share-btn {
       width: 112px;
       height: 112px;

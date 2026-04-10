@@ -11,7 +11,6 @@ import api from '@/api'
 import { classNames } from '@/utils'
 import { SpPage, SpTabbar } from '@/components'
 import CompBottomTip from './comps/comp-bottomTip'
-import CompTabbar from './comps/comp-tabbar'
 import './neigou-order.scss'
 
 const tabbarState = [{ title: '全部' }, { title: '待支付' }, { title: '待收货' }]
@@ -72,7 +71,7 @@ function SelectComponent(props) {
           )
         })}
       </View>
-      <SpPage className='neigou-order' renderFooter={<CompTabbar />}>
+      <SpPage className='neigou-order'>
         {orders?.map((item, index) => {
           return (
             <View key={item.id} className='good-item'>
