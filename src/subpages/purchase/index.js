@@ -4,20 +4,17 @@
  */
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import Taro, {
-  getCurrentInstance,
   useDidShow,
   useRouter,
-  useShareAppMessage,
-  useShareTimeline
-} from '@tarojs/taro'
-import { View, Text, ScrollView, Button } from '@tarojs/components'
+  useShareAppMessage} from '@tarojs/taro'
+import { View, ScrollView, Button } from '@tarojs/components'
 import { useSelector, useDispatch } from 'react-redux'
 import {
   SpPage,
-  SpSearch,
   SpPrivacyModal,
   SpPoster,
-  SpImage
+  SpImage,
+  SpPurchaseEnterpriseBar
 } from '@/components'
 import { SharePurchase } from '@/subpages/components'
 import api from '@/api'
@@ -66,8 +63,10 @@ const { store } = configStore()
 function Home() {
   const [state, setState] = useImmer(initialState)
   const { initState, entryStoreByLBS, appName } = useSelector((state) => state.sys)
-  const { purchase_share_info = {}, curDistributorId } = useSelector((state) => state.purchase)
-  const { isLogin, login, checkPolicyChange } = useLogin({
+  const { purchase_share_info = {}, curDistributorId, curEnterpriseId } = useSelector(
+    (state) => state.purchase
+  )
+  const { checkPolicyChange } = useLogin({
     policyUpdateHook: (isUpdate) => {
       if (isUpdate) {
         setPolicyModal(true)
@@ -79,6 +78,7 @@ function Home() {
   const pageRef = useRef()
 
   const [policyModal, setPolicyModal] = useState(false)
+  const [enterpriseName, setEnterpriseName] = useState('')
   const { openScanQrcode } = useSelector((state) => state.sys)
   const { setNavigationBarTitle } = useNavigation()
 
@@ -104,6 +104,30 @@ function Home() {
       setNavigationBarTitle(appName)
     }
   }, [initState])
+
+  useEffect(() => {
+    const eid =
+      curEnterpriseId ||
+      router?.params?.enterprise_id ||
+      purchase_share_info?.enterprise_id
+    if (!eid) {
+      setEnterpriseName('')
+      return
+    }
+    const loadEnterpriseName = async () => {
+      try {
+        const data = await api.purchase.getUserEnterprises({
+          disabled: 0,
+          distributor_id: getDistributorId()
+        })
+        const found = data?.find((x) => x.enterprise_id == eid)
+        setEnterpriseName(found?.name || found?.enterprise_name || '')
+      } catch (e) {
+        setEnterpriseName('')
+      }
+    }
+    loadEnterpriseName()
+  }, [curEnterpriseId, router?.params?.enterprise_id, purchase_share_info?.enterprise_id])
 
   useEffect(() => {
     if (skuPanelOpen) {
@@ -165,7 +189,7 @@ function Home() {
   }
 
   useShareAppMessage(async () => {
-    return new Promise(async function (resolve, reject) {
+    return new Promise(async function (resolve) {
       if (isPurchaseShare) {
         const activity_id = router?.params?.activity_id || purchase_share_info?.activity_id
         const enterprise_id = router?.params?.enterprise_id || purchase_share_info?.enterprise_id
@@ -186,40 +210,18 @@ function Home() {
     })
   })
 
-  // useShareTimeline(async (res) => {
-  //   return new Promise(async function (resolve,reject) {
-  //     const activity_id = router?.params?.activity_id || purchase_share_info?.activity_id
-  //     const enterprise_id = router?.params?.enterprise_id || purchase_share_info?.enterprise_id
-  //     const data = await api.purchase.getEmployeeInviteCode({ enterprise_id, activity_id })
-  //     log.debug(`/pages/purchase/auth?code=${data.invite_code}`)
-  //     resolve({
-  //       title: activityInfo.name,
-  //       imageUrl: activityInfo.share_pic,
-  //       path: `/pages/purchase/auth?code=${data.invite_code}&enterprise_id=${enterprise_id}&activity_id=${activity_id}`
-  //     })
-  //   })
-  // })
 
   const handleConfirmModal = useCallback(async () => {
     setPolicyModal(false)
   }, [])
 
-  const searchComp = wgts.find((wgt) => wgt.name == 'search')
-  const pageData = wgts.find((wgt) => wgt.name == 'page')
-  let filterWgts = []
-  if (searchComp && searchComp.config.fixTop) {
-    filterWgts = wgts.filter((wgt) => wgt.name !== 'search' && wgt.name != 'page')
-  } else {
-    filterWgts = wgts.filter((wgt) => wgt.name != 'page')
-  }
-
-  const fixedTop = searchComp && searchComp.config.fixTop
+  /* 顶栏搜索为固定稿样式，不读装修；若模板仍下发 search 组件则从正文排除避免重复 */
+  let filterWgts = wgts.filter((wgt) => wgt.name != 'page' && wgt.name !== 'search')
 
   const isShowHomeHeader =
     VERSION_PLATFORM ||
     (openScanQrcode == 1 && isWeixin) ||
-    (VERSION_STANDARD && entryStoreByLBS) ||
-    fixedTop
+    (VERSION_STANDARD && entryStoreByLBS)
 
   const onAddToCart = async ({ itemId, distributorId }) => {
     Taro.showLoading()
@@ -242,8 +244,6 @@ function Home() {
       })
     }
   }
-
-  const enterpriseTitle = activityInfo?.name || appName || ''
 
   const showInfo = () => {
     if (purchase_share_info.surplus_share_limitnum == '0') {
@@ -273,8 +273,6 @@ function Home() {
       className='page-purchase-index'
       scrollToTopBtn
       ref={pageRef}
-      // renderNavigation={renderNavigation()}
-      pageConfig={pageData?.base}
       renderFloat={
         false &&
         isPurchaseShare && (
@@ -292,19 +290,15 @@ function Home() {
         scrollY
       >
         <View className='purchase-page'>
-          <View className='purchase-page__hero'>
-            <View className='purchase-page__hero-bg' />
-            <View className='purchase-page__hero-content'>
-              <Text className='purchase-page__hero-title'>{enterpriseTitle || '企业购'}</Text>
-              <Text className='purchase-page__hero-sub'>甄选好物 · 一站采购</Text>
-            </View>
-          </View>
-
           {isShowHomeHeader && process.env.APP_PLATFORM === 'platform' && (
             <View className='purchase-page__toolbar'>
-              <WgtHomeHeader>{fixedTop && <SpSearch info={searchComp} />}</WgtHomeHeader>
+              <WgtHomeHeader />
             </View>
           )}
+
+          <View className='purchase-page__head'>
+            <SpPurchaseEnterpriseBar name={enterpriseName} showSearch />
+          </View>
 
           {filterWgts.length > 0 && (
             <View className='purchase-page__wgts'>

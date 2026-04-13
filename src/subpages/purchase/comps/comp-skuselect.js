@@ -1,48 +1,66 @@
 /**
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
+ *
+ * 内购 SKU 弹窗：仅 Figma 稿一种形态（顶弧、把手+关闭、头图+价+已选+步进器、规格、限购双列、购物车+主按钮）
  */
 import React, { useEffect, useRef } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import Taro, { useRouter } from '@tarojs/taro'
-import { AtButton } from 'taro-ui'
 import { View, Text } from '@tarojs/components'
-import { useImmer } from 'use-immer'
-import {
-  SpFloatLayout,
-  SpButton,
-  SpImage,
-  SpPrice,
-  SpInputNumber,
-  SpGoodsPrice
-} from '@/components'
+import { SpFloatLayout, SpImage, SpInputNumber, SpGoodsPrice } from '@/components'
 import { addCart, updateCount } from '@/store/slices/purchase'
 import { BUY_TOOL_BTNS } from '@/consts'
 import api from '@/api'
 import { useAsyncCallback } from '@/hooks'
-import { classNames, showToast } from '@/utils'
+import { classNames, showToast, navigateTo } from '@/utils'
 import './comp-skuselect.scss'
 
-// 数据类型
-// interface ISkuItem: {
-//   specName: string
-//   specId: string
-// }
-// skuList: ISkuItem[]
+function resolvePurchaseLimitQty(info, curItem) {
+  if (!info) return null
+  const {
+    activityType,
+    activityInfo,
+    purlimitByCart,
+    purlimitByFastbuy,
+    limitNum,
+    nospec,
+    purchaseLimitNum
+  } = info
+  if (activityType === 'limited_buy' && activityInfo?.rule?.limit != null) {
+    return activityInfo.rule.limit
+  }
+  if (activityType === 'seckill' || activityType === 'limited_time_sale') {
+    if (nospec) return limitNum
+    return curItem?.limitNum ?? limitNum
+  }
+  if (activityType === 'group') return 1
+  const v = purchaseLimitNum ?? purlimitByCart ?? purlimitByFastbuy ?? limitNum
+  return v != null && v !== '' ? v : null
+}
 
-// specItems
+function resolvePurchaseLimitAmountLine(info) {
+  if (!info) return null
+  const limitFee =
+    info.activityInfo?.fee?.limit_fee ??
+    info.fee?.limit_fee ??
+    info.activityInfo?.limit_fee ??
+    info.purchaseAmountLimitFee
+  if (limitFee == null || limitFee === '') return null
+  const n = Number(limitFee) / 100
+  if (Number.isNaN(n)) return null
+  return `限购金额：商品总额不超过 ¥${n.toFixed(2)}`
+}
 
 const initialState = {
-  curImage: null,
   selection: [],
   disabledSet: new Set(),
   curItem: null,
   skuText: '',
-  num: 1,
-  loading: false
+  num: 1
 }
 
-function SpSkuSelect(props) {
+function PurchaseSkuSelect(props) {
   const {
     info,
     open = false,
@@ -51,10 +69,9 @@ function SpSkuSelect(props) {
     type,
     hideInputNumber = false
   } = props
-  // const [state, setState] = useImmer(initialState)
   const [state, setState] = useAsyncCallback(initialState)
-  const { purchase_share_info = {} } = useSelector((state) => state.purchase)
-  const { selection, curImage, disabledSet, curItem, skuText, num, loading } = state
+  const { purchase_share_info = {}, cartCount = 0 } = useSelector((state) => state.purchase)
+  const { selection, disabledSet, curItem, skuText, num } = state
   const dispatch = useDispatch()
   const skuDictRef = useRef({})
   const router = useRouter()
@@ -67,13 +84,10 @@ function SpSkuSelect(props) {
 
   const init = () => {
     const { skuList, specItems } = info
-    console.log('skuList:', skuList)
-    console.log('specItems:', specItems)
     specItems.forEach((item) => {
       const key = item.specItem.map((spec) => spec.specId).join('_')
       skuDictRef.current[key] = item
     })
-    // 默认选中有库存并且前端可销售的sku
     const defaultSpecItem = specItems.find(
       (item) => item.store > 0 && ['onsale', 'offline_sale'].includes(item.approveStatus)
     )
@@ -86,11 +100,11 @@ function SpSkuSelect(props) {
   }
 
   const calcDisabled = (selection) => {
+    const { skuList } = info
     const disabledSet = new Set()
     const makeReg = (sel, row, val) => {
       const tSel = sel.slice()
       const regStr = tSel.map((s, idx) => (row === idx ? val : !s ? '(\\d+)' : s)).join('_')
-      // console.log('regStr:', regStr)
       return new RegExp(regStr)
     }
 
@@ -115,14 +129,6 @@ function SpSkuSelect(props) {
         }
       }
     }
-    console.log(
-      'skuDict:',
-      skuDictRef.current,
-      'selection:',
-      selection,
-      'disabledSet:',
-      disabledSet
-    )
 
     const curItem = skuDictRef.current[selection.join('_')]
     const skuText = curItem
@@ -139,16 +145,11 @@ function SpSkuSelect(props) {
     onChange(skuText, curItem)
   }
 
-  // calcDisabled(initSelection)
-
-  // console.log('disabledSet:', disabledSet)
-
   const handleSelectSku = ({ specId }, idx) => {
     if (disabledSet.has(specId)) return
     setState(
       (draft) => {
         draft.selection[idx] = selection[idx] == specId ? null : specId
-        draft.curImage = 1
       },
       ({ selection }) => {
         calcDisabled(selection)
@@ -164,7 +165,6 @@ function SpSkuSelect(props) {
         img = specImgs[0]
       }
     }
-    // console.log('img:', img)
     return img
   }
 
@@ -191,7 +191,6 @@ function SpSkuSelect(props) {
     const { activity_id, enterprise_id } = purchase_share_info
     let _activity_id = activity_id
     let _enterprise_id = enterprise_id
-    // 订单详情点进来的商品
     if (router?.params.activity_id && router?.params.enterprise_id) {
       _activity_id = router?.params.activity_id
       _enterprise_id = router?.params.enterprise_id
@@ -223,7 +222,6 @@ function SpSkuSelect(props) {
     )
 
     Taro.hideLoading()
-    // showToast('成功加入购物车')
   }
 
   const fastBuy = async () => {
@@ -238,7 +236,6 @@ function SpSkuSelect(props) {
     const { distributorId, activityType, activityInfo } = info
     let _activity_id = activity_id
     let _enterprise_id = enterprise_id
-    // 订单详情点进来的商品
     if (router?.params.activity_id && router?.params.enterprise_id) {
       _activity_id = router?.params.activity_id
       _enterprise_id = router?.params.enterprise_id
@@ -255,7 +252,7 @@ function SpSkuSelect(props) {
         cart_type: 'fastbuy'
       },
       !!info.point
-    ) // info.point 有积分值时是积分商品
+    )
     let url = !!info.point
       ? '/subpages/pointshop/espier-checkout?cart_type=fastbuy&shop_id=0'
       : `/subpages/purchase/espier-checkout?cart_type=fastbuy&shop_id=${distributorId}`
@@ -272,52 +269,21 @@ function SpSkuSelect(props) {
       url += `&type=${activityType}&group_id=${groups_activity_id}`
     }
 
-    // 订单详情点进来的商品去结算
     if (router?.params.activity_id && router?.params.enterprise_id) {
       url += `&activity_id=${_activity_id}&enterprise_id=${_enterprise_id}`
     }
 
     Taro.hideLoading()
-    console.log('navigateTo:url', url)
     Taro.navigateTo({
       url
     })
   }
 
-  const renderFooter = () => {
-    let btnTxt = ''
-    Object.keys(BUY_TOOL_BTNS()).forEach((key) => {
-      if (BUY_TOOL_BTNS()[key].key == type) {
-        btnTxt = BUY_TOOL_BTNS()[key].title
-      }
-    })
-    if (type == 'picker') {
-      return (
-        <AtButton circle type='primary' onClick={onClose}>
-          确定
-        </AtButton>
-      )
-    } else if (type == 'addcart') {
-      return (
-        <AtButton circle loading={loading} type='primary' onClick={addToCart}>
-          {btnTxt}
-        </AtButton>
-      )
-    } else {
-      return (
-        <AtButton circle loading={loading} type='primary' onClick={fastBuy}>
-          {btnTxt}
-        </AtButton>
-      )
-    }
-  }
-
-  const renderLimitTip = () => {
+  const computePurchaseQtyLimits = () => {
     const { nospec, activityType, activityInfo, purlimitByCart, purlimitByFastbuy } = info
     let limitNum = null
     let limitTxt = ''
-    let max = null
-    // 商品限购
+    let max = 1
     if (activityType) {
       if (activityType == 'limited_buy') {
         limitNum = activityInfo.rule.limit
@@ -329,40 +295,34 @@ function SpSkuSelect(props) {
       } else if (activityType == 'seckill' || activityType == 'limited_time_sale') {
         if (nospec) {
           limitNum = info.limitNum
-        } else {
-          if (curItem) {
-            limitNum = curItem.limitNum
-          }
+        } else if (curItem) {
+          limitNum = curItem.limitNum
         }
         limitTxt = `（限购${limitNum}件）`
       } else if (activityType == 'group') {
         limitNum = 1
       }
     }
-
-    // 内购加购限制 + 内购立即购买限制
     if (type == 'addcart' && purlimitByCart) {
       limitNum = purlimitByCart
       limitTxt = `（限购${purlimitByCart}件）`
     }
-
     if (type == 'fastbuy' && purlimitByFastbuy) {
       limitNum = purlimitByFastbuy
       limitTxt = `（限购${purlimitByFastbuy}件）`
     }
-
     if (limitNum) {
-      max = parseInt(limitNum)
+      max = parseInt(limitNum, 10)
     } else {
-      max = parseInt(curItem ? curItem.store : info.store)
+      max = parseInt(curItem ? curItem.store : info.store, 10)
     }
+    return { limitNum, limitTxt, max }
+  }
 
+  const renderQtyStepper = () => {
+    const { max } = computePurchaseQtyLimits()
     return (
-      <View className='buy-count'>
-        <View className='label'>
-          购买数量 {limitNum && <Text className='limit-count'>{limitTxt}</Text>}
-        </View>
-
+      <View className='sp-sku-select-espier__stepper-wrap'>
         <SpInputNumber
           value={num}
           min={1}
@@ -377,34 +337,111 @@ function SpSkuSelect(props) {
     )
   }
 
+  const renderFooter = () => {
+    const limitQty = resolvePurchaseLimitQty(info, curItem)
+    const amountLine = resolvePurchaseLimitAmountLine(info)
+    const showLimits = limitQty != null || !!amountLine
+    let btnTxt = '确定'
+    Object.keys(BUY_TOOL_BTNS()).forEach((key) => {
+      if (BUY_TOOL_BTNS()[key].key == type) {
+        btnTxt = BUY_TOOL_BTNS()[key].title
+      }
+    })
+    const onMain = () => {
+      if (type == 'picker') {
+        onClose()
+      } else if (type == 'addcart') {
+        addToCart()
+      } else {
+        fastBuy()
+      }
+    }
+    return (
+      <View className='sp-sku-select-espier__footer-inner'>
+        {showLimits && (
+          <View className='sp-sku-select-espier__limits'>
+            <Text className='sp-sku-select-espier__limit-left'>
+              {limitQty != null ? `限购数量：限购 ${limitQty} 件` : ''}
+            </Text>
+            <Text className='sp-sku-select-espier__limit-right'>
+              {amountLine || ''}
+            </Text>
+          </View>
+        )}
+        <View className='sp-sku-select-espier__bar'>
+          <View
+            className='sp-sku-select-espier__cart'
+            onClick={navigateTo.bind(null, '/subpages/purchase/espier-index?tabbar=0')}
+          >
+            <View className='sp-sku-select-espier__cart-icon-wrap'>
+              <Text className='iconfont icon-gouwuche sp-sku-select-espier__cart-icon' />
+              {cartCount > 0 && (
+                <Text className='sp-sku-select-espier__cart-badge'>
+                  {cartCount > 99 ? '99+' : cartCount}
+                </Text>
+              )}
+            </View>
+            <Text className='sp-sku-select-espier__cart-label'>购物车</Text>
+          </View>
+          <View className='sp-sku-select-espier__btn-solid' onClick={onMain}>
+            <Text className='sp-sku-select-espier__btn-text'>
+              {type == 'picker' ? '确定' : btnTxt}
+            </Text>
+          </View>
+        </View>
+      </View>
+    )
+  }
+
+  const selectedSpecLine =
+    curItem && curItem.specItem
+      ? curItem.specItem.map((s) => s.specName).join(' ')
+      : '请选择'
+
   return (
     <SpFloatLayout
       className='sp-sku-select'
+      hideClose
+      beforeScroll={
+        <View className='sp-sku-select-espier__sheet-head'>
+          <View className='sp-sku-select-espier__handle' />
+        </View>
+      }
       open={open}
       onClose={onClose}
       renderFooter={renderFooter()}
     >
-      <View className='sku-info'>
+      <View className='sp-sku-select-espier__header'>
         <SpImage
-          className='sku-image'
+          className='sp-sku-select-espier__thumb'
           src={getImgs()}
-          width={170}
-          height={170}
+          width={188}
+          height={186}
+          radius={16}
           mode='aspectFit'
           onClick={handlePreviewImage}
         />
-        <View className='info-bd'>
-          {/* <View className='goods-sku-price'>
-            <SpPrice value={curItem ? curItem.price : info.price}></SpPrice>
-            <SpPrice value={curItem ? curItem.marketPrice : info.marketPrice} lineThrough></SpPrice>
-          </View> */}
-          <SpGoodsPrice isPurchase info={curItem || info} />
-          <View className='goods-sku-txt'>{skuText}</View>
-          {info.store_setting && (
-            <View className='goods-sku-store'>库存：{curItem ? curItem.store : info.store}</View>
-          )}
+        <View className='sp-sku-select-espier__header-main'>
+          <View className='sp-sku-select-espier__price-row'>
+            <SpGoodsPrice isPurchase info={curItem || info} />
+          </View>
+          <View
+            className={classNames('sp-sku-select-espier__selected-wrap', {
+              'sp-sku-select-espier__selected-wrap--placeholder': !curItem
+            })}
+          >
+            <Text className='sp-sku-select-espier__selected-label'>已选：</Text>
+            <Text className='sp-sku-select-espier__selected'>{selectedSpecLine}</Text>
+          </View>
+          {!hideInputNumber && renderQtyStepper()}
+          {/* {info.store_setting && (
+            <Text className='sp-sku-select-espier__store'>
+              库存：{curItem ? curItem.store : info.store}
+            </Text>
+          )} */}
         </View>
       </View>
+
       <View className='sku-list'>
         {skuList.map((item, index) => (
           <View className='sku-group' key={`sku-group__${index}`}>
@@ -429,14 +466,13 @@ function SpSkuSelect(props) {
             </View>
           </View>
         ))}
-        {!hideInputNumber && renderLimitTip()}
       </View>
     </SpFloatLayout>
   )
 }
 
-SpSkuSelect.options = {
+PurchaseSkuSelect.options = {
   addGlobalClass: true
 }
 
-export default SpSkuSelect
+export default PurchaseSkuSelect

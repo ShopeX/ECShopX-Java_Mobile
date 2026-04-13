@@ -4,11 +4,11 @@
  */
 import React, { useRef, useEffect, useState } from 'react'
 import { View, Text, ScrollView } from '@tarojs/components'
-import Taro, { getCurrentInstance, useDidShow } from '@tarojs/taro'
+import Taro, { getCurrentInstance, useDidShow, useRouter } from '@tarojs/taro'
 import { useSelector, useDispatch } from 'react-redux'
 import { useImmer } from 'use-immer'
 import { AtDrawer, AtTabs } from 'taro-ui'
-import { SpGoodsItem, SpSearchBar, SpPage, SpScrollView, SpSelect } from '@/components'
+import { SpGoodsItem, SpSearchBar, SpPage, SpScrollView, SpSelect, SpPurchaseEnterpriseBar } from '@/components'
 import { SpFilterBar, SpTagBar, SpDrawer } from '@/subpages/components'
 import { fetchUserFavs } from '@/store/slices/user'
 import doc from '@/doc'
@@ -33,8 +33,8 @@ const initialState = {
   filterList: [
     { title: '综合' },
     { title: '销量' },
-    { title: '价格', icon: 'icon-shengxu-01' },
-    { title: '价格', icon: 'icon-jiangxu-01' }
+    { title: '价格从低到高' },
+    { title: '价格从高到低' }
   ],
   curFilterIdx: 0,
   tagList: [],
@@ -43,7 +43,8 @@ const initialState = {
   show: false,
   fixTop: 0,
   routerParams: null,
-  card_id: null // 兑换券
+  card_id: null, // 兑换券
+  goodsTotal: 0
 }
 
 function ItemList() {
@@ -61,12 +62,17 @@ function ItemList() {
     curTagIdx,
     show,
     fixTop,
-    routerParams
+    routerParams,
+    goodsTotal
   } = state
   const [isShowSearch, setIsShowSearch] = useState(false)
+  const [enterpriseName, setEnterpriseName] = useState('')
+  const router = useRouter()
   const { cat_id, main_cat_id, tag_id, card_id, user_card_id } = routerParams || {}
   const { shopInfo } = useSelector((state) => state.shop)
-  const { purchase_share_info = {}, curDistributorId } = useSelector((state) => state.purchase)
+  const { purchase_share_info = {}, curDistributorId, curEnterpriseId } = useSelector(
+    (state) => state.purchase
+  )
   const dispatch = useDispatch()
 
   const goodsRef = useRef()
@@ -99,6 +105,30 @@ function ItemList() {
       goodsRef.current.reset()
     }
   }, [routerParams])
+
+  useEffect(() => {
+    const eid =
+      curEnterpriseId ||
+      router?.params?.enterprise_id ||
+      purchase_share_info?.enterprise_id
+    if (!eid) {
+      setEnterpriseName('')
+      return
+    }
+    const loadEnterpriseName = async () => {
+      try {
+        const data = await api.purchase.getUserEnterprises({
+          disabled: 0,
+          distributor_id: getDistributorId()
+        })
+        const found = data?.find((x) => x.enterprise_id == eid)
+        setEnterpriseName(found?.name || found?.enterprise_name || '')
+      } catch (e) {
+        setEnterpriseName('')
+      }
+    }
+    loadEnterpriseName()
+  }, [curEnterpriseId, router?.params?.enterprise_id, purchase_share_info?.enterprise_id])
 
   useEffect(() => {
     if (shopInfo && card_id) {
@@ -192,11 +222,9 @@ function ItemList() {
     const {
       list,
       total_count,
-      item_params_list = [],
       select_tags_list = [],
       brand_list
     } = await api.purchase.getPurchaseActivityItems(params)
-    console.time('list render')
     const n_list = pickBy(list, doc.goods.ITEM_LIST_GOODS)
     const resLeftList = n_list.filter((item, index) => {
       if (index % 2 == 0) {
@@ -208,9 +236,9 @@ function ItemList() {
         return item
       }
     })
-    console.timeEnd('list render')
 
     setState((v) => {
+      v.goodsTotal = typeof total_count === 'number' ? total_count : 0
       v.leftList[pageIndex - 1] = resLeftList
       v.rightList[pageIndex - 1] = resRightList
       v.brandList = pickBy(brand_list?.list, doc.goods.WGT_GOODS_BRAND)
@@ -318,14 +346,14 @@ function ItemList() {
     <SpPage
       scrollToTopBtn
       className={classNames('page-item-list', {
-        'has-tagbar': tagList.length > 0
+        'has-tagbar': tagList.length > 0,
+        'page-item-list--with-store': VERSION_STANDARD && !!card_id
       })}
     >
-      <View className='search-wrap'>
-        {/* 兑换券选择店铺 */}
+      <View className='purchase-list-top-fixed'>
         {VERSION_STANDARD && card_id && (
           <View
-            className='store-picker'
+            className='purchase-list-top-fixed__store'
             onClick={() => {
               Taro.navigateTo({
                 url: '/subpages/store/list'
@@ -336,15 +364,21 @@ function ItemList() {
             <Text className='iconfont icon-qianwang-01'></Text>
           </View>
         )}
-        <SpSearchBar
-          keyword={keywords}
-          placeholder='搜索'
-          onFocus={handleOnFocus}
-          onChange={handleOnChange}
-          onClear={handleOnClear}
-          onCancel={handleSearchOff}
-          onConfirm={handleConfirm}
+        <SpPurchaseEnterpriseBar
+          name={enterpriseName}
+          showSearch={false}
         />
+        <View className='purchase-list-top-fixed__search'>
+          <SpSearchBar
+            keyword={keywords}
+            placeholder='搜索商品'
+            onFocus={handleOnFocus}
+            onChange={handleOnChange}
+            onClear={handleOnClear}
+            onCancel={handleSearchOff}
+            onConfirm={handleConfirm}
+          />
+        </View>
       </View>
       <View className='item-list-head'>
         {tagList.length > 0 && (
@@ -364,19 +398,34 @@ function ItemList() {
 
         <SpFilterBar
           custom
+          className='purchase-sort-bar'
           current={curFilterIdx}
           list={filterList}
           onChange={handleFilterChange}
-        />
+        >
+          <View
+            className='purchase-sort-bar__filter-trigger'
+            onClick={() => {
+              setState((draft) => {
+                draft.show = true
+              })
+            }}
+          >
+            <Text className='iconfont icon-shaixuan-01' />
+          </View>
+        </SpFilterBar>
       </View>
       <SpScrollView className='item-list-scroll' auto={false} ref={goodsRef} fetch={fetch}>
+        <View className='purchase-goods-total-wrap'>
+          <View className='purchase-goods-total-wrap__divider' />
+          <Text className='purchase-goods-total-wrap__label'>共 {goodsTotal} 件商品</Text>
+        </View>
         <View className='goods-list'>
           <View className='left-container'>
             {leftList.map((list, idx) => {
               return list.map((item, sidx) => (
                 <View className='goods-item-wrap' key={`goods-item-l__${idx}_${sidx}`}>
                   <SpGoodsItem
-                    showFav
                     onStoreClick={handleClickStore}
                     isPurchase
                     info={{
@@ -394,7 +443,6 @@ function ItemList() {
               return list.map((item, sidx) => (
                 <View className='goods-item-wrap' key={`goods-item-r__${idx}_${sidx}`}>
                   <SpGoodsItem
-                    showFav
                     onStoreClick={handleClickStore}
                     isPurchase
                     info={{
@@ -410,24 +458,19 @@ function ItemList() {
         </View>
       </SpScrollView>
 
-      {/* <SpDrawer
+      <SpDrawer
         show={show}
         onClose={() => {
-          setState(v => {
-            v.show = false;
-          });
+          setState((v) => {
+            v.show = false
+          })
         }}
         onConfirm={onConfirmBrand}
         onReset={onResetBrand}
       >
-        <View className="brand-title">品牌</View>
-        <SpSelect
-          multiple
-          info={brandList}
-          value={brandSelect}
-          onChange={onChangeBrand}
-        />
-      </SpDrawer> */}
+        <View className='brand-title'>品牌</View>
+        <SpSelect multiple info={brandList} value={brandSelect} onChange={onChangeBrand} />
+      </SpDrawer>
     </SpPage>
   )
 }

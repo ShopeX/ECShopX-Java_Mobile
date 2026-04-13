@@ -241,6 +241,10 @@ export const GOODS_INFO = {
   // 内购限购
   purlimitByCart: 'purchase_limit_num_by_cart',
   purlimitByFastbuy: 'purchase_limit_num_by_fastbuy',
+  /** 部分 employeepurchase 接口单独返回 purchase_limit_num */
+  purchaseLimitNum: 'purchase_limit_num',
+  /** 内购详情常在根节点返回 fee（与 activity_info.fee 二选一） */
+  fee: 'fee',
   isGift: 'is_gift',
   itemParams: ({ regions, item_unit, item_params }) => {
     const res = []
@@ -379,6 +383,8 @@ export const ESPIER_DETAIL_GOODS_INFO = {
   // 内购限购
   purlimitByCart: 'purchase_limit_num_by_cart',
   purlimitByFastbuy: 'purchase_limit_num_by_fastbuy',
+  purchaseLimitNum: 'purchase_limit_num',
+  fee: 'fee',
   isGift: 'is_gift',
   itemParams: ({ regions, item_unit, item_params }) => {
     const res = []

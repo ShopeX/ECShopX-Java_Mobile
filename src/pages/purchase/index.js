@@ -14,7 +14,7 @@ import { updateActivityInfo, updateCount } from '@/store/slices/purchase'
 
 import doc from '@/doc'
 import S from '@/spx'
-import { SpPage, SpNote, SpScrollView, SpImage } from '@/components'
+import { SpPage, SpNote, SpScrollView, SpImage, SpPurchaseEnterpriseBar } from '@/components'
 import './index.scss'
 
 const initialState = {
@@ -193,10 +193,7 @@ function PurchaseActivityList() {
   return (
     <SpPage className='page-purchase-index page-purchase-activitylist'>
       <View className='page-purchase-activitylist__inner'>
-        <View className='purchase-enterprise-bar'>
-          <Text className='purchase-enterprise-bar__label'>当前企业</Text>
-          <Text className='purchase-enterprise-bar__name'>{enterpriseName || '—'}</Text>
-        </View>
+        <SpPurchaseEnterpriseBar name={enterpriseName} showMore={false} showSearch={false} />
 
         <ScrollView className='purchase-activity-scroll' scrollY>
           <SpScrollView

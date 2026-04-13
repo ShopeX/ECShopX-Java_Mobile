@@ -6,8 +6,6 @@
 /* 企业购首页：页面壳层（与 Figma「企业购」稿对齐时，主要改此文件色值与间距） */
 
 $page-bg: #eef1f7;
-$hero-text: #ffffff;
-$hero-sub: rgba(255, 255, 255, 0.82);
 
 .page-purchase-index {
   /* 与 SpPage 内容区衔接，避免默认白底断层 */
@@ -31,46 +29,12 @@ $hero-sub: rgba(255, 255, 255, 0.82);
     padding-bottom: 24px;
   }
 
-  /* 顶区：深蓝渐变 + 大标题（企业购常见首屏） */
-  .purchase-page__hero {
-    position: relative;
-    overflow: hidden;
-    padding: 28px 28px 32px;
-    margin: 0 0 8px;
+  /* 顶区留白：分割线与企业条样式在 SpPurchaseEnterpriseBar 内 */
+  .purchase-page__head {
+    margin-bottom: 16px;
   }
 
-  .purchase-page__hero-bg {
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(128deg, #152238 0%, #1e3a5c 48%, #243d5c 100%);
-    border-radius: 0 0 28px 28px;
-    box-shadow: 0 12px 40px rgba(21, 34, 56, 0.22);
-  }
-
-  .purchase-page__hero-content {
-    position: relative;
-    z-index: 1;
-  }
-
-  .purchase-page__hero-title {
-    display: block;
-    font-size: 40px;
-    font-weight: 600;
-    line-height: 1.25;
-    letter-spacing: 0.02em;
-    color: $hero-text;
-  }
-
-  .purchase-page__hero-sub {
-    display: block;
-    margin-top: 12px;
-    font-size: 24px;
-    font-weight: 400;
-    line-height: 1.4;
-    color: $hero-sub;
-  }
-
-  /* 平台顶栏 + 搜索与首屏区分 */
+  /* 平台顶栏（地区 / 扫码）与下方企业抬头区分 */
   .purchase-page__toolbar {
     margin: 0 16px 12px;
     padding: 0 4px;

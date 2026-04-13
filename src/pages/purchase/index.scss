@@ -24,35 +24,6 @@
   box-sizing: border-box;
 }
 
-/* 当前企业：白底、上下浅灰分割线、小灰字标签 + 黑色加粗企业名 */
-.purchase-enterprise-bar {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: center;
-  padding: 24px 28px;
-  background: #fff;
-  border-top: 1px solid #e8e8e8;
-  border-bottom: 1px solid #e8e8e8;
-  box-sizing: border-box;
-}
-
-.purchase-enterprise-bar__label {
-  display: block;
-  font-size: 24px;
-  line-height: 1.35;
-  color: #6A7282;
-  margin-bottom: 8px;
-}
-
-.purchase-enterprise-bar__name {
-  display: block;
-  font-size: 32px;
-  font-weight: 700;
-  color: #0A0A0A;
-  line-height: 1.35;
-}
-
 .purchase-activity-scroll {
   flex: 1;
   min-height: 0;
