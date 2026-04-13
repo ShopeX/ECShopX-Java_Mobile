@@ -23,6 +23,22 @@ import dayjs from 'dayjs'
 import api from '@/api'
 import './index.scss'
 
+/** 企业购结算页分段条：与设计稿图标对应 */
+const PURCHASE_DELIVERY_ICONS = {
+  logistics: 'icon-office-box',
+  dada: 'icon-delivery',
+  merchant: 'icon-delivery',
+  ziti: 'icon-zitidian'
+}
+
+/** 企业购 Figma 58:460 文案（与 DELIVERY_LIST 中「同城配」区分） */
+const PURCHASE_TAB_LABELS = {
+  logistics: '普通快递',
+  dada: '同城配送',
+  merchant: '同城配送',
+  ziti: '到店自提'
+}
+
 const initialState = {
   distributorInfo: null,
   receiptType: '',
@@ -393,18 +409,42 @@ function SpDeliver(props, ref) {
   }
 
   return (
-    <View className='page-comp-deliver'>
-      <View className='switch-box'>
-        <View className={classNames(DELIVERY_LIST().length > 0 && 'switch-tab')}>
+    <View className={classNames('page-comp-deliver')}>
+      <View className={classNames('switch-box', isPurchase && 'switch-box--purchase')}>
+        <View
+          className={classNames(
+            DELIVERY_LIST().length > 0 && 'switch-tab',
+            isPurchase && 'switch-tab--purchase'
+          )}
+        >
           {DELIVERY_LIST().map((item) => {
             if (showSwitchItem(item.key, distributorInfo)) {
               return (
                 <View
                   key={item.type}
-                  className={`switch-item ${receiptType === item.type ? 'active' : ''}`}
+                  className={classNames(
+                    'switch-item',
+                    receiptType === item.type && 'active',
+                    isPurchase && 'switch-item--purchase'
+                  )}
                   onClick={handleSwitchExpress.bind(this, item.type)}
                 >
-                  {item.name}
+                  {isPurchase ? (
+                    <>
+                      <Text
+                        className={classNames(
+                          'iconfont',
+                          PURCHASE_DELIVERY_ICONS[item.type] || 'icon-delivery',
+                          'switch-item__ico'
+                        )}
+                      />
+                      <Text className='switch-item__txt'>
+                        {PURCHASE_TAB_LABELS[item.type] || item.name}
+                      </Text>
+                    </>
+                  ) : (
+                    item.name
+                  )}
                 </View>
               )
             }
