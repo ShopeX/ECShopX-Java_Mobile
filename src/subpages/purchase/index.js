@@ -27,7 +27,8 @@ import {
   pickBy,
   showToast,
   log,
-  buildSharePath
+  buildSharePath,
+  navigateTo
 } from '@/utils'
 import {
   updatePurchaseShareInfo,
@@ -42,7 +43,12 @@ import { WgtHomeHeader } from '@/pages/home/wgts'
 import configStore from '@/store'
 import { WgtsContext } from '@/pages/home/wgts/wgts-context'
 import CompSkuSelect from './comps/comp-skuselect'
+import CompPurchaseActionbar from './comps/comp-purchase-actionbar'
+import CompPurchaseQuotaSheet from './comps/comp-purchase-quota-sheet'
 import './index.scss'
+
+/** 与 SpPage renderFooter 预留高度一致（含底部条主体，安全区由 SpPage 页脚处理） */
+const PURCHASE_INDEX_FOOTER_HEIGHT = 200
 
 const MSpPrivacyModal = React.memo(SpPrivacyModal)
 const MSpSkuSelect = React.memo(CompSkuSelect)
@@ -78,6 +84,7 @@ function Home() {
   const pageRef = useRef()
 
   const [policyModal, setPolicyModal] = useState(false)
+  const [quotaSheetOpen, setQuotaSheetOpen] = useState(false)
   const [enterpriseName, setEnterpriseName] = useState('')
   const { openScanQrcode } = useSelector((state) => state.sys)
   const { setNavigationBarTitle } = useNavigation()
@@ -86,6 +93,35 @@ function Home() {
     state
 
   const dispatch = useDispatch()
+  const { cartCount = 0 } = useSelector((state) => state.purchase)
+
+  const remainingAmountText = useMemo(() => {
+    const cents =
+      activityInfo?.surplus_limitfee ??
+      activityInfo?.left_fee ??
+      activityInfo?.fee?.left_fee
+    if (cents == null || cents === '') {
+      return '¥0.00'
+    }
+    const n = Number(cents) / 100
+    if (Number.isNaN(n)) {
+      return '¥0.00'
+    }
+    return `¥${n.toFixed(2)}`
+  }, [activityInfo])
+
+  /** 额度抽屉：与 member / share 注释区字段一致，单位分 */
+  const quotaFeeCents = useMemo(
+    () => ({
+      total: activityInfo?.total_limitfee ?? activityInfo?.limit_fee,
+      used: activityInfo?.used_limitfee ?? activityInfo?.aggregate_fee,
+      remaining:
+        activityInfo?.surplus_limitfee ??
+        activityInfo?.left_fee ??
+        activityInfo?.fee?.left_fee
+    }),
+    [activityInfo]
+  )
 
   useEffect(() => {
     Taro.hideShareMenu({
@@ -268,11 +304,45 @@ function Home() {
     })
   }
 
+  const onActionBarCart = useCallback(() => {
+    navigateTo('/subpages/purchase/espier-index?tabbar=0')
+  }, [])
+
+  const onActionBarShare = useCallback(() => {
+    if (!isPurchaseShare) {
+      showToast('当前活动不支持分享亲友')
+      return
+    }
+    if (purchase_share_info.surplus_share_limitnum == '0') {
+      Taro.showToast({
+        title: '分享次数为0',
+        icon: 'none'
+      })
+      return
+    }
+    navigateTo('/subpages/purchase/share')
+  }, [isPurchaseShare, purchase_share_info])
+
+  const onActionBarQuota = useCallback(() => {
+    setQuotaSheetOpen(true)
+  }, [])
+
   return (
     <SpPage
       className='page-purchase-index'
       scrollToTopBtn
       ref={pageRef}
+      footerHeight={PURCHASE_INDEX_FOOTER_HEIGHT}
+      renderFooter={
+        <CompPurchaseActionbar
+          cartCount={cartCount}
+          remainingLabel='活动剩余额度'
+          remainingAmount={remainingAmountText}
+          onCart={onActionBarCart}
+          onShare={onActionBarShare}
+          onQuota={onActionBarQuota}
+        />
+      }
       renderFloat={
         false &&
         isPurchaseShare && (
@@ -339,6 +409,14 @@ function Home() {
           setPolicyModal(false)
         }}
         onConfirm={handleConfirmModal}
+      />
+
+      <CompPurchaseQuotaSheet
+        open={quotaSheetOpen}
+        onClose={() => setQuotaSheetOpen(false)}
+        totalFeeCents={quotaFeeCents.total}
+        usedFeeCents={quotaFeeCents.used}
+        remainingFeeCents={quotaFeeCents.remaining}
       />
 
       <SharePurchase
