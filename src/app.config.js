@@ -28,7 +28,8 @@ const config = {
     'pages/purchase/auth',
     'pages/cart/prescription-information', //补充处方信息
     'pages/cart/add-personnel', // 添加用药人员
-    'pages/share-land' //太阳码统一落地页
+    'pages/share-land', //太阳码统一落地页
+    'pages/reset-password' // 邮箱重置密码（邮件内链接 /reset-password）
   ],
   subPackages: [
     // 内购
@@ -456,6 +457,7 @@ const config = {
         'bindPhone', //绑定手机页面
         'auth-loading', //授权加载页
         'forgotpwd', //找回密码页面
+        'forgotpwd-email', //邮箱找回密码（发送重置邮件）
         'edit-phone' //修改密码页面
       ]
     },

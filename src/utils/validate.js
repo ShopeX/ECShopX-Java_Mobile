@@ -17,6 +17,10 @@ const validate = {
   isPassword: function (val) {
     return password_rule.test(val)
   },
+  /** 邮箱通道注册/重置密码：≥8 位、须同时含字母与数字（与 MemberPasswordPolicy 对齐，弱口令由服务端校验） */
+  isEmailChannelPassword: function (val) {
+    return pass_rule.test(val)
+  },
   isMobileNum: function (val) {
     return phone_rule.test(val)
   },
