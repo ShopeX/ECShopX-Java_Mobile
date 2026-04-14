@@ -17,6 +17,8 @@ $page-bg: #eef1f7;
     box-sizing: border-box;
     height: 100%;
     background: $page-bg;
+    /* 底部固定操作栏占位（高度与主包活动列表一致） */
+    padding-bottom: 220px;
   }
 
   .home-body {

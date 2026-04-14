@@ -6,6 +6,7 @@ import React, { Component } from 'react'
 import Taro, { getCurrentInstance } from '@tarojs/taro'
 import { View, Text, ScrollView, Button } from '@tarojs/components'
 import { SpPage, SpImage, SpPoster, SpPurchaseEnterpriseBar } from '@/components'
+import CompPurchaseNav from '@/pages/purchase/comps/comp-purchase-nav'
 import { SharePurchase } from '@/subpages/components'
 import api from '@/api'
 import { connect } from 'react-redux'
@@ -145,7 +146,13 @@ export default class PurchaseIndex extends Component {
       : null
 
     return (
-      <SpPage className='page-purchase-share' scrollToTopBtn>
+      <SpPage
+        className='page-purchase-share'
+        scrollToTopBtn
+        title='分享亲友'
+        pageConfig={{ navigateBackgroundColor: '#ffffff' }}
+        renderNavigation={(navProps) => <CompPurchaseNav {...navProps} />}
+      >
         <View className='share-page purchase-page'>
           <View className='purchase-page__head'>
             <SpPurchaseEnterpriseBar name={enterpriseName} showSearch={false} />

@@ -2,7 +2,7 @@
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
  */
-import React, { useRef, useEffect, useState } from 'react'
+import React, { useRef, useEffect, useState, useCallback } from 'react'
 import { View, Text, ScrollView } from '@tarojs/components'
 import Taro, { getCurrentInstance, useDidShow, useRouter } from '@tarojs/taro'
 import { useSelector, useDispatch } from 'react-redux'
@@ -20,9 +20,13 @@ import {
   getDistributorId,
   styleNames,
   entryLaunch,
-  VERSION_STANDARD
+  VERSION_STANDARD,
+  navigateTo,
+  showToast
 } from '@/utils'
 import S from '@/spx'
+import CompPurchaseNav from '@/pages/purchase/comps/comp-purchase-nav'
+import CompPurchaseActionbar from '@/subpages/purchase/comps/comp-purchase-actionbar'
 import './list.scss'
 
 const initialState = {
@@ -70,9 +74,8 @@ function ItemList() {
   const router = useRouter()
   const { cat_id, main_cat_id, tag_id, card_id, user_card_id } = routerParams || {}
   const { shopInfo } = useSelector((state) => state.shop)
-  const { purchase_share_info = {}, curDistributorId, curEnterpriseId } = useSelector(
-    (state) => state.purchase
-  )
+  const { purchase_share_info = {}, curDistributorId, curEnterpriseId, cartCount = 0 } =
+    useSelector((state) => state.purchase)
   const dispatch = useDispatch()
 
   const goodsRef = useRef()
@@ -342,10 +345,34 @@ function ItemList() {
       url
     })
   }
+
+  const onActionBarCart = useCallback(() => {
+    navigateTo('/subpages/purchase/espier-index?tabbar=0')
+  }, [])
+
+  const onActionBarShare = useCallback(() => {
+    if (!purchase_share_info?.activity_id) {
+      showToast('请先进入活动')
+      return
+    }
+    if (purchase_share_info.surplus_share_limitnum == '0') {
+      Taro.showToast({ title: '分享次数为0', icon: 'none' })
+      return
+    }
+    navigateTo('/subpages/purchase/share')
+  }, [purchase_share_info])
+
+  const onActionBarQuota = useCallback(() => {
+    showToast('请在活动首页查看额度')
+  }, [])
+
   return (
     <SpPage
       scrollToTopBtn
-      className={classNames('page-item-list', {
+      title='商品列表'
+      pageConfig={{ navigateBackgroundColor: '#ffffff' }}
+      renderNavigation={(navProps) => <CompPurchaseNav {...navProps} />}
+      className={classNames('page-item-list', 'has-navbar', {
         'has-tagbar': tagList.length > 0,
         'page-item-list--with-store': VERSION_STANDARD && !!card_id
       })}
@@ -471,6 +498,15 @@ function ItemList() {
         <View className='brand-title'>品牌</View>
         <SpSelect multiple info={brandList} value={brandSelect} onChange={onChangeBrand} />
       </SpDrawer>
+
+      <CompPurchaseActionbar
+        fixed
+        cartCount={cartCount}
+        remainingLabel='活动剩余额度'
+        onCart={onActionBarCart}
+        onShare={onActionBarShare}
+        onQuota={onActionBarQuota}
+      />
     </SpPage>
   )
 }

@@ -6,6 +6,36 @@
   &.has-tabbar {
     padding-bottom: $tabbar-height;
   }
+
+  /* 与 subpages/purchase/espier-checkout 企业条右侧优惠说明一致 */
+  &__policy {
+    display: flex;
+    align-items: flex-start;
+    max-width: 360px;
+    margin-left: 16px;
+  }
+
+  &__policy-icon {
+    font-size: 24px;
+    color: #0A0A0A;
+    margin-right: 8px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  &__policy-txt {
+    font-size: 22px;
+    line-height: 1.45;
+    color: #0A0A0A;
+    white-space: pre-line;
+  }
+
+  /* 底部固定操作栏（无购物车入口）占位 */
+  .sp-page__body-children {
+    padding-bottom: 220px;
+    box-sizing: border-box;
+  }
+
   .login-header {
     display: flex;
     justify-content: center;
@@ -34,7 +64,7 @@
   }
   .shop-cart-item {
     padding: 0 16px;
-    margin-top: 40px;
+    margin-top: 16px;
     /*  #ifdef  alipay  */
     margin-top: 0;
     padding-top: 40px;

@@ -39,6 +39,7 @@ import api from '@/api'
 import doc from '@/doc'
 import qs from 'qs'
 import S from '@/spx'
+import CompPurchaseNav from '@/pages/purchase/comps/comp-purchase-nav'
 import { initialState } from './const'
 import './espier-checkout.scss'
 
@@ -667,6 +668,9 @@ function PurchaseCheckout(props) {
     <SpPage
       ref={pageRef}
       className='page-espier-checkout'
+      title='订单结算'
+      pageConfig={{ navigateBackgroundColor: '#ffffff' }}
+      renderNavigation={(navProps) => <CompPurchaseNav {...navProps} />}
       renderFooter={renderFooter()}
       footerHeight={160}
     >

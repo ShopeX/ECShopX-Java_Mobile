@@ -40,15 +40,13 @@ import { useImmer } from 'use-immer'
 import { useLogin, useNavigation } from '@/hooks'
 import HomeWgts from '@/pages/home/comps/home-wgts'
 import { WgtHomeHeader } from '@/pages/home/wgts'
+import CompPurchaseNav from '@/pages/purchase/comps/comp-purchase-nav'
 import configStore from '@/store'
 import { WgtsContext } from '@/pages/home/wgts/wgts-context'
 import CompSkuSelect from './comps/comp-skuselect'
 import CompPurchaseActionbar from './comps/comp-purchase-actionbar'
 import CompPurchaseQuotaSheet from './comps/comp-purchase-quota-sheet'
 import './index.scss'
-
-/** 与 SpPage renderFooter 预留高度一致（含底部条主体，安全区由 SpPage 页脚处理） */
-const PURCHASE_INDEX_FOOTER_HEIGHT = 200
 
 const MSpPrivacyModal = React.memo(SpPrivacyModal)
 const MSpSkuSelect = React.memo(CompSkuSelect)
@@ -330,19 +328,11 @@ function Home() {
   return (
     <SpPage
       className='page-purchase-index'
+      title='企业购'
+      pageConfig={{ navigateBackgroundColor: '#ffffff' }}
+      renderNavigation={(navProps) => <CompPurchaseNav {...navProps} />}
       scrollToTopBtn
       ref={pageRef}
-      footerHeight={PURCHASE_INDEX_FOOTER_HEIGHT}
-      renderFooter={
-        <CompPurchaseActionbar
-          cartCount={cartCount}
-          remainingLabel='活动剩余额度'
-          remainingAmount={remainingAmountText}
-          onCart={onActionBarCart}
-          onShare={onActionBarShare}
-          onQuota={onActionBarQuota}
-        />
-      }
       renderFloat={
         false &&
         isPurchaseShare && (
@@ -441,6 +431,16 @@ function Home() {
           }}
         />
       )}
+
+      <CompPurchaseActionbar
+        fixed
+        cartCount={cartCount}
+        remainingLabel='活动剩余额度'
+        remainingAmount={remainingAmountText}
+        onCart={onActionBarCart}
+        onShare={onActionBarShare}
+        onQuota={onActionBarQuota}
+      />
     </SpPage>
   )
 }

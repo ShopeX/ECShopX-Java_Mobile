@@ -4,10 +4,12 @@
  *
  * 企业购「我的额度」底部抽屉（purchase 分包）
  */
-import React from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { View, Text } from '@tarojs/components'
 import { classNames } from '@/utils'
 import './comp-purchase-quota-sheet.scss'
+
+const SHEET_ANIMATION_DURATION = 240
 
 function formatQuotaYuan(cents) {
   if (cents == null || cents === '') {
@@ -31,7 +33,47 @@ function CompPurchaseQuotaSheet(props) {
     remainingFeeCents
   } = props
 
-  if (!open) {
+  const [shouldRender, setShouldRender] = useState(open)
+  const [isActive, setIsActive] = useState(open)
+  const openTimerRef = useRef(null)
+  const closeTimerRef = useRef(null)
+
+  useEffect(() => {
+    if (openTimerRef.current) {
+      clearTimeout(openTimerRef.current)
+      openTimerRef.current = null
+    }
+    if (closeTimerRef.current) {
+      clearTimeout(closeTimerRef.current)
+      closeTimerRef.current = null
+    }
+
+    if (open) {
+      setShouldRender(true)
+      // 延迟一个 tick，确保初始样式生效后再触发过渡
+      openTimerRef.current = setTimeout(() => {
+        setIsActive(true)
+      }, 16)
+      return undefined
+    }
+
+    setIsActive(false)
+    closeTimerRef.current = setTimeout(() => {
+      setShouldRender(false)
+    }, SHEET_ANIMATION_DURATION)
+    return undefined
+  }, [open])
+
+  useEffect(() => () => {
+    if (openTimerRef.current) {
+      clearTimeout(openTimerRef.current)
+    }
+    if (closeTimerRef.current) {
+      clearTimeout(closeTimerRef.current)
+    }
+  }, [])
+
+  if (!shouldRender) {
     return null
   }
 
@@ -40,7 +82,7 @@ function CompPurchaseQuotaSheet(props) {
   const remainingText = formatQuotaYuan(remainingFeeCents)
 
   return (
-    <View className={classNames('comp-purchase-quota-sheet', className)} catchMove>
+    <View className={classNames('comp-purchase-quota-sheet', { 'is-active': isActive }, className)} catchMove>
       <View className='comp-purchase-quota-sheet__mask' onClick={onClose} />
       <View className='comp-purchase-quota-sheet__panel' catchMove>
         <View className='comp-purchase-quota-sheet__grabber' />

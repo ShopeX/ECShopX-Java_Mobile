@@ -3,7 +3,7 @@
  * See LICENSE file for license details.
  */
 import Taro, { getCurrentInstance, useDidShow } from '@tarojs/taro'
-import React, { useEffect, useState, useMemo } from 'react'
+import React, { useEffect } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { View, Text, ScrollView } from '@tarojs/components'
 import { AtButton } from 'taro-ui'

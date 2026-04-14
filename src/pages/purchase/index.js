@@ -16,6 +16,7 @@ import doc from '@/doc'
 import S from '@/spx'
 import { SpPage, SpNote, SpScrollView, SpImage, SpPurchaseEnterpriseBar } from '@/components'
 import './index.scss'
+import CompPurchaseNav from './comps/comp-purchase-nav'
 
 const initialState = {
   activityList: [],
@@ -191,7 +192,12 @@ function PurchaseActivityList() {
   }
 
   return (
-    <SpPage className='page-purchase-index page-purchase-activitylist'>
+    <SpPage
+      className='page-purchase-index page-purchase-activitylist'
+      title='企业购'
+      pageConfig={{ navigateBackgroundColor: '#ffffff' }}
+      renderNavigation={(navProps) => <CompPurchaseNav {...navProps} />}
+    >
       <View className='page-purchase-activitylist__inner'>
         <SpPurchaseEnterpriseBar name={enterpriseName} showMore={false} showSearch={false} />
 

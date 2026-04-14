@@ -250,6 +250,9 @@ $purchase-list-fixed-store-extra: 52px;
   /* 列表滚动区贴灰底 */
   .item-list-scroll {
     background: $page-bg;
+    /* 底部固定操作栏占位 */
+    padding-bottom: 220px;
+    box-sizing: border-box;
   }
 
   .purchase-goods-total-wrap {
