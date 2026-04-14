@@ -17,8 +17,14 @@ const initialValue = {
 }
 
 const CompPasswordInput = (props) => {
-  useTranslation()
-  const { onChange = () => {}, disabled, onFocus = () => {}, onBlur = () => {}, value } = props
+  const {
+    onChange = () => {},
+    disabled,
+    onFocus = () => {},
+    onBlur = () => {},
+    value,
+    placeholder = '密码需由6-16位数字或字母组成'
+  } = props
 
   const [state, setState] = useImmer(initialValue)
 
@@ -35,7 +41,7 @@ const CompPasswordInput = (props) => {
       <AtInput
         clear
         type={type}
-        placeholder={$t('24f4b47f.c4d0c8')}
+        placeholder={placeholder}
         placeholderClass='input-placeholder'
         onChange={onChange}
         onFocus={onFocus}

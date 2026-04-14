@@ -61,6 +61,26 @@ export function forgotPwd(params = {}) {
   return req.post('/member/reset/password', params)
 }
 
+/** POST 发送邮箱验证码，purpose: sign | login */
+export function memberEmailCode(data = {}) {
+  return req.post('/member/email/code', data)
+}
+
+/** POST 邮箱注册，返回 JWT */
+export function memberEmailRegister(data = {}) {
+  return req.post('/member/email/register', data)
+}
+
+/** POST 申请邮箱重置密码邮件（防枚举统一文案） */
+export function requestEmailPasswordReset(data = {}) {
+  return req.post('/member/email/password/reset-request', data)
+}
+
+/** POST 邮件内 token 设置新密码 */
+export function emailPasswordResetConfirm(data = {}) {
+  return req.post('/member/email/password/reset', data)
+}
+
 export function checkpclogin(data) {
   return req.post('/oauthlogin', data)
 }

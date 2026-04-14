@@ -34,6 +34,7 @@ export default class Login extends Component {
       isVisible: false,
       imgInfo: null,
       loginType: 1, // 1=密码; 2=验证码
+      accountMode: 'mobile', // mobile | email
       logoShow: true,
       is_new: false
     }
@@ -73,6 +74,11 @@ export default class Login extends Component {
     if (!validate.isRequired(yzm)) {
       return showToast($t('3ca883d0.e70066'))
     }
+    if (!imgInfo?.imageToken) {
+      showToast($t('3ca883d0.8eb88e'))
+      this.getImageVcode()
+      return
+    }
     try {
       await api.user.regSmsCode({
         type: 'login',
@@ -81,6 +87,40 @@ export default class Login extends Component {
         token: imgInfo.imageToken
       })
       showToast($t('3ca883d0.4d7fb5'))
+      resolve()
+    } catch (e) {
+      this.getImageVcode()
+    }
+  }
+
+  /** POST /member/email/code purpose=login */
+  handleEmailLoginTimerStart = async (resolve) => {
+    const { imgInfo } = this.state
+    const { email, yzm } = this.state.info
+    const emailTrim = (email || '').trim()
+    if (!validate.isEmail(emailTrim)) {
+      return showToast($t('3ca883d0.04154b'))
+    }
+    if (!validate.isRequired(yzm)) {
+      return showToast($t('3ca883d0.e70066'))
+    }
+    if (!imgInfo?.imageToken) {
+      showToast($t('3ca883d0.8eb88e'))
+      this.getImageVcode()
+      return
+    }
+    try {
+      await api.user.memberEmailCode({
+        email: emailTrim,
+        purpose: 'login',
+        token: imgInfo.imageToken,
+        yzm
+      })
+      showToast($t('3ca883d0.4d7fb5'))
+      this.setState((prev) => ({
+        info: { ...prev.info, yzm: '' }
+      }))
+      await this.getImageVcode()
       resolve()
     } catch (e) {
       this.getImageVcode()
@@ -112,9 +152,36 @@ export default class Login extends Component {
 
   handleToggleLogin = () => {
     const { loginType } = this.state
-    this.setState({
-      loginType: loginType == 1 ? 2 : 1
-    })
+    const next = loginType == 1 ? 2 : 1
+    this.setState(
+      {
+        loginType: next
+      },
+      () => {
+        if (next === 2) {
+          this.getImageVcode()
+        }
+      }
+    )
+  }
+
+  handleAccountModeChange = (accountMode) => {
+    this.setState(
+      (prev) => ({
+        accountMode,
+        info: {
+          ...prev.info,
+          yzm: '',
+          vcode: '',
+          password: ''
+        }
+      }),
+      () => {
+        if (accountMode === 'mobile' || this.state.loginType === 2) {
+          this.getImageVcode()
+        }
+      }
+    )
   }
 
   getImageVcode = async () => {
@@ -128,39 +195,78 @@ export default class Login extends Component {
     const { source_id, monitor_id, latest_source_id, latest_monitor_id } =
       Taro.getStorageSync('sourceInfo') // 千人千码参数
     const { redirect } = this.$instance?.router?.params
-    const { loginType } = this.state
-    const { mobile, password, vcode } = this.state.info
-    let params = {
-      username: mobile
-    }
-    if (!validate.isMobileNum(mobile)) {
-      showToast($t('3ca883d0.a32ab5'))
-      return
-    }
+    const { loginType, accountMode } = this.state
+    const { mobile, email, password, vcode } = this.state.info
+    let params = {}
 
-    if (loginType == 1) {
-      if (!validate.isRequired(password)) {
-        showToast($t('3ca883d0.e39ffe'))
+    if (accountMode === 'email') {
+      const emailTrim = (email || '').trim()
+      if (!validate.isEmail(emailTrim)) {
+        showToast($t('3ca883d0.04154b'))
         return
       }
-      if (!validate.isPassword(password)) {
-        return showToast($t('3ca883d0.eac67a'))
+      if (loginType == 1) {
+        if (!validate.isRequired(password)) {
+          showToast($t('3ca883d0.e39ffe'))
+          return
+        }
+        if (!validate.isEmailChannelPassword(password)) {
+          return showToast($t('3ca883d0.96246d'))
+        }
+        params = {
+          username: emailTrim,
+          password,
+          check_type: 'password',
+          silent: 1,
+          auto_register: 0,
+          auth_type: 'local'
+        }
+      } else {
+        if (!validate.isRequired(vcode)) {
+          showToast($t('3ca883d0.d0c06a'))
+          return
+        }
+        params = {
+          username: emailTrim,
+          vcode,
+          check_type: 'email_otp',
+          auto_register: 1,
+          auth_type: 'local'
+        }
       }
-      params['password'] = password
-      params['check_type'] = 'password'
-      params['silent'] = 1
-      params['auto_register'] = 0
     } else {
-      if (!validate.isRequired(vcode)) {
-        showToast($t('3ca883d0.d0c06a'))
+      params = {
+        username: mobile
+      }
+      if (!validate.isMobileNum(mobile)) {
+        showToast($t('3ca883d0.a32ab5'))
         return
       }
-      params['vcode'] = vcode
-      params['check_type'] = 'mobile'
-      params['auto_register'] = 1
-    }
 
-    params['auth_type'] = 'local'
+      if (loginType == 1) {
+        if (!validate.isRequired(password)) {
+          showToast($t('3ca883d0.e39ffe'))
+          return
+        }
+        if (!validate.isPassword(password)) {
+          return showToast($t('3ca883d0.eac67a'))
+        }
+        params['password'] = password
+        params['check_type'] = 'password'
+        params['silent'] = 1
+        params['auto_register'] = 0
+      } else {
+        if (!validate.isRequired(vcode)) {
+          showToast($t('3ca883d0.d0c06a'))
+          return
+        }
+        params['vcode'] = vcode
+        params['check_type'] = 'mobile'
+        params['auto_register'] = 1
+      }
+
+      params['auth_type'] = 'local'
+    }
 
     if (source_id) {
       params['source_id'] = source_id
@@ -181,16 +287,29 @@ export default class Login extends Component {
       const { is_new } = tokenParseH5(token)
 
       if (is_new === 1) {
+        if (accountMode === 'email') {
+          if (loginType === 1) {
+            return showToast($t('3ca883d0.54414f'))
+          }
+          setToken(token)
+          const emailTrim = (this.state.info.email || '').trim()
+          Taro.navigateTo({
+            url: `/subpages/auth/edit-password?phone=${encodeURIComponent(
+              emailTrim
+            )}&redi_url=${encodeURIComponent(redirect || '')}`
+          })
+          return
+        }
         if (loginType === 1) {
           return showToast($t('3ca883d0.3bfe03'))
-        } else {
-          setToken(token)
-          Taro.navigateTo({
-            url: `/subpages/auth/edit-password?phone=${mobile}&redi_url=${encodeURIComponent(
-              redirect
-            )}`
-          })
         }
+        setToken(token)
+        Taro.navigateTo({
+          url: `/subpages/auth/edit-password?phone=${mobile}&redi_url=${encodeURIComponent(
+            redirect || ''
+          )}`
+        })
+        return
       } else {
         if (error_message) {
           return showToast(error_message)
@@ -229,17 +348,35 @@ export default class Login extends Component {
 
   handleForgotPsd = async () => {
     const { redirect } = this.$instance?.router?.params
-    let url = '/subpages/auth/forgotpwd'
-    const { mobile } = this.state.info
+    const { accountMode } = this.state
+    const { mobile, email } = this.state.info
+
+    if (accountMode === 'email') {
+      const parts = []
+      if (redirect) {
+        parts.push(`redi_url=${encodeURIComponent(redirect)}`)
+      }
+      if (email) {
+        parts.push(`email=${encodeURIComponent(email.trim())}`)
+      }
+      const url =
+        parts.length > 0
+          ? `/subpages/auth/forgotpwd-email?${parts.join('&')}`
+          : '/subpages/auth/forgotpwd-email'
+      Taro.navigateTo({ url })
+      return
+    }
+
+    const parts = []
     if (redirect) {
-      url += `?redi_url=${encodeURIComponent(redirect)}`
+      parts.push(`redi_url=${encodeURIComponent(redirect)}`)
     }
     if (mobile) {
-      url += `&phone=${mobile}`
+      parts.push(`phone=${mobile}`)
     }
-    Taro.navigateTo({
-      url
-    })
+    const url =
+      parts.length > 0 ? `/subpages/auth/forgotpwd?${parts.join('&')}` : '/subpages/auth/forgotpwd'
+    Taro.navigateTo({ url })
   }
 
   getDevice() {
@@ -299,22 +436,40 @@ export default class Login extends Component {
   }
 
   render() {
-    const { info, loginType, imgInfo, logoShow } = this.state
+    const { info, loginType, imgInfo, logoShow, accountMode } = this.state
 
     const passwordLogin = loginType == 1
 
     const codeLogin = loginType == 2
 
-    //全填写完
-    const isFull =
+    const emailTrim = (info.email || '').trim()
+    const isFullMobile =
+      accountMode === 'mobile' &&
       ((codeLogin && info.mobile && info.yzm && info.vcode) ||
         (passwordLogin &&
           info.mobile &&
           info.password &&
           info.password.length >= 6 &&
           !info.is_new)) &&
+      info.mobile &&
       info.mobile.length === 11
-    console.log('info', passwordLogin, info)
+
+    const isFullEmailPassword =
+      accountMode === 'email' &&
+      passwordLogin &&
+      validate.isEmail(emailTrim) &&
+      info.password &&
+      validate.isEmailChannelPassword(info.password)
+
+    const isFullEmailOtp =
+      accountMode === 'email' &&
+      codeLogin &&
+      validate.isEmail(emailTrim) &&
+      info.yzm &&
+      info.vcode
+
+    const isFull = isFullMobile || isFullEmailPassword || isFullEmailOtp
+
     const inputProp = {
       onFocus: this.logoShow(false),
       onBlur: this.logoShow(true)
@@ -334,85 +489,187 @@ export default class Login extends Component {
             {/* <View className='desc'>使用已注册的手机号登录</View> */}
           </View>
           <View className='auth-bd'>
-            <AtForm className='form'>
-              <View className='form-field noborder'>
-                <CompInputPhone
-                  onChange={this.handleInputChange.bind(this, 'mobile')}
-                  value={info.mobile}
-                  needValidate={passwordLogin}
-                />
+            <View className='login-type-tabs'>
+              <View
+                className={classNames('login-type-tab', {
+                  'login-type-tab--active': accountMode === 'mobile'
+                })}
+                onClick={() => this.handleAccountModeChange('mobile')}
+              >
+                {$t('3ca883d0.cbbfff')}
               </View>
-              {/* 密码登录 */}
-              {passwordLogin && (
-                <View className='form-field'>
-                  <View className='input-field'>
-                    <CompPasswordInput
-                      onChange={this.handleInputChange.bind(this, 'password')}
-                      {...inputProp}
-                      value={info.password}
-                      // onFocus={this.handleRemarkFocus.bind(this)}
-                      // onBlur={this.handleRemarkBlur.bind(this)}
+              <View
+                className={classNames('login-type-tab', {
+                  'login-type-tab--active': accountMode === 'email'
+                })}
+                onClick={() => this.handleAccountModeChange('email')}
+              >
+                {$t('3ca883d0.fc2898')}
+              </View>
+            </View>
+            <AtForm className='form'>
+              {accountMode === 'mobile' ? (
+                <>
+                  <View className='form-field noborder'>
+                    <CompInputPhone
+                      onChange={this.handleInputChange.bind(this, 'mobile')}
+                      value={info.mobile}
+                      needValidate={passwordLogin}
                     />
                   </View>
-                </View>
-              )}
-              {/* 验证码登录，验证码超过1次，显示图形验证码 */}
-              {codeLogin && (
-                <View className='form-field'>
-                  <View className='input-field'>
-                    <AtInput
-                      clear
-                      name='yzm'
-                      value={info.yzm}
-                      placeholder={$t('3ca883d0.e70066')}
-                      onChange={this.handleInputChange.bind(this, 'yzm')}
-                      placeholderClass='input-placeholder'
-                      {...inputProp}
-                    />
-                  </View>
-                  <View className='btn-field'>
-                    {imgInfo && (
-                      <Image
-                        className='image-vcode'
-                        src={imgInfo.imageData}
-                        onClick={this.getImageVcode.bind(this)}
-                      />
+                  {/* 密码登录 */}
+                  {passwordLogin && (
+                    <View className='form-field'>
+                      <View className='input-field'>
+                        <CompPasswordInput
+                          onChange={this.handleInputChange.bind(this, 'password')}
+                          {...inputProp}
+                          value={info.password}
+                        />
+                      </View>
+                    </View>
+                  )}
+                  {/* 验证码登录，验证码超过1次，显示图形验证码 */}
+                  {codeLogin && (
+                    <View className='form-field'>
+                      <View className='input-field'>
+                        <AtInput
+                          clear
+                          name='yzm'
+                          value={info.yzm}
+                          placeholder={$t('3ca883d0.e70066')}
+                          onChange={this.handleInputChange.bind(this, 'yzm')}
+                          placeholderClass='input-placeholder'
+                          {...inputProp}
+                        />
+                      </View>
+                      <View className='btn-field'>
+                        {imgInfo && (
+                          <Image
+                            className='image-vcode'
+                            src={imgInfo.imageData}
+                            onClick={this.getImageVcode.bind(this)}
+                          />
+                        )}
+                      </View>
+                    </View>
+                  )}
+                  {codeLogin && (
+                    <View className='form-field'>
+                      <View className='input-field'>
+                        <AtInput
+                          clear
+                          name='vcode'
+                          value={info.vcode}
+                          placeholder={$t('3ca883d0.d0c06a')}
+                          onChange={this.handleInputChange.bind(this, 'vcode')}
+                          placeholderClass='input-placeholder'
+                          {...inputProp}
+                        />
+                      </View>
+                      <View className='btn-field'>
+                        <SpTimer
+                          onStart={this.handleTimerStart.bind(this)}
+                          onStop={this.handleTimerStop}
+                        />
+                      </View>
+                    </View>
+                  )}
+                  <View className='btn-text-group'>
+                    <Text className='btn-text' onClick={this.handleToggleLogin.bind(this)}>
+                      {passwordLogin ? $t('3ca883d0.4bc8be') : $t('3ca883d0.0d9631')}
+                    </Text>
+                    {passwordLogin && (
+                      <Text className='btn-text forgot-password' onClick={this.handleForgotPsd}>
+                        {$t('3ca883d0.804890')}
+                      </Text>
                     )}
                   </View>
-                </View>
-              )}
-              {codeLogin && (
-                <View className='form-field'>
-                  <View className='input-field'>
+                </>
+              ) : (
+                <>
+                  <View className='form-field'>
                     <AtInput
                       clear
-                      name='vcode'
-                      value={info.vcode}
-                      placeholder={$t('3ca883d0.d0c06a')}
-                      onChange={this.handleInputChange.bind(this, 'vcode')}
+                      name='email'
+                      type='text'
+                      value={info.email}
+                      placeholder={$t('3ca883d0.b457cd')}
+                      onChange={this.handleInputChange.bind(this, 'email')}
                       placeholderClass='input-placeholder'
                       {...inputProp}
                     />
                   </View>
-                  <View className='btn-field'>
-                    <SpTimer
-                      onStart={this.handleTimerStart.bind(this)}
-                      onStop={this.handleTimerStop}
-                    />
+                  {passwordLogin && (
+                    <View className='form-field'>
+                      <View className='input-field'>
+                        <CompPasswordInput
+                          placeholder={$t('3ca883d0.96246d')}
+                          onChange={this.handleInputChange.bind(this, 'password')}
+                          {...inputProp}
+                          value={info.password}
+                        />
+                      </View>
+                    </View>
+                  )}
+                  {codeLogin && (
+                    <View className='form-field'>
+                      <View className='input-field'>
+                        <AtInput
+                          clear
+                          name='email-yzm'
+                          value={info.yzm}
+                          placeholder={$t('3ca883d0.e70066')}
+                          onChange={this.handleInputChange.bind(this, 'yzm')}
+                          placeholderClass='input-placeholder'
+                          {...inputProp}
+                        />
+                      </View>
+                      <View className='btn-field'>
+                        {imgInfo && (
+                          <Image
+                            className='image-vcode'
+                            src={imgInfo.imageData}
+                            onClick={this.getImageVcode.bind(this)}
+                          />
+                        )}
+                      </View>
+                    </View>
+                  )}
+                  {codeLogin && (
+                    <View className='form-field'>
+                      <View className='input-field'>
+                        <AtInput
+                          clear
+                          name='email-vcode'
+                          value={info.vcode}
+                          placeholder={$t('3ca883d0.a5ae49')}
+                          onChange={this.handleInputChange.bind(this, 'vcode')}
+                          placeholderClass='input-placeholder'
+                          {...inputProp}
+                        />
+                      </View>
+                      <View className='btn-field'>
+                        <SpTimer
+                          key='login-email-timer'
+                          onStart={this.handleEmailLoginTimerStart.bind(this)}
+                          onStop={this.handleTimerStop}
+                        />
+                      </View>
+                    </View>
+                  )}
+                  <View className='btn-text-group'>
+                    <Text className='btn-text' onClick={this.handleToggleLogin.bind(this)}>
+                      {passwordLogin ? $t('3ca883d0.4bc8be') : $t('3ca883d0.0d9631')}
+                    </Text>
+                    {passwordLogin && (
+                      <Text className='btn-text forgot-password' onClick={this.handleForgotPsd}>
+                        {$t('3ca883d0.804890')}
+                      </Text>
+                    )}
                   </View>
-                </View>
+                </>
               )}
-              {/* {passwordLogin && <View className='form-tip'>{PASSWORD_TIP()}</View>} */}
-              <View className='btn-text-group'>
-                <Text className='btn-text' onClick={this.handleToggleLogin.bind(this)}>
-                  {passwordLogin ? $t('3ca883d0.4bc8be') : $t('3ca883d0.0d9631')}
-                </Text>
-                {passwordLogin && (
-                  <Text className='btn-text forgot-password' onClick={this.handleForgotPsd}>
-                    {$t('3ca883d0.804890')}
-                  </Text>
-                )}
-              </View>
               <View className='form-submit'>
                 <AtButton
                   disabled={!isFull}
