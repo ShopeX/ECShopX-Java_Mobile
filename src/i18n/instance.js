@@ -3,11 +3,14 @@
  * See LICENSE file for license details.
  *
  * i18next 单例：资源来自 src/i18n/locales，语言与 Taro 存储 / Redux user.lang（zhcn|en|ar）同步。
+ *
+ * 注意：本文件不能顶层 import `@tarojs/taro`。`app.config.js` 会 import `@/i18n`，构建期在 Node
+ * 中执行模块时会连带加载 Taro → `@tarojs/runtime`，H5 下会访问全局 `window`，导致
+ * `ReferenceError: window is not defined`。
  */
 /* eslint-disable import/no-named-as-default-member -- i18next 默认导出即实例，需调用 .use / .changeLanguage */
 import i18n from 'i18next'
 import { initReactI18next } from 'react-i18next'
-import Taro from '@tarojs/taro'
 
 import zhCN from './locales/zh-CN.json'
 import en from './locales/en.json'
@@ -32,10 +35,21 @@ export const SUPPORTED_STORAGE_LANGS = ['zhcn', 'en', 'ar']
 
 function readStorageLang() {
   try {
-    return Taro.getStorageSync('lang') || ''
+    if (typeof localStorage !== 'undefined' && localStorage != null) {
+      const v = localStorage.getItem('lang')
+      if (v != null && v !== '') return String(v)
+    }
   } catch {
-    return ''
+    /* ignore */
   }
+  try {
+    if (typeof wx !== 'undefined' && wx && typeof wx.getStorageSync === 'function') {
+      return wx.getStorageSync('lang') || ''
+    }
+  } catch {
+    /* ignore */
+  }
+  return ''
 }
 
 function resolveInitialLng() {
