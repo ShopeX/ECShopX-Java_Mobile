@@ -10,7 +10,7 @@ import api from '@/api'
 import * as dianwuApi from '@/api/dianwu'
 import doc from '@/subpages/doc'
 import { View, Text, ScrollView, Camera } from '@tarojs/components'
-import { AtTabs, AtTabsPane, AtButton, AtCurtain } from 'taro-ui'
+import { AtTabs, AtTabsPane, AtButton } from 'taro-ui'
 import {
   SpPage,
   SpSearchInput,
@@ -24,12 +24,13 @@ import {
   SpInput as AtInput
 } from '@/components'
 import { useDianWuLogin, useDebounce } from '@/hooks'
-import { styleNames, pickBy, showToast, classNames, validate } from '@/utils'
+import { styleNames, pickBy, showToast, classNames } from '@/utils'
 import { selectMember } from '@/store/slices/dianwu'
 import CompGoods from './comps/comp-goods'
 import CompGift from './comps/comp-gift'
 import CompGoodsPrice from './comps/comp-goods-price'
 import CompTabbar from './comps/comp-tabbar'
+import CompDianwuSelectMember from './comps/comp-dianwu-select-member'
 import './cashier.scss'
 
 const initialState = {
@@ -40,9 +41,7 @@ const initialState = {
   ],
   current: 0,
   cartList: [],
-  mobile: '',
   searchGoodsList: [],
-  searchMemberResult: null,
   discountDetailLayout: false,
   searchResultLayout: false,
   addUserCurtain: false,
@@ -56,12 +55,10 @@ function DianWuCashier() {
     typeList,
     current,
     cartList,
-    mobile,
     discountDetailLayout,
     searchResultLayout,
     addUserCurtain,
     searchGoodsList,
-    searchMemberResult,
     isCameraOpend,
     distributor_id
   } = state
@@ -120,24 +117,6 @@ function DianWuCashier() {
       // draft.searchMemberList = pickBy(memberList, doc.dianwu.MEMBER_ITEM)
       draft.searchResultLayout = true
     })
-  }
-
-  const handleScanCode = async () => {
-    const { errMsg, result } = await Taro.scanCode()
-    console.log('handleScanCode:', result)
-    if (errMsg == 'scanCode:ok') {
-      Taro.showLoading({ title: '' })
-      const { list } = await dianwuApi.getMembers({
-        user_card_code: result.split('_')[1]
-      })
-      // console.log(pickBy(list, doc.dianwu.MEMBER_ITEM))
-      Taro.hideLoading()
-      setState((draft) => {
-        draft.searchMemberResult = pickBy(list, doc.dianwu.MEMBER_ITEM)
-      })
-    } else {
-      showToast(errMsg)
-    }
   }
 
   const handleScanGoodsBN = async () => {
@@ -225,26 +204,6 @@ function DianWuCashier() {
     }
   }
 
-  // 选择会员
-  const handleSelectMember = async () => {
-    const [item] = searchMemberResult
-    const userInfo = await dianwuApi.getMemberByUserId({ user_id: item.userId })
-    const { couponNum, point, vipDiscount } = pickBy(userInfo, doc.dianwu.MEMBER_INFO)
-    dispatch(
-      selectMember({
-        ...item,
-        couponNum,
-        point,
-        vipDiscount
-      })
-    )
-    setState((draft) => {
-      draft.addUserCurtain = false
-      draft.mobile = ''
-      draft.searchMemberResult = null
-    })
-  }
-
   // 挂单
   const handleOrderPendding = async () => {
     if (cartList.length == 0) {
@@ -297,43 +256,6 @@ function DianWuCashier() {
           showToast(e.res.data.data.message)
         }
       }
-    }
-  }
-
-  const handleCreateMember = async () => {
-    const res = await dianwuApi.createMember({ mobile })
-    const newUser = pickBy(res, doc.dianwu.CREATE_MEMBER_ITEM)
-    const userInfo = await dianwuApi.getMemberByUserId({ user_id: newUser.userId })
-    const { couponNum, point, vipDiscount } = pickBy(userInfo, doc.dianwu.MEMBER_INFO)
-    dispatch(
-      selectMember({
-        ...newUser,
-        couponNum,
-        point,
-        vipDiscount
-      })
-    )
-    setState((draft) => {
-      draft.addUserCurtain = false
-    })
-  }
-
-  const onChangeMobile = (e) => {
-    setState((draft) => {
-      draft.mobile = e
-    })
-  }
-
-  const handleConfirm = async () => {
-    if (validate.isMobileNum(mobile)) {
-      const { list } = await dianwuApi.getMembers({
-        mobile
-      })
-      setState((draft) => {
-        draft.searchMemberResult = pickBy(list, doc.dianwu.MEMBER_ITEM)
-      })
-    } else {
-      showToast('请输入正确的手机号')
     }
   }
 
@@ -475,10 +397,6 @@ function DianWuCashier() {
                 className='btn-clear'
                 onClick={() => {
                   dispatch(selectMember(null))
-                  setState((draft) => {
-                    draft.mobile = ''
-                    draft.searchMemberResult = null
-                  })
                 }}
               >
                 <Text className='iconfont icon-shanchu-011'></Text>
@@ -708,65 +626,15 @@ function DianWuCashier() {
         </ScrollView>
       </SpFloatLayout>
 
-      <AtCurtain
-        isOpened={addUserCurtain}
+      <CompDianwuSelectMember
+        open={addUserCurtain}
+        distributor_id={distributor_id}
         onClose={() => {
           setState((draft) => {
             draft.addUserCurtain = false
           })
         }}
-      >
-        <View className='search-user'>
-          <View className='search-user-hd'>
-            <View className='title'>查询会员</View>
-            <View className='scan-member' onClick={handleScanCode}>
-              <Text className='iconfont icon-saoma'></Text>扫会员码
-            </View>
-          </View>
-          <View className='search-user-bd'>
-            <View className='form-field'>
-              <AtInput
-                name='mobile'
-                value={mobile}
-                className='mobile'
-                placeholder='请输入手机号'
-                onChange={onChangeMobile}
-                onConfirm={handleConfirm}
-              />
-            </View>
-            {searchMemberResult && (
-              <View className='search-result'>
-                {searchMemberResult?.length == 0 && <Text>没有找到会员</Text>}
-                {searchMemberResult?.length > 0 && (
-                  <Text>{`${searchMemberResult[0]?.username} ${searchMemberResult[0]?.mobile}`}</Text>
-                )}
-              </View>
-            )}
-          </View>
-          <View className='search-user-ft'>
-            <View
-              className='btn-cancel'
-              onClick={() => {
-                setState((draft) => {
-                  draft.addUserCurtain = false
-                })
-              }}
-            >
-              取消
-            </View>
-            {searchMemberResult?.length > 0 && (
-              <AtButton className='btn-confirm' onClick={handleSelectMember}>
-                选择会员
-              </AtButton>
-            )}
-            {searchMemberResult?.length == 0 && (
-              <AtButton className='btn-confirm' onClick={handleCreateMember}>
-                立即创建
-              </AtButton>
-            )}
-          </View>
-        </View>
-      </AtCurtain>
+      />
     </SpPage>
   )
 }

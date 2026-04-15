@@ -19,6 +19,14 @@ import CompGoods from './comps/comp-goods'
 import CompTabbar from './comps/comp-tabbar'
 import './list.scss'
 
+/** 无库存不可加购：门店与云仓均为 0 才禁用；未返回 platform_store 时仅按门店库存判断（与历史行为一致） */
+function isDianwuListGoodsDisabled(item) {
+  if (item.store != 0) return false
+  const ps = item.platformStore
+  if (ps == null || ps === '') return true
+  return ps == 0
+}
+
 const initialState = {
   keywords: '',
   typeList: [
@@ -98,6 +106,25 @@ function DianWuList() {
     showToast('加入收银台成功')
   }
 
+  const handlePlatformOrder = async ({ itemId }) => {
+    const res = await dianwuApi.cartFastBuyAdd({
+      item_id: itemId,
+      num: 1,
+      distributor_id,
+      is_accumulate: false
+    })
+    if(res?.distributor_id){
+      Taro.navigateTo({
+        url: `/subpages/dianwu/checkout?distributor_id=${res.distributor_id}&cart_type=fastbuy`,
+        events: {
+          onEventFetchOrder: () => {
+            getCashierList()
+          }
+        }
+      })
+    }
+  }
+
   const getCashierList = async () => {
     const { valid_cart } = await dianwuApi.getCartDataList({
       distributor_id
@@ -149,7 +176,7 @@ function DianWuList() {
         {list.map((items, idx) => {
           return items.map((item, sidx) => (
             <View
-              className={classNames('item-wrap', { 'item-disabled': item.store == 0 })}
+              className={classNames('item-wrap', { 'item-disabled': isDianwuListGoodsDisabled(item) })}
               key={`item-wrap__${idx}_${sidx}`}
             >
               {/* <View className='item-hd'>
@@ -170,6 +197,16 @@ function DianWuList() {
                     onClick={handleAddToCart.bind(this, item)}
                   >
                     加入收银
+                  </AtButton>
+                )}
+
+                {item.store == 0 && item.platformStore > 0 && (
+                  <AtButton
+                    className='btn-add-cart btn-platform-order'
+                    circle
+                    onClick={handlePlatformOrder.bind(this, item)}
+                  >
+                    立即下单
                   </AtButton>
                 )}
               </CompGoods>
