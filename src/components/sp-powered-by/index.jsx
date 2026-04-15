@@ -8,11 +8,10 @@ import './index.scss'
 function SpPoweredBy(props) {
   const {className } = props
   return (
-    <View></View>
-    // <View className={classNames('sp-powered-by', className)}>
-    //   <Text className='sp-powered-by__text'>Powered by</Text>
-    //   <Image src='/assets/imgs/powered-logo.png' className='sp-powered-by__logo' mode='contain' />
-    // </View>
+    <View className={classNames('sp-powered-by', className)}>
+      <Text className='sp-powered-by__text'>Powered by</Text>
+      <Image src='/assets/imgs/powered-logo.png' className='sp-powered-by__logo' mode='contain' />
+    </View>
   )
 }
 
