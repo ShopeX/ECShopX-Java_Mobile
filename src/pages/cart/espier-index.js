@@ -296,6 +296,8 @@ function CartIndex() {
           draft.footerHeight = footerHeight
         })
       }}
+      immersive={false}
+      title='购物车'
       renderFooter={tabbar == 1 && <SpTabbar height={state.footerHeight} />}
     >
       <ScrollView scrollY style='height: 100%;'>
