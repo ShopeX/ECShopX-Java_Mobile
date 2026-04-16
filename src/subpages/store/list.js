@@ -289,7 +289,7 @@ function NearlyShop(props) {
   }
 
   return (
-    <SpPage className='page-store-list' ref={pageRef}>
+    <SpPage className='page-store-list' ref={pageRef} title='店铺列表'>
       <View className='search-block'>
         <View className='search-bar'>
           {/* <View className='region-picker'>
