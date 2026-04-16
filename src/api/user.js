@@ -71,6 +71,11 @@ export function memberEmailRegister(data = {}) {
   return req.post('/member/email/register', data)
 }
 
+/** POST 邮件链接 token 完成邮箱激活（与邮件 query 中 token / company_id 一致） */
+export function memberEmailActivate(data = {}) {
+  return req.post('/member/email/activate', data)
+}
+
 /** POST 申请邮箱重置密码邮件（防枚举统一文案） */
 export function requestEmailPasswordReset(data = {}) {
   return req.post('/member/email/password/reset-request', data)
