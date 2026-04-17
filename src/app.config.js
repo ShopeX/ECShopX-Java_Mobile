@@ -1,8 +1,10 @@
 /**
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
+ *
+ * 不要在此文件使用 `@/i18n` 的 `$t`：会初始化 i18next，在编译 app 配置（Node 环境）时可能触发 `window is not defined`。
  */
-import { $t } from '@/i18n'
+import appConfigZhCN from './i18n/locales/zh-CN.json'
 
 const config = {
   pages: [
@@ -479,16 +481,16 @@ const config = {
   ],
   permission: {
     'scope.userLocation': {
-      desc: $t('95285d68.93f311')
+      desc: appConfigZhCN['95285d68.93f311']
     }
   },
   // usingComponents: {
   //   'mp-html': './components/sp-html/mp-weixin/index'
   // },
-  window: {
+  'window': {
     'backgroundTextStyle': 'light',
     'navigationBarBackgroundColor': '#fff',
-    'navigationBarTitleText': $t('95285d68.0ed510'),
+    'navigationBarTitleText': appConfigZhCN['95285d68.0ed510'],
     'navigationBarTextStyle': 'black'
   },
   plugins: {
