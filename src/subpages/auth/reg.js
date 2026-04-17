@@ -12,12 +12,7 @@ import { useSelector } from 'react-redux'
 import { AtForm, AtButton } from 'taro-ui'
 import api from '@/api'
 import { useImmer } from 'use-immer'
-<<<<<<< HEAD
-import { useLogin } from '@/hooks'
-import { useTranslation, $t, ti } from '@/i18n'
-=======
 import { useTranslation, $t, ti, i18n } from '@/i18n'
->>>>>>> feature/email_login_tyc
 import { CompPasswordInput } from './comps'
 import './reg.scss'
 

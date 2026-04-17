@@ -30,11 +30,7 @@ const initialValue = {
 }
 
 const PageBindPhone = () => {
-<<<<<<< HEAD
-  const { i18n } = useTranslation()
-=======
   useTranslation()
->>>>>>> feature/email_login_tyc
   const $instance = getCurrentInstance() || {}
   const {
     params: { phone, redi_url }

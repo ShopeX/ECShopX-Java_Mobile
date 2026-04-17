@@ -560,11 +560,7 @@ function MemberIndex(props) {
                 onClick={() => onLoginChange('/subpages/member/point-detail')}
               >
                 <Text className='stat-value'>{isLogin ? state.point || 0 : '···'}</Text>
-<<<<<<< HEAD
-                <Text className='stat-label'>{$t('3009e832.9f68a8')}</Text>
-=======
                 <Text className='stat-label'>{pointName}</Text>
->>>>>>> feature/email_login_tyc
               </View>
             </View>
           </SpLogin>
