@@ -52,8 +52,10 @@ function CompGoods(props) {
               {info.store && (
                 <View className='kc'>
                   <Text className='label'>库存：</Text>
-                  <Text>门店 {info.store} </Text>
-                  {info?.platformStore && <Text>| 云仓 {info.platformStore}</Text>}
+                  <Text>门店 {info.store}</Text>
+                  {info.platformStore != null && (
+                    <Text> | 云仓 {info.platformStore}</Text>
+                  )}
                 </View>
               )}
               {info.barcode && (

@@ -17,6 +17,7 @@ import { classNames, pickBy, showToast } from '@/utils'
 import { SG_ROUTER_PARAMS } from '@/consts'
 import CompGoods from './comps/comp-goods'
 import CompTabbar from './comps/comp-tabbar'
+import CompDianwuPlatformOrder from './comps/comp-dianwu-platform-order'
 import './list.scss'
 
 /** 无库存不可加购：门店与云仓均为 0 才禁用；未返回 platform_store 时仅按门店库存判断（与历史行为一致） */
@@ -35,12 +36,13 @@ const initialState = {
   ],
   list: [],
   current: 0,
-  cartList: []
+  cartList: [],
+  platformOrderItem: null
 }
 
 function DianWuList() {
   const [state, setState] = useImmer(initialState)
-  const { keywords, typeList, current, list, cartList } = state
+  const { keywords, typeList, current, list, cartList, platformOrderItem } = state
   const goodsRef = useRef()
   const $instance = getCurrentInstance() || {}
   const { distributor_id } = $instance?.router?.params
@@ -104,25 +106,6 @@ function DianWuList() {
     })
     getCashierList()
     showToast('加入收银台成功')
-  }
-
-  const handlePlatformOrder = async ({ itemId }) => {
-    const res = await dianwuApi.cartFastBuyAdd({
-      item_id: itemId,
-      num: 1,
-      distributor_id,
-      is_accumulate: false
-    })
-    if(res?.distributor_id){
-      Taro.navigateTo({
-        url: `/subpages/dianwu/checkout?distributor_id=${res.distributor_id}&cart_type=fastbuy`,
-        events: {
-          onEventFetchOrder: () => {
-            getCashierList()
-          }
-        }
-      })
-    }
   }
 
   const getCashierList = async () => {
@@ -204,7 +187,11 @@ function DianWuList() {
                   <AtButton
                     className='btn-add-cart btn-platform-order'
                     circle
-                    onClick={handlePlatformOrder.bind(this, item)}
+                    onClick={() => {
+                      setState((draft) => {
+                        draft.platformOrderItem = item
+                      })
+                    }}
                   >
                     立即下单
                   </AtButton>
@@ -214,6 +201,18 @@ function DianWuList() {
           ))
         })}
       </SpScrollView>
+
+      <CompDianwuPlatformOrder
+        open={!!platformOrderItem}
+        item={platformOrderItem}
+        distributor_id={distributor_id}
+        onClose={() => {
+          setState((draft) => {
+            draft.platformOrderItem = null
+          })
+        }}
+        onEventFetchOrder={getCashierList}
+      />
     </SpPage>
   )
 }

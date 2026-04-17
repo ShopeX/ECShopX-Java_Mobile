@@ -31,6 +31,7 @@ import CompGift from './comps/comp-gift'
 import CompGoodsPrice from './comps/comp-goods-price'
 import CompTabbar from './comps/comp-tabbar'
 import CompDianwuSelectMember from './comps/comp-dianwu-select-member'
+import CompDianwuPlatformOrder from './comps/comp-dianwu-platform-order'
 import './cashier.scss'
 
 const initialState = {
@@ -45,7 +46,8 @@ const initialState = {
   discountDetailLayout: false,
   searchResultLayout: false,
   addUserCurtain: false,
-  isCameraOpend: false
+  isCameraOpend: false,
+  platformOrderItem: null
 }
 
 function DianWuCashier() {
@@ -60,7 +62,8 @@ function DianWuCashier() {
     addUserCurtain,
     searchGoodsList,
     isCameraOpend,
-    distributor_id
+    distributor_id,
+    platformOrderItem
   } = state
   const pageRef = useRef()
   const getCashierListRef = useRef(null)
@@ -90,12 +93,12 @@ function DianWuCashier() {
   }, [member])
 
   useEffect(() => {
-    if (discountDetailLayout || searchResultLayout || addUserCurtain) {
+    if (discountDetailLayout || searchResultLayout || addUserCurtain || platformOrderItem) {
       pageRef.current.pageLock()
     } else {
       pageRef.current.pageUnLock()
     }
-  }, [discountDetailLayout, searchResultLayout, addUserCurtain])
+  }, [discountDetailLayout, searchResultLayout, addUserCurtain, platformOrderItem])
 
   useEffect(() => {
     if (keywords) {
@@ -108,7 +111,8 @@ function DianWuCashier() {
     const { list: goodsList } = await dianwuApi.goodsItems({
       page: 1,
       pageSize: 100,
-      keywords
+      keywords,
+      distributor_id
     })
     Taro.hideLoading()
 
@@ -620,11 +624,37 @@ function DianWuCashier() {
                     加入收银
                   </AtButton>
                 )}
+
+                {item.store == 0 && item.platformStore > 0 && (
+                  <AtButton
+                    className='btn-add-cart btn-platform-order'
+                    circle
+                    onClick={() => {
+                      setState((draft) => {
+                        draft.platformOrderItem = item
+                      })
+                    }}
+                  >
+                    立即下单
+                  </AtButton>
+                )}
               </CompGoods>
             </View>
           ))}
         </ScrollView>
       </SpFloatLayout>
+
+      <CompDianwuPlatformOrder
+        open={!!platformOrderItem}
+        item={platformOrderItem}
+        distributor_id={distributor_id}
+        onClose={() => {
+          setState((draft) => {
+            draft.platformOrderItem = null
+          })
+        }}
+        onEventFetchOrder={getCashierList}
+      />
 
       <CompDianwuSelectMember
         open={addUserCurtain}
