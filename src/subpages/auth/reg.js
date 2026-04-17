@@ -12,11 +12,46 @@ import { useSelector } from 'react-redux'
 import { AtForm, AtButton } from 'taro-ui'
 import api from '@/api'
 import { useImmer } from 'use-immer'
+<<<<<<< HEAD
 import { useLogin } from '@/hooks'
 import { useTranslation, $t, ti } from '@/i18n'
+=======
+import { useTranslation, $t, ti, i18n } from '@/i18n'
+>>>>>>> feature/email_login_tyc
 import { CompPasswordInput } from './comps'
-import { setTokenAndRedirect } from './util'
 import './reg.scss'
+
+/** query 里邮箱保留 `@`，避免链接或路由层把 `%40` 当字面量带进输入框；其余字符仍按 URI 编码 */
+function encodeEmailForLoginQuery(email) {
+  return encodeURIComponent(String(email).trim()).replace(/%40/gi, '@')
+}
+
+/** 成功接口体里的 message / msg；无则回退本地默认「注册成功」 */
+function pickRegisterSuccessToast(res, fallback) {
+  if (!res || typeof res !== 'object') return fallback
+  const m = res.message ?? res.msg
+  if (m != null && String(m).trim() !== '') return String(m).trim()
+  return fallback
+}
+
+/** 注册成功后进登录页，并带上账号类型与预填账号（不写入注册返回的 token，由用户在登录页登录） */
+function buildPostRegisterLoginUrl(accountMode, fields, routerParams) {
+  const qs = [`account_mode=${encodeURIComponent(accountMode)}`]
+  if (accountMode === 'mobile' && fields.mobile) {
+    qs.push(`mobile=${encodeURIComponent(String(fields.mobile).trim())}`)
+  }
+  if (accountMode === 'email' && fields.email) {
+    qs.push(`email=${encodeEmailForLoginQuery(fields.email)}`)
+  }
+  const { redi_url, redirect } = routerParams || {}
+  if (redi_url) {
+    qs.push(`redi_url=${encodeURIComponent(redi_url)}`)
+  }
+  if (redirect) {
+    qs.push(`redirect=${encodeURIComponent(redirect)}`)
+  }
+  return `/subpages/auth/login?${qs.join('&')}`
+}
 
 const initialValue = {
   regMode: 'mobile',
@@ -48,6 +83,7 @@ function pickDefaultMemberGradeIdFromCard(data) {
 
 const Reg = () => {
   const regModeEffectSkip = useRef(true)
+  useTranslation()
   const [state, setState] = useImmer(initialValue)
 
   const {
@@ -66,8 +102,6 @@ const Reg = () => {
   } = state
 
   const { colorPrimary } = useSelector((state) => state.sys)
-
-  const { getUserInfo } = useLogin()
 
   const handleInputChange = (name) => (val) => {
     setState((state) => {
@@ -111,11 +145,11 @@ const Reg = () => {
       return
     }
     if (!validate.isRequired(yzm)) {
-      showToast('请输入图形验证码')
+      showToast($t('4e9d53b5.e70066'))
       return
     }
     if (!imgInfo?.imageToken) {
-      showToast('请稍候再试')
+      showToast($t('4e9d53b5.c901aa'))
       getImageVcode()
       return
     }
@@ -126,7 +160,7 @@ const Reg = () => {
         yzm: yzm,
         token: imgInfo.imageToken
       })
-      showToast('验证码已发送')
+      showToast($t('4e9d53b5.4d7fb5'))
       done()
     } catch (e) {
       getImageVcode()
@@ -148,22 +182,22 @@ const Reg = () => {
 
     if (regMode === 'mobile') {
       if (!validate.isMobileNum(mobile)) {
-        showToast('请输入正确的手机号')
+        showToast($t('4e9d53b5.a32ab5'))
         return
       }
       if (!validate.isRequired(vcode)) {
-        showToast('请输入验证码')
+        showToast($t('4e9d53b5.d0c06a'))
         return
       }
       if (!validate.isRequired(password)) {
-        showToast('请输入密码')
+        showToast($t('4e9d53b5.e39ffe'))
         return
       }
       if (!validate.isPassword(password)) {
-        return showToast('密码格式不正确')
+        return showToast($t('4e9d53b5.eac67a'))
       }
       try {
-        const { token } = await api.user.reg({
+        const regRes = await api.user.reg({
           auth_type: 'local',
           check_type: CODE_SYMBOL,
           mobile,
@@ -172,14 +206,11 @@ const Reg = () => {
           sex: 0,
           user_type: 'local'
         })
-        showToast('注册成功', async () => {
-          await setTokenAndRedirect(
-            token,
-            async () => {
-              await getUserInfo()
-            },
-            { forceMemberCenter: true }
-          )
+        const routerParams = getCurrentInstance()?.router?.params || {}
+        showToast(pickRegisterSuccessToast(regRes, $t('4e9d53b5.6506a9')), () => {
+          Taro.redirectTo({
+            url: buildPostRegisterLoginUrl('mobile', { mobile }, routerParams)
+          })
         })
       } catch (e) {
         console.log(e)
@@ -188,20 +219,20 @@ const Reg = () => {
     }
 
     if (!validate.isEmail(email.trim())) {
-      showToast('请输入正确的电子邮箱')
+      showToast($t('4e9d53b5.c902bb'))
       return
     }
     if (!validate.isRequired(yzm)) {
-      showToast('请输入图形验证码')
+      showToast($t('4e9d53b5.e70066'))
       return
     }
     if (!imgInfo?.imageToken) {
-      showToast('请稍候再试')
+      showToast($t('4e9d53b5.c901aa'))
       getImageVcode()
       return
     }
     if (!validate.isEmailChannelPassword(password)) {
-      return showToast('密码需8-20位且同时包含字母与数字')
+      return showToast($t('4e9d53b5.c903cc'))
     }
     const passMsg = validate.validatePass2(password, passwordConfirm)
     if (passMsg) {
@@ -220,15 +251,13 @@ const Reg = () => {
       if (defaultMemberGradeId != null && defaultMemberGradeId !== '') {
         emailPayload.grade_id = defaultMemberGradeId
       }
-      const { token } = await api.user.memberEmailRegister(emailPayload)
-      showToast('注册成功', async () => {
-        await setTokenAndRedirect(
-          token,
-          async () => {
-            await getUserInfo()
-          },
-          { forceMemberCenter: true }
-        )
+      const emailRegRes = await api.user.memberEmailRegister(emailPayload)
+      const routerParams = getCurrentInstance()?.router?.params || {}
+      const emailTrim = email.trim()
+      showToast(pickRegisterSuccessToast(emailRegRes, $t('4e9d53b5.6506a9')), () => {
+        Taro.redirectTo({
+          url: buildPostRegisterLoginUrl('email', { email: emailTrim }, routerParams)
+        })
       })
     } catch (e) {
       console.log(e)
@@ -288,6 +317,13 @@ const Reg = () => {
   }
 
   useEffect(() => {
+    Taro.setNavigationBarTitle({ title: $t('461de497.fe0e8b') })
+    const onLang = () => Taro.setNavigationBarTitle({ title: $t('461de497.fe0e8b') })
+    i18n.on('languageChanged', onLang)
+    return () => i18n.off('languageChanged', onLang)
+  }, [])
+
+  useEffect(() => {
     getImageVcode()
     fetchPrivacyData()
     fetchDefaultMemberGradeId()
@@ -327,13 +363,13 @@ const Reg = () => {
             className={classNames('reg-type-tab', { 'reg-type-tab--active': regMode === 'mobile' })}
             onClick={() => setRegMode('mobile')}
           >
-            手机号注册
+            {$t('4e9d53b5.c904dd')}
           </View>
           <View
             className={classNames('reg-type-tab', { 'reg-type-tab--active': regMode === 'email' })}
             onClick={() => setRegMode('email')}
           >
-            邮箱注册
+            {$t('4e9d53b5.c905ee')}
           </View>
         </View>
         <AtForm className='form'>
@@ -346,7 +382,7 @@ const Reg = () => {
                   maxLength={11}
                   type='tel'
                   value={state.mobile}
-                  placeholder='请输入您的手机号码'
+                  placeholder={$t('4e9d53b5.787a47')}
                   onChange={handleInputChange('mobile')}
                 />
               </View>
@@ -357,7 +393,7 @@ const Reg = () => {
                     clear
                     name='yzm'
                     value={state.yzm}
-                    placeholder='请输入图形验证码'
+                    placeholder={$t('4e9d53b5.e70066')}
                     onChange={handleInputChange('yzm')}
                   />
                 </View>
@@ -374,19 +410,24 @@ const Reg = () => {
                     clear
                     name='vcode'
                     value={state.vcode}
-                    placeholder='请输入验证码'
+                    placeholder={$t('4e9d53b5.d0c06a')}
                     onChange={handleInputChange('vcode')}
                   />
                 </View>
                 <View className='btn-field'>
-                  <SpTimer key='reg-mobile-timer' onStart={handleSmsTimerStart} />
+                  <SpTimer
+                    key='reg-mobile-timer'
+                    defaultMsg={$t('0eb8dfea.c5c358')}
+                    msg={$t('0eb8dfea.89b213')}
+                    onStart={handleSmsTimerStart}
+                  />
                 </View>
               </View>
 
               <View className='form-field'>
                 <View className='input-field'>
                   <CompPasswordInput
-                    placeholder='请输入登录密码'
+                    placeholder={$t('4e9d53b5.e39ffe')}
                     onChange={handleInputChange('password')}
                     value={state.password}
                   />
@@ -401,7 +442,7 @@ const Reg = () => {
                   name='email'
                   type='text'
                   value={state.email}
-                  placeholder='请输入电子邮箱'
+                  placeholder={$t('3ca883d0.c90811')}
                   onChange={handleInputChange('email')}
                 />
               </View>
@@ -412,7 +453,7 @@ const Reg = () => {
                     clear
                     name='email-yzm'
                     value={state.yzm}
-                    placeholder='请输入图形验证码'
+                    placeholder={$t('4e9d53b5.e70066')}
                     onChange={handleInputChange('yzm')}
                   />
                 </View>
@@ -426,7 +467,7 @@ const Reg = () => {
               <View className='form-field'>
                 <View className='input-field'>
                   <CompPasswordInput
-                    placeholder='密码需8-20位且同时包含字母与数字'
+                    placeholder={$t('4e9d53b5.c903cc')}
                     onChange={handleInputChange('password')}
                     value={state.password}
                   />
@@ -436,7 +477,7 @@ const Reg = () => {
               <View className='form-field'>
                 <View className='input-field'>
                   <CompPasswordInput
-                    placeholder='请再次确认登录密码'
+                    placeholder={$t('4e9d53b5.c90700')}
                     onChange={handleInputChange('passwordConfirm')}
                     value={state.passwordConfirm}
                   />
@@ -448,7 +489,7 @@ const Reg = () => {
           {regMode === 'email' && (
             <View className='btn-text-group btn-text-group--end'>
               <Text className='btn-text' onClick={handleNavigateForgotEmail}>
-                忘记密码？
+                {$t('3ca883d0.804890')}
               </Text>
             </View>
           )}

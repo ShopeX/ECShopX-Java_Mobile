@@ -12,6 +12,7 @@ import qs from 'qs'
 import api from '@/api'
 import doc from '@/doc'
 import { navigateTo, pickBy, classNames, throttle } from '@/utils'
+import { useTranslation, $t, ti } from '@/i18n'
 import { useLogin, useLocation, useDebounce } from '@/hooks'
 import { fetchCartList, deleteCartItem, updateCartItemNum, updateCount } from '@/store/slices/cart'
 import { updatePurchaseShareInfo, updateInviteCode } from '@/store/slices/purchase'
@@ -45,7 +46,11 @@ const initialState = {
 }
 
 function CartIndex() {
+<<<<<<< HEAD
   const { i18n } = useTranslation()
+=======
+  useTranslation()
+>>>>>>> feature/email_login_tyc
   const { updateAddress } = useLocation()
 
   const { shopInfo = {} } = useSelector((state) => state.shop)
@@ -231,7 +236,10 @@ function CartIndex() {
       title: $t('61e2d21a.02d981'),
       content: $t('61e2d21a.a4936e'),
       showCancel: true,
+<<<<<<< HEAD
       cancel: $t('61e2d21a.625fb2'),
+=======
+>>>>>>> feature/email_login_tyc
       cancelText: $t('61e2d21a.625fb2'),
       confirmText: $t('61e2d21a.e83a25'),
       confirmColor: colorPrimary

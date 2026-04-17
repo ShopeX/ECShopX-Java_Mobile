@@ -9,9 +9,11 @@ import { SpPage, SpInput as AtInput } from '@/components'
 import { classNames, validate, showToast } from '@/utils'
 import { AtForm, AtButton } from 'taro-ui'
 import api from '@/api'
+import { useTranslation, $t } from '@/i18n'
 import './forgotpwd.scss'
 
 const PageForgotPwdEmail = () => {
+  useTranslation()
   const $instance = getCurrentInstance() || {}
   const { email: emailParam, redi_url: rediUrlParam } = $instance?.router?.params || {}
 
@@ -27,7 +29,7 @@ const PageForgotPwdEmail = () => {
   const handleSend = async () => {
     const trimmed = email.trim()
     if (!validate.isEmail(trimmed)) {
-      showToast('请输入正确的电子邮箱')
+      showToast($t('4e9d53b5.c902bb'))
       return
     }
     if (submitting) return
@@ -43,7 +45,7 @@ const PageForgotPwdEmail = () => {
         email: trimmed,
         ...(reset_base_url ? { reset_base_url } : {})
       })
-      showToast('若该邮箱已注册，您将收到重置密码邮件')
+      showToast($t('0dbd2dc3.e3b0c2'))
     } catch (e) {
       console.log(e)
     } finally {
@@ -60,8 +62,8 @@ const PageForgotPwdEmail = () => {
       })}
     >
       <View className='auth-hd'>
-        <View className='title'>邮箱找回密码</View>
-        <View className='desc'>将向您的邮箱发送重置密码链接</View>
+        <View className='title'>{$t('0dbd2dc3.e1b0a0')}</View>
+        <View className='desc'>{$t('0dbd2dc3.e2b0b1')}</View>
       </View>
       <View className='auth-bd'>
         <AtForm className='form'>
@@ -71,7 +73,7 @@ const PageForgotPwdEmail = () => {
               name='email'
               type='text'
               value={email}
-              placeholder='请输入电子邮箱'
+              placeholder={$t('3ca883d0.c90811')}
               onChange={(val) => setEmail(val)}
             />
           </View>
@@ -85,7 +87,7 @@ const PageForgotPwdEmail = () => {
               className='login-button'
               onClick={handleSend}
             >
-              发送重置密码邮件
+              {$t('0dbd2dc3.e4b0d3')}
             </AtButton>
           </View>
 
@@ -100,7 +102,7 @@ const PageForgotPwdEmail = () => {
                   })
                 }
               >
-                返回登录
+                {$t('0dbd2dc3.e5b0e4')}
               </Text>
             </View>
           ) : null}

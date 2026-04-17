@@ -70,7 +70,11 @@ const CompInputPhone = (props) => {
         name='mobile'
         maxLength={11}
         type='tel'
+<<<<<<< HEAD
         placeholder={placeholder || $t('70e510e9.787a47')}
+=======
+        placeholder={placeholder ?? '请输入您的手机号码'}
+>>>>>>> feature/email_login_tyc
         onChange={handleChange}
         value={value}
         {...restProps}

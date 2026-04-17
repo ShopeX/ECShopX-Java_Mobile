@@ -460,6 +460,7 @@ const config = {
         'auth-loading', //授权加载页
         'forgotpwd', //找回密码页面
         'forgotpwd-email', //邮箱找回密码（发送重置邮件）
+        'email-activate', //邮箱注册激活落地页
         'edit-phone' //修改密码页面
       ]
     },

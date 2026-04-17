@@ -6,7 +6,7 @@ import React, { Component } from 'react'
 import Taro, { getCurrentInstance } from '@tarojs/taro'
 import { View, Text, Image } from '@tarojs/components'
 import { AtForm, AtButton } from 'taro-ui'
-import { SpPage, SpInput as AtInput } from '@/components'
+import { SpPage, SpInput as AtInput, SpFloatLayout } from '@/components'
 import { SpTimer } from '@/subpages/components'
 import { updateUserInfo } from '@/store/slices/user'
 import { connect } from 'react-redux'
@@ -17,6 +17,17 @@ import { $t, i18n } from '@/i18n'
 import { CompOtherLogin, CompPasswordInput, CompInputPhone } from './comps'
 import { navigationToReg, setToken, setTokenAndRedirect, addListener } from './util'
 import './login.scss'
+
+/** 注册页 redirect 带来的 email query（可能与 reg 侧 `encodeEmailForLoginQuery` 成对使用） */
+function decodeLoginEmailQueryParam(raw) {
+  const s = String(raw ?? '').trim()
+  if (!s) return ''
+  try {
+    return decodeURIComponent(s.replace(/\+/g, ' '))
+  } catch (e) {
+    return s
+  }
+}
 
 @connect(
   ({ colors }) => ({
@@ -36,16 +47,75 @@ export default class Login extends Component {
       loginType: 1, // 1=密码; 2=验证码
       accountMode: 'mobile', // mobile | email
       logoShow: true,
-      is_new: false
+      is_new: false,
+      showEmailNotActivatedHint: false,
+      showResendActivateModal: false,
+      imgInfoActivate: null,
+      resendActivateYzm: ''
     }
     //定时器
     this.timer = null
+    /** 是否已从路由应用注册成功带回的 account_mode / email / mobile（避免重复覆盖） */
+    this._loginRouterPrefilled = false
+  }
+
+  /** 注册成功 redirect 登录页时携带 account_mode、email、mobile；H5 部分环境下 params 在 didShow 才就绪 */
+  prefillLoginFromRouter = () => {
+    if (this._loginRouterPrefilled) return
+    const params =
+      getCurrentInstance()?.router?.params || this.$instance?.router?.params || {}
+    const account_mode = params.account_mode
+    const emailParam = params.email
+    const mobileParam = params.mobile
+
+    let nextMode = null
+    if (account_mode === 'email' || account_mode === 'mobile') {
+      nextMode = account_mode
+    } else if (emailParam != null && String(emailParam).trim() !== '') {
+      nextMode = 'email'
+    } else if (mobileParam != null && String(mobileParam).trim() !== '') {
+      nextMode = 'mobile'
+    }
+
+    const hasEmail = emailParam != null && String(emailParam).trim() !== ''
+    const hasMobile = mobileParam != null && String(mobileParam).trim() !== ''
+
+    if (!nextMode && !hasEmail && !hasMobile) return
+
+    this._loginRouterPrefilled = true
+
+    const updates = {}
+    if (nextMode) {
+      updates.accountMode = nextMode
+    }
+
+    const info = { ...this.state.info }
+    if (hasEmail) {
+      info.email = decodeLoginEmailQueryParam(emailParam)
+    }
+    if (hasMobile) {
+      info.mobile = String(mobileParam).trim()
+    }
+    updates.info = info
+
+    this.setState(updates, () => {
+      this.getImageVcode()
+    })
   }
 
   componentDidMount() {
     this._onLanguageChanged = () => this.forceUpdate()
     i18n.on('languageChanged', this._onLanguageChanged)
-    this.getImageVcode()
+    this.prefillLoginFromRouter()
+    if (!this._loginRouterPrefilled) {
+      this.getImageVcode()
+    }
+  }
+
+  componentWillUnmount() {
+    if (this._onLanguageChanged) {
+      i18n.off('languageChanged', this._onLanguageChanged)
+    }
   }
 
   componentWillUnmount() {
@@ -61,6 +131,8 @@ export default class Login extends Component {
       const url = redirect ? decodeURIComponent(redirect) : '/subpages/member/index'
       window.location.href = url
     }
+    // 部分环境下 query 仅在 didShow 就绪，用于补一次「注册成功带回邮箱」的预填
+    this.prefillLoginFromRouter()
   }
 
   navigateTo = navigateTo
@@ -135,9 +207,126 @@ export default class Login extends Component {
     if (name == 'mobile') {
       info.is_new = error
     }
+    const patch = { info }
+    if (name === 'email') {
+      patch.showEmailNotActivatedHint = false
+    }
+    this.setState(patch)
+  }
+
+  /** 从 req 拒绝结果里取文案 / code（与 req.js reqError 及后端多种包体兼容） */
+  pickApiErrorMeta(err) {
+    const d = err?.res?.data
+    const inner = d && d.data
+    const message =
+      (err && err.message && String(err.message).trim()) ||
+      (inner && (inner.message || inner.msg)) ||
+      (d && (d.message || d.msg)) ||
+      ''
+    const code =
+      (inner && (inner.code || inner.error_code)) || (d && (d.code || d.error_code)) || ''
+    return { message: String(message || '').trim(), code: String(code || '').trim() }
+  }
+
+  /** 未激活邮箱：文案或错误码（含「邮箱未验证」等） */
+  isEmailNotActivatedText(text) {
+    const t = String(text || '').trim()
+    if (!t) return false
+    if (/email_not_verified|email_not_activated|email_must_be_verified/i.test(t)) return true
+    if (
+      /邮箱未验证|邮箱未激活|电子邮箱未验证|账号未验证|未验证邮箱|请先验证邮箱|尚未激活|尚未验证/i.test(
+        t
+      )
+    )
+      return true
+    if (/未激活|未验证/.test(t) && /邮|邮箱|email|激活|验证/i.test(t)) return true
+    if (
+      /not\s*verified|not\s*activated|must\s*verify|verify\s*(your\s*)?email|complete\s*activation/i.test(
+        t
+      )
+    )
+      return true
+    return false
+  }
+
+  isEmailNotActivatedError(err) {
+    const { message, code } = this.pickApiErrorMeta(err)
+    if (this.isEmailNotActivatedText(code)) return true
+    if (this.isEmailNotActivatedText(message)) return true
+    return false
+  }
+
+  getResendActivateImageVcode = async () => {
+    const img_res = await api.user.regImg({ type: 'sign' })
+    this.setState({ imgInfoActivate: img_res })
+  }
+
+  handleOpenResendActivateModal = async () => {
+    try {
+      const imgInfoActivate = await api.user.regImg({ type: 'sign' })
+      this.setState({
+        showResendActivateModal: true,
+        imgInfoActivate,
+        resendActivateYzm: ''
+      })
+    } catch (e) {
+      showToast(e.message || $t('3ca883d0.8eb88e'))
+    }
+  }
+
+  handleCloseResendActivateModal = () => {
     this.setState({
-      info
+      showResendActivateModal: false,
+      imgInfoActivate: null,
+      resendActivateYzm: ''
     })
+  }
+
+  handleResendActivateYzmChange = (val) => {
+    this.setState({ resendActivateYzm: val })
+  }
+
+  handleConfirmResendActivate = async () => {
+    const { imgInfoActivate, resendActivateYzm } = this.state
+    const emailTrim = (this.state.info.email || '').trim()
+    if (!validate.isEmail(emailTrim)) {
+      return showToast($t('3ca883d0.04154b'))
+    }
+    if (!validate.isRequired(resendActivateYzm)) {
+      return showToast($t('3ca883d0.e70066'))
+    }
+    if (!imgInfoActivate?.imageToken) {
+      showToast($t('3ca883d0.8eb88e'))
+      this.getResendActivateImageVcode()
+      return
+    }
+    const activationBase =
+      typeof window !== 'undefined' && window.location && window.location.origin
+        ? window.location.origin.replace(/\/$/, '')
+        : ''
+    const resendPayload = {
+      email: emailTrim,
+      purpose: 'activate',
+      token: imgInfoActivate.imageToken,
+      yzm: (resendActivateYzm || '').trim(),
+      showError: false
+    }
+    if (activationBase) {
+      resendPayload.activation_base_url = activationBase
+    }
+    try {
+      await api.user.memberEmailCode(resendPayload)
+      showToast($t('3ca883d0.actResentOk'))
+      this.handleCloseResendActivateModal()
+    } catch (e) {
+      showToast(e.message || $t('3ca883d0.actResentFail'))
+      try {
+        const img = await api.user.regImg({ type: 'sign' })
+        this.setState({ imgInfoActivate: img, resendActivateYzm: '' })
+      } catch (err) {
+        showToast(err.message || $t('3ca883d0.8eb88e'))
+      }
+    }
   }
 
   handleNavLeftItemClick = () => {
@@ -169,6 +358,7 @@ export default class Login extends Component {
     this.setState(
       (prev) => ({
         accountMode,
+        showEmailNotActivatedHint: false,
         info: {
           ...prev.info,
           yzm: '',
@@ -281,13 +471,17 @@ export default class Login extends Component {
       params['latest_monitor_id'] = latest_monitor_id
     }
 
+    const loginPayload =
+      accountMode === 'email' ? { ...params, showError: false } : params
+
     try {
-      const { token, error_message } = await api.wx.newloginh5(params)
+      const { token, error_message } = await api.wx.newloginh5(loginPayload)
 
       const { is_new } = tokenParseH5(token)
 
       if (is_new === 1) {
         if (accountMode === 'email') {
+          this.setState({ showEmailNotActivatedHint: false })
           if (loginType === 1) {
             return showToast($t('3ca883d0.54414f'))
           }
@@ -312,8 +506,14 @@ export default class Login extends Component {
         return
       } else {
         if (error_message) {
+          if (accountMode === 'email') {
+            this.setState({
+              showEmailNotActivatedHint: this.isEmailNotActivatedText(error_message)
+            })
+          }
           return showToast(error_message)
         }
+        this.setState({ showEmailNotActivatedHint: false })
         const self = this
         setTokenAndRedirect(token, async () => {
           await self.handleUpdateUserInfo()
@@ -321,6 +521,16 @@ export default class Login extends Component {
       }
     } catch (e) {
       console.log(e)
+      if (accountMode === 'email') {
+        const { message: apiMsg } = this.pickApiErrorMeta(e)
+        const msg = apiMsg || (e && e.message) || ''
+        this.setState({
+          showEmailNotActivatedHint: this.isEmailNotActivatedError(e)
+        })
+        if (msg) {
+          showToast(msg)
+        }
+      }
     }
   }
 
@@ -436,7 +646,17 @@ export default class Login extends Component {
   }
 
   render() {
-    const { info, loginType, imgInfo, logoShow, accountMode } = this.state
+    const {
+      info,
+      loginType,
+      imgInfo,
+      logoShow,
+      accountMode,
+      showEmailNotActivatedHint,
+      showResendActivateModal,
+      imgInfoActivate,
+      resendActivateYzm
+    } = this.state
 
     const passwordLogin = loginType == 1
 
@@ -496,7 +716,7 @@ export default class Login extends Component {
                 })}
                 onClick={() => this.handleAccountModeChange('mobile')}
               >
-                {$t('3ca883d0.cbbfff')}
+                {$t('3ca883d0.c906ff')}
               </View>
               <View
                 className={classNames('login-type-tab', {
@@ -504,7 +724,7 @@ export default class Login extends Component {
                 })}
                 onClick={() => this.handleAccountModeChange('email')}
               >
-                {$t('3ca883d0.fc2898')}
+                {$t('3ca883d0.c90700')}
               </View>
             </View>
             <AtForm className='form'>
@@ -662,9 +882,18 @@ export default class Login extends Component {
                     <Text className='btn-text' onClick={this.handleToggleLogin.bind(this)}>
                       {passwordLogin ? $t('3ca883d0.4bc8be') : $t('3ca883d0.0d9631')}
                     </Text>
-                    {passwordLogin && (
-                      <Text className='btn-text forgot-password' onClick={this.handleForgotPsd}>
-                        {$t('3ca883d0.804890')}
+                    {(passwordLogin || showEmailNotActivatedHint) && (
+                      <Text
+                        className='btn-text forgot-password'
+                        onClick={
+                          showEmailNotActivatedHint
+                            ? this.handleOpenResendActivateModal
+                            : this.handleForgotPsd
+                        }
+                      >
+                        {showEmailNotActivatedHint
+                          ? $t('3ca883d0.actHint')
+                          : $t('3ca883d0.804890')}
                       </Text>
                     )}
                   </View>
@@ -695,6 +924,49 @@ export default class Login extends Component {
             <CompOtherLogin />
           </View>
         </View>
+
+        <SpFloatLayout
+          className='login-resend-activate-modal'
+          title={$t('3ca883d0.actModalTitle')}
+          open={showResendActivateModal}
+          onClose={this.handleCloseResendActivateModal}
+          renderFooter={
+            <View className='resend-activate-footer'>
+              <AtButton circle onClick={this.handleCloseResendActivateModal}>
+                {$t('3ca883d0.actCancel')}
+              </AtButton>
+              <AtButton circle type='primary' onClick={this.handleConfirmResendActivate}>
+                {$t('3ca883d0.actConfirm')}
+              </AtButton>
+            </View>
+          }
+        >
+          <View className='resend-activate-body'>
+            <Text className='resend-activate-body__text'>{$t('3ca883d0.actModalBody')}</Text>
+            <View className='form-field resend-activate-captcha'>
+              <View className='input-field'>
+                <AtInput
+                  clear
+                  name='resend-activate-yzm'
+                  value={resendActivateYzm}
+                  placeholder={$t('3ca883d0.e70066')}
+                  onChange={this.handleResendActivateYzmChange}
+                  placeholderClass='input-placeholder'
+                />
+              </View>
+              <View className='btn-field'>
+                {imgInfoActivate && (
+                  <Image
+                    className='image-vcode'
+                    mode='aspectFit'
+                    src={imgInfoActivate.imageData}
+                    onClick={this.getResendActivateImageVcode}
+                  />
+                )}
+              </View>
+            </View>
+          </View>
+        </SpFloatLayout>
       </SpPage>
     )
   }

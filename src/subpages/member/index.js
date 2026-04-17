@@ -107,6 +107,7 @@ const initialState = {
 }
 
 function MemberIndex(props) {
+  useTranslation()
   // console.log('===>getCurrentPages==>', getCurrentPages(), getCurrentInstance())
   const { i18n } = useTranslation()
   const pageRef = useRef(null)
@@ -559,7 +560,11 @@ function MemberIndex(props) {
                 onClick={() => onLoginChange('/subpages/member/point-detail')}
               >
                 <Text className='stat-value'>{isLogin ? state.point || 0 : '···'}</Text>
+<<<<<<< HEAD
                 <Text className='stat-label'>{$t('3009e832.9f68a8')}</Text>
+=======
+                <Text className='stat-label'>{pointName}</Text>
+>>>>>>> feature/email_login_tyc
               </View>
             </View>
           </SpLogin>

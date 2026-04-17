@@ -202,3 +202,75 @@ $border-color: #e2e4ea;
     text-align: center;
   }
 }
+
+.login-resend-activate-modal {
+  /* 避免 ScrollView 内横向溢出把图形码顶出屏外 */
+  .sp-float-layout-bd {
+    box-sizing: border-box;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  .resend-activate-body {
+    padding: 8px 0 24px;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+
+    &__text {
+      font-size: 28px;
+      color: #111a34;
+      line-height: 1.5;
+      margin-bottom: 24px;
+      display: block;
+      word-break: break-word;
+    }
+  }
+
+  .resend-activate-captcha {
+    display: flex;
+    align-items: center;
+    margin-top: 8px;
+    border-bottom: 1px solid $border-color;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+
+    .input-field {
+      flex: 1 1 0;
+      min-width: 0;
+    }
+
+    .btn-field {
+      flex: 0 1 auto;
+      width: min(180px, 36vw);
+      max-width: 42%;
+      min-width: 0;
+      margin-left: 12px;
+      text-align: center;
+
+      .image-vcode {
+        display: block;
+        width: 100%;
+        max-width: 100%;
+        height: 60px;
+        object-fit: contain;
+      }
+    }
+
+    .at-input {
+      min-width: 0;
+    }
+  }
+
+  .resend-activate-footer {
+    display: flex;
+    gap: 24px;
+    width: 100%;
+    box-sizing: border-box;
+
+    .at-button {
+      flex: 1;
+    }
+  }
+}

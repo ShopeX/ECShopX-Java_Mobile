@@ -30,7 +30,11 @@ const initialValue = {
 }
 
 const PageBindPhone = () => {
+<<<<<<< HEAD
   const { i18n } = useTranslation()
+=======
+  useTranslation()
+>>>>>>> feature/email_login_tyc
   const $instance = getCurrentInstance() || {}
   const {
     params: { phone, redi_url }
@@ -207,7 +211,11 @@ const PageBindPhone = () => {
               />
             </View>
             <View className='btn-field'>
-              <SpTimer onStart={handleTimerStart} />
+              <SpTimer
+                defaultMsg={$t('0eb8dfea.c5c358')}
+                msg={$t('0eb8dfea.89b213')}
+                onStart={handleTimerStart}
+              />
             </View>
           </View>
 
