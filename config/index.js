@@ -20,7 +20,9 @@ const CONST_ENVS = {
     process.env.TARO_ENV == 'h5' ? '/subpage/pages/auth/login' : '/subpages/member/index',
   APP_BUILD_TARGET: BUILD_TARGET,
   APP_LIVE: process.env.APP_LIVE,
-  ...APP_ENVS
+  ...APP_ENVS,
+  // 显式列入，保证 defineConstants 注入；否则客户端会保留 process.env.* 引用导致「process is not defined」
+  APP_DEFAULT_MEMBER_GRADE_ID: process.env.APP_DEFAULT_MEMBER_GRADE_ID || ''
 }
 
 Object.keys(CONST_ENVS).forEach((key) => {
