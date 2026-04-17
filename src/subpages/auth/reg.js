@@ -21,6 +21,14 @@ function encodeEmailForLoginQuery(email) {
   return encodeURIComponent(String(email).trim()).replace(/%40/gi, '@')
 }
 
+/** 成功接口体里的 message / msg；无则回退本地默认「注册成功」 */
+function pickRegisterSuccessToast(res, fallback) {
+  if (!res || typeof res !== 'object') return fallback
+  const m = res.message ?? res.msg
+  if (m != null && String(m).trim() !== '') return String(m).trim()
+  return fallback
+}
+
 /** 注册成功后进登录页，并带上账号类型与预填账号（不写入注册返回的 token，由用户在登录页登录） */
 function buildPostRegisterLoginUrl(accountMode, fields, routerParams) {
   const qs = [`account_mode=${encodeURIComponent(accountMode)}`]
@@ -184,7 +192,7 @@ const Reg = () => {
         return showToast($t('4e9d53b5.eac67a'))
       }
       try {
-        await api.user.reg({
+        const regRes = await api.user.reg({
           auth_type: 'local',
           check_type: CODE_SYMBOL,
           mobile,
@@ -194,7 +202,7 @@ const Reg = () => {
           user_type: 'local'
         })
         const routerParams = getCurrentInstance()?.router?.params || {}
-        showToast($t('4e9d53b5.6506a9'), () => {
+        showToast(pickRegisterSuccessToast(regRes, $t('4e9d53b5.6506a9')), () => {
           Taro.redirectTo({
             url: buildPostRegisterLoginUrl('mobile', { mobile }, routerParams)
           })
@@ -238,10 +246,10 @@ const Reg = () => {
       if (defaultMemberGradeId != null && defaultMemberGradeId !== '') {
         emailPayload.grade_id = defaultMemberGradeId
       }
-      await api.user.memberEmailRegister(emailPayload)
+      const emailRegRes = await api.user.memberEmailRegister(emailPayload)
       const routerParams = getCurrentInstance()?.router?.params || {}
       const emailTrim = email.trim()
-      showToast($t('4e9d53b5.6506a9'), () => {
+      showToast(pickRegisterSuccessToast(emailRegRes, $t('4e9d53b5.6506a9')), () => {
         Taro.redirectTo({
           url: buildPostRegisterLoginUrl('email', { email: emailTrim }, routerParams)
         })

@@ -61,7 +61,10 @@ export function forgotPwd(params = {}) {
   return req.post('/member/reset/password', params)
 }
 
-/** POST 发送邮箱验证码，purpose: sign | login */
+/**
+ * POST /member/email/code（相对 h5app/wxapp，即文档 `/h5app/wxapp/member/email/code`）
+ * purpose=activate：重发激活链接，图形码 type=sign；purpose=login：发登录 6 位码，图形码 type=login
+ */
 export function memberEmailCode(data = {}) {
   return req.post('/member/email/code', data)
 }
