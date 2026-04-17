@@ -2,7 +2,8 @@
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
  *
- * 统一出口：`app.config.js`、组件等 `import { $t, useTranslation, i18n } from '@/i18n'`
+ * 统一出口：组件/页面 `import { $t, useTranslation, i18n } from '@/i18n'`。
+ * `app.config.js` 请使用 `import { $t } from '@/i18n/config-t'`（编译期 Node 环境，无 window）。
  */
 import { useTranslation } from 'react-i18next'
 import i18n from './instance'

@@ -2,9 +2,9 @@
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
  *
- * 不要在此文件使用 `@/i18n` 的 `$t`：会初始化 i18next，在编译 app 配置（Node 环境）时可能触发 `window is not defined`。
+ * 文案请用 `@/i18n/config-t` 的 `$t`，勿用 `@/i18n`：后者会加载 i18next，在 Node 编译 app 配置时可能报 `window is not defined`。
  */
-import appConfigZhCN from './i18n/locales/zh-CN.json'
+import { $t } from '@/i18n/config-t'
 
 const config = {
   pages: [
@@ -481,7 +481,7 @@ const config = {
   ],
   permission: {
     'scope.userLocation': {
-      desc: appConfigZhCN['95285d68.93f311']
+      desc: $t('95285d68.93f311')
     }
   },
   // usingComponents: {
@@ -490,7 +490,7 @@ const config = {
   'window': {
     'backgroundTextStyle': 'light',
     'navigationBarBackgroundColor': '#fff',
-    'navigationBarTitleText': appConfigZhCN['95285d68.0ed510'],
+    'navigationBarTitleText': $t('95285d68.0ed510'),
     'navigationBarTextStyle': 'black'
   },
   plugins: {
@@ -531,9 +531,11 @@ if (process.env.APP_LIVE == 'true') {
 }
 
 if (process.env.APP_PLATFORM == 'in_purchase') {
-  config?.pages?.splice(config?.pages[0], 1, 'pages/purchase/index')
+  if (Array.isArray(config.pages) && config.pages.length > 0) {
+    config.pages.splice(0, 1, 'pages/purchase/index')
+  }
 } else {
-  config?.pages?.push('pages/purchase/index')
+  config.pages.push('pages/purchase/index')
 }
 
 if (process.env.APP_ADAPAY == 'true') {

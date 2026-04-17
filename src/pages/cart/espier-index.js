@@ -26,7 +26,6 @@ import {
   SpCheckboxNew,
   SpPrivacyModal
 } from '@/components'
-import { useTranslation, $t, ti } from '@/i18n'
 
 import CompGoodsItem from './comps/comp-goodsitem'
 

@@ -7,7 +7,6 @@
 /* eslint-disable import/no-named-as-default-member -- i18next 默认导出即实例，需调用 .use / .changeLanguage */
 import i18n from 'i18next'
 import { initReactI18next } from 'react-i18next'
-import Taro from '@tarojs/taro'
 
 import zhCN from './locales/zh-CN.json'
 import en from './locales/en.json'
@@ -30,8 +29,21 @@ export const I18N_TO_STORAGE = {
 /** 可选语言顺序（与 Taro 存储 lang 一致） */
 export const SUPPORTED_STORAGE_LANGS = ['zhcn', 'en', 'ar']
 
+function isNodeCompilerContext() {
+  return (
+    typeof process !== 'undefined' &&
+    process.versions != null &&
+    typeof process.versions.node === 'string'
+  )
+}
+
 function readStorageLang() {
+  // readConfig（esbuild + Node）会加载本模块：勿顶层 import Taro，否则会拉取 @tarojs/runtime 并在 TARO_PLATFORM=web 时访问 window 报错。
+  if (isNodeCompilerContext()) {
+    return ''
+  }
   try {
+    const Taro = require('@tarojs/taro').default
     return Taro.getStorageSync('lang') || ''
   } catch {
     return ''
