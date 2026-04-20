@@ -587,7 +587,7 @@ function MemberIndex(props) {
           onLink={handleClickService}
         />
         {/* If you remove or alter Shopex brand identifiers, you must obtain a branding removal license from Shopex.  Contact us at:  http://www.shopex.cn to purchase a branding removal license. */}
-        <SpPoweredBy />
+        {/* <SpPoweredBy /> */}
       </ScrollView>
     </SpPage>
   )
