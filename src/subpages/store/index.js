@@ -151,7 +151,6 @@ function StoreIndex() {
     // }
   }
 
-
   const fetchWgts = async () => {
     const { id, dtid, uid } = await parameter()
 
@@ -408,7 +407,7 @@ function StoreIndex() {
           className='switchs'
           style={{
             background: `${pageData?.base?.pageBackgroundColor || '#fff'}`,
-            top: `0px`
+            top: `${statusBarHeight + 40}px`
           }}
         >
           <Text
@@ -428,8 +427,7 @@ function StoreIndex() {
         {productSwitching && wgts.length > 0 ? (
           <WgtsContext.Provider
             value={{
-              onAddToCart,
-              setScrollIntoView: () => {}
+              onAddToCart
             }}
           >
             <HomeWgts wgts={filterWgts} dtid={distributorId} onLoad={fetchLikeList}>
