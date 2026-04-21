@@ -161,8 +161,7 @@ const SpPage = memo(
         isWeixin || isAlipay
           ? navigationStyle === 'custom'
           : isWeb && !!(props.pageConfig || props.immersive)
-      const _btnReturn =
-        pages.length > 1 && (!TAB_PAGES.includes(absolutePath) || forceShowBack)
+      const _btnReturn = pages.length > 1 && (!TAB_PAGES.includes(absolutePath) || forceShowBack)
       const _btnHome = pages.length == 1 && !TAB_PAGES.includes(absolutePath)
       if (isWeixin || isAlipay) {
         const menuButton = Taro.getMenuButtonBoundingClientRect()
