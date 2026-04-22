@@ -229,6 +229,7 @@ function Home() {
         const enterprise_id = router?.params?.enterprise_id || purchase_share_info?.enterprise_id
         const data = await api.purchase.getEmployeeInviteCode({ enterprise_id, activity_id })
         const params = {
+          type: 'passcode',
           code: data.invite_code,
           enterprise_id,
           activity_id

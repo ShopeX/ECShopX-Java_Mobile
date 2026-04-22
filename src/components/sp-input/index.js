@@ -102,6 +102,7 @@ function SpInput(props) {
           clear={props.clear}
           value={props.value}
           type={type}
+          adjustPosition={props.adjustPosition}
           maxLength={props.maxLength}
           placeholder={props.placeholder}
           cursor={cursor}
@@ -144,6 +145,7 @@ SpInput.defaultProps = {
   clear: false,
   placeholder: '',
   maxLength: null,
+  adjustPosition: true,
   onChange: () => {},
   onConfirm: () => {}
 }

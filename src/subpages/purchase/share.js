@@ -71,11 +71,11 @@ export default class PurchaseIndex extends Component {
     const { enterprise_id, activity_id } = this.props.purchase_share_info || {}
     return new Promise(async function (resolve) {
       const data = await api.purchase.getEmployeeInviteCode({ enterprise_id, activity_id })
-      log.debug(`/pages/purchase/auth?code=${data.invite_code}`)
+      log.debug(`/pages/purchase/auth?type=passcode&code=${data.invite_code}`)
       resolve({
         title: info.name,
         imageUrl: info.share_pic,
-        path: `/pages/purchase/auth?code=${data.invite_code}&enterprise_id=${enterprise_id}&activity_id=${activity_id}`
+        path: `/pages/purchase/auth?type=passcode&code=${data.invite_code}&enterprise_id=${enterprise_id}&activity_id=${activity_id}`
       })
     })
   }

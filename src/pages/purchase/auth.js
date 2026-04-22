@@ -1,34 +1,26 @@
 /**
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
+ *
+ * 企业内购认证：仅保留四种方式
+ * 1) 口令码 2) 手机验证码 3) 邮箱验证码 4) 手机授权登录
  */
-import Taro, { getCurrentInstance, useRouter } from '@tarojs/taro'
-import React, { useCallback, useState, useEffect, useRef } from 'react'
-import { View, Text, Image, RootPortal } from '@tarojs/components'
-import { SpPrivacyModal, SpPage, SpLogin, SpModal, SpCheckbox, SpImage } from '@/components'
-import { AtButton, AtIcon } from 'taro-ui'
-import {
-  showToast,
-  normalizeQuerys,
-  getCurrentPageRouteParams,
-  VERSION_IN_PURCHASE,
-  getDistributorId
-} from '@/utils'
-import { useLogin, useModal, useSyncCallback } from '@/hooks'
-import { SG_ROUTER_PARAMS } from '@/consts/localstorage'
-import S from '@/spx'
-import entryLaunch from '@/utils/entryLaunch'
-import api from '@/api'
+import Taro, { useRouter } from '@tarojs/taro'
+import React, { useEffect, useRef, useState } from 'react'
+import { SpPrivacyModal, SpPage } from '@/components'
+import { showToast, VERSION_IN_PURCHASE, getDistributorId } from '@/utils'
+import { useLogin, useSyncCallback } from '@/hooks'
 import { INVITE_ACTIVITY_ID } from '@/consts'
 import { useImmer } from 'use-immer'
 import { useSelector, useDispatch } from 'react-redux'
-import CompBottomTip from '@/subpages/purchase/comps/comp-bottomTip'
-import {
-  updateInviteCode,
-  updateEnterpriseId,
-  updateCurDistributorId
-} from '@/store/slices/purchase'
-
+import { updateInviteCode, updateEnterpriseId, updateCurDistributorId } from '@/store/slices/purchase'
+import S from '@/spx'
+import entryLaunch from '@/utils/entryLaunch'
+import api from '@/api'
+import PurchasePasscode from './passcode'
+import PurchaseAccountPassword from './account-password'
+import PurchaseEmailCode from './email-code'
+import PurchasePhoneLogin from './phone-login'
 import './auth.scss'
 
 const initialState = {
@@ -38,27 +30,61 @@ const initialState = {
   is_activity: ''
 }
 
-function PurchaseAuth() {
-  const { isLogin, checkPolicyChange, isNewUser, updatePolicyTime, getUserInfo, setToken, login } =
-    useLogin({
-      autoLogin: false
-      // policyUpdateHook: (isUpdate) => {
-      //   isUpdate && setPolicyModal(true)
-      // }
-    })
+const AUTH_TYPE_MAP = {
+  passcode: 'passcode',
+  '口令码': 'passcode',
+  mobile: 'mobileCode',
+  mobilecode: 'mobileCode',
+  '手机号验证码': 'mobileCode',
+  '手机密码': 'mobileCode',
+  account: 'accountPassword',
+  accountpassword: 'accountPassword',
+  '账号密码': 'accountPassword',
+  email: 'emailCode',
+  emailcode: 'emailCode',
+  '企业邮箱': 'emailCode',
+  phoneauth: 'phoneAuthorize',
+  wxphone: 'phoneAuthorize',
+  authorize: 'phoneAuthorize',
+  '手机号授权': 'phoneAuthorize',
+  '手机授权登录': 'phoneAuthorize'
+}
 
-  const { userInfo = {} } = useSelector((state) => state.user)
-  const { appName, appLogo } = useSelector((state) => state.sys)
+function resolveAuthType(params, inviteCode) {
+  const rawType = String(params?.type || '').toLowerCase()
+  if (AUTH_TYPE_MAP[rawType]) {
+    return AUTH_TYPE_MAP[rawType]
+  }
+  if (params?.type && AUTH_TYPE_MAP[params.type]) {
+    return AUTH_TYPE_MAP[params.type]
+  }
+  if (params?.code || params?.invite_code || params?.entry === 'passcode' || inviteCode) {
+    return 'passcode'
+  }
+  return 'mobileCode'
+}
+
+function PurchaseAuth() {
+  const { checkPolicyChange, isNewUser, getUserInfo, setToken, login } = useLogin({
+    autoLogin: false
+  })
+
+  const { appName } = useSelector((state) => state.sys)
   const [policyModal, setPolicyModal] = useState(false)
   const [checked, setChecked] = useState(false)
   const { params } = useRouter()
   const dispatch = useDispatch()
   const codeRef = useRef()
-  const { showModal } = useModal()
-  const $instance = getCurrentInstance() || {}
   const [state, setState] = useImmer(initialState)
+  const [activityBg, setActivityBg] = useState('')
 
   const { invite_code, activity_id, enterprise_id, is_activity } = state
+  const authType = resolveAuthType(params, invite_code)
+
+  const isPasscodeMode = authType === 'passcode'
+  const isAccountPasswordMode = authType === 'accountPassword'
+  const isEmailCodeMode = authType === 'emailCode'
+  const isPhoneAuthorizeMode = authType === 'phoneAuthorize'
 
   useEffect(() => {
     if (!S.getAuthToken()) {
@@ -67,7 +93,7 @@ function PurchaseAuth() {
           codeRef.current = code
         },
         fail: (e) => {
-          console.error('[sp-login] taro login fail:', e)
+          console.error('[purchase-auth] taro login fail:', e)
         }
       })
     }
@@ -88,54 +114,81 @@ function PurchaseAuth() {
   }, [invite_code])
 
   useEffect(() => {
+    fetchActivityConfig()
+  }, [activity_id, enterprise_id, params?.activity_id, params?.enterprise_id])
+
+  useEffect(() => {
     Taro.setNavigationBarTitle({
       title: appName
     })
   }, [appName])
 
   const init = async () => {
-    //获取扫码参数
     await getQrcodeEid()
-    //如果不是扫码则存路由参数
     if (!params.scene) {
       setState((draft) => {
-        draft.invite_code = params?.code
+        draft.invite_code = params?.code || params?.invite_code || ''
         draft.activity_id = params?.activity_id
         draft.enterprise_id = params?.enterprise_id
         draft.is_activity = params?.is_activity
       })
     }
-    //检查隐私协议
     checkPolicyChangeFunc()
   }
 
   const checkPolicyChangeFunc = useSyncCallback(async () => {
     const res = await checkPolicyChange()
     setChecked(res)
-    //如果是亲友分享且没有同意隐私协议，则弹
-    if (!res && (invite_code || VERSION_IN_PURCHASE)) {
+    if (!res && (invite_code || params?.code || params?.invite_code || VERSION_IN_PURCHASE)) {
       setPolicyModal(true)
     }
   })
 
-  // 企业二维码扫码登录
-  const getQrcodeEid = async () => {
-    // eid=18&cid=34&t=m&c=1
-    // eid:员工企业ID--enterpriseId
-    // cid:企业ID--companyId
-    // t:认证方式 取了第一个字符 mobile=m；email=e；account=a；qr_code=q
-    // c:是否验证白名单 1=验证
-    if (params.scene) {
-      const { eid, cid, t, c, aid, code } = await entryLaunch.getRouteParams()
-      console.log('扫码参数', eid, cid, t, c, aid, code)
+  const fetchActivityConfig = async () => {
+    const currentActivityId = activity_id || params?.activity_id
+    if (!currentActivityId) {
+      setActivityBg('')
+      return
+    }
+    try {
+      const data = await api.purchase.getEmployeeActivitydata({
+        activity_id: currentActivityId,
+        enterprise_id: enterprise_id || params?.enterprise_id
+      })
+      const candidate =
+        data?.auth_bg_pic ||
+        data?.auth_bg_url ||
+        data?.activity_bg_pic ||
+        data?.activity_bg_url ||
+        data?.bg_pic ||
+        data?.bg_url ||
+        data?.background_pic ||
+        data?.background_url ||
+        data?.landing_pic ||
+        data?.landing_url ||
+        data?.cover_pic ||
+        data?.cover_url ||
+        data?.share_pic ||
+        ''
+      setActivityBg(candidate)
+    } catch (e) {
+      setActivityBg('')
+    }
+  }
 
+  const getQrcodeEid = async () => {
+    if (params.scene) {
+      const { eid, t, c, aid, code } = await entryLaunch.getRouteParams()
       if (code && aid && eid) {
-        //亲友扫码
         setState((draft) => {
           draft.invite_code = code
           draft.activity_id = aid
           draft.enterprise_id = eid
         })
+        return
+      }
+
+      if (authType === 'passcode' || authType === 'phoneAuthorize') {
         return
       }
 
@@ -153,7 +206,6 @@ function PurchaseAuth() {
         if (c) {
           sparams.is_verify = c
         }
-        //跳转
         handleConfirmClick(tMap[t], sparams)
       }
     }
@@ -163,14 +215,12 @@ function PurchaseAuth() {
     Taro.exitMiniProgram()
   }
 
-  // 同意隐私协议
   const onResolvePolicy = async () => {
     setPolicyModal(false)
     setChecked(true)
     if (!isNewUser) {
       await login()
       if (VERSION_IN_PURCHASE) {
-        // 纯内购如果有企业则进入选身份页面
         const data = await api.purchase.getUserEnterprises({
           disabled: 0,
           distributor_id: getDistributorId()
@@ -188,41 +238,38 @@ function PurchaseAuth() {
   const handleConfirmClick = async (rtype, rparmas) => {
     let redirectUrl
     if (rtype == 'account') {
-      redirectUrl = `/subpages/purchase/select-company-account`
+      redirectUrl = '/subpages/purchase/select-company-account'
     } else if (rtype == 'email') {
-      redirectUrl = `/subpages/purchase/select-company-email`
+      redirectUrl = '/subpages/purchase/select-company-email'
     } else if (rtype == 'mobile' || rtype == 'qr_code') {
-      redirectUrl = `/subpages/purchase/select-company-phone`
+      redirectUrl = '/subpages/purchase/select-company-phone'
     }
 
+    if (!redirectUrl) return
+
     if (rparmas) {
-      //扫码传参数
       redirectUrl += Object.keys(rparmas)
-        .reduce((pre, cur) => {
-          return pre + `${cur}=${rparmas[cur]}&`
-        }, '?')
+        .reduce((pre, cur) => pre + `${cur}=${rparmas[cur]}&`, '?')
         .slice(0, -1)
-      console.log(redirectUrl, rparmas)
-      Taro.reLaunch({
-        url: redirectUrl
-      })
-    } else {
-      //首页模板活动入口跳转进来，带活动ID
-      if (activity_id) {
-        redirectUrl = `${redirectUrl}?activity_id=${activity_id}`
-        if (is_activity) {
-          //首页跳转进来需要带上标识认证成功直接进入活动
-          redirectUrl += '&is_activity=1'
-        }
-      }
-      Taro.navigateTo({
-        url: redirectUrl
-      })
+      Taro.reLaunch({ url: redirectUrl })
+      return
     }
+
+    if (activity_id) {
+      redirectUrl = `${redirectUrl}?activity_id=${activity_id}`
+      if (is_activity) {
+        redirectUrl += '&is_activity=1'
+      }
+    }
+    Taro.navigateTo({ url: redirectUrl })
   }
 
   const handleBindPhone = async (e) => {
     const { encryptedData, iv, cloudID } = e.detail
+    if (authType === 'passcode' && !invite_code) {
+      showToast('缺少口令码')
+      return
+    }
     if (encryptedData && iv) {
       const code = codeRef.current
       const sparams = {
@@ -239,156 +286,95 @@ function PurchaseAuth() {
       showToast('验证成功')
       await getDtidToEnterid(enterprise_id)
       setTimeout(() => {
-        Taro.reLaunch({ url: `/pages/purchase/index?is_redirt=1` })
+        Taro.reLaunch({ url: '/pages/purchase/index?is_redirt=1' })
       }, 700)
     }
   }
 
-  const validatePhone = async () => {
-    try {
-      await api.purchase.getEmployeeRelativeBind({ invite_code, showError: false })
-      showToast('验证成功')
-      await getDtidToEnterid(enterprise_id)
-      setTimeout(() => {
-        Taro.reLaunch({ url: `/pages/purchase/index?is_redirt=1` })
-      }, 700)
-    } catch (e) {
-      console.log(e)
-      Taro.showModal({
-        content: e.message || e,
-        confirmText: '我知道了',
-        showCancel: false,
-        success: async () => {
-          await getDtidToEnterid(enterprise_id)
-          Taro.reLaunch({ url: `/pages/purchase/index?is_redirt=1` })
-        }
-      })
+  const handlePasscodeSubmit = (nextInviteCode) => {
+    setState((draft) => {
+      draft.invite_code = nextInviteCode
+    })
+    dispatch(updateInviteCode(nextInviteCode))
+    if (activity_id) {
+      S?.set(INVITE_ACTIVITY_ID, activity_id, true)
     }
+
+    let url = '/pages/purchase/index?is_redirt=1'
+    if (activity_id) url += `&activity_id=${activity_id}`
+    if (enterprise_id) url += `&enterprise_id=${enterprise_id}`
+    if (is_activity) url += '&is_activity=1'
+    Taro.reLaunch({ url })
   }
 
   const getDtidToEnterid = async (eid) => {
-    // 亲友分享需要拿到企业id和店铺ID
     const { distributor_id } = await api.purchase.getPurchaseDistributor({ enterprise_id: eid })
-    //后续身份切换需要用
     dispatch(updateCurDistributorId(distributor_id))
     dispatch(updateEnterpriseId(eid))
   }
 
-  const handlePassClick = async () => {
-    await getDtidToEnterid(enterprise_id)
-    Taro.reLaunch({ url: `/pages/purchase/index?is_redirt=1` })
+  const ensureAgreed = () => {
+    if (!checked) {
+      showToast('请先阅读并同意协议')
+      return false
+    }
+    return true
   }
 
-  const handleClickPrivacy = (type) => {
-    Taro.navigateTo({
-      url: `/subpages/auth/reg-rule?type=${type}`
-    })
+  const handleAccountConfirm = () => {
+    if (!ensureAgreed()) return
+    handleConfirmClick('account')
   }
 
-  const handleSelectPrivacy = async () => {
-    setChecked(!checked)
+  const handleMobileCodeConfirm = () => {
+    if (!ensureAgreed()) return
+    handleConfirmClick('mobile')
+  }
+
+  const handleEmailConfirm = () => {
+    if (!ensureAgreed()) return
+    handleConfirmClick('email')
   }
 
   return (
-    <SpPage className='purchase-auth'>
-      {/* 隐私协议 */}
+    <SpPage className='purchase-auth purchase-auth--passphrase'>
       <SpPrivacyModal open={policyModal} onCancel={onRejectPolicy} onConfirm={onResolvePolicy} />
-
-      <View className='header'>
-        <Image className='header-avatar' src={appLogo} mode='aspectFill' />
-        <Text className='welcome'>欢迎登录</Text>
-        <Text className='title'>{appName}</Text>
-      </View>
-      <View className='btns'>
-        {!invite_code && (
-          <>
-            <AtButton
-              circle
-              disabled={!checked}
-              className='button btns-phone'
-              onClick={() => handleConfirmClick('mobile')}
-            >
-              手机号登录&nbsp;
-              <Text className='iconfont icon-shuangjiantou'></Text>
-            </AtButton>
-            <AtButton
-              circle
-              disabled={!checked}
-              className='button btns-account'
-              onClick={() => handleConfirmClick('account')}
-            >
-              账号密码登录&nbsp;
-              <Text className='iconfont icon-shuangjiantou'></Text>
-            </AtButton>
-            <AtButton
-              circle
-              disabled={!checked}
-              className='button btns-email'
-              onClick={() => handleConfirmClick('email')}
-            >
-              使用邮箱登录
-            </AtButton>
-          </>
-        )}
-
-        {invite_code &&
-          isLogin &&
-          userInfo?.is_relative && ( // 有/无商城，已登录亲友验证、绑定
-            <>
-              <View className='validate-pass'>验证通过</View>
-              <AtButton circle className='button btns-phone' onClick={handlePassClick}>
-                继续
-              </AtButton>
-            </>
-          )}
-
-        {invite_code && isLogin && !isNewUser && !userInfo?.is_relative && (
-          <AtButton circle className='button btns-phone' onClick={validatePhone}>
-            手机号授权登录
-          </AtButton>
-        )}
-
-        {invite_code &&
-          isNewUser && ( // 有/无商城，未登录亲友验证、绑定
-            <AtButton
-              openType='getPhoneNumber'
-              onGetPhoneNumber={handleBindPhone}
-              circle
-              className='button btns-phone'
-            >
-              手机号授权登录
-            </AtButton>
-          )}
-      </View>
-
-      <View className='auth--footer'>
-        <SpCheckbox onChange={handleSelectPrivacy} checked={checked} />
-        <Text className='auth--footer-text'>
-          我已阅读并接受{' '}
-          <Text onClick={() => handleClickPrivacy('privacy')} className='content'>
-            隐私政策
-          </Text>
-          及
-          <Text className='content' onClick={() => handleClickPrivacy('member_register')}>
-            用户协议
-          </Text>
-        </Text>
-      </View>
-
-      {/* <View className='service-footer'>
-        <View
-          className='toolbar-item'
-          onClick={() => {
-            S?.phoneNumber('021-60662088')
-          }}
-        >
-          <Text className='iconfont icon-lianxi'></Text>
-          <Text className='toolbar-item-txt'>客服电话：</Text>
-          <Text className='toolbar-item-content'>021-60662088</Text>
-        </View>
-      </View> */}
-
-      <CompBottomTip />
+      {authType === 'passcode' && (
+        <PurchasePasscode
+          activityBg={activityBg}
+          inviteCode={invite_code}
+          onBindPhone={handleBindPhone}
+          onRequirePolicy={() => setPolicyModal(true)}
+          privacyAccepted={checked}
+          isLoggedIn={Boolean(S.getAuthToken())}
+          onSubmitInviteCode={handlePasscodeSubmit}
+        />
+      )}
+      {authType === 'accountPassword' && (
+        <PurchaseAccountPassword
+          activityBg={activityBg}
+          appName={appName}
+          checked={checked}
+          onConfirm={handleAccountConfirm}
+        />
+      )}
+      {authType === 'emailCode' && (
+        <PurchaseEmailCode
+          activityBg={activityBg}
+          appName={appName}
+          enterpriseId={enterprise_id || params?.enterprise_id}
+          onConfirm={handleEmailConfirm}
+        />
+      )}
+      {authType === 'mobileCode' && (
+        <PurchasePhoneLogin
+          activityBg={activityBg}
+          appName={appName}
+          checked={checked}
+          onRequirePolicy={() => setPolicyModal(true)}
+          onConfirm={handleMobileCodeConfirm}
+        />
+      )}
     </SpPage>
   )
 }

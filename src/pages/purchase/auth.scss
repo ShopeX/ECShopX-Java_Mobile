@@ -1,184 +1,414 @@
 /**
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
+ *
+ * 企业内购认证：账号入口 / 口令验证 两套布局（对齐企业购 Figma 信息层级）
  */
 .purchase-auth {
-  padding-top: 80px;
-  position: relative;
-  height: 100vh;
-  background-color: #f5f5f5;
+  min-height: 100vh;
   box-sizing: border-box;
+  padding: 48px 40px 280px;
+  position: relative;
+  .sp-page__body{
+    background-color: #fff;
+  }
+  .sp-purchase-enterprise-bar {
+    box-shadow: 0px 1px 3px 0px #0000001A;
+  }
 
-  .header {
-    margin: 0 auto;
-    width: 569px;
-    // height: 369px;
+  &__hero {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    text-align: center;
+    margin-bottom: 48px;
+  }
 
-    &-avatar {
-      width: 250px;
-      height: 250px;
-      border-radius: 50%;
-    }
+  &__badge {
+    font-size: 22px;
+    line-height: 1;
+    padding: 10px 24px;
+    border-radius: 999px;
+    background: rgba(11, 65, 55, 0.08);
+    color: var(--color-primary, #0b4137);
+    font-weight: 600;
+    margin-bottom: 28px;
+  }
 
-    .welcome {
-      color: #666;
-      font-size: 32px;
-      margin: 32px 0 32px 0;
-    }
+  &__logo-wrap {
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    overflow: hidden;
+    box-shadow: 0 12px 40px rgba(15, 35, 52, 0.12);
+    margin-bottom: 28px;
+    background: #fff;
 
-    .title {
-      color: #222;
-      font-size: 40px;
-      font-weight: 400 !important;
+    &--sm {
+      width: 160px;
+      height: 160px;
     }
   }
 
-  .btns {
-    margin-top: 120px;
-    padding: 0 64px;
+  &__logo {
+    width: 100%;
+    height: 100%;
+  }
+
+  &__welcome {
+    font-size: 28px;
+    color: #6b7280;
+    margin-bottom: 12px;
+  }
+
+  &__name {
+    font-size: 40px;
+    font-weight: 600;
+    color: #111827;
+    line-height: 1.35;
+    margin-bottom: 16px;
+  }
+
+  &__sub {
+    font-size: 26px;
+    color: #6b7280;
+    line-height: 1.5;
+    max-width: 620px;
+
+    &--pass {
+      max-width: 600px;
+    }
+  }
+
+  /* ---------- 账号登录：三卡片 ---------- */
+  &__methods {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  &__card {
+    position: relative;
+    border-radius: 20px;
+    padding: 36px 32px 36px 28px;
     box-sizing: border-box;
+    transition: opacity 0.2s, transform 0.15s;
 
-    &-account {
+    &:active:not(.is-disabled) {
+      transform: scale(0.99);
+    }
+
+    &.is-disabled {
+      opacity: 0.45;
+      pointer-events: none;
+    }
+
+    &-title {
+      display: block;
       font-size: 32px;
-      font-weight: 400;
-      color: #222;
-      text-align: center;
-      margin-bottom: 0 !important;
-
-      .account {
-        font-weight: 600;
-      }
-    }
-
-    .button {
       font-weight: 600;
-      border: none;
-      height: 88px;
-      line-height: 88px;
-      border-radius: 50px;
-      .at-button__text {
-        font-weight: 500;
-        font-size: 32px;
-        display: flex;
-        align-items: center;
-        .icon-shuangjiantou {
-          font-size: 18px;
-          margin-left: 8px;
-        }
-      }
-    }
-
-    .login {
-      font-weight: 400;
-    }
-
-    .icon {
-      display: inline-block;
+      color: #111827;
       margin-bottom: 10px;
     }
 
-    &-phone {
-      margin-bottom: 48px;
-      background-color: var(--color-primary);
+    &-desc {
+      display: block;
+      font-size: 24px;
+      color: #6b7280;
+      line-height: 1.45;
+      padding-right: 48px;
+    }
+
+    &-arrow {
+      position: absolute;
+      right: 28px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 20px;
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    &--primary {
+      background: var(--color-primary, #0b4137);
       color: #fff;
-    }
+      box-shadow: 0 8px 28px rgba(11, 65, 55, 0.25);
 
-    &-account {
-      background-color: #fff;
-      color: var(--color-primary);
-    }
-
-    &-email {
-      background-color: #f5f5f5;
-      color: #222222;
-      margin-top: 12px;
-      .at-button__text {
-        font-size: 32px !important;
-        font-weight: 400 !important;
+      .purchase-auth__card-title {
+        color: #fff;
+      }
+      .purchase-auth__card-desc {
+        color: rgba(255, 255, 255, 0.85);
       }
     }
 
-    &-weixin {
-      background: #07c160;
-      font-size: 32px;
-      font-weight: 400 !important;
+    &--outline {
+      background: #fff;
+      border: 2px solid rgba(11, 65, 55, 0.2);
+      box-shadow: 0 4px 20px rgba(15, 35, 52, 0.06);
+
+      .purchase-auth__card-arrow {
+        color: var(--color-primary, #0b4137);
+      }
+    }
+
+    &--ghost {
+      background: #f3f4f6;
+      border: 2px solid transparent;
+
+      .purchase-auth__card-title {
+        font-weight: 500;
+      }
     }
   }
 
-  .validate-pass {
-    margin-bottom: 24px;
-    text-align: center;
+  /* ---------- 口令验证 ---------- */
+  &__pass-body {
+    margin-top: 8px;
   }
 
-  .sp-modal-test {
-    position: absolute;
-    bottom: 0;
+  &__pass-panel {
+    background: #fff;
+    border-radius: 20px;
+    padding: 40px 32px;
+    box-shadow: 0 8px 32px rgba(15, 35, 52, 0.08);
+  }
+
+  &__hint {
+    display: block;
+    font-size: 26px;
+    color: #4b5563;
+    line-height: 1.55;
+    margin-bottom: 32px;
+    text-align: center;
+
+    &--left {
+      text-align: left;
+      margin-bottom: 24px;
+    }
+  }
+
+  &__status {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 36px;
+
+    &--ok {
+      color: #059669;
+    }
+
+    &-icon {
+      font-size: 36px;
+      font-weight: 700;
+    }
+
+    &-text {
+      font-size: 32px;
+      font-weight: 600;
+    }
+  }
+
+  &__cta {
+    height: 96px;
+    line-height: 96px;
+    text-align: center;
+    border-radius: 48px;
+    font-size: 30px;
+    font-weight: 600;
+    color: #fff;
+    background: var(--color-primary, #0b4137);
+
+    &--solid {
+      box-shadow: 0 8px 24px rgba(11, 65, 55, 0.22);
+    }
+  }
+
+  &__wx-btn {
+    width: 100% !important;
+    height: 96px !important;
+    line-height: 96px !important;
+    border-radius: 48px !important;
+    font-size: 30px !important;
+    font-weight: 600 !important;
+    color: #fff !important;
+    background: var(--color-primary, #0b4137) !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: 0 8px 24px rgba(11, 65, 55, 0.22);
+
+    &::after {
+      border: none !important;
+    }
+  }
+
+  /* ---------- 协议 ---------- */
+  &__footer {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 120px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 0 48px;
+    box-sizing: border-box;
+    z-index: 2;
+  }
+
+  &__footer-text {
+    flex: 1;
+    margin-left: 12px;
+    font-size: 24px;
+    color: #374151;
+    line-height: 40px;
+  }
+
+  &__link {
+    color: var(--color-primary, #0b4137);
+    font-weight: 600;
+    text-decoration: underline;
+  }
+
+  /* ---------- 口令链路：活动落地 + 底部抽屉 ---------- */
+  &--passphrase {
+    padding: 0 0 env(safe-area-inset-bottom);
+    background: transparent;
+    min-height: 100vh;
+  }
+
+  &__hero--landing {
+    margin-bottom: 0;
+  }
+
+  &__logo-wrap--landing {
+    width: 136px;
+    height: 136px;
+    margin-bottom: 18px;
+    box-shadow: none;
+    background: rgba(255, 255, 255, 0.9);
+  }
+
+  &__center-dot {
+    display: block;
+    font-size: 44px;
+    line-height: 1;
+    color: #1f2937;
+    margin-bottom: 18px;
+  }
+
+  &__pass-mask {
+    position: fixed;
+    left: 0;
+    right: 0;
     top: 0;
-    z-index: 5000;
+    bottom: 0;
+    z-index: 50;
+    background: rgba(17, 24, 39, 0.28);
+  }
+
+  &__pass-sheet {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 60;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    pointer-events: none;
+
+    &-inner {
+      pointer-events: auto;
+      width: 100%;
+      box-sizing: border-box;
+      padding: 28px 32px calc(20px + env(safe-area-inset-bottom));
+      border-radius: 28px 28px 0 0;
+      background: #fff;
+      box-shadow: 0 -12px 48px rgba(15, 35, 52, 0.12);
+    }
+
+    &-head {
+      display: flex;
+      flex-direction: row;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    &-title {
+      flex: 1;
+      padding-right: 16px;
+      font-size: 34px;
+      font-weight: 700;
+      color: #111827;
+      line-height: 1.35;
+    }
+
+    &-sub {
+      display: block;
+      font-size: 26px;
+      color: #9ca3af;
+      line-height: 1.45;
+      margin-bottom: 8px;
+    }
+  }
+
+  &__pass-close {
+    width: 56px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: -8px;
+    margin-right: -8px;
+    border-radius: 50%;
+
+    &:active {
+      opacity: 0.65;
+    }
+  }
+
+  &__pass-close-icon {
+    font-size: 44px;
+    line-height: 1;
+    color: #9ca3af;
+    font-weight: 300;
+  }
+
+  &__pass-confirm {
+    height: 96px;
+    border-radius: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #111827;
+    box-sizing: border-box;
+
+    &--disabled {
+      background: #e5e7eb;
+      pointer-events: none;
+    }
+  }
+
+  &__pass-confirm-text {
+    font-size: 30px;
+    font-weight: 600;
+    color: #fff;
+  }
+
+  &__sheet-footer-protocol {
     display: flex;
     flex-direction: row;
-    justify-content: center;
-    align-items: center;
-    width: 100vw;
-    /* height: 200px; */
-    background: rgba(206, 48, 48, 0.65);
-    opacity: 1;
-    transform: scale3d(1, 1, 1);
-    transition: all 0.2s ease-in;
-    pointer-events: auto;
+    align-items: flex-start;
+    margin-top: 28px;
+    padding-top: 8px;
   }
 
-  .auth--footer {
-    position: fixed;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 100%;
-    bottom: 210px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 24px;
-    font-family: PingFangSC-Regular, PingFang SC;
-    font-weight: 400;
-    color: #222222;
-    line-height: 46px;
-    margin-bottom: 24px;
-    .auth--footer-text {
-      .content {
-        font-weight: bolder;
-        text-decoration: underline;
-      }
-    }
+  &__sheet-footer-protocol .purchase-auth__footer-text {
+    flex: 1;
+    margin-left: 12px;
   }
-  .service-footer {
-    border-top: 1px solid #dddddd;
-    justify-content: center;
-    width: 100%;
-    padding-top: 31px;
-    display: flex;
-    align-items: center;
-    position: fixed;
-    bottom: 57px;
-    left: 0;
-    .icon-lianxi {
-      color: #666666;
-      font-size: 32px;
-      margin-right: 6px;
-    }
-    .toolbar-item {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      &-txt {
-        color: #666666;
-      }
-      &-content {
-        color: #007aff;
-      }
-    }
-  }
+
 }
