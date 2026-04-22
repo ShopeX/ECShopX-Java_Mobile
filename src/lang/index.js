@@ -3,7 +3,13 @@
  * See LICENSE file for license details.
  */
 import Taro from '@tarojs/taro'
-import { syncI18nLanguage } from '@/i18n/instance'
+
+/** 主包不静态依赖 i18next：与 `react-i18next` 对齐时再异步拉取 */
+function syncReactI18nLazy(lang) {
+  import('@/subpage/i18n/instance')
+    .then((m) => m.syncI18nLanguage(lang))
+    .catch(() => {})
+}
 
 class Lang {
   constructor() {
@@ -79,7 +85,7 @@ class Lang {
         if (Taro.eventCenter) {
           Taro.eventCenter.trigger('languageChanged', { lang, langMap: globalThis.langMap[lang] })
         }
-        Promise.resolve(syncI18nLanguage(lang)).catch(() => {})
+        syncReactI18nLazy(lang)
       }
 
       if (
@@ -185,7 +191,7 @@ class Lang {
     }
     // 根据当前语言设置翻译函数的语言包
     globalThis.$t.locale(globalThis.langMap[lang], 'lang')
-    Promise.resolve(syncI18nLanguage(lang)).catch(() => {})
+    syncReactI18nLazy(lang)
   }
 }
 

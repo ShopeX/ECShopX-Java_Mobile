@@ -2,7 +2,7 @@
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
  */
-// import { appConfigT } from '@/i18n/app-config-t'
+// import { appConfigT } from '@/subpage/i18n/app-config-t'
 
 const config = {
   pages: [
