@@ -18,6 +18,8 @@ import { withPageWrapper } from '@/hocs'
 import { WgtFilm, WgtSlider, WgtWriting, WgtGoodsCard, WgtHeading } from '../home/wgts'
 import './detail.scss'
 
+const isGoodsCardWidget = (name) => name === 'goodsCard' || name === 'goodscard'
+
 const initialState = {
   itemId: '',
   title: '',
@@ -124,7 +126,6 @@ function GuideRecommendDetail(props) {
     }
   }
 
-  const handleClickGoods = async () => {}
 
   return (
     <SpPage
@@ -169,7 +170,7 @@ function GuideRecommendDetail(props) {
                 {item.name === 'slider' && <WgtSlider info={item} />}
                 {item.name === 'writing' && <WgtWriting info={item} />}
                 {item.name === 'heading' && <WgtHeading info={item} />}
-                {item.name === 'goodscard' && <WgtGoodsCard onClick={handleClickGoods} info={item} />}
+                {isGoodsCardWidget(item.name) && <WgtGoodsCard info={item} />}
               </View>
             ))}
           </View>

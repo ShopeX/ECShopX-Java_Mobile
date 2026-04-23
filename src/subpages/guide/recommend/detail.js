@@ -13,8 +13,8 @@ import { SpPage } from '@/components'
 import api from '@/api'
 import doc from '@/doc'
 import { pickBy, log, buildSharePath } from '@/utils'
-import { WgtFilm, WgtSlider, WgtWriting,WgtHeading } from '../components/wgts'
 import { WgtGoodsCard } from '@/pages/home/wgts'
+import { WgtFilm, WgtSlider, WgtWriting, WgtHeading } from '../components/wgts'
 import './detail.scss'
 
 const initialState = {
@@ -105,7 +105,7 @@ function GuideRecommendDetail(props) {
               {item.name === 'slider' && <WgtSlider info={item} />}
               {item.name === 'writing' && <WgtWriting info={item} />}
               {item.name === 'heading' && <WgtHeading info={item} />}
-              {item.name === 'goodscard' && (
+              {(item.name === 'goodsCard' || item.name === 'goodscard') && (
                 <WgtGoodsCard info={item} />
               )}
             </View>
