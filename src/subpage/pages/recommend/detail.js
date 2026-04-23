@@ -236,7 +236,7 @@ export default class recommendDetail extends Component {
                   {item.name === 'slider' && <WgtSlider info={item} width={screenWidth} />}
                   {item.name === 'writing' && <WgtWriting info={item} />}
                   {item.name === 'heading' && <WgtHeading info={item} />}
-                  {(item.name === 'goodsCard' || item.name === 'goodscard') && (
+                  {item.name === 'goodsCard' && (
                     <WgtGoodsCard onClick={this.handleClickGoods.bind(this)} info={item} />
                   )}
                 </View>
