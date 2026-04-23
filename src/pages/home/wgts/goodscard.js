@@ -191,7 +191,7 @@ export default class WgtGoodsCard extends Component {
             return (
               <View key={key} className='goods-card' style={styleNames(goodsCardInnerStyle)}>
                 <View className='goods-card__header' onClick={this.handleClickItem.bind(this, item)}>
-                  <SpImage src={item.img_url} width={80} height={80} isOss />
+                  <SpImage src={item.img_url} width={160} height={160} isOss />
                   <View className='goods-card__info'>
                     <View className='goods-card__info-title'>{item.item_name}</View>
                     <View className='goods-card__info-price'>
