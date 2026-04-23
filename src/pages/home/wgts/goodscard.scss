@@ -6,43 +6,43 @@
   box-sizing: border-box;
 
   &.padded {
-    padding: 10px 0;
+    padding: 20px 0;
   }
 
   .wgt-hd {
-    padding: 10px;
+    padding: 20px;
 
     .title {
-      font-size: 18px;
+      font-size: 36px;
       font-weight: 600;
       color: #333;
     }
 
     .sub-title {
       color: #666;
-      margin-left: 4px;
+      margin-left: 8px;
     }
   }
 
   .wgt-bd {
-    padding: 0 10px;
+    padding: 0 20px;
 
     .goods-card {
       box-sizing: border-box;
 
       &:not(:last-child) {
-        margin-bottom: 10px;
+        margin-bottom: 20px;
       }
 
       &__header {
-        padding: 10px;
+        padding: 20px;
         display: flex;
         align-items: center;
       }
 
       &__info {
-        padding-left: 10px;
-        height: 80px;
+        padding-left: 20px;
+        height: 160px;
         display: flex;
         flex-direction: column;
         justify-content: center;
@@ -51,24 +51,24 @@
       }
 
       &__info-title {
-        font-size: 14px;
+        font-size: 28px;
         font-weight: 500;
         color: #333;
         @include multi-ellipsis(2);
       }
 
       &__info-price {
-        margin-top: 4px;
+        margin-top: 8px;
       }
 
       &__info-sales {
-        font-size: 12px;
+        font-size: 24px;
         color: #666;
-        margin-top: 4px;
+        margin-top: 8px;
       }
 
       &__footer {
-        height: 40px;
+        height: 80px;
         display: flex;
         justify-content: space-around;
         align-items: center;
@@ -76,7 +76,7 @@
         .goods-card__btn {
           flex: 1;
           text-align: center;
-          font-size: 14px;
+          font-size: 28px;
           color: $color-brand-primary;
         }
 
@@ -85,8 +85,8 @@
         }
 
         .gap-line {
-          width: 1px;
-          height: 20px;
+          width: 2px;
+          height: 40px;
           background-color: #e5e5e5;
         }
       }
