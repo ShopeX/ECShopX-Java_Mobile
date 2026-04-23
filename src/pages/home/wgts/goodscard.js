@@ -13,7 +13,7 @@ import entry from '@/utils/entry'
 import { getDistributorId, VERSION_STANDARD, classNames, isAlipay } from '@/utils'
 import api from '@/api'
 
-import './goods.scss'
+import './goodscard.scss'
 
 @connect(
   ({ cart, user, shop }) => ({
@@ -29,7 +29,7 @@ import './goods.scss'
     onUpdateCartCount: (count) => dispatch({ type: 'cart/updateCartNum', payload: count })
   })
 )
-export default class WgtGoods extends Component {
+export default class WgtGoodsCard extends Component {
   static options = {
     addGlobalClass: true
   }
