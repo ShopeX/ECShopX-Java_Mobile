@@ -3,6 +3,10 @@
  * See LICENSE file for license details.
  */
 .wgt-goods {
+  .wgt-goodscard-body {
+    box-sizing: border-box;
+  }
+
   .goods {
     margin: 0 20px;
     box-sizing: border-box;
