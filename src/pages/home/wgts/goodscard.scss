@@ -2,39 +2,92 @@
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
  */
-.wgt-goods {
-  .wgt-goodscard-body {
-    box-sizing: border-box;
+.wgt-goods-card {
+  box-sizing: border-box;
+
+  &.padded {
+    padding: 10px 0;
   }
 
-  .goods {
-    margin: 0 20px;
-    box-sizing: border-box;
-    background: #ffffff;
-    border-radius: 8px;
-    box-shadow: 2px 2px 6px 6px rgba(120, 120, 120, 0.1);
-    .goods-info {
-      padding: 20px;
-      display: flex;
+  .wgt-hd {
+    padding: 10px;
+
+    .title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #333;
     }
-    .goods-img {
-      width: 200px;
+
+    .sub-title {
+      color: #666;
+      margin-left: 4px;
     }
-    .goods-name {
-      margin-left: 10px;
-      .desc {
-        color: #888;
-        margin-top: 6px;
+  }
+
+  .wgt-bd {
+    padding: 0 10px;
+
+    .goods-card {
+      box-sizing: border-box;
+
+      &:not(:last-child) {
+        margin-bottom: 10px;
       }
-    }
-    .goods-btns {
-      display: flex;
-      justify-content: space-around;
-      padding: 0 20px 20px;
-      .btn-text {
-        color: $color-brand-primary;
-        &.disabled {
+
+      &__header {
+        padding: 10px;
+        display: flex;
+        align-items: center;
+      }
+
+      &__info {
+        padding-left: 10px;
+        height: 80px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        flex: 1;
+        min-width: 0;
+      }
+
+      &__info-title {
+        font-size: 14px;
+        font-weight: 500;
+        color: #333;
+        @include multi-ellipsis(2);
+      }
+
+      &__info-price {
+        margin-top: 4px;
+      }
+
+      &__info-sales {
+        font-size: 12px;
+        color: #666;
+        margin-top: 4px;
+      }
+
+      &__footer {
+        height: 40px;
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+
+        .goods-card__btn {
+          flex: 1;
+          text-align: center;
+          font-size: 14px;
+          color: $color-brand-primary;
+        }
+
+        .goods-card__btn--disabled {
           color: $color-brand-accent-light;
+        }
+
+        .gap-line {
+          width: 1px;
+          height: 20px;
+          background-color: #e5e5e5;
         }
       }
     }

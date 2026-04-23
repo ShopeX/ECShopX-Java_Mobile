@@ -3,23 +3,23 @@
  * See LICENSE file for license details.
  */
 import React, { Component } from 'react'
-import Taro, { getCurrentInstance } from '@tarojs/taro'
+import Taro from '@tarojs/taro'
 import { View, Text } from '@tarojs/components'
-import { SpImg, SpImage } from '@/components'
+import { SpImage, SpPrice } from '@/components'
 import { connect } from 'react-redux'
 // import { Tracker } from '@/service'
 import S from '@/spx'
 import entry from '@/utils/entry'
-import { getDistributorId, VERSION_STANDARD, classNames, isAlipay, styleNames } from '@/utils'
+import { classNames, styleNames, showToast } from '@/utils'
 import api from '@/api'
 
 import { getGlobalBaseStyle } from './helper'
 import './goodscard.scss'
 
 @connect(
-  ({ cart, user, shop }) => ({
+  ({ cart, member, shop }) => ({
     cart,
-    favs: user.favs,
+    favs: member.favs,
     shop
   }),
   (dispatch) => ({
@@ -39,16 +39,6 @@ export default class WgtGoodsCard extends Component {
     info: null
   }
 
-  constructor(props) {
-    super(props)
-
-    this.state = {
-      curIdx: 0,
-      is_fav: false,
-      count: 0
-    }
-  }
-
   handleClickItem = (item) => {
     // const { info } = this.props
 
@@ -66,6 +56,14 @@ export default class WgtGoodsCard extends Component {
       }
     }*/
     // try {
+    if (item.itemStatus === false) {
+      showToast({
+        title: '该商品已下架',
+        icon: 'none'
+      })
+      return
+    }
+
     const { distributor_id, item_id } = item
     // const dtid = distributor_id ? distributor_id : getDistributorId()
     Taro.navigateTo({
@@ -80,16 +78,7 @@ export default class WgtGoodsCard extends Component {
     // }
   }
 
-  handleSwiperChange = (e) => {
-    const { current } = e.detail
-
-    this.setState({
-      curIdx: current
-    })
-  }
-
   handleClickOperate = async (item_data, type, e) => {
-    const { info } = this.props
     e.stopPropagation()
 
     if (!S.getAuthToken()) {
@@ -100,49 +89,19 @@ export default class WgtGoodsCard extends Component {
       return
     }
 
-    /*if(info.data) {
-      let onsale = true
-      info.data.map(item => {
-        if(item_data.item_id === item.item_id){
-          if(!item.isOnsale){
-            onsale = false
-          }
-        }
+    if (item_data.itemStatus === false) {
+      showToast({
+        title: '该商品已下架',
+        icon: 'none'
       })
-      if(!onsale){
-        return false
-      }
-    }*/
+      return
+    }
+
     if (type === 'collect') {
-      /*if(this.state.count === 0) {
-        let is_fav = Boolean(this.props.favs[item_data.item_id])
-        this.setState({
-          count: 1,
-          is_fav
-        })
-      }
-      if(!this.state.is_fav) {
-        await api.member.addFav(item_data.item_id)
-        this.props.onAddFav(item_data)
-        Taro.showToast({
-          title: '已加入收藏',
-          icon: 'none'
-        })
-      } else {
-        await api.member.delFav(item_data.item_id)
-        this.props.onDelFav(item_data)
-        Taro.showToast({
-          title: '已移出收藏',
-          icon: 'none'
-        })
-      }
-      this.setState({
-        is_fav: !this.state.is_fav
-      })*/
-      if (!item_data.favStatus) {
-        await api.member.addFav(item_data.item_id)
+      const isFav = Boolean(item_data.favStatus ?? this.props.favs?.[item_data.item_id])
 
-        // !isAlipay && Tracker.dispatch('GOODS_COLLECT', info)
+      if (!isFav) {
+        await api.member.addFav(item_data.item_id)
 
         this.props.onAddFav(item_data)
         Taro.showToast({
@@ -157,18 +116,13 @@ export default class WgtGoodsCard extends Component {
           icon: 'none'
         })
       }
-      this.props.onClick()
+      if (typeof this.props.onClick === 'function') {
+        this.props.onClick()
+      }
     }
 
     if (type === 'buy') {
       try {
-        const isOpenStore = await entry.getStoreStatus()
-        const { distributor_id, store_id } = Taro.getStorageSync('curStore')
-        let id = Number(item_data.distributor_id) || 0
-        // if (VERSION_STANDARD && !id) {
-        //   id = isOpenStore ? store_id : distributor_id
-        // }
-
         await api.cart.add({
           item_id: item_data.item_id,
           distributor_id: this.props?.shop?.shopInfo?.distributor_id,
@@ -195,62 +149,72 @@ export default class WgtGoodsCard extends Component {
   }
 
   render() {
-    const { info } = this.props
-    const { curIdx, is_fav } = this.state
+    const { info, favs } = this.props
     if (!info) {
       return null
     }
 
-    const { config, base, data } = info
-    const curContent = (data[curIdx] || {}).content
+    const { base, data: dataList = [] } = info
 
     const outerStyle = getGlobalBaseStyle(base.outerMargin)
-    const innerStyle = getGlobalBaseStyle(base.innerPadding)
+    const innerPaddingStyle = getGlobalBaseStyle(base.innerPadding)
     const useOuterLayout = Boolean(base.outerMargin && typeof base.outerMargin === 'object')
+
+    const goodsCardInnerStyle = (() => {
+      const style = {
+        ...innerPaddingStyle,
+        'border-radius': Taro.pxTransform(8)
+      }
+
+      const hasBgColor = Boolean(style['background-color'])
+      const hasBgImage = Boolean(style['background-image'])
+
+      if (!hasBgColor && !hasBgImage) {
+        style['background-color'] = '#fff'
+      }
+
+      return style
+    })()
 
     return (
       <View
-        className={classNames('wgt wgt-goods', {
-          wgt__padded: base.padded && !useOuterLayout
+        className={classNames('wgt wgt-goods-card', {
+          padded: base.padded && !useOuterLayout
         })}
         style={styleNames(outerStyle)}
       >
-        <View className='wgt-goodscard-body' style={styleNames(innerStyle)}>
-          {base.title && (
-            <View className='wgt__header'>
-              <View className='wgt__title'>{base.title}</View>
-              <View className='wgt__subtitle'>{base.subtitle}</View>
-            </View>
-          )}
-          <View className='slider-wrap'>
-            {data.map((item) => (
-              <View
-                className='goods'
-                key={item.item_id}
-                onClick={this.handleClickItem.bind(this, item)}
-              >
-                <View className='goods-info'>
-                  <SpImage className='goods-img' src={item.img_url} />
-                  <View className='goods-name'>
-                    <View className='name'>{item.item_name}</View>
-                    <View className='desc'>
-                      {item.itemStatus ? '点击查看产品详情' : '该商品已下架'}
+        <View className='wgt-bd'>
+          {dataList.map((item, index) => {
+            const key = item.item_id != null ? String(item.item_id) : `goods-card__${index}`
+            const onSale = item.itemStatus !== false
+            const isFav = Boolean(item.favStatus ?? favs?.[item.item_id])
+            return (
+              <View key={key} className='goods-card' style={styleNames(goodsCardInnerStyle)}>
+                <View className='goods-card__header' onClick={this.handleClickItem.bind(this, item)}>
+                  <SpImage src={item.img_url} width={80} height={80} isOss />
+                  <View className='goods-card__info'>
+                    <View className='goods-card__info-title'>{item.item_name}</View>
+                    <View className='goods-card__info-price'>
+                      <SpPrice unit='cent' value={item.price} size={28} primary noDecimal />
                     </View>
+                    {item.sales > 0 && (
+                      <View className='goods-card__info-sales'>销量：{item.sales}</View>
+                    )}
                   </View>
                 </View>
-                <View className='goods-btns'>
+                <View className='goods-card__footer'>
                   <View
-                    className={classNames(`btn-text`, {
-                      'disabled': !item.itemStatus
+                    className={classNames('goods-card__btn', {
+                      'goods-card__btn--disabled': !onSale
                     })}
                     onClick={this.handleClickOperate.bind(this, item, 'collect')}
                   >
-                    {item.favStatus ? '移除心愿' : '加入心愿'}
+                    {isFav ? '移除心愿' : '加入心愿'}
                   </View>
-                  <Text>|</Text>
+                  <View className='gap-line' />
                   <View
-                    className={classNames(`btn-text`, {
-                      'disabled': !item.itemStatus
+                    className={classNames('goods-card__btn', {
+                      'goods-card__btn--disabled': !onSale
                     })}
                     onClick={this.handleClickOperate.bind(this, item, 'buy')}
                   >
@@ -258,8 +222,8 @@ export default class WgtGoodsCard extends Component {
                   </View>
                 </View>
               </View>
-            ))}
-          </View>
+            )
+          })}
         </View>
       </View>
     )
