@@ -9,27 +9,11 @@ import { SpImage, SpPrice } from '@/components'
 import { connect } from 'react-redux'
 // import { Tracker } from '@/service'
 import S from '@/spx'
-import { classNames, styleNames, showToast } from '@/utils'
+import { classNames, styleNames, showToast, pxToUnitRpx } from '@/utils'
 import api from '@/api'
 
 import { getGlobalBaseStyle } from './helper'
 import './goodscard.scss'
-
-const scaleDesignPxFields = (baseStyle, ratio = 2) => {
-  if (!baseStyle || typeof baseStyle !== 'object') {
-    return baseStyle
-  }
-
-  const next = { ...baseStyle }
-  ;['paddedt', 'paddedb', 'paddedl', 'paddedr'].forEach((key) => {
-    const v = next[key]
-    if (typeof v === 'number' && Number.isFinite(v)) {
-      next[key] = v * ratio
-    }
-  })
-
-  return next
-}
 
 @connect(
   ({ cart, member, shop }) => ({
@@ -171,15 +155,15 @@ export default class WgtGoodsCard extends Component {
 
     const { base, data: dataList = [] } = info
 
-    const outerStyle = getGlobalBaseStyle(scaleDesignPxFields(base.outerMargin))
-    const innerPaddingStyle = getGlobalBaseStyle(scaleDesignPxFields(base.innerPadding))
+    const outerStyle = getGlobalBaseStyle(base.outerMargin)
+    const innerPaddingStyle = getGlobalBaseStyle(base.innerPadding)
     const useOuterLayout = Boolean(base.outerMargin && typeof base.outerMargin === 'object')
 
     const goodsCardInnerStyle = (() => {
       const style = {
         ...innerPaddingStyle,
-        // Vue 设计稿为 8px；小程序端按设计 px ×2 再交给 pxTransform
-        'border-radius': Taro.pxTransform(16)
+        // 与后台 Vue 一致：borderRadius 8px；小程序端用 pxToUnitRpx 做 ×2 适配
+        'border-radius': pxToUnitRpx(8)
       }
 
       const hasBgColor = Boolean(style['background-color'])
@@ -207,11 +191,11 @@ export default class WgtGoodsCard extends Component {
             return (
               <View key={key} className='goods-card' style={styleNames(goodsCardInnerStyle)}>
                 <View className='goods-card__header' onClick={this.handleClickItem.bind(this, item)}>
-                  <SpImage src={item.img_url} width={160} height={160} isOss />
+                  <SpImage src={item.img_url} width={80} height={80} isOss />
                   <View className='goods-card__info'>
                     <View className='goods-card__info-title'>{item.item_name}</View>
                     <View className='goods-card__info-price'>
-                      <SpPrice unit='cent' value={item.price} size={56} primary noDecimal />
+                      <SpPrice unit='cent' value={item.price} size={28} primary noDecimal />
                     </View>
                     {item.sales > 0 && (
                       <View className='goods-card__info-sales'>销量：{item.sales}</View>

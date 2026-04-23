@@ -3,46 +3,42 @@
  * See LICENSE file for license details.
  */
 .wgt-goods-card {
-  box-sizing: border-box;
-
   &.padded {
-    padding: 20px 0;
+    padding: 10px 0;
   }
 
   .wgt-hd {
-    padding: 20px;
+    padding: 10px;
 
     .title {
-      font-size: 36px;
+      font-size: 18px;
       font-weight: 600;
       color: #333;
     }
 
     .sub-title {
       color: #666;
-      margin-left: 8px;
+      margin-left: 4px;
     }
   }
 
   .wgt-bd {
-    padding: 0 20px;
+    padding: 0 10px;
 
     .goods-card {
-      box-sizing: border-box;
-
       &:not(:last-child) {
-        margin-bottom: 20px;
+        margin-bottom: 10px;
       }
 
       &__header {
-        padding: 20px;
+        padding: 10px;
         display: flex;
         align-items: center;
       }
 
       &__info {
-        padding-left: 20px;
-        height: 160px;
+        padding-left: 10px;
+        height: 80px;
         display: flex;
         flex-direction: column;
         justify-content: center;
@@ -51,24 +47,24 @@
       }
 
       &__info-title {
-        font-size: 28px;
+        font-size: 14px;
         font-weight: 500;
         color: #333;
         @include multi-ellipsis(2);
       }
 
       &__info-price {
-        margin-top: 8px;
+        margin-top: 4px;
       }
 
       &__info-sales {
-        font-size: 24px;
+        font-size: 12px;
         color: #666;
-        margin-top: 8px;
+        margin-top: 4px;
       }
 
       &__footer {
-        height: 80px;
+        height: 40px;
         display: flex;
         justify-content: space-around;
         align-items: center;
@@ -76,7 +72,7 @@
         .goods-card__btn {
           flex: 1;
           text-align: center;
-          font-size: 28px;
+          font-size: 14px;
           color: $color-brand-primary;
         }
 
@@ -85,8 +81,8 @@
         }
 
         .gap-line {
-          width: 2px;
-          height: 40px;
+          width: 1px;
+          height: 20px;
           background-color: #e5e5e5;
         }
       }
