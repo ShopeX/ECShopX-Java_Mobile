@@ -1,9 +1,10 @@
 /**
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
+ *
+ * 构建期在 Node 执行：勿 import `@/i18n`（会间接加载 Taro → window is not defined）。
+ * 与 zh-CN 键 95285d68.* 一致；页面内可用 Taro.setNavigationBarTitle + $t 覆盖。
  */
-import { $t } from '@/i18n'
-
 const config = {
   pages: [
     'pages/index', // 首页
@@ -30,7 +31,8 @@ const config = {
     'pages/purchase/auth',
     'pages/cart/prescription-information', //补充处方信息
     'pages/cart/add-personnel', // 添加用药人员
-    'pages/share-land' //太阳码统一落地页
+    'pages/share-land', //太阳码统一落地页
+    'pages/reset-password' // 邮箱重置密码（邮件内链接 /reset-password）
   ],
   subPackages: [
     // 内购
@@ -458,6 +460,8 @@ const config = {
         'bindPhone', //绑定手机页面
         'auth-loading', //授权加载页
         'forgotpwd', //找回密码页面
+        'forgotpwd-email', //邮箱找回密码（发送重置邮件）
+        'email-activate', //邮箱注册激活落地页
         'edit-phone' //修改密码页面
       ]
     },
@@ -476,7 +480,7 @@ const config = {
   ],
   permission: {
     'scope.userLocation': {
-      desc: $t('95285d68.93f311')
+      desc: '您的位置信息将用于定位附近门店'
     }
   },
   // usingComponents: {
@@ -485,7 +489,7 @@ const config = {
   window: {
     'backgroundTextStyle': 'light',
     'navigationBarBackgroundColor': '#fff',
-    'navigationBarTitleText': $t('95285d68.0ed510'),
+    'navigationBarTitleText': '小程序',
     'navigationBarTextStyle': 'black'
   },
   plugins: {
@@ -526,9 +530,9 @@ if (process.env.APP_LIVE == 'true') {
 }
 
 if (process.env.APP_PLATFORM == 'in_purchase') {
-  config?.pages?.splice(config?.pages[0], 1, 'pages/purchase/index')
+  config.pages.splice(0, 1, 'pages/purchase/index')
 } else {
-  config?.pages?.push('pages/purchase/index')
+  config.pages.push('pages/purchase/index')
 }
 
 if (process.env.APP_ADAPAY == 'true') {

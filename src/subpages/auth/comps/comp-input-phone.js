@@ -70,7 +70,7 @@ const CompInputPhone = (props) => {
         name='mobile'
         maxLength={11}
         type='tel'
-        placeholder={placeholder || $t('70e510e9.787a47')}
+        placeholder={placeholder ?? '请输入您的手机号码'}
         onChange={handleChange}
         value={value}
         {...restProps}

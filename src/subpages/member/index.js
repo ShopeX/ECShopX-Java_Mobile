@@ -480,13 +480,14 @@ function MemberIndex(props) {
               <View
                 className='user-avatar'
                 onClick={() => onLoginChange('/subpages/member/user-info')}
-                style={{ width: '72px', height: '72px' }}
               >
                 <SpImage
                   className='avatar-img'
                   src={(userInfo && userInfo.avatar) || 'user_icon.png'}
                   width={144}
                   height={144}
+                  mode='aspectFit'
+                  radius={72}
                 />
               </View>
 
@@ -559,7 +560,7 @@ function MemberIndex(props) {
                 onClick={() => onLoginChange('/subpages/member/point-detail')}
               >
                 <Text className='stat-value'>{isLogin ? state.point || 0 : '···'}</Text>
-                <Text className='stat-label'>{$t('3009e832.9f68a8')}</Text>
+                <Text className='stat-label'>{pointName}</Text>
               </View>
             </View>
           </SpLogin>

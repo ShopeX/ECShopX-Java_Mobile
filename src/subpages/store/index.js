@@ -60,7 +60,6 @@ const initState = {
   info: null,
   skuPanelOpen: false,
   selectType: 'picker',
-  statusBarHeight: '',
   open: false,
   hideClose: true,
   /** 页面滚动超过 20px 时搜索条白底 */
@@ -87,7 +86,6 @@ function StoreIndex() {
     info,
     skuPanelOpen,
     selectType,
-    statusBarHeight,
     open,
     searchSolidBg
   } = state
@@ -98,7 +96,6 @@ function StoreIndex() {
 
   useDidShow(() => {
     fetchWgts()
-    init()
     salesmanShare()
   })
 
@@ -154,14 +151,6 @@ function StoreIndex() {
     // }
     // return routeParams
     // }
-  }
-
-  const init = async () => {
-    const { statusBarHeight } = await Taro.getSystemInfoSync()
-    setState((draft) => {
-      draft.statusBarHeight = statusBarHeight
-    })
-    console.log('MenuButton:', statusBarHeight)
   }
 
   const fetchWgts = async () => {
@@ -420,7 +409,7 @@ function StoreIndex() {
           className='switchs'
           style={{
             background: `${pageData?.base?.pageBackgroundColor || '#fff'}`,
-            top: `${statusBarHeight + 40}px`
+            top: `0px`
           }}
         >
           <Text

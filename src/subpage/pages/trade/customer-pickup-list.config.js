@@ -1,9 +1,8 @@
 /**
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
+ * 构建期勿 import `@/i18n`（与 zh-CN 键 d5036137.9c9137 一致）。
  */
-import { $t } from '@/i18n'
-
 export default {
-  navigationBarTitleText: $t('d5036137.9c9137')
+  navigationBarTitleText: '自提订单'
 }

@@ -3,7 +3,7 @@
  * See LICENSE file for license details.
  */
 import Taro, { getCurrentInstance, useDidShow } from '@tarojs/taro'
-import React, { useEffect, useState, useMemo } from 'react'
+import React, { useEffect } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { View, Text, ScrollView } from '@tarojs/components'
 import { AtButton } from 'taro-ui'
@@ -460,7 +460,7 @@ function CartIndex() {
                             disabled={all_item.cart_total_num <= 0}
                             onClick={() => handleCheckout(all_item)}
                           >
-                            {ti('f9ef9536.605bad', [all_item.cart_total_num])}
+                            {`结算(${all_item.cart_total_num})`}
                           </AtButton>
                         </View>
                       </View>
