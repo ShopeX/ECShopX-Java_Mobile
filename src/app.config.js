@@ -2,10 +2,9 @@
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
  *
- * 文案请用 `@/i18n/config-t` 的 `$t`，勿用 `@/i18n`：后者会加载 i18next，在 Node 编译 app 配置时可能报 `window is not defined`。
+ * 构建期在 Node 执行：勿 import `@/i18n`（会间接加载 Taro → window is not defined）。
+ * 与 zh-CN 键 95285d68.* 一致；页面内可用 Taro.setNavigationBarTitle + $t 覆盖。
  */
-import { $t } from '@/i18n/config-t'
-
 const config = {
   pages: [
     'pages/index', // 首页
@@ -481,7 +480,7 @@ const config = {
   ],
   permission: {
     'scope.userLocation': {
-      desc: $t('95285d68.93f311')
+      desc: '您的位置信息将用于定位附近门店'
     }
   },
   // usingComponents: {
@@ -490,7 +489,7 @@ const config = {
   'window': {
     'backgroundTextStyle': 'light',
     'navigationBarBackgroundColor': '#fff',
-    'navigationBarTitleText': $t('95285d68.0ed510'),
+    'navigationBarTitleText': '小程序',
     'navigationBarTextStyle': 'black'
   },
   plugins: {
@@ -531,9 +530,7 @@ if (process.env.APP_LIVE == 'true') {
 }
 
 if (process.env.APP_PLATFORM == 'in_purchase') {
-  if (Array.isArray(config.pages) && config.pages.length > 0) {
-    config.pages.splice(0, 1, 'pages/purchase/index')
-  }
+  config.pages.splice(0, 1, 'pages/purchase/index')
 } else {
   config.pages.push('pages/purchase/index')
 }

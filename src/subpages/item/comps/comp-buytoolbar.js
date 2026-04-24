@@ -188,7 +188,7 @@ function CompGoodsBuyToolbar(props) {
       </SpLogin>
       <View
         className='toolbar-item'
-        onClick={navigateTo.bind(this, '/pages/cart/espier-index?tabbar=0')}
+        onClick={navigateTo.bind(this, '/pages/cart/espier-index?showBack=1')}
       >
         <Text className='iconfont icon-gouwuche'></Text>
         <Text className='toolbar-item-txt'>{$t('21544271.c017be')}</Text>

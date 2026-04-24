@@ -15,7 +15,13 @@ import api from '@/api'
 import { classNames, navigateTo, validate, showToast, tokenParseH5 } from '@/utils'
 import { $t, i18n } from '@/i18n'
 import { CompOtherLogin, CompPasswordInput, CompInputPhone } from './comps'
-import { navigationToReg, setToken, setTokenAndRedirect, addListener } from './util'
+import {
+  navigationToReg,
+  setToken,
+  setTokenAndRedirect,
+  addListener,
+  normalizeAuthRedirectParam
+} from './util'
 import './login.scss'
 
 /** 注册页 redirect 带来的 email query（可能与 reg 侧 `encodeEmailForLoginQuery` 成对使用） */
@@ -62,8 +68,7 @@ export default class Login extends Component {
   /** 注册成功 redirect 登录页时携带 account_mode、email、mobile；H5 部分环境下 params 在 didShow 才就绪 */
   prefillLoginFromRouter = () => {
     if (this._loginRouterPrefilled) return
-    const params =
-      getCurrentInstance()?.router?.params || this.$instance?.router?.params || {}
+    const params = getCurrentInstance()?.router?.params || this.$instance?.router?.params || {}
     const account_mode = params.account_mode
     const emailParam = params.email
     const mobileParam = params.mobile
@@ -104,8 +109,6 @@ export default class Login extends Component {
   }
 
   componentDidMount() {
-    this._onLanguageChanged = () => this.forceUpdate()
-    i18n.on('languageChanged', this._onLanguageChanged)
     this.prefillLoginFromRouter()
     if (!this._loginRouterPrefilled) {
       this.getImageVcode()
@@ -118,17 +121,11 @@ export default class Login extends Component {
     }
   }
 
-  componentWillUnmount() {
-    if (this._onLanguageChanged) {
-      i18n.off('languageChanged', this._onLanguageChanged)
-    }
-  }
-
   componentDidShow() {
-    Taro.setNavigationBarTitle({ title: $t('aa1b799d.402d19') })
+    Taro.setNavigationBarTitle({ title: '登录' })
     const { redirect } = this.$instance?.router?.params
     if (S.getAuthToken()) {
-      const url = redirect ? decodeURIComponent(redirect) : '/subpages/member/index'
+      const url = redirect ? normalizeAuthRedirectParam(redirect) : '/subpages/member/index'
       window.location.href = url
     }
     // 部分环境下 query 仅在 didShow 就绪，用于补一次「注册成功带回邮箱」的预填
@@ -147,7 +144,7 @@ export default class Login extends Component {
       return showToast($t('3ca883d0.e70066'))
     }
     if (!imgInfo?.imageToken) {
-      showToast($t('3ca883d0.8eb88e'))
+      showToast('图形验证码未就绪，请刷新重试')
       this.getImageVcode()
       return
     }
@@ -171,13 +168,13 @@ export default class Login extends Component {
     const { email, yzm } = this.state.info
     const emailTrim = (email || '').trim()
     if (!validate.isEmail(emailTrim)) {
-      return showToast($t('3ca883d0.04154b'))
+      return showToast('请输入正确的电子邮箱')
     }
     if (!validate.isRequired(yzm)) {
-      return showToast($t('3ca883d0.e70066'))
+      return showToast('请输入图形验证码')
     }
     if (!imgInfo?.imageToken) {
-      showToast($t('3ca883d0.8eb88e'))
+      showToast('图形验证码未就绪，请刷新重试')
       this.getImageVcode()
       return
     }
@@ -188,7 +185,7 @@ export default class Login extends Component {
         token: imgInfo.imageToken,
         yzm
       })
-      showToast($t('3ca883d0.4d7fb5'))
+      showToast('验证码已发送')
       this.setState((prev) => ({
         info: { ...prev.info, yzm: '' }
       }))
@@ -270,7 +267,7 @@ export default class Login extends Component {
         resendActivateYzm: ''
       })
     } catch (e) {
-      showToast(e.message || $t('3ca883d0.8eb88e'))
+      showToast(e.message || '图形验证码未就绪，请刷新重试')
     }
   }
 
@@ -290,13 +287,13 @@ export default class Login extends Component {
     const { imgInfoActivate, resendActivateYzm } = this.state
     const emailTrim = (this.state.info.email || '').trim()
     if (!validate.isEmail(emailTrim)) {
-      return showToast($t('3ca883d0.04154b'))
+      return showToast('请输入正确的电子邮箱')
     }
     if (!validate.isRequired(resendActivateYzm)) {
-      return showToast($t('3ca883d0.e70066'))
+      return showToast('请输入图形验证码')
     }
     if (!imgInfoActivate?.imageToken) {
-      showToast($t('3ca883d0.8eb88e'))
+      showToast('图形验证码未就绪，请刷新重试')
       this.getResendActivateImageVcode()
       return
     }
@@ -316,15 +313,15 @@ export default class Login extends Component {
     }
     try {
       await api.user.memberEmailCode(resendPayload)
-      showToast($t('3ca883d0.actResentOk'))
+      showToast('激活邮件已发送，请查收邮箱')
       this.handleCloseResendActivateModal()
     } catch (e) {
-      showToast(e.message || $t('3ca883d0.actResentFail'))
+      showToast(e.message || '发送失败，请稍后重试')
       try {
         const img = await api.user.regImg({ type: 'sign' })
         this.setState({ imgInfoActivate: img, resendActivateYzm: '' })
       } catch (err) {
-        showToast(err.message || $t('3ca883d0.8eb88e'))
+        showToast(err.message || '图形验证码未就绪，请刷新重试')
       }
     }
   }
@@ -392,16 +389,16 @@ export default class Login extends Component {
     if (accountMode === 'email') {
       const emailTrim = (email || '').trim()
       if (!validate.isEmail(emailTrim)) {
-        showToast($t('3ca883d0.04154b'))
+        showToast('请输入正确的电子邮箱')
         return
       }
       if (loginType == 1) {
         if (!validate.isRequired(password)) {
-          showToast($t('3ca883d0.e39ffe'))
+          showToast('请输入密码')
           return
         }
         if (!validate.isEmailChannelPassword(password)) {
-          return showToast($t('3ca883d0.96246d'))
+          return showToast('请输入密码（8-20位，须含字母与数字）')
         }
         params = {
           username: emailTrim,
@@ -413,7 +410,7 @@ export default class Login extends Component {
         }
       } else {
         if (!validate.isRequired(vcode)) {
-          showToast($t('3ca883d0.d0c06a'))
+          showToast('请输入验证码')
           return
         }
         params = {
@@ -429,17 +426,17 @@ export default class Login extends Component {
         username: mobile
       }
       if (!validate.isMobileNum(mobile)) {
-        showToast($t('3ca883d0.a32ab5'))
+        showToast('请输入正确的手机号')
         return
       }
 
       if (loginType == 1) {
         if (!validate.isRequired(password)) {
-          showToast($t('3ca883d0.e39ffe'))
+          showToast('请输入密码')
           return
         }
         if (!validate.isPassword(password)) {
-          return showToast($t('3ca883d0.eac67a'))
+          return showToast('密码格式不正确')
         }
         params['password'] = password
         params['check_type'] = 'password'
@@ -447,7 +444,7 @@ export default class Login extends Component {
         params['auto_register'] = 0
       } else {
         if (!validate.isRequired(vcode)) {
-          showToast($t('3ca883d0.d0c06a'))
+          showToast('请输入验证码')
           return
         }
         params['vcode'] = vcode
@@ -471,8 +468,7 @@ export default class Login extends Component {
       params['latest_monitor_id'] = latest_monitor_id
     }
 
-    const loginPayload =
-      accountMode === 'email' ? { ...params, showError: false } : params
+    const loginPayload = accountMode === 'email' ? { ...params, showError: false } : params
 
     try {
       const { token, error_message } = await api.wx.newloginh5(loginPayload)
@@ -483,24 +479,24 @@ export default class Login extends Component {
         if (accountMode === 'email') {
           this.setState({ showEmailNotActivatedHint: false })
           if (loginType === 1) {
-            return showToast($t('3ca883d0.54414f'))
+            return showToast('该邮箱尚未注册，请先注册或使用验证码登录')
           }
           setToken(token)
           const emailTrim = (this.state.info.email || '').trim()
           Taro.navigateTo({
             url: `/subpages/auth/edit-password?phone=${encodeURIComponent(
               emailTrim
-            )}&redi_url=${encodeURIComponent(redirect || '')}`
+            )}&redi_url=${encodeURIComponent(normalizeAuthRedirectParam(redirect || ''))}`
           })
           return
         }
         if (loginType === 1) {
-          return showToast($t('3ca883d0.3bfe03'))
+          return showToast('当前手机号未注册，请先注册！')
         }
         setToken(token)
         Taro.navigateTo({
           url: `/subpages/auth/edit-password?phone=${mobile}&redi_url=${encodeURIComponent(
-            redirect || ''
+            normalizeAuthRedirectParam(redirect || '')
           )}`
         })
         return
@@ -564,7 +560,7 @@ export default class Login extends Component {
     if (accountMode === 'email') {
       const parts = []
       if (redirect) {
-        parts.push(`redi_url=${encodeURIComponent(redirect)}`)
+        parts.push(`redi_url=${encodeURIComponent(normalizeAuthRedirectParam(redirect))}`)
       }
       if (email) {
         parts.push(`email=${encodeURIComponent(email.trim())}`)
@@ -579,7 +575,7 @@ export default class Login extends Component {
 
     const parts = []
     if (redirect) {
-      parts.push(`redi_url=${encodeURIComponent(redirect)}`)
+      parts.push(`redi_url=${encodeURIComponent(normalizeAuthRedirectParam(redirect))}`)
     }
     if (mobile) {
       parts.push(`phone=${mobile}`)
@@ -682,11 +678,7 @@ export default class Login extends Component {
       validate.isEmailChannelPassword(info.password)
 
     const isFullEmailOtp =
-      accountMode === 'email' &&
-      codeLogin &&
-      validate.isEmail(emailTrim) &&
-      info.yzm &&
-      info.vcode
+      accountMode === 'email' && codeLogin && validate.isEmail(emailTrim) && info.yzm && info.vcode
 
     const isFull = isFullMobile || isFullEmailPassword || isFullEmailOtp
 
@@ -705,7 +697,7 @@ export default class Login extends Component {
       >
         <View style={{ padding: '0 32px' }}>
           <View className='auth-hd'>
-            <View className='title'>{$t('3ca883d0.04b015')}</View>
+            <View className='title'>{'欢迎登录'}</View>
             {/* <View className='desc'>使用已注册的手机号登录</View> */}
           </View>
           <View className='auth-bd'>
@@ -716,7 +708,7 @@ export default class Login extends Component {
                 })}
                 onClick={() => this.handleAccountModeChange('mobile')}
               >
-                {$t('3ca883d0.c906ff')}
+                {'手机号登录'}
               </View>
               <View
                 className={classNames('login-type-tab', {
@@ -724,7 +716,7 @@ export default class Login extends Component {
                 })}
                 onClick={() => this.handleAccountModeChange('email')}
               >
-                {$t('3ca883d0.c90700')}
+                {'邮箱登录'}
               </View>
             </View>
             <AtForm className='form'>
@@ -757,7 +749,7 @@ export default class Login extends Component {
                           clear
                           name='yzm'
                           value={info.yzm}
-                          placeholder={$t('3ca883d0.e70066')}
+                          placeholder={'请输入图形验证码'}
                           onChange={this.handleInputChange.bind(this, 'yzm')}
                           placeholderClass='input-placeholder'
                           {...inputProp}
@@ -781,7 +773,7 @@ export default class Login extends Component {
                           clear
                           name='vcode'
                           value={info.vcode}
-                          placeholder={$t('3ca883d0.d0c06a')}
+                          placeholder={'请输入验证码'}
                           onChange={this.handleInputChange.bind(this, 'vcode')}
                           placeholderClass='input-placeholder'
                           {...inputProp}
@@ -797,11 +789,11 @@ export default class Login extends Component {
                   )}
                   <View className='btn-text-group'>
                     <Text className='btn-text' onClick={this.handleToggleLogin.bind(this)}>
-                      {passwordLogin ? $t('3ca883d0.4bc8be') : $t('3ca883d0.0d9631')}
+                      {passwordLogin ? '验证码登录' : '密码登录'}
                     </Text>
                     {passwordLogin && (
                       <Text className='btn-text forgot-password' onClick={this.handleForgotPsd}>
-                        {$t('3ca883d0.804890')}
+                        {'忘记密码？'}
                       </Text>
                     )}
                   </View>
@@ -814,7 +806,7 @@ export default class Login extends Component {
                       name='email'
                       type='text'
                       value={info.email}
-                      placeholder={$t('3ca883d0.b457cd')}
+                      placeholder={'请输入登录邮箱'}
                       onChange={this.handleInputChange.bind(this, 'email')}
                       placeholderClass='input-placeholder'
                       {...inputProp}
@@ -824,7 +816,7 @@ export default class Login extends Component {
                     <View className='form-field'>
                       <View className='input-field'>
                         <CompPasswordInput
-                          placeholder={$t('3ca883d0.96246d')}
+                          placeholder={'请输入密码（8-20位，须含字母与数字）'}
                           onChange={this.handleInputChange.bind(this, 'password')}
                           {...inputProp}
                           value={info.password}
@@ -839,7 +831,7 @@ export default class Login extends Component {
                           clear
                           name='email-yzm'
                           value={info.yzm}
-                          placeholder={$t('3ca883d0.e70066')}
+                          placeholder={'请输入图形验证码'}
                           onChange={this.handleInputChange.bind(this, 'yzm')}
                           placeholderClass='input-placeholder'
                           {...inputProp}
@@ -863,7 +855,7 @@ export default class Login extends Component {
                           clear
                           name='email-vcode'
                           value={info.vcode}
-                          placeholder={$t('3ca883d0.a5ae49')}
+                          placeholder={'请输入邮箱验证码'}
                           onChange={this.handleInputChange.bind(this, 'vcode')}
                           placeholderClass='input-placeholder'
                           {...inputProp}
@@ -880,7 +872,7 @@ export default class Login extends Component {
                   )}
                   <View className='btn-text-group'>
                     <Text className='btn-text' onClick={this.handleToggleLogin.bind(this)}>
-                      {passwordLogin ? $t('3ca883d0.4bc8be') : $t('3ca883d0.0d9631')}
+                      {passwordLogin ? '验证码登录' : '密码登录'}
                     </Text>
                     {(passwordLogin || showEmailNotActivatedHint) && (
                       <Text
@@ -891,9 +883,7 @@ export default class Login extends Component {
                             : this.handleForgotPsd
                         }
                       >
-                        {showEmailNotActivatedHint
-                          ? $t('3ca883d0.actHint')
-                          : $t('3ca883d0.804890')}
+                        {showEmailNotActivatedHint ? '未收到激活邮件？' : '忘记密码？'}
                       </Text>
                     )}
                   </View>
@@ -907,7 +897,7 @@ export default class Login extends Component {
                   className='login-button'
                   onClick={this.handleSubmit.bind(this)}
                 >
-                  {$t('3ca883d0.e43613')}
+                  {'登 录'}
                 </AtButton>
                 <AtButton
                   circle
@@ -915,7 +905,7 @@ export default class Login extends Component {
                   className='reg-button'
                   onClick={this.handleNavigateReg}
                 >
-                  {$t('3ca883d0.495d84')}
+                  {'注 册'}
                 </AtButton>
               </View>
             </AtForm>
@@ -927,29 +917,29 @@ export default class Login extends Component {
 
         <SpFloatLayout
           className='login-resend-activate-modal'
-          title={$t('3ca883d0.actModalTitle')}
+          title={'重发激活邮件'}
           open={showResendActivateModal}
           onClose={this.handleCloseResendActivateModal}
           renderFooter={
             <View className='resend-activate-footer'>
               <AtButton circle onClick={this.handleCloseResendActivateModal}>
-                {$t('3ca883d0.actCancel')}
+                {'取消'}
               </AtButton>
               <AtButton circle type='primary' onClick={this.handleConfirmResendActivate}>
-                {$t('3ca883d0.actConfirm')}
+                {'确认'}
               </AtButton>
             </View>
           }
         >
           <View className='resend-activate-body'>
-            <Text className='resend-activate-body__text'>{$t('3ca883d0.actModalBody')}</Text>
+            <Text className='resend-activate-body__text'>{'是否向该邮箱重新发送激活邮件？'}</Text>
             <View className='form-field resend-activate-captcha'>
               <View className='input-field'>
                 <AtInput
                   clear
                   name='resend-activate-yzm'
                   value={resendActivateYzm}
-                  placeholder={$t('3ca883d0.e70066')}
+                  placeholder={'请输入图形验证码'}
                   onChange={this.handleResendActivateYzmChange}
                   placeholderClass='input-placeholder'
                 />

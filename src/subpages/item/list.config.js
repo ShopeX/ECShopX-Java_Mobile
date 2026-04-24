@@ -6,5 +6,6 @@ export default {
   usingComponents: {
     //'cell': 'plugin://contactPlugin/cell'
   },
-  navigationBarTitleText: ''
+  navigationBarTitleText: '',
+  navigationStyle: 'custom'
 }

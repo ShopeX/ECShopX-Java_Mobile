@@ -3,7 +3,7 @@
  * See LICENSE file for license details.
  */
 import Taro, { getCurrentInstance, useDidShow } from '@tarojs/taro'
-import React, { useEffect, useState, useMemo } from 'react'
+import React, { useEffect } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { View, Text, ScrollView } from '@tarojs/components'
 import { AtButton } from 'taro-ui'
@@ -12,7 +12,6 @@ import qs from 'qs'
 import api from '@/api'
 import doc from '@/doc'
 import { navigateTo, pickBy, classNames, throttle } from '@/utils'
-import { useTranslation, $t, ti } from '@/i18n'
 import { useLogin, useLocation, useDebounce } from '@/hooks'
 import { fetchCartList, deleteCartItem, updateCartItemNum, updateCount } from '@/store/slices/cart'
 import { updatePurchaseShareInfo, updateInviteCode } from '@/store/slices/purchase'
@@ -45,7 +44,7 @@ const initialState = {
 }
 
 function CartIndex() {
-  useTranslation()
+  const { i18n } = useTranslation()
   const { updateAddress } = useLocation()
 
   const { shopInfo = {} } = useSelector((state) => state.shop)
@@ -231,6 +230,7 @@ function CartIndex() {
       title: $t('61e2d21a.02d981'),
       content: $t('61e2d21a.a4936e'),
       showCancel: true,
+      cancel: $t('61e2d21a.625fb2'),
       cancelText: $t('61e2d21a.625fb2'),
       confirmText: $t('61e2d21a.e83a25'),
       confirmColor: colorPrimary
@@ -295,6 +295,8 @@ function CartIndex() {
           draft.footerHeight = footerHeight
         })
       }}
+      immersive={false}
+      title='购物车'
       renderFooter={tabbar == 1 && <SpTabbar height={state.footerHeight} />}
     >
       <ScrollView scrollY style='height: 100%;'>
@@ -457,7 +459,7 @@ function CartIndex() {
                             disabled={all_item.cart_total_num <= 0}
                             onClick={() => handleCheckout(all_item)}
                           >
-                            {ti('f9ef9536.605bad', [all_item.cart_total_num])}
+                            {`结算(${all_item.cart_total_num})`}
                           </AtButton>
                         </View>
                       </View>

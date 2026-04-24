@@ -10,6 +10,7 @@ import classNames from 'classnames'
 import './comp-activity-item.scss'
 
 function CompActivityItem(props) {
+  useTranslation()
   const {
     info = {},
     isActivity = false,
@@ -83,7 +84,7 @@ function CompActivityItem(props) {
             <Text className='activity-item__content-reject-reason'>{reason}</Text>
           </View>
         )}
-  
+
         <View className='activity-item__content-btns'>
           {isActivity && (
             <View className='activity-item__content-btn activity-btn'>{$t('c012603a.048ca2')}</View>
@@ -97,33 +98,36 @@ function CompActivityItem(props) {
                   onViewRecords(info)
                 }}
               >
-                {$t('c2a4242b.b38ce3')}
+                {$t('925d1b2b.b38ce3')}
               </View>
             ) : null}
-          {actionEdit && !isActivity && (
-            <View
-              className='activity-item__content-btn'
-              onClick={(e) => handleBtnClick(e, 'reFill')}
-            >
-              {$t('c012603a.a5c7b5')}
-            </View>
-          )}
-          {!isActivity && actionApply && (
-            <View className='activity-item__content-btn' onClick={(e) => handleBtnClick(e, 'sign')}>
-              {$t('c012603a.1e6c87')}
-            </View>
-          )}
+            {actionEdit && !isActivity && (
+              <View
+                className='activity-item__content-btn'
+                onClick={(e) => handleBtnClick(e, 'reFill')}
+              >
+                {$t('925d1b2b.a5c7b5')}
+              </View>
+            )}
+            {!isActivity && actionApply && (
+              <View
+                className='activity-item__content-btn'
+                onClick={(e) => handleBtnClick(e, 'sign')}
+              >
+                {$t('925d1b2b.1e6c87')}
+              </View>
+            )}
 
-          {isActivity && (
-            <View
-              className={classNames('activity-item__content-btn', {
-                ' disabled-btn': signDisabled
-              })}
-              onClick={(e) => handleBtnClick(e, 'sign')}
-            >
-              {$t('c012603a.1e6c87')}
-            </View>
-          )}
+            {isActivity && (
+              <View
+                className={classNames('activity-item__content-btn', {
+                  ' disabled-btn': signDisabled
+                })}
+                onClick={(e) => handleBtnClick(e, 'sign')}
+              >
+                {$t('925d1b2b.1e6c87')}
+              </View>
+            )}
           </View>
         </View>
       </View>

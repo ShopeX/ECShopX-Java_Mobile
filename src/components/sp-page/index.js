@@ -64,7 +64,6 @@ const initialState = {
   mantle: false,
   navigationLSpace: 0,
   navigationRSpace: 0,
-  pageTitle: '',
   pageBackground: {},
   pageTheme: {},
   showLeftContainer: false,
@@ -156,12 +155,13 @@ const SpPage = memo(
       let _navigationRSpace = 0 // 导航栏右间距
       const { screenHeight, windowWidth, windowHeight } = Taro.getWindowInfo()
       const [absolutePath] = router?.path.split('?')
+      const forceShowBack = String(router?.params?.showBack || '') === '1'
       // 小程序/支付宝：按页面 config 是否 custom；H5：有 pageConfig 或 immersive 时也使用自定义顶栏以支持相同顶部样式
       const custom_navigation =
         isWeixin || isAlipay
           ? navigationStyle === 'custom'
           : isWeb && !!(props.pageConfig || props.immersive)
-      const _btnReturn = pages.length > 1 && !TAB_PAGES.includes(absolutePath)
+      const _btnReturn = pages.length > 1 && (!TAB_PAGES.includes(absolutePath) || forceShowBack)
       const _btnHome = pages.length == 1 && !TAB_PAGES.includes(absolutePath)
       if (isWeixin || isAlipay) {
         const menuButton = Taro.getMenuButtonBoundingClientRect()
@@ -184,7 +184,6 @@ const SpPage = memo(
         draft.customNavigation = custom_navigation
         draft.cusCurrentPage = pages.length
         draft.ipx = isIphoneX()
-        draft.pageTitle = props.title || instanceRef.current?.page?.config?.navigationBarTitleText
         draft.gNavbarH = _gNavbarH
         draft.gStatusBarHeight = _gStatusBarHeight
         draft.height =
