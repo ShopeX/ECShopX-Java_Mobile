@@ -168,13 +168,6 @@ const Reg = () => {
   }
 
   const handleSubmit = async () => {
-    const routerParams = getCurrentInstance()?.router?.params || {}
-    showToast(pickRegisterSuccessToast({ message: '注册成功' }, '注册成功'), () => {
-      Taro.redirectTo({
-        url: buildPostRegisterLoginUrl('mobile', { mobile:15800792170 }, routerParams)
-      })
-    })
-    return
     if (!checked) {
       const res = await Taro.showModal({
         title: $t('4e9d53b5.02d981'),
