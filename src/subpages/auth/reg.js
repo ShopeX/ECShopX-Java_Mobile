@@ -13,6 +13,7 @@ import { AtForm, AtButton } from 'taro-ui'
 import api from '@/api'
 import { useImmer } from 'use-immer'
 import { CompPasswordInput } from './comps'
+import { normalizeAuthRedirectParam } from './util'
 import './reg.scss'
 
 /** query 里邮箱保留 `@`，避免链接或路由层把 `%40` 当字面量带进输入框；其余字符仍按 URI 编码 */
@@ -38,11 +39,13 @@ function buildPostRegisterLoginUrl(accountMode, fields, routerParams) {
     qs.push(`email=${encodeEmailForLoginQuery(fields.email)}`)
   }
   const { redi_url, redirect } = routerParams || {}
-  if (redi_url) {
-    qs.push(`redi_url=${encodeURIComponent(redi_url)}`)
+  const rediPlain = redi_url ? normalizeAuthRedirectParam(redi_url) : ''
+  const redirectPlain = redirect ? normalizeAuthRedirectParam(redirect) : ''
+  if (rediPlain) {
+    qs.push(`redi_url=${encodeURIComponent(rediPlain)}`)
   }
-  if (redirect) {
-    qs.push(`redirect=${encodeURIComponent(redirect)}`)
+  if (redirectPlain) {
+    qs.push(`redirect=${encodeURIComponent(redirectPlain)}`)
   }
   return `/subpages/auth/login?${qs.join('&')}`
 }
@@ -114,7 +117,7 @@ const Reg = () => {
     const redi_url = getCurrentInstance()?.router?.params?.redi_url
     const parts = []
     if (redi_url) {
-      parts.push(`redi_url=${encodeURIComponent(redi_url)}`)
+      parts.push(`redi_url=${encodeURIComponent(normalizeAuthRedirectParam(redi_url))}`)
     }
     const e = email.trim()
     if (e) {

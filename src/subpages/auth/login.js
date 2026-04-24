@@ -14,7 +14,13 @@ import S from '@/spx'
 import api from '@/api'
 import { classNames, navigateTo, validate, showToast, tokenParseH5 } from '@/utils'
 import { CompOtherLogin, CompPasswordInput, CompInputPhone } from './comps'
-import { navigationToReg, setToken, setTokenAndRedirect, addListener } from './util'
+import {
+  navigationToReg,
+  setToken,
+  setTokenAndRedirect,
+  addListener,
+  normalizeAuthRedirectParam
+} from './util'
 import './login.scss'
 
 /** 注册页 redirect 带来的 email query（可能与 reg 侧 `encodeEmailForLoginQuery` 成对使用） */
@@ -112,7 +118,7 @@ export default class Login extends Component {
     Taro.setNavigationBarTitle({ title: '登录' })
     const { redirect } = this.$instance?.router?.params
     if (S.getAuthToken()) {
-      const url = redirect ? decodeURIComponent(redirect) : '/subpages/member/index'
+      const url = redirect ? normalizeAuthRedirectParam(redirect) : '/subpages/member/index'
       window.location.href = url
     }
     // 部分环境下 query 仅在 didShow 就绪，用于补一次「注册成功带回邮箱」的预填
@@ -473,7 +479,7 @@ export default class Login extends Component {
           Taro.navigateTo({
             url: `/subpages/auth/edit-password?phone=${encodeURIComponent(
               emailTrim
-            )}&redi_url=${encodeURIComponent(redirect || '')}`
+            )}&redi_url=${encodeURIComponent(normalizeAuthRedirectParam(redirect || ''))}`
           })
           return
         }
@@ -483,7 +489,7 @@ export default class Login extends Component {
         setToken(token)
         Taro.navigateTo({
           url: `/subpages/auth/edit-password?phone=${mobile}&redi_url=${encodeURIComponent(
-            redirect || ''
+            normalizeAuthRedirectParam(redirect || '')
           )}`
         })
         return
@@ -547,7 +553,7 @@ export default class Login extends Component {
     if (accountMode === 'email') {
       const parts = []
       if (redirect) {
-        parts.push(`redi_url=${encodeURIComponent(redirect)}`)
+        parts.push(`redi_url=${encodeURIComponent(normalizeAuthRedirectParam(redirect))}`)
       }
       if (email) {
         parts.push(`email=${encodeURIComponent(email.trim())}`)
@@ -562,7 +568,7 @@ export default class Login extends Component {
 
     const parts = []
     if (redirect) {
-      parts.push(`redi_url=${encodeURIComponent(redirect)}`)
+      parts.push(`redi_url=${encodeURIComponent(normalizeAuthRedirectParam(redirect))}`)
     }
     if (mobile) {
       parts.push(`phone=${mobile}`)

@@ -13,6 +13,7 @@ import api from '@/api'
 import { useImmer } from 'use-immer'
 import { useSelector } from 'react-redux'
 import { CompPasswordInput } from './comps'
+import { normalizeAuthRedirectParam } from './util'
 import './forgotpwd.scss'
 
 const SYMBOL = 'forgot_password'
@@ -60,7 +61,7 @@ const PageBindPhone = () => {
   const showModalReg = async () => {
     let url = `/subpages/auth/reg`
     if (redi_url) {
-      url += `?redi_url=${encodeURIComponent(redi_url)}`
+      url += `?redi_url=${encodeURIComponent(normalizeAuthRedirectParam(redi_url))}`
     }
     const { is_new } = await api.wx.getIsNew({ mobile: username })
     setState((_state) => {
