@@ -10,7 +10,7 @@ import api from '@/api'
 import * as dianwuApi from '@/api/dianwu'
 import doc from '@/subpages/doc'
 import { View, Text, ScrollView, Camera } from '@tarojs/components'
-import { AtTabs, AtTabsPane, AtButton, AtCurtain } from 'taro-ui'
+import { AtTabs, AtTabsPane, AtButton } from 'taro-ui'
 import {
   SpPage,
   SpSearchInput,
@@ -31,18 +31,19 @@ import CompGoods from './comps/comp-goods'
 import CompGift from './comps/comp-gift'
 import CompGoodsPrice from './comps/comp-goods-price'
 import CompTabbar from './comps/comp-tabbar'
+import CompDianwuSelectMember from './comps/comp-dianwu-select-member'
+import CompDianwuPlatformOrder from './comps/comp-dianwu-platform-order'
 import './cashier.scss'
 
 const initialState = {
   keywords: '',
   cartList: [],
-  mobile: '',
   searchGoodsList: [],
-  searchMemberResult: null,
   discountDetailLayout: false,
   searchResultLayout: false,
   addUserCurtain: false,
-  isCameraOpend: false
+  isCameraOpend: false,
+  platformOrderItem: null
 }
 
 function DianWuCashier() {
@@ -50,14 +51,13 @@ function DianWuCashier() {
   const {
     keywords,
     cartList,
-    mobile,
     discountDetailLayout,
     searchResultLayout,
     addUserCurtain,
     searchGoodsList,
-    searchMemberResult,
     isCameraOpend,
-    distributor_id
+    distributor_id,
+    platformOrderItem
   } = state
   const pageRef = useRef()
   const getCashierListRef = useRef(null)
@@ -98,12 +98,12 @@ function DianWuCashier() {
   }, [member])
 
   useEffect(() => {
-    if (discountDetailLayout || searchResultLayout || addUserCurtain) {
+    if (discountDetailLayout || searchResultLayout || addUserCurtain || platformOrderItem) {
       pageRef.current.pageLock()
     } else {
       pageRef.current.pageUnLock()
     }
-  }, [discountDetailLayout, searchResultLayout, addUserCurtain])
+  }, [discountDetailLayout, searchResultLayout, addUserCurtain, platformOrderItem])
 
   useEffect(() => {
     if (keywords) {
@@ -116,7 +116,8 @@ function DianWuCashier() {
     const { list: goodsList } = await dianwuApi.goodsItems({
       page: 1,
       pageSize: 100,
-      keywords
+      keywords,
+      distributor_id
     })
     Taro.hideLoading()
 
@@ -125,24 +126,6 @@ function DianWuCashier() {
       // draft.searchMemberList = pickBy(memberList, doc.dianwu.MEMBER_ITEM)
       draft.searchResultLayout = true
     })
-  }
-
-  const handleScanCode = async () => {
-    const { errMsg, result } = await Taro.scanCode()
-    console.log('handleScanCode:', result)
-    if (errMsg == 'scanCode:ok') {
-      Taro.showLoading({ title: '' })
-      const { list } = await dianwuApi.getMembers({
-        user_card_code: result.split('_')[1]
-      })
-      // console.log(pickBy(list, doc.dianwu.MEMBER_ITEM))
-      Taro.hideLoading()
-      setState((draft) => {
-        draft.searchMemberResult = pickBy(list, doc.dianwu.MEMBER_ITEM)
-      })
-    } else {
-      showToast(errMsg)
-    }
   }
 
   const handleScanGoodsBN = async () => {
@@ -228,26 +211,6 @@ function DianWuCashier() {
         scanIsUseableRef.current = true
       }, 2000)
     }
-  }
-
-  // 选择会员
-  const handleSelectMember = async () => {
-    const [item] = searchMemberResult
-    const userInfo = await dianwuApi.getMemberByUserId({ user_id: item.userId })
-    const { couponNum, point, vipDiscount } = pickBy(userInfo, doc.dianwu.MEMBER_INFO)
-    dispatch(
-      selectMember({
-        ...item,
-        couponNum,
-        point,
-        vipDiscount
-      })
-    )
-    setState((draft) => {
-      draft.addUserCurtain = false
-      draft.mobile = ''
-      draft.searchMemberResult = null
-    })
   }
 
   // 挂单
@@ -481,10 +444,6 @@ function DianWuCashier() {
                 className='btn-clear'
                 onClick={() => {
                   dispatch(selectMember(null))
-                  setState((draft) => {
-                    draft.mobile = ''
-                    draft.searchMemberResult = null
-                  })
                 }}
               >
                 <Text className='iconfont icon-shanchu-011'></Text>
@@ -701,7 +660,7 @@ function DianWuCashier() {
           {searchGoodsList.map((item, index) => (
             <View className='goods-item-wrap' key={`goods-item-wrap__${index}`}>
               <CompGoods info={item}>
-                {item.store > 0 && (
+                {item.store > 0 && item.isTotalStore === true && (
                   <AtButton
                     circle
                     className='btn-add-cart'
@@ -710,14 +669,41 @@ function DianWuCashier() {
                     {$t('7187dbd0.cd2240')}
                   </AtButton>
                 )}
+
+                {item.store == 0 && item.platformStore > 0 && (
+                  <AtButton
+                    className='btn-add-cart btn-platform-order'
+                    circle
+                    onClick={() => {
+                      setState((draft) => {
+                        draft.platformOrderItem = item
+                      })
+                    }}
+                  >
+                    立即下单
+                  </AtButton>
+                )}
               </CompGoods>
             </View>
           ))}
         </ScrollView>
       </SpFloatLayout>
 
-      <AtCurtain
-        isOpened={addUserCurtain}
+      <CompDianwuPlatformOrder
+        open={!!platformOrderItem}
+        item={platformOrderItem}
+        distributor_id={distributor_id}
+        onClose={() => {
+          setState((draft) => {
+            draft.platformOrderItem = null
+          })
+        }}
+        onEventFetchOrder={getCashierList}
+      />
+
+      <CompDianwuSelectMember
+        open={addUserCurtain}
+        distributor_id={distributor_id}
         onClose={() => {
           setState((draft) => {
             draft.addUserCurtain = false

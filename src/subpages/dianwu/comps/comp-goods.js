@@ -16,6 +16,10 @@ function CompGoods(props) {
     return null
   }
 
+  const showStore = info.isTotalStore === true
+  const showPlatformStore = info.platformStore != null
+  const showInventory = showStore || showPlatformStore
+
   return (
     <View className='comp-goods'>
       <View className='item-bd'>
@@ -44,10 +48,12 @@ function CompGoods(props) {
           <CompGoodsPrice info={info} />
           <View className='goods-info'>
             <View className='kc-bn'>
-              {info.store && (
+              {showInventory && (
                 <View className='kc'>
                   <Text className='label'>{$t('982aa174.b008bd')}</Text>
-                  {info.store}
+                  {showStore && <Text>门店 {info.store}</Text>}
+                  {showStore && showPlatformStore && <Text> | </Text>}
+                  {showPlatformStore && <Text>云仓 {info.platformStore}</Text>}
                 </View>
               )}
               {info.barcode && (

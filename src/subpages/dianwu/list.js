@@ -15,18 +15,29 @@ import { useTranslation, $t, ti, i18n } from '@/i18n'
 import { useNavigation } from '@/hooks'
 import CompGoods from './comps/comp-goods'
 import CompTabbar from './comps/comp-tabbar'
+import CompDianwuPlatformOrder from './comps/comp-dianwu-platform-order'
 import './list.scss'
+
+/** 无库存不可加购：门店与云仓均为 0 才禁用；未返回 platform_store 时仅按门店库存判断（与历史行为一致） */
+function isDianwuListGoodsDisabled(item) {
+  if (item.store != 0) return false
+  const ps = item.platformStore
+  if (ps == null || ps === '') return true
+  return ps == 0
+}
 
 const initialState = {
   keywords: '',
   list: [],
-  cartList: []
+  current: 0,
+  cartList: [],
+  platformOrderItem: null
 }
 
 function DianWuList() {
   useTranslation()
   const [state, setState] = useImmer(initialState)
-  const { keywords, list, cartList } = state
+  const { keywords, typeList, current, list, cartList, platformOrderItem } = state
   const goodsRef = useRef()
   const $instance = getCurrentInstance() || {}
   const { distributor_id } = $instance?.router?.params
@@ -144,11 +155,11 @@ function DianWuList() {
         {list.map((items, idx) => {
           return items.map((item, sidx) => (
             <View
-              className={classNames('item-wrap', { 'item-disabled': item.store == 0 })}
+              className={classNames('item-wrap', { 'item-disabled': isDianwuListGoodsDisabled(item) })}
               key={`item-wrap__${idx}_${sidx}`}
             >
               <CompGoods info={item}>
-                {item.store > 0 && (
+                {item.store > 0 && item.isTotalStore === true && (
                   <AtButton
                     className='btn-add-cart'
                     circle
@@ -157,11 +168,37 @@ function DianWuList() {
                     {$t('8cac8565.cd2240')}
                   </AtButton>
                 )}
+
+                {item.store == 0 && item.platformStore > 0 && (
+                  <AtButton
+                    className='btn-add-cart btn-platform-order'
+                    circle
+                    onClick={() => {
+                      setState((draft) => {
+                        draft.platformOrderItem = item
+                      })
+                    }}
+                  >
+                    立即下单
+                  </AtButton>
+                )}
               </CompGoods>
             </View>
           ))
         })}
       </SpScrollView>
+
+      <CompDianwuPlatformOrder
+        open={!!platformOrderItem}
+        item={platformOrderItem}
+        distributor_id={distributor_id}
+        onClose={() => {
+          setState((draft) => {
+            draft.platformOrderItem = null
+          })
+        }}
+        onEventFetchOrder={getCashierList}
+      />
     </SpPage>
   )
 }
