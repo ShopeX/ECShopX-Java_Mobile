@@ -449,9 +449,9 @@ function StoreIndex() {
         ) : (
           <Categorys addPurchases={addPurchases} dtid={distributorId} />
         )}
-        {/* <View className='sp-page__powered-by w-full'>
+        <View className='sp-page__powered-by w-full'>
           <SpPoweredBy />
-        </View> */}
+        </View>
         {/* Sku选择器 */}
         <MSpSkuSelect
           open={skuPanelOpen}

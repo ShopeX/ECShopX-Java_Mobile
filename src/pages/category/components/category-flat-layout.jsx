@@ -190,9 +190,9 @@ function CategoryFlatLayout() {
                   {item.name === 'film' && <WgtFilm info={item} id={index + 1} />} {/** 视频 */}
                 </>
               ))}
-              {/* <View className='category-flat-layout__powered-by-wrap'>
+              <View className='category-flat-layout__powered-by-wrap'>
                 <SpPoweredBy />
-              </View> */}
+              </View>
             </ScrollView>
           )}
         </>

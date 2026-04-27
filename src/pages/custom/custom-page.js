@@ -168,9 +168,9 @@ function CustomPage(props) {
           <HomeWgts wgts={filterWgts} />
         </WgtsContext.Provider>
         {/* If you remove or alter Shopex brand identifiers, you must obtain a branding removal license from Shopex.  Contact us at:  http://www.shopex.cn to purchase a branding removal license. */}
-        {/* <View className='sp-page__powered-by w-full'>
+        <View className='sp-page__powered-by w-full'>
           <SpPoweredBy />
-        </View> */}
+        </View>
 
         {/* Sku选择器 */}
         <MSpSkuSelect
