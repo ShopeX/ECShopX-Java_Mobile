@@ -2,6 +2,8 @@
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
  */
+// import { appConfigT } from '@/subpage/i18n/app-config-t'
+
 const config = {
   pages: [
     'pages/index', // 首页

@@ -16,7 +16,16 @@ const initialValue = {
 }
 
 const CompPasswordInput = (props) => {
-  const { onChange = () => {}, disabled, onFocus = () => {}, onBlur = () => {}, value } = props
+  const {
+    onChange = () => {},
+    disabled,
+    onFocus = () => {},
+    onBlur = () => {},
+    value,
+    placeholder
+  } = props
+
+  const placeholderText = placeholder ?? '密码需由6-16位数字或字母组成'
 
   const [state, setState] = useImmer(initialValue)
 

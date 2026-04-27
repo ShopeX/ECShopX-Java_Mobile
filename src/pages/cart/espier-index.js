@@ -3,7 +3,7 @@
  * See LICENSE file for license details.
  */
 import Taro, { getCurrentInstance, useDidShow } from '@tarojs/taro'
-import React, { useEffect, useState, useMemo } from 'react'
+import React, { useEffect } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { View, Text, ScrollView } from '@tarojs/components'
 import { AtButton } from 'taro-ui'
@@ -225,7 +225,6 @@ function CartIndex() {
       title: '提示',
       content: '将当前商品移出购物车?',
       showCancel: true,
-      cancel: '取消',
       cancelText: '取消',
       confirmText: '确认',
       confirmColor: colorPrimary
@@ -343,9 +342,7 @@ function CartIndex() {
                                       })
                                     }
                                   >
-                                    <Text className='shop-cart-activity-label'>
-                                      换购
-                                    </Text>
+                                    <Text className='shop-cart-activity-label'>换购</Text>
                                     <Text>{discount_desc.info}</Text>
                                   </View>
                                   <View
@@ -356,7 +353,7 @@ function CartIndex() {
                                       })
                                     }
                                   >
-                                      去选择
+                                    去选择
                                     <Text className='at-icon at-icon-chevron-right'></Text>
                                   </View>
                                 </View>
@@ -454,7 +451,7 @@ function CartIndex() {
                             disabled={all_item.cart_total_num <= 0}
                             onClick={() => handleCheckout(all_item)}
                           >
-                            结算({all_item.cart_total_num})
+                            {`结算(${all_item.cart_total_num})`}
                           </AtButton>
                         </View>
                       </View>
