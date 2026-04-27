@@ -143,7 +143,7 @@ export function getGlobalBaseStyle(baseStyle) {
     style.backgroundColor = baseStyle.bgColor
   } else if (bgType === 'pic' && baseStyle.bgPic) {
     style.backgroundImage = `url(${baseStyle.bgPic})`
-    style.backgroundSize = 'cover'
+    style.backgroundSize = '100% 100%'
     style.backgroundPosition = 'center'
     style.backgroundRepeat = 'no-repeat'
   } else if (bgType === 'gradient' && baseStyle.startColor) {

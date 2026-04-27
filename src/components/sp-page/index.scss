@@ -201,17 +201,16 @@
         .title-function.nearby-function {
           width: 100%;
           flex-shrink: 0;
-          text-align: center;
+          text-align: left;
           display: flex;
           align-items: center;
-          justify-content: center;
+          justify-content: flex-start;
 
           .nearby-function-text {
             font-size: 28px;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
-            flex: 1;
             min-width: 0;
           }
 
