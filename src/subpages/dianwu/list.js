@@ -173,7 +173,7 @@ function DianWuList() {
                 </View>
               </View> */}
               <CompGoods info={item}>
-                {item.store > 0 && (
+                {item.store > 0 && item.isTotalStore === true && (
                   <AtButton
                     className='btn-add-cart'
                     circle

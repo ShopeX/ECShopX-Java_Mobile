@@ -615,7 +615,7 @@ function DianWuCashier() {
           {searchGoodsList.map((item, index) => (
             <View className='goods-item-wrap' key={`goods-item-wrap__${index}`}>
               <CompGoods info={item}>
-                {item.store > 0 && (
+                {item.store > 0 && item.isTotalStore === true && (
                   <AtButton
                     circle
                     className='btn-add-cart'
