@@ -212,7 +212,7 @@ const CustomNavigationHeader = memo((props) => {
         >
           {showNavitionLeft && (
             <View
-              className={classNames('header-container-left', { 'is-web': isWeb })}
+              className={classNames('header-container-left', { 'is-web': isWeb&&showFunctionArea })}
               style={styleNames({
                 width:
                   resolvedTitleStyle === '0'
