@@ -7,5 +7,5 @@ export default {
     //'cell': 'plugin://contactPlugin/cell'
   },
   navigationBarTitleText: '',
-  navigationStyle: 'custom'
+  // navigationStyle: 'custom'
 }
