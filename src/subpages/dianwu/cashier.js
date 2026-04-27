@@ -709,59 +709,7 @@ function DianWuCashier() {
             draft.addUserCurtain = false
           })
         }}
-      >
-        <View className='search-user'>
-          <View className='search-user-hd'>
-            <View className='title'>{$t('7187dbd0.49cc45')}</View>
-            <View className='scan-member' onClick={handleScanCode}>
-              <Text className='iconfont icon-saoma'></Text>
-              {$t('7187dbd0.9d27f8')}
-            </View>
-          </View>
-          <View className='search-user-bd'>
-            <View className='form-field'>
-              <AtInput
-                name='mobile'
-                value={mobile}
-                className='mobile'
-                placeholder={$t('7187dbd0.6e4f4b')}
-                onChange={onChangeMobile}
-                onConfirm={handleConfirm}
-              />
-            </View>
-            {searchMemberResult && (
-              <View className='search-result'>
-                {searchMemberResult?.length == 0 && <Text>{$t('7187dbd0.6136c3')}</Text>}
-                {searchMemberResult?.length > 0 && (
-                  <Text>{`${searchMemberResult[0]?.username} ${searchMemberResult[0]?.mobile}`}</Text>
-                )}
-              </View>
-            )}
-          </View>
-          <View className='search-user-ft'>
-            <View
-              className='btn-cancel'
-              onClick={() => {
-                setState((draft) => {
-                  draft.addUserCurtain = false
-                })
-              }}
-            >
-              {$t('7187dbd0.625fb2')}
-            </View>
-            {searchMemberResult?.length > 0 && (
-              <AtButton className='btn-confirm' onClick={handleSelectMember}>
-                {$t('7187dbd0.3a6fa4')}
-              </AtButton>
-            )}
-            {searchMemberResult?.length == 0 && (
-              <AtButton className='btn-confirm' onClick={handleCreateMember}>
-                {$t('7187dbd0.9fd000')}
-              </AtButton>
-            )}
-          </View>
-        </View>
-      </AtCurtain>
+      />
     </SpPage>
   )
 }
