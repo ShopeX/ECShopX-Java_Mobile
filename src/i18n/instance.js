@@ -2,15 +2,11 @@
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
  *
- * i18next 单例：资源来自 src/i18n/locales，语言与 Taro 存储 / Redux user.lang（zhcn|en|ar）同步。
+ * i18next 单例：语言资源通过 subpages/i18n/resources 分包异步加载。
  */
 /* eslint-disable import/no-named-as-default-member -- i18next 默认导出即实例，需调用 .use / .changeLanguage */
 import i18n from 'i18next'
 import { initReactI18next } from 'react-i18next'
-
-import zhCN from './locales/zh-CN.json'
-import en from './locales/en.json'
-import ar from './locales/ar.json'
 
 /** Taro 存储 / Redux 使用的语言码 → i18next lng */
 export const STORAGE_TO_I18N = {
@@ -65,15 +61,56 @@ function resolveInitialLng() {
   return 'en'
 }
 
+function getTaro() {
+  try {
+    return require('@tarojs/taro').default
+  } catch {
+    return null
+  }
+}
+
+function getLoadedPackageResource(storageLang) {
+  const Taro = getTaro()
+  return Taro?.__i18nResources?.[storageLang]
+}
+
+function loadLocalePackage() {
+  const cached =
+    getLoadedPackageResource('zhcn') || getLoadedPackageResource('en') || getLoadedPackageResource('ar')
+  if (cached) {
+    return Promise.resolve()
+  }
+
+  const Taro = getTaro()
+  if (process.env.TARO_ENV === 'weapp') {
+    return new Promise((resolve, reject) => {
+      if (typeof __non_webpack_require__ === 'undefined') {
+        reject(new Error('subPackage require is unavailable'))
+        return
+      }
+      __non_webpack_require__('subpages/i18n/resources', () => {
+        const resources = __non_webpack_require__('subpages/i18n/resources')
+        Taro.__i18nResources = {
+          ...(Taro.__i18nResources || {}),
+          ...resources
+        }
+        if (resources.zhcn || resources.en || resources.ar) {
+          resolve()
+        } else {
+          reject(new Error('i18n subPackage loaded without resources'))
+        }
+      })
+    })
+  }
+
+  return Promise.reject(new Error('i18n subPackage resource loading is only enabled for weapp'))
+}
+
 if (!i18n.isInitialized) {
   i18n.use(initReactI18next).init({
-    resources: {
-      'zh-CN': { translation: zhCN },
-      en: { translation: en },
-      ar: { translation: ar }
-    },
+    resources: {},
     lng: resolveInitialLng(),
-    fallbackLng: ['en', 'zh-CN'],
+    fallbackLng: ['zh-CN'],
     interpolation: {
       escapeValue: false
     },
@@ -84,19 +121,34 @@ if (!i18n.isInitialized) {
   })
 }
 
+async function loadI18nResource(storageLang) {
+  const lng = STORAGE_TO_I18N[storageLang]
+  if (!lng || i18n.hasResourceBundle(lng, 'translation')) {
+    return lng
+  }
+
+  await loadLocalePackage()
+  const resource = getLoadedPackageResource(storageLang)
+  if (!resource) {
+    throw new Error(`Missing i18n resource: ${storageLang}`)
+  }
+  i18n.addResourceBundle(lng, 'translation', resource, true, true)
+  return lng
+}
+
 /**
  * 与 Taro 存储语言对齐（zhcn / en / ar）
  * @param {string} storageLang
  */
-export function syncI18nLanguage(storageLang) {
-  const lng = STORAGE_TO_I18N[storageLang]
+export async function syncI18nLanguage(storageLang) {
+  const lng = await loadI18nResource(storageLang)
   if (!lng) {
-    return Promise.resolve()
+    return
   }
   if (i18n.language === lng) {
-    return Promise.resolve()
+    return
   }
-  return i18n.changeLanguage(lng)
+  await i18n.changeLanguage(lng)
 }
 
 export default i18n

@@ -11,7 +11,7 @@ import api from '@/api'
 import { classNames, pickBy, getDistributorId, VERSION_IN_PURCHASE } from '@/utils'
 import { updateUserInfo } from '@/store/slices/user'
 import { updateActivityInfo, updateCount } from '@/store/slices/purchase'
-
+import { useTranslation, $t } from '@/i18n'
 import doc from '@/doc'
 import S from '@/spx'
 import { SpPage, SpNote, SpScrollView, SpImage, SpPurchaseEnterpriseBar } from '@/components'

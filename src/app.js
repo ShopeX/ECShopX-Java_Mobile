@@ -2,7 +2,7 @@
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
  */
-import langObj from '@/lang/index.js' // 📍 必须在入口文件中第一行引入，文件会在运行插件时自动生成，默认位于打包配置目录同层的lang文件夹中，其中的index.js就是配置文件
+import '@/lang/index.js' // 📍 必须在入口文件中第一行引入，初始化旧 $t/$iS 兼容运行时
 import i18n, { syncI18nLanguage } from '@/i18n/instance'
 import { $t } from '@/i18n'
 import { I18nextProvider } from 'react-i18next'
@@ -131,19 +131,6 @@ function App({ children }) {
       getSystemConfig()
     })
 
-    //分包异步加载语言包
-    if (process.env.TARO_ENV === 'weapp') {
-      __non_webpack_require__ &&
-        __non_webpack_require__('subpages/i18n/index', (res) => {
-          const langJSON = Taro['langJSON']
-          langObj.setLanguagePackage(langJSON)
-        })
-    } else {
-      import('@/subpages/i18n/index').then((res) => {
-        const langJSON = Taro['langJSON']
-        langObj.setLanguagePackage(langJSON)
-      })
-    }
   })
 
   useDidShow(async (options) => {

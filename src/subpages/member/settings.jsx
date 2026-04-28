@@ -10,7 +10,7 @@ import { SpPage, SpCell, SpFloatLayout, SpCheckbox } from '@/components'
 import { isWeb } from '@/utils'
 import { SG_CHECK_STORE_RULE } from '@/consts'
 import { View } from '@tarojs/components'
-import { useTranslation, $t, SUPPORTED_STORAGE_LANGS } from '@/i18n'
+import { useTranslation, $t, syncI18nLanguage, SUPPORTED_STORAGE_LANGS } from '@/i18n'
 import './settings.scss'
 
 const initialState = {
@@ -68,8 +68,9 @@ const Settings = () => {
           <AtButton
             circle
             type='primary'
-            onClick={() => {
+            onClick={async () => {
               Taro.$changeLang(state.selectLang)
+              await syncI18nLanguage(state.selectLang)
               Taro.setStorageSync(SG_CHECK_STORE_RULE, 0)
               if (isWeb) {
                 window.location.href = `${window.location.origin}/subpages/member/index`

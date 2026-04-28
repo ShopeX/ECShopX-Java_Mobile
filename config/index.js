@@ -42,6 +42,12 @@ if (process.env.TARO_ENV == 'h5') {
 if (process.env.TARO_ENV == 'alipay') {
   copyPatterns.push({ from: 'mini.project.json', to: `${DIST_PATH}/mini.project.json` })
 }
+if (process.env.TARO_ENV == 'weapp') {
+  copyPatterns.push({
+    from: 'src/subpages/i18n/resources.js',
+    to: `${DIST_PATH}/subpages/i18n/resources.js`
+  })
+}
 
 const config = {
   projectName: pkg.name,

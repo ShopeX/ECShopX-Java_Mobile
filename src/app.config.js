@@ -474,6 +474,7 @@ const config = {
         'prescription-information' //补充处方信息
       ]
     },
+    // i18n 非默认语言资源分包
     {
       root: 'subpages/i18n',
       pages: ['index']

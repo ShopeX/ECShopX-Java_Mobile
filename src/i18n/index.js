@@ -27,6 +27,7 @@ export function getLocale() {
  * @param {string} key
  */
 export function $t(key) {
+  if (key == null || key === '') return ''
   return i18n.t(key)
 }
 

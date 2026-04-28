@@ -9,13 +9,14 @@ import { View, Text } from '@tarojs/components'
 import api from '@/api'
 import { SpPage, SpPrivacyModal, SpInput, SpImage, SpPurchaseEnterpriseBar } from '@/components'
 import { useLogin, useModal } from '@/hooks'
+import { useTranslation, $t } from '@/i18n'
 import { showToast, getDistributorId, isWeb } from '@/utils'
 import qs from 'qs'
 import { updateEnterpriseId, updateCurDistributorId } from '@/store/slices/purchase'
 import './select-company-account.scss'
 
 function PurchaseAuthAccount() {
-  const { i18n } = useTranslation()
+  useTranslation()
   const { isNewUser, login } = useLogin({
     autoLogin: true,
     policyUpdateHook: (isUpdate) => {
