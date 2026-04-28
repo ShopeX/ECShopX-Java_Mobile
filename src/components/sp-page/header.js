@@ -9,10 +9,8 @@ import { SpImage } from '@/components'
 import { styleNames, classNames, VERSION_STANDARD, isWeb } from '@/utils'
 import { VERSION_IN_PURCHASE, isGoodsShelves, linkPage } from '@/utils'
 import { useSelector } from 'react-redux'
-import { useTranslation, $t } from '@/i18n'
 
 const CustomNavigationHeader = memo((props) => {
-  useTranslation()
   const {
     pageConfig = {},
     title,
@@ -35,6 +33,7 @@ const CustomNavigationHeader = memo((props) => {
 
   const titleStyle = pageConfig?.titleStyle
   const resolvedTitleStyle = titleStyle || '1'
+  const showHeaderContent = resolvedTitleStyle !== '0'
   const { shopInfo } = useSelector((state) => state.shop)
 
   const headerStyle = useCallback(() => {
@@ -155,9 +154,7 @@ const CustomNavigationHeader = memo((props) => {
         style={{ color: pageConfig?.titleColor }}
       >
         <Text className='nearby-function-text'>
-          {VERSION_STANDARD
-            ? shopInfo?.name || $t('ad191639.0d7757')
-            : nearbyText || $t('ad191639.e9a36d')}
+          {VERSION_STANDARD ? shopInfo?.name || '总店' : nearbyText || '选择地区'}
         </Text>
         <Text className='nearby-function-icon iconfont icon-arrowDown' />
       </View>
@@ -174,7 +171,7 @@ const CustomNavigationHeader = memo((props) => {
           <Text className='iconfont icon-sousuo-01 search-icon' />
           {pageConfig?.showSearchButton && (
             <View className='search-button' style={styleNames(searchButtonStyle())}>
-              <Text>{$t('ad191639.e5f71f')}</Text>
+              <Text>搜索</Text>
             </View>
           )}
         </View>
