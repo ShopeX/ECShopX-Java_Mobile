@@ -71,15 +71,11 @@ function PurchaseSkuSelect(props) {
   } = props
   const [state, setState] = useAsyncCallback(initialState)
   const { purchase_share_info = {}, cartCount = 0 } = useSelector((state) => state.purchase)
-  const { selection, disabledSet, curItem, skuText, num } = state
+  const { selection, disabledSet, curItem, num } = state
   const dispatch = useDispatch()
   const skuDictRef = useRef({})
   const router = useRouter()
 
-  const skuText = useMemo(
-    () => skuSummaryText(selection, skuDictRef.current),
-    [selection, i18n.language]
-  )
 
   useEffect(() => {
     if (info && !info.nospec) {
