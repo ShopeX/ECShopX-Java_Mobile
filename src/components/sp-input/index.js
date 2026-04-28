@@ -156,12 +156,11 @@ SpInput.defaultProps = {
   clear: false,
   placeholder: '',
   maxLength: null,
-  onChange: noop,
-  onBlur: noop,
-  onFocus: noop,
   adjustPosition: true,
   onChange: () => {},
-  onConfirm: () => {}
+  onConfirm: () => {},
+  onBlur: noop,
+  onFocus: noop
 }
 
 export default SpInput

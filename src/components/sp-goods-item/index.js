@@ -217,6 +217,14 @@ function SpGoodsItem(props) {
                 {!isPurchase && (
                   <SpPrice size={36} value={info.activityPrice || info.price}></SpPrice>
                 )}
+                {info.marketPrice > 0 && enMarketPrice && (
+                  <SpPrice
+                    size={26}
+                    className='mkt-price'
+                    lineThrough
+                    value={info.marketPrice}
+                  ></SpPrice>
+                )}
               </View>
               {!info.activityPrice && isLogin && !isPurchase && (
                 <View className='more-price'>

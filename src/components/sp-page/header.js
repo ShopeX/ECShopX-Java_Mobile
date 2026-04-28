@@ -269,12 +269,12 @@ const CustomNavigationHeader = memo((props) => {
               className='title-container'
               style={styleNames({ paddingLeft: !showNavitionLeft ? `20rpx` : `0` })}
             >
-              {/* 标题区：搜索 */}
-              {showHeaderContent && titleStyle === '3' && renderSearch()}
-              {/* 标题区：页面名称 */}
-              {showHeaderContent && titleStyle === '1' && renderTitleText()}
-              {/* 标题区：图片 */}
-              {showHeaderContent && titleStyle === '2' && renderTitleImage()}
+            {/* 标题区：搜索 */}
+            {showHeaderContent && resolvedTitleStyle === '3' && renderSearch()}
+            {/* 标题区：页面名称 */}
+            {showHeaderContent && resolvedTitleStyle === '1' && renderTitleText()}
+            {/* 标题区：图片 */}
+            {showHeaderContent && resolvedTitleStyle === '2' && renderTitleImage()}
             </View>
           </View>
         )}
