@@ -1,7 +1,7 @@
 {
   "name": "ecshopx-vshop",
   "app_name": "ecshopx",
-  "version": "4.4.0",
+  "version": "4.5.2",
   "private": true,
   "description": "taro app for bbc",
   "scripts": {
@@ -81,6 +81,7 @@
     "qrcode": "^1.5.3",
     "react": "18.2.0",
     "react-dom": "18.2.0",
+    "react-i18next": "^17.0.4",
     "react-redux": "^8.1.2",
     "redux-logger": "^3.0.6",
     "redux-persist": "^6.0.0",

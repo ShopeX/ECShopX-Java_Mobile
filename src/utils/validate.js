@@ -2,6 +2,7 @@
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
  */
+
 const phone_rule = /^1[3456789]\d{9}$/
 const password_rule = /^[(a-z|A-Z|0-9)]{6,16}$/
 const pass_rule = /^(?![0-9]+$)(?![a-zA-Z]+$)[0-9A-Za-z]{8,20}$/
@@ -16,6 +17,10 @@ const validate = {
   },
   isPassword: function (val) {
     return password_rule.test(val)
+  },
+  /** 邮箱通道注册/重置密码：≥8 位、须同时含字母与数字（与 MemberPasswordPolicy 对齐，弱口令由服务端校验） */
+  isEmailChannelPassword: function (val) {
+    return pass_rule.test(val)
   },
   isMobileNum: function (val) {
     return phone_rule.test(val)

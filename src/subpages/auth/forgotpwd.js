@@ -13,6 +13,7 @@ import api from '@/api'
 import { useImmer } from 'use-immer'
 import { useSelector } from 'react-redux'
 import { CompPasswordInput } from './comps'
+import { normalizeAuthRedirectParam } from './util'
 import './forgotpwd.scss'
 
 const SYMBOL = 'forgot_password'
@@ -60,7 +61,7 @@ const PageBindPhone = () => {
   const showModalReg = async () => {
     let url = `/subpages/auth/reg`
     if (redi_url) {
-      url += `?redi_url=${encodeURIComponent(redi_url)}`
+      url += `?redi_url=${encodeURIComponent(normalizeAuthRedirectParam(redi_url))}`
     }
     const { is_new } = await api.wx.getIsNew({ mobile: username })
     setState((_state) => {
@@ -69,7 +70,7 @@ const PageBindPhone = () => {
     if (is_new === 1) {
       const res = await Taro.showModal({
         title: '提示',
-        content: `此手机号码未注册、是否同意前往注册`,
+        content: '此手机号码未注册、是否同意前往注册',
         cancelText: '拒绝',
         confirmText: '同意',
         confirmColor: colorPrimary
@@ -201,7 +202,11 @@ const PageBindPhone = () => {
               />
             </View>
             <View className='btn-field'>
-              <SpTimer onStart={handleTimerStart} />
+              <SpTimer
+                defaultMsg='发送验证码'
+                msg='重新发送'
+                onStart={handleTimerStart}
+              />
             </View>
           </View>
 

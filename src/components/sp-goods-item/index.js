@@ -185,7 +185,7 @@ function SpGoodsItem(props) {
 
           {!info.point && showPrice && (
             <View className='goods-price'>
-              <View className='gd-price'>
+              <View className='gd-price flex flex-align-center'>
                 {isPurchase && (
                   <>
                     {info.activityPrice ? (
@@ -200,6 +200,14 @@ function SpGoodsItem(props) {
                 )}
                 {!isPurchase && (
                   <SpPrice size={36} value={info.activityPrice || info.price}></SpPrice>
+                )}
+                {info.marketPrice > 0 && enMarketPrice && (
+                  <SpPrice
+                    size={26}
+                    className='mkt-price'
+                    lineThrough
+                    value={info.marketPrice}
+                  ></SpPrice>
                 )}
               </View>
               {!info.activityPrice && isLogin && !isPurchase && (

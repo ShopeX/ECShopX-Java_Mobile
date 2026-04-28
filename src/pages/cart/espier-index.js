@@ -225,7 +225,6 @@ function CartIndex() {
       title: '提示',
       content: '将当前商品移出购物车?',
       showCancel: true,
-      cancel: '取消',
       cancelText: '取消',
       confirmText: '确认',
       confirmColor: colorPrimary
@@ -290,6 +289,8 @@ function CartIndex() {
           draft.footerHeight = footerHeight
         })
       }}
+      immersive={false}
+      title='购物车'
       renderFooter={tabbar == 1 && <SpTabbar height={state.footerHeight} />}
     >
       <ScrollView scrollY style='height: 100%;'>
@@ -450,7 +451,7 @@ function CartIndex() {
                             disabled={all_item.cart_total_num <= 0}
                             onClick={() => handleCheckout(all_item)}
                           >
-                            结算({all_item.cart_total_num})
+                            {`结算(${all_item.cart_total_num})`}
                           </AtButton>
                         </View>
                       </View>

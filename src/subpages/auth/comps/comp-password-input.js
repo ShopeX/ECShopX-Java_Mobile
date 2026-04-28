@@ -3,7 +3,6 @@
  * See LICENSE file for license details.
  */
 import React from 'react'
-import Taro, { getCurrentInstance } from '@tarojs/taro'
 import { View, Text } from '@tarojs/components'
 import { classNames } from '@/utils'
 import { useImmer } from 'use-immer'
@@ -16,7 +15,16 @@ const initialValue = {
 }
 
 const CompPasswordInput = (props) => {
-  const { onChange = () => {}, disabled, onFocus = () => {}, onBlur = () => {}, value } = props
+  const {
+    onChange = () => {},
+    disabled,
+    onFocus = () => {},
+    onBlur = () => {},
+    value,
+    placeholder
+  } = props
+
+  const placeholderText = placeholder ?? '密码需由6-16位数字或字母组成'
 
   const [state, setState] = useImmer(initialValue)
 
@@ -33,7 +41,7 @@ const CompPasswordInput = (props) => {
       <AtInput
         clear
         type={type}
-        placeholder='密码需由6-16位数字或字母组成'
+        placeholder={placeholderText}
         placeholderClass='input-placeholder'
         onChange={onChange}
         onFocus={onFocus}
