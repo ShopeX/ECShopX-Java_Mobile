@@ -2,20 +2,26 @@
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
  */
-import Taro, { useRouter } from '@tarojs/taro'
+import Taro, { getCurrentInstance, useRouter } from '@tarojs/taro'
 import React, { useState, useEffect } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { useImmer } from 'use-immer'
-import { View, Text, Button } from '@tarojs/components'
+import { View, Text } from '@tarojs/components'
+import { AtButton } from 'taro-ui'
 import api from '@/api'
-import { SpPage, SpPrivacyModal, SpImage, SpPurchaseEnterpriseBar } from '@/components'
+import { SpImage, SpPage, SpPrivacyModal, SpPurchaseEnterpriseBar } from '@/components'
 import { useLogin, useModal } from '@/hooks'
-import { classNames, showToast, getDistributorId, isWeb } from '@/utils'
+import { showToast, getDistributorId, isWeb } from '@/utils'
+import { classNames } from '@/utils'
 import { updateEnterpriseId, updateCurDistributorId } from '@/store/slices/purchase'
 import './select-company-phone.scss'
 
 const initialState = {
-  wxCode: ''
+  wxCode: '',
+  isOpened: false,
+  companyList: [],
+  curActiveIndex: undefined,
+  activityBg: ''
 }
 
 function PurchaseAuthPhone(props) {
@@ -28,62 +34,26 @@ function PurchaseAuthPhone(props) {
   const dispatch = useDispatch()
   const [state, setState] = useImmer(initialState)
   const [policyModal, setPolicyModal] = useState(false)
-  const [enterpriseName, setEnterpriseName] = useState('')
-  const [activityBg, setActivityBg] = useState('')
+  const { isOpened, companyList, curActiveIndex } = state
   const { userInfo = {} } = useSelector((state) => state.user)
   const { params } = useRouter()
   let {
-    enterprise_name,
     auth_code,
     account,
-    email,
-    vcode,
     auth_type = 'mobile',
-    employee_id,
     enterprise_id,
     is_verify,
     activity_id,
-    is_activity = ''
+    is_activity = '',
+    activityBg = ''
   } = params
   const { showModal } = useModal()
+  const $instance = getCurrentInstance() || {}
 
   useEffect(() => {
     getLoginCode()
     // getQrcodeEid()
   }, [])
-
-  useEffect(() => {
-    syncEnterpriseName()
-  }, [enterprise_id, enterprise_name, params?.enterprise_id, params?.enterprise_name])
-
-  const decodeName = (value) => {
-    const raw = String(value || '').trim()
-    if (!raw) return ''
-    try {
-      return decodeURIComponent(raw)
-    } catch (e) {
-      return raw
-    }
-  }
-
-  const syncEnterpriseName = async () => {
-    try {
-      const list = await api.purchase.getUserEnterprises({
-        disabled: 0,
-        distributor_id: getDistributorId()
-      })
-      const found = (list || []).find(
-        (item) => String(item?.id ?? item?.enterprise_id) === String(enterprise_id)
-      )
-      setEnterpriseName(found?.name|| '')
-      setActivityBg(found?.logo || '')
-    } catch (e) {
-      setEnterpriseName('')
-      setActivityBg('')
-    }
-  }
-
-
 
   const onRejectPolicy = () => {
     Taro.exitMiniProgram()
@@ -144,8 +114,9 @@ function PurchaseAuthPhone(props) {
           dispatch(updateEnterpriseId(enterprise_id))
           setTimeout(() => {
             Taro.reLaunch({
-              url: `/pages/purchase/index?is_redirt=1${is_activity && activity_id ? `&activity_id=${activity_id}` : ''
-                }`
+              url: `/pages/purchase/index?is_redirt=1${
+                is_activity && activity_id ? `&activity_id=${activity_id}` : ''
+              }`
             })
           }, 700)
         }
@@ -169,12 +140,16 @@ function PurchaseAuthPhone(props) {
         checkParams.distributor_id = getDistributorId()
       }
       const { list } = await api.purchase.employeeCheck(checkParams)
-      if (list && list.length > 1) {
-        const matched = list.find((row) => String(row?.enterprise_id) === String(enterprise_id))
-        if (matched) {
-          _params.enterprise_id = matched.enterprise_id
-        }
+      if (list.length > 1) {
+        //选择企业
+        setState((draft) => {
+          draft.isOpened = true
+          draft.companyList = list
+        })
+        return
       }
+      _params.enterprise_id = list[0]?.enterprise_id
+      _params.employee_id = list[0]?.id
     }
 
     employeeAuthFetch(_params)
@@ -183,20 +158,26 @@ function PurchaseAuthPhone(props) {
   const employeeAuthFetch = async (_params) => {
     try {
       await api.purchase.setEmployeeAuth({ ..._params, showError: false })
-      await getQrCodeDtid(_params.enterprise_id)
+      await getQrCodeDtid()
       dispatch(updateEnterpriseId(_params.enterprise_id))
       showToast('验证成功')
+      if (isOpened) {
+        setState((draft) => {
+          draft.isOpened = false
+        })
+      }
       setTimeout(() => {
         Taro.reLaunch({
-          url: `/subpages/purchase/index?is_redirt=1${is_activity && activity_id ? `&activity_id=${activity_id}` : ''
-            }`
+          url: `/pages/purchase/index?is_redirt=1${
+            is_activity && activity_id ? `&activity_id=${activity_id}` : ''
+          }`
         })
       }, 2000)
     } catch (e) {
       console.log('🚀🚀🚀 ~ file: select-company-phone.js:102 ~ validatePhone ~ e:', e)
       if (e.message.indexOf('重复绑定') > -1) {
         dispatch(updateEnterpriseId(_params.enterprise_id))
-        await getQrCodeDtid(_params.enterprise_id)
+        await getQrCodeDtid()
       }
       await showModal({
         title: '验证失败',
@@ -206,31 +187,39 @@ function PurchaseAuthPhone(props) {
         contentAlign: 'center'
       })
       Taro.reLaunch({
-        url: `/subpages/purchase/index?is_redirt=1${is_activity && activity_id ? `&activity_id=${activity_id}` : ''
-          }`
+        url: `/pages/purchase/index?is_redirt=1${
+          is_activity && activity_id ? `&activity_id=${activity_id}` : ''
+        }`
       })
       getLoginCode()
     }
   }
 
-  const getQrCodeDtid = async (eid) => {
-    const id = eid ?? enterprise_id ?? params?.enterprise_id
-    if (!id) return
-    const { distributor_id } = await api.purchase.getPurchaseDistributor({ enterprise_id: id })
+  const getQrCodeDtid = async () => {
+    if (!enterprise_id) return
+    // 如果扫码进来存在企业ID则需要绑定拿到店铺ID
+    const { distributor_id } = await api.purchase.getPurchaseDistributor({ enterprise_id })
+    //后续身份切换需要用
     dispatch(updateCurDistributorId(distributor_id))
   }
 
-  const handleValidatePhone = () =>
-    validatePhone({
-      auth_type,
-      enterprise_id,
-      mobile: 'member_mobile'
-    })
+  const handleSelctCompany = async () => {
+    const { enterprise_id: _enterprise_id, id: _employee_id } = companyList[curActiveIndex] || {}
+    const _params = {
+      enterprise_id: _enterprise_id,
+      employee_id: _employee_id,
+      mobile: 'member_mobile',
+      auth_type: 'mobile'
+    }
+    employeeAuthFetch(_params)
+  }
 
+  console.log('enterprise_id', enterprise_id)
+  console.log('auth_type', auth_type)
   return (
     <SpPage className='purchase-phone-auth'>
       <SpImage src={activityBg} className='purchase-phone-auth__cover-img' mode='aspectFill' />
-      <SpPurchaseEnterpriseBar name={enterpriseName || '企业购'} showMore={false} showSearch={false} />
+      <SpPurchaseEnterpriseBar showMore={false} showSearch={false} />
 
       <View className='purchase-phone-auth__form-wrap'>
         <View className='purchase-phone-auth__form-card'>
@@ -241,24 +230,13 @@ function PurchaseAuthPhone(props) {
             </Text>
           </View>
           <View className='purchase-phone-auth__footer'>
-            {isNewUser && !isWeb ? (
-              <Button
+              <AtButton
                 className='purchase-phone-auth__confirm'
                 openType='getPhoneNumber'
                 onGetPhoneNumber={handleBindPhone}
               >
                 <Text className='purchase-phone-auth__confirm-text'>授权手机号</Text>
-              </Button>
-            ) : (
-              <Button
-                className={classNames('purchase-phone-auth__confirm', {
-                  'purchase-phone-auth__confirm--disabled': !userInfo?.mobile
-                })}
-                onClick={handleValidatePhone}
-              >
-                <Text className='purchase-phone-auth__confirm-text'>使用该号码验证</Text>
-              </Button>
-            )}
+              </AtButton>
           </View>
         </View>
       </View>
