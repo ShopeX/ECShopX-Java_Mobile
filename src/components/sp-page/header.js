@@ -207,7 +207,7 @@ const CustomNavigationHeader = memo((props) => {
 
   const navTitle =
     title ||
-    value?.wgtName ||
+    pageConfig?.wgtName ||
     getCurrentInstance()?.page?.config?.navigationBarTitleText ||
     appName
 
@@ -222,7 +222,7 @@ const CustomNavigationHeader = memo((props) => {
           navigationRSpace,
           gNavbarH,
           gStatusBarHeight,
-          pageConfig: value
+          pageConfig
         })
       : null
 

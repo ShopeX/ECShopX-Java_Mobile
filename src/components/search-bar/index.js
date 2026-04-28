@@ -9,6 +9,7 @@ import { AtSearchBar } from 'taro-ui'
 import { isWeb, isWeixin, isAlipay, classNames } from '@/utils'
 import { toggleTouchMove } from '@/utils/dom'
 import { $t } from '@/i18n'
+import { DEFAULT_NAVIGATE_HEIGHT } from '@/consts'
 
 import './index.scss'
 
