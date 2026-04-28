@@ -24,56 +24,13 @@ function PurchaseAuthAccount() {
   const [policyModal, setPolicyModal] = useState(false)
   const [account, setAccount] = useState('')
   const [authCode, setAuthCode] = useState('')
-  const [enterpriseName, setEnterpriseName] = useState('')
   const { params } = useRouter()
-  const { enterprise_id, enterprise_name, enterprise_sn, activity_id, is_activity = '' } = params
-  const { appName } = useSelector((state) => state.sys)
+  const { enterprise_id, activity_id, is_activity = '' } = params
+  const { curEnterpriseLogo } = useSelector((state) => state.purchase)
   const { showModal } = useModal()
   const dispatch = useDispatch()
-  const activityBg = params?.activity_bg || ''
 
   const disabled = useMemo(() => !account.trim() || !authCode.trim(), [account, authCode])
-
-  useEffect(() => {
-    syncEnterpriseName()
-  }, [enterprise_id, enterprise_name, params?.enterprise_id, params?.enterprise_name])
-
-  const decodeName = (value) => {
-    const raw = String(value || '').trim()
-    if (!raw) return ''
-    try {
-      return decodeURIComponent(raw)
-    } catch (e) {
-      return raw
-    }
-  }
-
-  const syncEnterpriseName = async () => {
-    const routeName = decodeName(enterprise_name || params?.enterprise_name)
-    if (routeName) {
-      setEnterpriseName(routeName)
-      return
-    }
-
-    const currentEnterpriseId = enterprise_id || params?.enterprise_id
-    if (!currentEnterpriseId) {
-      setEnterpriseName('')
-      return
-    }
-
-    try {
-      const list = await api.purchase.getUserEnterprises({
-        disabled: 0,
-        distributor_id: getDistributorId()
-      })
-      const found = (list || []).find(
-        (item) => String(item?.id ?? item?.enterprise_id) === String(currentEnterpriseId)
-      )
-      setEnterpriseName(found?.name || found?.enterprise_name || '')
-    } catch (e) {
-      setEnterpriseName('')
-    }
-  }
 
   const onFormSubmit = async () => {
     if (disabled) return
@@ -176,10 +133,9 @@ function PurchaseAuthAccount() {
 
   return (
     <SpPage className='purchase-account-auth'>
-      <SpImage src={activityBg} className='purchase-account-auth__cover-img' mode='widthFix' />
+      <SpImage src={curEnterpriseLogo} className='purchase-account-auth__cover-img' mode='widthFix' />
 
       <SpPurchaseEnterpriseBar
-        name={enterpriseName || appName || '企业购'}
         showMore={false}
         showSearch={false}
       />

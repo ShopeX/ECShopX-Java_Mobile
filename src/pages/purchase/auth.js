@@ -18,7 +18,8 @@ import {
   updateInviteCode,
   updateEnterpriseId,
   updateCurDistributorId,
-  updateCurEnterpriseName
+  updateCurEnterpriseName,
+  updateEnterpriselogo
 } from '@/store/slices/purchase'
 
 import './auth.scss'
@@ -71,7 +72,7 @@ function PurchaseAuth() {
 
   useEffect(() => {
     fetchEnterpriseInfo()
-  }, [enterprise_id, authType])
+  }, [enterprise_id])
 
 
 
@@ -119,14 +120,13 @@ function PurchaseAuth() {
         enterprise_id: enterprise_id
       })
       dispatch(updateEnterpriseId(list[0].id))
+      dispatch(updateEnterpriselogo(list[0].logo))
       dispatch(updateCurEnterpriseName(list[0].name))
       dispatch(updateCurDistributorId(list[0].distributor_id))
-      if(!authType){
-        setState((draft) => {
-          draft.authType = list[0].auth_type || ''
-        })
-      }
-     
+      const { ppe = '' } = await entryLaunch.getRouteParams()
+      setState((draft) => {
+        draft.authType = ppe == 1 ? 'code' : list[0].auth_type || ''
+      })
     } catch (e) {
       console.error('获取企业信息失败', e)
     }
@@ -145,10 +145,9 @@ function PurchaseAuth() {
   // 企业二维码扫码登录
   const getQrcodeEid = async () => {
     try {
-      const { id, enterprise_id, code, ppe } = await entryLaunch.getRouteParams()
+      const { id, enterprise_id, code } = await entryLaunch.getRouteParams()
       //亲友扫码
       setState((draft) => {
-        draft.authType = ppe == 1 ? 'code' : '' //口令码认证
         draft.invite_code = code || ''
         draft.activity_id = id || ''
         draft.enterprise_id = enterprise_id || ''
@@ -220,7 +219,7 @@ function PurchaseAuth() {
       redirectUrl = '/subpages/purchase/select-company-email'
     } else if (authType == 'mobile' || authType == 'qr_code') {
       redirectUrl = '/subpages/purchase/select-company-phone'
-    }else if(authType == 'code'){
+    } else if (authType == 'code') {
       redirectUrl = '/subpages/purchase/select-company-passcode'
     }
     if (activity_id) {

@@ -1,8 +1,4 @@
-/**
- * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
- * See LICENSE file for license details.
- */
- .purchase-account-auth {
+.purchase-account-auth {
   min-height: 100vh;
   background: #fff;
   display: flex;
@@ -90,10 +86,14 @@
     line-height: 34px;
     letter-spacing: -0.625px;
     color: #0a0a0a;
+    display: flex;
+    align-items: center;
   }
 
   &__field-input-ph {
     color: rgba(10, 10, 10, 0.5);
+    display: flex;
+    align-items: center;
   }
 
   &__confirm {
