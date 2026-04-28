@@ -17,11 +17,13 @@ const initialState = {
   cartCount: 0,
   hasValidIdentity: true,
   curEnterpriseId: null,
+  curEnterpriseName: '',
   priceDisplayConfig: {},
   isDiscountDescriptionEnabled: false,
   discountDescription: '',
   curDistributorId: null,
-  persist_purchase_share_info: {} //持久化存储最近一次活动，用于内购会员中心额度和分享
+  curEnterpriseLogo: '',
+  persist_purchase_share_info: {}, //持久化存储最近一次活动，用于内购会员中心额度和分享
 }
 
 export const fetchCartList = createAsyncThunk('purchase/fetchCartList', async (params) => {
@@ -79,6 +81,9 @@ const purchaseSlice = createSlice({
     updateEnterpriseId: (state, { payload = '' }) => {
       state.curEnterpriseId = payload
     },
+    updateCurEnterpriseName: (state, { payload = '' }) => {
+      state.curEnterpriseName = payload
+    },
     updateActivityInfo: (state, { payload }) => {
       const { priceDisplayConfig, isDiscountDescriptionEnabled, discountDescription } = payload
       state.priceDisplayConfig = priceDisplayConfig
@@ -90,6 +95,9 @@ const purchaseSlice = createSlice({
     },
     updateIsOpenPurchase: (state, { payload = false }) => {
       state.isOpen = payload
+    },
+    updateEnterpriselogo: (state, { payload = '' }) => {
+      state.curEnterpriseLogo = payload
     }
   },
   extraReducers: (builder) => {
@@ -116,7 +124,9 @@ export const {
   updateActivityInfo,
   updateCurDistributorId,
   updateIsOpenPurchase,
-  updatePersistPurchaseShareInfo
+  updatePersistPurchaseShareInfo,
+  updateCurEnterpriseName,
+  updateEnterpriselogo
 } = purchaseSlice.actions
 
 export default purchaseSlice.reducer

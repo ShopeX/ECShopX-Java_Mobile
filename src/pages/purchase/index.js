@@ -6,52 +6,42 @@ import Taro, { useRouter } from '@tarojs/taro'
 import React, { useRef, useState, useEffect } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { useImmer } from 'use-immer'
-import { View, Text, ScrollView, Image } from '@tarojs/components'
+import { View, Text, ScrollView } from '@tarojs/components'
 import api from '@/api'
 import { classNames, pickBy, getDistributorId, VERSION_IN_PURCHASE } from '@/utils'
-import { useAsyncCallback, useLogin } from '@/hooks'
 import { updateUserInfo } from '@/store/slices/user'
-import {
-  updatePurchaseShareInfo,
-  updatePurchaseTabbar,
-  updateActivityInfo,
-  updateCount,
-  updateValidIdentity
-} from '@/store/slices/purchase'
+import { updateActivityInfo, updateCount } from '@/store/slices/purchase'
 
 import doc from '@/doc'
 import S from '@/spx'
-import {
-  SpPage,
-  SpNote,
-  SpScrollView,
-  SpSearchInput,
-  SpFloatMenuItem,
-  SpImage,
-  SpTabs
-} from '@/components'
-import { useTranslation, $t, ti } from '@/i18n'
-import CompTabbar from './comps/comp-tabbar'
+import { SpPage, SpNote, SpScrollView, SpImage, SpPurchaseEnterpriseBar } from '@/components'
 import './index.scss'
+import CompPurchaseNav from './comps/comp-purchase-nav'
 
 const initialState = {
   activityList: [],
-  activity_name: '',
-  currentIndex: 0,
-  tabList: [
-    { titleKey: 'e32a7439.a8b0c2', value: 0 },
-    { titleKey: 'e32a7439.a8bcd6', value: 1 },
-    { titleKey: 'e32a7439.dd4e55', value: 2 },
-    { titleKey: 'e32a7439.047fab', value: 3 }
-  ],
   loading: true
+}
+
+/** @returns {'upcoming' | 'ongoing' | 'ended'} */
+function getActivityPhase(item) {
+  const begin = item.beginTs
+  const end = item.endTs
+  const now = Date.now()
+  if (!begin || !end) return 'ongoing'
+  if (now < begin) return 'upcoming'
+  if (now > end) return 'ended'
+  return 'ongoing'
 }
 
 function PurchaseActivityList() {
   const { i18n } = useTranslation()
   const [state, setState] = useImmer(initialState)
-  const { activityList, activity_name, tabList, currentIndex, loading } = state
+  const { activityList, loading } = state
   const { curEnterpriseId } = useSelector((_state) => _state.purchase)
+  console.log('curEnterpriseId', curEnterpriseId)
+
+  const [enterpriseName, setEnterpriseName] = useState('')
 
   const scrollRef = useRef()
   const dispatch = useDispatch()
@@ -74,9 +64,27 @@ function PurchaseActivityList() {
     }
   }, [])
 
+  useEffect(() => {
+    const loadEnterpriseName = async () => {
+      if (!curEnterpriseId) return
+      try {
+        const data = await api.purchase.getUserEnterprises({
+          disabled: 0,
+          distributor_id: getDistributorId()
+        })
+        const found = data?.find((x) => x.enterprise_id == curEnterpriseId)
+        setEnterpriseName(found?.name || found?.enterprise_name || '')
+      } catch (e) {
+        setEnterpriseName('')
+      }
+    }
+    if (!loading) {
+      loadEnterpriseName()
+    }
+  }, [loading, curEnterpriseId])
+
   const verfiyActivityNums = async () => {
     if (VERSION_IN_PURCHASE) {
-      // 纯内购没有企业进入认证首页
       const data = await api.purchase.getUserEnterprises({
         disabled: 0,
         distributor_id: getDistributorId()
@@ -97,7 +105,6 @@ function PurchaseActivityList() {
       activity_id
     })
 
-    // 如果只有一条数据，直接进入活动首页
     if (total_count == 1 && is_redirt) {
       const _list = pickBy(list, doc.purchase.ACTIVITY_ITEM)
       onClickChange(_list[0], 'redirectTo')
@@ -106,20 +113,8 @@ function PurchaseActivityList() {
         draft.loading = false
       })
       scrollRef.current.reset()
-      //更新底部tabbar是否有身份切换
-      // updateIdentity()
       updataMemberInfo()
     }
-  }
-
-  const updateIdentity = async () => {
-    const data = await api.purchase.getUserEnterprises({
-      disabled: 0,
-      distributor_id: getDistributorId()
-    })
-    const hasValidIdentity = data.filter((item) => item.disabled == 0).length > 1
-    //多个企业展示身份切换tab
-    dispatch(updateValidIdentity(hasValidIdentity))
   }
 
   const updataMemberInfo = async () => {
@@ -128,44 +123,19 @@ function PurchaseActivityList() {
   }
 
   const fetch = async ({ pageIndex, pageSize }) => {
-    // const type = tabList[currentIndex]?.value
     const { list, total_count } = await api.purchase.getEmployeeActivityList({
       page: pageIndex,
       pageSize,
-      activity_name,
-      // type,
       enterprise_id: curEnterpriseId,
       activity_id
     })
 
     const _list = pickBy(list, doc.purchase.ACTIVITY_ITEM)
     setState((draft) => {
-      draft.activityList = [...activityList, ..._list]
+      draft.activityList = [...draft.activityList, ..._list]
     })
 
     return { total: total_count }
-  }
-
-  const handleToggleRole = () => {
-    Taro.navigateTo({
-      url: '/subpages/purchase/select-identity'
-    })
-  }
-
-  const onConfirm = (value) => {
-    setState((draft) => {
-      draft.activity_name = value
-      draft.activityList = []
-    })
-    scrollRef.current.reset()
-  }
-
-  const renderFooter = () => {
-    return (
-      <View className='select-company-footer' onClick={handleToggleRole}>
-        {$t('e32a7439.e33d3e')}
-      </View>
-    )
   }
 
   const onClickChange = async (item, isRedirectTo) => {
@@ -179,7 +149,6 @@ function PurchaseActivityList() {
     } = item
     const url = `/subpages/purchase/index?activity_id=${id}&enterprise_id=${enterpriseId}&pages_template_id=${pages_template_id}`
     const _priceDisplayConfig = handlePriceConfig(priceDisplayConfig)
-    //需要存活动价格展示
     dispatch(
       updateActivityInfo({
         priceDisplayConfig: _priceDisplayConfig,
@@ -187,7 +156,6 @@ function PurchaseActivityList() {
         discountDescription
       })
     )
-    //更新活动购物车
     await dispatch(
       updateCount({
         shop_type: 'distributor',
@@ -216,62 +184,85 @@ function PurchaseActivityList() {
     return priceConfig
   }
 
-  const handleTypeChange = (e) => {
-    setState((draft) => {
-      draft.currentIndex = e
-      draft.activityList = []
-    })
-    scrollRef.current.reset()
+  const handleCardAction = (item) => {
+    const phase = getActivityPhase(item)
+    if (phase === 'upcoming') {
+      Taro.showToast({ title: '活动尚未开始', icon: 'none' })
+      return
+    }
+    if (phase === 'ended') {
+      Taro.showToast({ title: '活动已结束', icon: 'none' })
+      return
+    }
+    onClickChange(item)
   }
 
   return (
     <SpPage
-      className='page-purchase-index'
-      // renderFloat={
-      //   <View>
-      //     <SpFloatMenuItem
-      //       onClick={() => {
-      //         dispatch(updatePurchaseShareInfo(null))
-      //         Taro.navigateTo({ url: `/subpages/purchase/member?from=${'purchase_home'}` })
-      //       }}
-      //     >
-      //       <Text className='iconfont icon-huiyuanzhongxin'></Text>
-      //     </SpFloatMenuItem>
-      //   </View>
-      // }
-      // renderFooter={renderFooter()}
-      renderFooter={!loading && <CompTabbar />}
+      className='page-purchase-index page-purchase-activitylist'
+      title='企业购'
+      pageConfig={{ navigateBackgroundColor: '#ffffff' }}
+      renderNavigation={(navProps) => <CompPurchaseNav {...navProps} />}
     >
-      <View className='user-box'>
-        <View className='user-serach'>
-          <SpSearchInput placeholder={$t('e32a7439.39834b')} onConfirm={onConfirm} />
-        </View>
+      <View className='page-purchase-activitylist__inner'>
+        <SpPurchaseEnterpriseBar name={enterpriseName} showMore={false} showSearch={false} />
+
+        <ScrollView className='purchase-activity-scroll' scrollY>
+          <SpScrollView
+            ref={scrollRef}
+            className=''
+            auto={false}
+            fetch={fetch}
+            renderEmpty={<SpNote img='empty_activity.png' title='没有查询到内购活动' />}
+          >
+            <View className='purchase-activity-list'>
+              {activityList.map((item) => {
+                const phase = getActivityPhase(item)
+                const badgeText =
+                  phase === 'upcoming' ? '即将开始' : phase === 'ended' ? '已结束' : '进行中'
+                const btnText =
+                  phase === 'upcoming'
+                    ? '敬请期待'
+                    : phase === 'ended'
+                      ? '已结束'
+                      : '立即参与'
+                return (
+                  <View key={item.id} className='activity-card'>
+                    <View className='activity-card__cover'>
+                      <SpImage className='activity-card__img' mode='aspectFill' src={item.pic} />
+                      <View
+                        className={classNames('activity-card__badge', `activity-card__badge--${phase}`)}
+                      >
+                        <Text>{badgeText}</Text>
+                      </View>
+                    </View>
+                    <View className='activity-card__body'>
+                      <Text className='activity-card__title'>{item.name}</Text>
+                      <View className='activity-card__time-row'>
+                        <Text className='iconfont icon-riqi activity-card__time-icon' />
+                        <Text className='activity-card__time-text'>开始时间：{item.employeeBeginTime}</Text>
+                      </View>
+                      <View className='activity-card__time-row'>
+                        <Text className='iconfont icon-clock1 activity-card__time-icon' />
+                        <Text className='activity-card__time-text'>结束时间：{item.employeeEndTime}</Text>
+                      </View>
+                      <View
+                        className={classNames('activity-card__btn', {
+                          'activity-card__btn--primary': phase === 'ongoing',
+                          'activity-card__btn--muted': phase !== 'ongoing'
+                        })}
+                        onClick={() => handleCardAction(item)}
+                      >
+                        <Text>{btnText}</Text>
+                      </View>
+                    </View>
+                  </View>
+                )
+              })}
+            </View>
+          </SpScrollView>
+        </ScrollView>
       </View>
-      {/* <SpTabs current={currentIndex} tablist={tabList} onChange={handleTypeChange} /> */}
-      <ScrollView className='item-list-scroll' scrollY>
-        <SpScrollView
-          ref={scrollRef}
-          className=''
-          auto={false}
-          fetch={fetch}
-          renderEmpty={<SpNote img='empty_activity.png' title={$t('e32a7439.dd530e')} />}
-        >
-          <View className='scroll-view-container'>
-            {activityList.map((item, index) => (
-              <View key={item.id} className='activity-item' onClick={() => onClickChange(item)}>
-                <View className='activity-item-hd'>
-                  <View className='activity-title'>{item.name}</View>
-                  {/* <View className='role'>{item.role}</View> */}
-                </View>
-                <View className='activity-time'>
-                  {ti('e32a7439.b5e0b5', [item.employeeBeginTime, item.employeeEndTime])}
-                </View>
-                <SpImage className='activity-pic' circle={36} src={item.pic} />
-              </View>
-            ))}
-          </View>
-        </SpScrollView>
-      </ScrollView>
     </SpPage>
   )
 }

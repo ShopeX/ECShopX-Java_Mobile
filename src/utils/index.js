@@ -962,7 +962,6 @@ export function buildSharePath(from_scene, params = {}) {
     ...params
   }
   const queryString = qs.stringify(shareParams)
-  debugger
   return `/pages/share-land${queryString ? '?' + queryString : ''}`
 }
 

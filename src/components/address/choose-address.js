@@ -59,8 +59,8 @@ class AddressChoose extends Component {
                     {isAddress.province}
                     {isAddress.city}
                     {isAddress.county}
+                    {isAddress.adrdetail}
                   </View>
-                  <View className='address-detail'>{isAddress.adrdetail}</View>
                   <View className='user-info-trade'>
                     <Text className='name'>{isAddress.username}</Text>
                     <Text>{isAddress.telephone}</Text>

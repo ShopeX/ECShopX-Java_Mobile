@@ -204,9 +204,9 @@ function SpGoodsItem(props) {
               <View className='gd-price flex flex-align-center'>
                 {isPurchase && (
                   <>
-                    {info.activityPrice && enPurActivityPrice ? (
+                    {info.activityPrice ? (
                       <View className='act-price-wrap'>
-                        <SpPrice value={info.activityPrice} className='act-price' symbol='¥' />
+                        <SpPrice value={info.activityPrice} className='act-price' symbol='¥' weight='blod' />
                         <SpPrice size={24} value={info.price} noSymbol lineThrough />
                       </View>
                     ) : (
@@ -216,14 +216,6 @@ function SpGoodsItem(props) {
                 )}
                 {!isPurchase && (
                   <SpPrice size={36} value={info.activityPrice || info.price}></SpPrice>
-                )}
-                {info.marketPrice > 0 && enMarketPrice && (
-                  <SpPrice
-                    size={26}
-                    className='mkt-price'
-                    lineThrough
-                    value={info.marketPrice}
-                  ></SpPrice>
                 )}
               </View>
               {!info.activityPrice && isLogin && !isPurchase && (

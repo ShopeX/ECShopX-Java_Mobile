@@ -4,22 +4,17 @@
  */
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import Taro, {
-  getCurrentInstance,
   useDidShow,
   useRouter,
-  useShareAppMessage,
-  useShareTimeline
-} from '@tarojs/taro'
-import { View, Image, ScrollView, Button } from '@tarojs/components'
+  useShareAppMessage} from '@tarojs/taro'
+import { View, ScrollView, Button } from '@tarojs/components'
 import { useSelector, useDispatch } from 'react-redux'
 import {
   SpPage,
-  SpSearch,
   SpPrivacyModal,
-  SpTabbar,
-  SpFloatMenus,
   SpPoster,
-  SpImage
+  SpImage,
+  SpPurchaseEnterpriseBar
 } from '@/components'
 import { SharePurchase } from '@/subpages/components'
 import api from '@/api'
@@ -32,7 +27,8 @@ import {
   pickBy,
   showToast,
   log,
-  buildSharePath
+  buildSharePath,
+  navigateTo
 } from '@/utils'
 import {
   updatePurchaseShareInfo,
@@ -45,10 +41,12 @@ import { useLogin, useNavigation } from '@/hooks'
 import { useTranslation, $t } from '@/i18n'
 import HomeWgts from '@/pages/home/comps/home-wgts'
 import { WgtHomeHeader } from '@/pages/home/wgts'
+import CompPurchaseNav from '@/pages/purchase/comps/comp-purchase-nav'
 import configStore from '@/store'
 import { WgtsContext } from '@/pages/home/wgts/wgts-context'
 import CompSkuSelect from './comps/comp-skuselect'
-import CompTabbar from './comps/comp-tabbar'
+import CompPurchaseActionbar from './comps/comp-purchase-actionbar'
+import CompPurchaseQuotaSheet from './comps/comp-purchase-quota-sheet'
 import './index.scss'
 
 const MSpPrivacyModal = React.memo(SpPrivacyModal)
@@ -71,8 +69,10 @@ function Home() {
   useTranslation()
   const [state, setState] = useImmer(initialState)
   const { initState, entryStoreByLBS, appName } = useSelector((state) => state.sys)
-  const { purchase_share_info = {}, curDistributorId } = useSelector((state) => state.purchase)
-  const { isLogin, login, checkPolicyChange } = useLogin({
+  const { purchase_share_info = {}, curDistributorId, curEnterpriseId } = useSelector(
+    (state) => state.purchase
+  )
+  const { checkPolicyChange } = useLogin({
     policyUpdateHook: (isUpdate) => {
       if (isUpdate) {
         setPolicyModal(true)
@@ -84,6 +84,7 @@ function Home() {
   const pageRef = useRef()
 
   const [policyModal, setPolicyModal] = useState(false)
+  const [quotaSheetOpen, setQuotaSheetOpen] = useState(false)
   const { openScanQrcode } = useSelector((state) => state.sys)
   const { setNavigationBarTitle } = useNavigation()
 
@@ -91,6 +92,35 @@ function Home() {
     state
 
   const dispatch = useDispatch()
+  const { cartCount = 0 } = useSelector((state) => state.purchase)
+
+  const remainingAmountText = useMemo(() => {
+    const cents =
+      activityInfo?.surplus_limitfee ??
+      activityInfo?.left_fee ??
+      activityInfo?.fee?.left_fee
+    if (cents == null || cents === '') {
+      return '¥0.00'
+    }
+    const n = Number(cents) / 100
+    if (Number.isNaN(n)) {
+      return '¥0.00'
+    }
+    return `¥${n.toFixed(2)}`
+  }, [activityInfo])
+
+  /** 额度抽屉：与 member / share 注释区字段一致，单位分 */
+  const quotaFeeCents = useMemo(
+    () => ({
+      total: activityInfo?.total_limitfee ?? activityInfo?.limit_fee,
+      used: activityInfo?.used_limitfee ?? activityInfo?.aggregate_fee,
+      remaining:
+        activityInfo?.surplus_limitfee ??
+        activityInfo?.left_fee ??
+        activityInfo?.fee?.left_fee
+    }),
+    [activityInfo]
+  )
 
   useEffect(() => {
     Taro.hideShareMenu({
@@ -109,6 +139,7 @@ function Home() {
       setNavigationBarTitle(appName)
     }
   }, [initState])
+
 
   useEffect(() => {
     if (skuPanelOpen) {
@@ -170,12 +201,13 @@ function Home() {
   }
 
   useShareAppMessage(async () => {
-    return new Promise(async function (resolve, reject) {
+    return new Promise(async function (resolve) {
       if (isPurchaseShare) {
         const activity_id = router?.params?.activity_id || purchase_share_info?.activity_id
         const enterprise_id = router?.params?.enterprise_id || purchase_share_info?.enterprise_id
         const data = await api.purchase.getEmployeeInviteCode({ enterprise_id, activity_id })
         const params = {
+          type: 'passcode',
           code: data.invite_code,
           enterprise_id,
           activity_id
@@ -191,40 +223,18 @@ function Home() {
     })
   })
 
-  // useShareTimeline(async (res) => {
-  //   return new Promise(async function (resolve,reject) {
-  //     const activity_id = router?.params?.activity_id || purchase_share_info?.activity_id
-  //     const enterprise_id = router?.params?.enterprise_id || purchase_share_info?.enterprise_id
-  //     const data = await api.purchase.getEmployeeInviteCode({ enterprise_id, activity_id })
-  //     log.debug(`/pages/purchase/auth?code=${data.invite_code}`)
-  //     resolve({
-  //       title: activityInfo.name,
-  //       imageUrl: activityInfo.share_pic,
-  //       path: `/pages/purchase/auth?code=${data.invite_code}&enterprise_id=${enterprise_id}&activity_id=${activity_id}`
-  //     })
-  //   })
-  // })
 
   const handleConfirmModal = useCallback(async () => {
     setPolicyModal(false)
   }, [])
 
-  const searchComp = wgts.find((wgt) => wgt.name == 'search')
-  const pageData = wgts.find((wgt) => wgt.name == 'page')
-  let filterWgts = []
-  if (searchComp && searchComp.config.fixTop) {
-    filterWgts = wgts.filter((wgt) => wgt.name !== 'search' && wgt.name != 'page')
-  } else {
-    filterWgts = wgts.filter((wgt) => wgt.name != 'page')
-  }
-
-  const fixedTop = searchComp && searchComp.config.fixTop
+  /* 顶栏搜索为固定稿样式，不读装修；若模板仍下发 search 组件则从正文排除避免重复 */
+  let filterWgts = wgts.filter((wgt) => wgt.name != 'page' && wgt.name !== 'search')
 
   const isShowHomeHeader =
     VERSION_PLATFORM ||
     (openScanQrcode == 1 && isWeixin) ||
-    (VERSION_STANDARD && entryStoreByLBS) ||
-    fixedTop
+    (VERSION_STANDARD && entryStoreByLBS)
 
   const onAddToCart = async ({ itemId, distributorId }) => {
     Taro.showLoading()
@@ -271,15 +281,37 @@ function Home() {
     })
   }
 
-  console.log('pageData:', pageData)
+  const onActionBarCart = useCallback(() => {
+    navigateTo('/subpages/purchase/espier-index?tabbar=0')
+  }, [])
+
+  const onActionBarShare = useCallback(() => {
+    if (!isPurchaseShare) {
+      showToast('当前活动不支持分享亲友')
+      return
+    }
+    if (purchase_share_info.surplus_share_limitnum == '0') {
+      Taro.showToast({
+        title: '分享次数为0',
+        icon: 'none'
+      })
+      return
+    }
+    navigateTo('/subpages/purchase/share')
+  }, [isPurchaseShare, purchase_share_info])
+
+  const onActionBarQuota = useCallback(() => {
+    setQuotaSheetOpen(true)
+  }, [])
+
   return (
     <SpPage
       className='page-purchase-index'
+      title='企业购'
+      pageConfig={{ navigateBackgroundColor: '#ffffff' }}
+      renderNavigation={(navProps) => <CompPurchaseNav {...navProps} />}
       scrollToTopBtn
       ref={pageRef}
-      // renderNavigation={renderNavigation()}
-      pageConfig={pageData?.base}
-      renderFooter={<CompTabbar />}
       renderFloat={
         false &&
         isPurchaseShare && (
@@ -291,23 +323,34 @@ function Home() {
       loading={loading}
     >
       <ScrollView
-        className={classNames('home-body', {
+        className={classNames('purchase-page__scroll', 'home-body', {
           'has-home-header': isShowHomeHeader && isWeixin
         })}
         scrollY
       >
-        {isShowHomeHeader && process.env.APP_PLATFORM === 'platform' && (
-          <WgtHomeHeader>{fixedTop && <SpSearch info={searchComp} />}</WgtHomeHeader>
-        )}
-        {filterWgts.length > 0 && (
-          <WgtsContext.Provider
-            value={{
-              onAddToCart
-            }}
-          >
-            <HomeWgts wgts={filterWgts} />
-          </WgtsContext.Provider>
-        )}
+        <View className='purchase-page'>
+          {isShowHomeHeader && process.env.APP_PLATFORM === 'platform' && (
+            <View className='purchase-page__toolbar'>
+              <WgtHomeHeader />
+            </View>
+          )}
+
+          <View className='purchase-page__head'>
+            <SpPurchaseEnterpriseBar  showSearch />
+          </View>
+
+          {filterWgts.length > 0 && (
+            <View className='purchase-page__wgts'>
+              <WgtsContext.Provider
+                value={{
+                  onAddToCart
+                }}
+              >
+                <HomeWgts wgts={filterWgts} />
+              </WgtsContext.Provider>
+            </View>
+          )}
+        </View>
       </ScrollView>
 
       {/* Sku选择器 */}
@@ -337,6 +380,14 @@ function Home() {
         onConfirm={handleConfirmModal}
       />
 
+      <CompPurchaseQuotaSheet
+        open={quotaSheetOpen}
+        onClose={() => setQuotaSheetOpen(false)}
+        totalFeeCents={quotaFeeCents.total}
+        usedFeeCents={quotaFeeCents.used}
+        remainingFeeCents={quotaFeeCents.remaining}
+      />
+
       <SharePurchase
         open={isOpened}
         onCreatePoster={onCreatePoster}
@@ -359,6 +410,16 @@ function Home() {
           }}
         />
       )}
+
+      <CompPurchaseActionbar
+        fixed
+        cartCount={cartCount}
+        remainingLabel='活动剩余额度'
+        remainingAmount={remainingAmountText}
+        onCart={onActionBarCart}
+        onShare={onActionBarShare}
+        onQuota={onActionBarQuota}
+      />
     </SpPage>
   )
 }

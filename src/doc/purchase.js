@@ -2,8 +2,20 @@
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
  */
+import dayjs from 'dayjs'
 import { formatDateTime } from '@/utils'
 import { $t } from '@/i18n'
+
+const toMs = (raw) => {
+  if (raw == null || raw === '') return 0
+  const s = String(raw)
+  if (/\d{4}-\d{2}-\d{2}/.test(s)) {
+    return dayjs(raw).valueOf()
+  }
+  const n = Number(raw)
+  if (Number.isNaN(n)) return 0
+  return s.length < 13 ? n * 1000 : n
+}
 
 export const ACTIVITY_ITEM = {
   enterpriseId: 'enterprise_id',
@@ -13,6 +25,9 @@ export const ACTIVITY_ITEM = {
   employeeEndTime: ({ employee_end_time }) => {
     return formatDateTime(employee_end_time)
   },
+  /** 用于活动卡片状态（即将开始 / 进行中 / 已结束） */
+  beginTs: ({ employee_begin_time }) => toMs(employee_begin_time),
+  endTs: ({ employee_end_time }) => toMs(employee_end_time),
   id: 'id',
   name: 'name',
   pic: 'pic',

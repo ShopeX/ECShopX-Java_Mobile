@@ -47,6 +47,7 @@ const config = {
         'select-company-account',
         'select-company-email',
         'select-company-phone',
+        'select-company-passcode',
         'select-identity',
         'neigou-order',
         'category',

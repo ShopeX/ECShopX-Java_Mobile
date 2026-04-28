@@ -1,38 +1,30 @@
 /**
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
+ *
+ * 内购详情底部栏：仅 Figma 稿布局（左价 · 中购物车 · 右主操作）
  */
 import React from 'react'
-import { useSelector, useDispatch } from 'react-redux'
+import { useSelector } from 'react-redux'
 import Taro from '@tarojs/taro'
 import { View, Text } from '@tarojs/components'
-import { SpLogin } from '@/components'
+import { SpLogin, SpGoodsPrice } from '@/components'
 import { classNames, navigateTo, showToast, isWeb } from '@/utils'
 import { BUY_TOOL_BTNS, ACTIVITY_LIST } from '@/consts'
-import { fetchUserFavs, addUserFav, deleteUserFav } from '@/store/slices/user'
 import api from '@/api'
 import { useTranslation, $t } from '@/i18n'
 import './comp-buytoolbar.scss'
 
 function CompGoodsBuyToolbar(props) {
-  useTranslation()
-  const {
-    onAddCart = () => {},
-    onFastBuy = () => {},
-    info,
-    onChange = () => {},
-    onSubscribe = () => {}
-  } = props
+  const { info, onChange = () => {}, onSubscribe = () => {}, curItem = null } = props
   const { cartCount = 0 } = useSelector((state) => state.purchase)
-  const { favs = [] } = useSelector((state) => state.user)
-  const dispatch = useDispatch()
   const btns = []
 
   if (!info) {
     return null
   }
 
-  const RenderBtns = () => {
+  const fillToolbarBtns = () => {
     if (info.approveStatus == 'only_show') {
       btns.push(BUY_TOOL_BTNS().ONLY_SHOW)
       return
@@ -51,10 +43,8 @@ function CompGoodsBuyToolbar(props) {
       return
     }
 
-    // 秒杀、拼团、限时特惠
     if (ACTIVITY_LIST()[info.activityType]) {
       if (info.activityType == 'seckill') {
-        // 活动即将开始
         if (info.activityInfo.status === 'in_the_notice') {
           btns.push(BUY_TOOL_BTNS().ACTIVITY_WILL_START)
         } else {
@@ -80,10 +70,16 @@ function CompGoodsBuyToolbar(props) {
     btns.push(BUY_TOOL_BTNS().FAST_BUY)
   }
 
-  RenderBtns()
+  fillToolbarBtns()
+
+  if (!ACTIVITY_LIST()[info.activityType]) {
+    const fi = btns.findIndex((b) => b.key === 'fastbuy')
+    if (fi > -1) {
+      btns.splice(fi, 1)
+    }
+  }
 
   const onChangeLogin = async ({ key }) => {
-    console.log('onChangeLogin:', key)
     if (key == 'notice') {
       const { subscribe } = info
       if (subscribe) return false
@@ -113,68 +109,65 @@ function CompGoodsBuyToolbar(props) {
     }
   }
 
-  // 收藏
-  const onChangeCollection = async () => {
-    const { itemId } = info
-    const fav = favs.findIndex((item) => item.item_id == itemId) > -1
-    if (!fav) {
-      await dispatch(addUserFav(itemId))
-    } else {
-      await dispatch(deleteUserFav(itemId))
-    }
-    await dispatch(fetchUserFavs())
-    showToast(fav ? $t('21544271.b46077') : $t('21544271.151286'))
-  }
+  const renderToolbarBtns = () =>
+    btns.map((item, index) => {
+      if (item.btnStatus == 'disabled') {
+        return (
+          <View
+            className='comp-goodsbuytoolbar-espier__btn comp-goodsbuytoolbar-espier__btn--disabled'
+            key={`btn-item__${index}`}
+          >
+            <Text className='comp-goodsbuytoolbar-espier__btn-text'>{item.title}</Text>
+          </View>
+        )
+      }
+      return (
+        <SpLogin
+          className={classNames(
+            'comp-goodsbuytoolbar-espier__btn',
+            item.btnStatus === 'active'
+              ? 'comp-goodsbuytoolbar-espier__btn--accent'
+              : 'comp-goodsbuytoolbar-espier__btn--solid'
+          )}
+          onChange={onChangeLogin.bind(null, item)}
+          key={`btn-item__${index}`}
+        >
+          <Text className='comp-goodsbuytoolbar-espier__btn-text'>{item.title}</Text>
+        </SpLogin>
+      )
+    })
 
-  const isFaved = favs.findIndex((item) => item.item_id == info.itemId) > -1
+  const priceInfo = curItem || info
+
   return (
-    <View className='comp-goodsbuytoolbar'>
-      <SpLogin className='shoucang-wrap' onChange={onChangeCollection.bind(this)}>
-        <View className='toolbar-item'>
-          <Text
-            className={classNames(
-              'iconfont',
-              isFaved ? 'icon-shoucanghover-01' : 'icon-shoucang-01'
-            )}
-          ></Text>
-          <Text className='toolbar-item-txt'>{$t('21544271.ae336c')}</Text>
+    <View className='comp-goodsbuytoolbar-espier'>
+      <View className='comp-goodsbuytoolbar-espier__inner'>
+        <View className='comp-goodsbuytoolbar-espier__price'>
+          <SpGoodsPrice isPurchase info={priceInfo} />
         </View>
-      </SpLogin>
-      <View
-        className='toolbar-item'
-        onClick={navigateTo.bind(this, '/subpages/purchase/espier-index?tabbar=0')}
-      >
-        <Text className='iconfont icon-gouwuche'></Text>
-        <Text className='toolbar-item-txt'>{$t('21544271.c017be')}</Text>
-        {cartCount > 0 && <Text className='cart-count'>{cartCount}</Text>}
-      </View>
-      <View
-        className={classNames('toolbar-btns', {
-          'mutiplte-btn': btns.length > 1
-        })}
-      >
-        {btns.map((item, index) => {
-          if (item.btnStatus == 'disabled') {
-            return (
-              <View
-                className={classNames('btn-item', `btn-${item.btnStatus}`)}
-                key={`btn-item__${index}`}
-              >
-                {item.title}
-              </View>
-            )
-          } else {
-            return (
-              <SpLogin
-                className={classNames('btn-item', `btn-${item.btnStatus}`)}
-                onChange={onChangeLogin.bind(this, item)}
-                key={`btn-item__${index}`}
-              >
-                <View className='btn-item-txt'>{item.title}</View>
-              </SpLogin>
-            )
-          }
-        })}
+
+        <View
+          className='comp-goodsbuytoolbar-espier__cart'
+          onClick={navigateTo.bind(null, '/subpages/purchase/espier-index?tabbar=0')}
+        >
+          <View className='comp-goodsbuytoolbar-espier__cart-icon-wrap'>
+            <Text className='iconfont icon-gouwuche comp-goodsbuytoolbar-espier__cart-icon' />
+            {cartCount > 0 && (
+              <Text className='comp-goodsbuytoolbar-espier__cart-badge'>
+                {cartCount > 99 ? '99+' : cartCount}
+              </Text>
+            )}
+          </View>
+          <Text className='comp-goodsbuytoolbar-espier__cart-label'>购物车</Text>
+        </View>
+
+        <View
+          className={classNames('comp-goodsbuytoolbar-espier__actions', {
+            'comp-goodsbuytoolbar-espier__actions--multi': btns.length > 1
+          })}
+        >
+          {renderToolbarBtns()}
+        </View>
       </View>
     </View>
   )

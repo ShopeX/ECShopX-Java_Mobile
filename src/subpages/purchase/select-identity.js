@@ -8,7 +8,6 @@ import { useImmer } from 'use-immer'
 import { View, Text, Image, ScrollView } from '@tarojs/components'
 import api from '@/api'
 import { classNames, getDistributorId, VERSION_IN_PURCHASE } from '@/utils'
-import CompTabbarActivity from '@/pages/purchase/comps/comp-tabbar'
 import { SpPage } from '@/components'
 import {
   updateValidIdentity,
@@ -95,7 +94,6 @@ function SelectIdentity(props) {
     <SpPage
       className='select-identity'
       loading={loading}
-      renderFooter={!loading && <CompTabbarActivity />}
     >
       <ScrollView className='identity-content' scrollY scrollWithAnimation>
         <View className='identity-item' onClick={onAddIdentityChange}>

@@ -49,6 +49,16 @@ export function getEmployeeActivitydata(params) {
   return req.get('/employee/activitydata', params)
 }
 
+export function getActivitydata(params) {
+  // 获取活动数据
+  return req.get('/employeepurchase/activity/detail', params)
+}
+
+export function reportEmployeepurchaseBehavior(params) {
+  // 内购行为上报（如口令码验证）
+  return req.post('/employeepurchase/activity/behavior-report', params)
+}
+
 export function getEmployeeInvitelist(params) {
   // 获取员工邀请亲友列表
   return req.get('/employee/invitelist', params)

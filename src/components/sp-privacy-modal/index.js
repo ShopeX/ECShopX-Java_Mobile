@@ -69,7 +69,7 @@ function SpPrivacyModal(props) {
       <View className='sp-privacy-modal__overlay'></View>
       <View className='modal-container'>
         <View className='modal-hd'>
-          <Text className='title'>{$t('ed40c676.5a98bd')}</Text>
+          <Text className='title'>隐私声明及使用条款</Text>
         </View>
         <View className='modal-bd'>
           <Text>{$t('c1881067.fe728a')}</Text>
@@ -84,13 +84,13 @@ function SpPrivacyModal(props) {
         </View>
         <View className='modal-ft'>
           <View className='btn-wrap'>
-            <AtButton type='primary' circle onClick={handleConfirm}>
-              {$t('ed40c676.e61f2c')}
+            <AtButton className='cancel-btn' onClick={handleCancel}>
+              拒绝
             </AtButton>
           </View>
           <View className='btn-wrap'>
-            <AtButton className='cancel-btn' onClick={handleCancel}>
-              {$t('ed40c676.1bf19c')}
+            <AtButton className='confirm-btn' circle onClick={handleConfirm}>
+              同意
             </AtButton>
           </View>
         </View>

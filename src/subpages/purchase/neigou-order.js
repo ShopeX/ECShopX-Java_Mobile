@@ -9,7 +9,6 @@ import { classNames } from '@/utils'
 import { SpPage, SpTabbar } from '@/components'
 import { useTranslation, $t, ti } from '@/i18n'
 import CompBottomTip from './comps/comp-bottomTip'
-import CompTabbar from './comps/comp-tabbar'
 import './neigou-order.scss'
 
 const MOCK_ORDERS = [
@@ -89,8 +88,8 @@ function SelectComponent(props) {
           )
         })}
       </View>
-      <SpPage className='neigou-order' renderFooter={<CompTabbar />}>
-        {orders?.map((item) => {
+      <SpPage className='neigou-order'>
+        {orders?.map((item, index) => {
           return (
             <View key={item.id} className='good-item'>
               <View className='item-title'>{$t(item.titleKey)}</View>

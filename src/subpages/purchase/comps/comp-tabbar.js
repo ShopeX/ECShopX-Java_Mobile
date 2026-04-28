@@ -49,19 +49,14 @@ function CompTabbar(props) {
     })
   }
 
-  console.log('comp-tabbar currentIndex:', currentIndex)
-
   const handleTabbarClick = async (index) => {
     const tabItem = tabList[index]
-    console.log(tabItem, 'tabItem')
     const { path } = getCurrentRoute()
     if (path != tabItem.url) {
       Taro.redirectTo({ url: `${tabItem.url}` })
       // Taro.redirectTo({ url: `/${tabItem.url}?${paramsSplice(purchase_share_info)}` })
     }
   }
-
-  console.log(tabbar, 'tabbar')
 
   return (
     <AtTabBar
