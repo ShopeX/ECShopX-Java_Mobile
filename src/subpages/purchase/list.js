@@ -48,7 +48,8 @@ const initialState = {
   fixTop: 0,
   routerParams: null,
   card_id: null, // 兑换券
-  goodsTotal: 0
+  goodsTotal: 0,
+  navH: 0
 }
 
 function ItemList() {
@@ -67,7 +68,8 @@ function ItemList() {
     show,
     fixTop,
     routerParams,
-    goodsTotal
+    goodsTotal,
+    navH
   } = state
   const [isShowSearch, setIsShowSearch] = useState(false)
   const [enterpriseName, setEnterpriseName] = useState('')
@@ -376,8 +378,13 @@ function ItemList() {
         'has-tagbar': tagList.length > 0,
         'page-item-list--with-store': VERSION_STANDARD && !!card_id
       })}
+      onReady={({gNavbarH})=>{
+        setState((draft) => {
+          draft.navH = gNavbarH
+        })
+      }}
     >
-      <View className='purchase-list-top-fixed'>
+      <View className='purchase-list-top-fixed' style={{ top: `${navH}px` }}>
         {VERSION_STANDARD && card_id && (
           <View
             className='purchase-list-top-fixed__store'

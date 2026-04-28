@@ -16,6 +16,7 @@ const initialState = {
   cartCount: 0,
   hasValidIdentity: true,
   curEnterpriseId: null,
+  curEnterpriseName: '',
   priceDisplayConfig: {},
   isDiscountDescriptionEnabled: false,
   discountDescription: '',
@@ -78,6 +79,9 @@ const purchaseSlice = createSlice({
     updateEnterpriseId: (state, { payload = '' }) => {
       state.curEnterpriseId = payload
     },
+    updateCurEnterpriseName: (state, { payload = '' }) => {
+      state.curEnterpriseName = payload
+    },
     updateActivityInfo: (state, { payload }) => {
       const { priceDisplayConfig, isDiscountDescriptionEnabled, discountDescription } = payload
       state.priceDisplayConfig = priceDisplayConfig
@@ -115,7 +119,8 @@ export const {
   updateActivityInfo,
   updateCurDistributorId,
   updateIsOpenPurchase,
-  updatePersistPurchaseShareInfo
+  updatePersistPurchaseShareInfo,
+  updateCurEnterpriseName
 } = purchaseSlice.actions
 
 export default purchaseSlice.reducer

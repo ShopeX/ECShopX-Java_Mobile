@@ -19,11 +19,6 @@ $purchase-list-fixed-store-extra: 52px;
     background: $page-bg;
   }
 
-  &.has-navbar {
-    .purchase-list-top-fixed {
-      top: $navigate-height;
-    }
-  }
 
   /*
    * 列表页顶栏容器：只负责 fixed / 店铺行 / 搜索外包层。

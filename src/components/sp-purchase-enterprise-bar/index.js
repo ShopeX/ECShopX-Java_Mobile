@@ -5,6 +5,7 @@
 import React from 'react'
 import Taro from '@tarojs/taro'
 import { View, Text } from '@tarojs/components'
+import { useSelector } from 'react-redux'
 import './index.scss'
 import SpImage from '../sp-image'
 import SpSearch from '../sp-search'
@@ -27,14 +28,15 @@ const DEFAULT_SEARCH_INFO = {
  * @param {React.ReactNode} [props.rightExtra] 右侧自定义内容（如详情页提示文案）；传入时不再展示「更多活动」
  */
 function SpPurchaseEnterpriseBar(props) {
-  const { label = '当前企业', name, showMore = true, showSearch = false, rightExtra } = props
+  const { label = '当前企业', showMore = true, showSearch = false, rightExtra } = props
+  const { curEnterpriseName } = useSelector((state) => state.purchase)
 
   return (
     <View className='sp-purchase-enterprise-bar'>
       <View className='sp-purchase-enterprise-bar__row'>
         <View className='sp-purchase-enterprise-bar__left'>
           <Text className='sp-purchase-enterprise-bar__label'>{label}</Text>
-          <Text className='sp-purchase-enterprise-bar__name'>{name || '—'}</Text>
+          <Text className='sp-purchase-enterprise-bar__name'>{curEnterpriseName || '—'}</Text>
         </View>
         {rightExtra != null && rightExtra !== false ? (
           <View className='sp-purchase-enterprise-bar__right-extra'>{rightExtra}</View>

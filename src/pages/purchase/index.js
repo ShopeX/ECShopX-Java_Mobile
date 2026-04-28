@@ -38,6 +38,7 @@ function PurchaseActivityList() {
   const [state, setState] = useImmer(initialState)
   const { activityList, loading } = state
   const { curEnterpriseId } = useSelector((_state) => _state.purchase)
+  console.log('curEnterpriseId', curEnterpriseId)
 
   const [enterpriseName, setEnterpriseName] = useState('')
 

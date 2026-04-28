@@ -7,23 +7,20 @@ import React, { useMemo, useState, useEffect } from 'react'
 import { useDispatch } from 'react-redux'
 import { View, Text, Input, Button } from '@tarojs/components'
 import api from '@/api'
-import { SpPage, SpPrivacyModal } from '@/components'
+import { reportEmployeepurchaseBehavior } from '@/api/purchase'
+import { SpPage } from '@/components'
 import { useLogin } from '@/hooks'
-import { classNames, showToast, getDistributorId } from '@/utils'
-import { updateInviteCode } from '@/store/slices/purchase'
+import { classNames, showToast } from '@/utils'
+import { updateEnterpriseId } from '@/store/slices/purchase'
 import { INVITE_ACTIVITY_ID } from '@/consts'
 import S from '@/spx'
 import './select-company-passcode.scss'
 
 function PurchasePasscodeAuth() {
-  const { login, isNewUser } = useLogin({
-    autoLogin: true,
-    policyUpdateHook: (isUpdate) => {
-      isUpdate && setPolicyModal(true)
-    }
+  useLogin({
+    autoLogin: true
   })
-  const [policyModal, setPolicyModal] = useState(false)
-  const [passSheetVisible, setPassSheetVisible] = useState(false)
+  const [passSheetVisible, setPassSheetVisible] = useState(true)
   const [inviteCode, setInviteCode] = useState('')
   const [activityBg, setActivityBg] = useState('')
   const { params } = useRouter()
@@ -31,14 +28,9 @@ function PurchasePasscodeAuth() {
 
   const activity_id = params?.activity_id
   const enterprise_id = params?.enterprise_id
-  const is_activity = params?.is_activity
-  const inviteFromRoute = params?.code || params?.invite_code || ''
-
-  useEffect(() => {
-    if (params?.activity_bg) {
-      setActivityBg(params.activity_bg)
-    }
-  }, [params?.activity_bg])
+  const company_id = params?.company_id || enterprise_id
+  const inviteFromRoute = params?.code || ''
+ 
 
   const disabled = useMemo(() => !inviteCode.trim(), [inviteCode])
 
@@ -56,74 +48,27 @@ function PurchasePasscodeAuth() {
     setPassSheetVisible(true)
   }, [inviteFromRoute])
 
-  useEffect(() => {
-    syncEnterpriseBg()
-  }, [enterprise_id, activity_id])
+
 
   useEffect(() => {
     fetchActivityBg()
+    dispatch(updateEnterpriseId(enterprise_id))
   }, [activity_id, enterprise_id])
-
-  const syncEnterpriseBg = async () => {
-    if (!enterprise_id) {
-      return
-    }
-    try {
-      const list = await api.purchase.getUserEnterprises({
-        disabled: 0,
-        distributor_id: getDistributorId()
-      })
-      const found = (list || []).find(
-        (item) => String(item?.id ?? item?.enterprise_id) === String(enterprise_id)
-      )
-      if (!activity_id && found?.logo) {
-        setActivityBg(found.logo)
-      }
-    } catch (e) {
-      // ignore
-    }
-  }
 
   const fetchActivityBg = async () => {
     if (!activity_id) {
       return
     }
     try {
-      const data = await api.purchase.getEmployeeActivitydata({
+      const data = await api.purchase.getActivitydata({
         activity_id,
-        enterprise_id: enterprise_id || params?.enterprise_id
       })
-      const candidate =
-        data?.auth_bg_pic ||
-        data?.auth_bg_url ||
-        data?.activity_bg_pic ||
-        data?.activity_bg_url ||
-        data?.bg_pic ||
-        data?.bg_url ||
-        data?.background_pic ||
-        data?.background_url ||
-        data?.landing_pic ||
-        data?.landing_url ||
-        data?.cover_pic ||
-        data?.cover_url ||
-        data?.share_pic ||
-        ''
+      const candidate = data?.pic ||''
       if (candidate) {
         setActivityBg(candidate)
       }
     } catch (e) {
       // ignore
-    }
-  }
-
-  const onRejectPolicy = () => {
-    Taro.exitMiniProgram()
-  }
-
-  const onResolvePolicy = async () => {
-    setPolicyModal(false)
-    if (!isNewUser) {
-      await login()
     }
   }
 
@@ -135,22 +80,47 @@ function PurchasePasscodeAuth() {
     setPassSheetVisible(false)
   }
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const next = inviteCode.trim()
     if (!next) {
       showToast('请输入活动口令码')
       return
     }
-    dispatch(updateInviteCode(next))
+
+    if (!activity_id || !enterprise_id ) {
+      showToast('活动信息缺失，请重新进入')
+      return
+    }
+
+    const payload = {
+      behavior_type: 'passphrase_verify',
+      company_id,
+      activity_id,
+      enterprise_id,
+      passphrase_code: next,
+      visitor_key:''
+    }
+
+    try {
+     const {verified} =await reportEmployeepurchaseBehavior(payload)
+     if(!verified){
+      showToast('口令码验证失败，请重试')
+      return
+     }
+    } catch (e) {
+      console.error('口令码验证失败', e)
+      showToast(e?.message || '口令码验证失败，请重试')
+      return
+    }
+
     if (activity_id) {
       S?.set(INVITE_ACTIVITY_ID, activity_id, true)
     }
 
-    let url = '/pages/purchase/index?is_redirt=1'
+    let url = '/subpages/purchase/index?is_redirt=1'
     if (activity_id) url += `&activity_id=${activity_id}`
     if (enterprise_id) url += `&enterprise_id=${enterprise_id}`
-    if (is_activity) url += '&is_activity=1'
-    Taro.reLaunch({ url })
+    Taro.navigateTo({ url })
   }
 
   return (
@@ -207,8 +177,6 @@ function PurchasePasscodeAuth() {
           </View>
         </>
       )}
-
-      <SpPrivacyModal open={policyModal} onCancel={onRejectPolicy} onConfirm={onResolvePolicy} />
     </SpPage>
   )
 }

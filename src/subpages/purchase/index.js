@@ -83,7 +83,6 @@ function Home() {
 
   const [policyModal, setPolicyModal] = useState(false)
   const [quotaSheetOpen, setQuotaSheetOpen] = useState(false)
-  const [enterpriseName, setEnterpriseName] = useState('')
   const { openScanQrcode } = useSelector((state) => state.sys)
   const { setNavigationBarTitle } = useNavigation()
 
@@ -139,29 +138,6 @@ function Home() {
     }
   }, [initState])
 
-  useEffect(() => {
-    const eid =
-      curEnterpriseId ||
-      router?.params?.enterprise_id ||
-      purchase_share_info?.enterprise_id
-    if (!eid) {
-      setEnterpriseName('')
-      return
-    }
-    const loadEnterpriseName = async () => {
-      try {
-        const data = await api.purchase.getUserEnterprises({
-          disabled: 0,
-          distributor_id: getDistributorId()
-        })
-        const found = data?.find((x) => x.enterprise_id == eid)
-        setEnterpriseName(found?.name || found?.enterprise_name || '')
-      } catch (e) {
-        setEnterpriseName('')
-      }
-    }
-    loadEnterpriseName()
-  }, [curEnterpriseId, router?.params?.enterprise_id, purchase_share_info?.enterprise_id])
 
   useEffect(() => {
     if (skuPanelOpen) {
@@ -358,7 +334,7 @@ function Home() {
           )}
 
           <View className='purchase-page__head'>
-            <SpPurchaseEnterpriseBar name={enterpriseName} showSearch />
+            <SpPurchaseEnterpriseBar  showSearch />
           </View>
 
           {filterWgts.length > 0 && (
