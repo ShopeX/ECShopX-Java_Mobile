@@ -71,7 +71,10 @@ function getTaro() {
 
 function getLoadedPackageResource(storageLang) {
   const Taro = getTaro()
-  return Taro?.__i18nResources?.[storageLang]
+  if (!Taro || !Taro.__i18nResources) {
+    return undefined
+  }
+  return Taro.__i18nResources[storageLang]
 }
 
 function loadLocalePackage() {

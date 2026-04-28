@@ -8,6 +8,8 @@ require('dotenv-flow').config()
 
 const DIST_PATH = `dist/${process.env.TARO_ENV}`
 const APP_ENVS = getEnvs()
+const REACT_I18NEXT_PATH = path.dirname(require.resolve('react-i18next/package.json'))
+const I18NEXT_PATH = path.dirname(require.resolve('i18next/package.json'))
 
 // 是否为生产模式
 const IS_PROD = process.env.NODE_ENV === 'production'
@@ -94,6 +96,10 @@ const config = {
 
   mini: {
     webpackChain(chain) {},
+
+    compile: {
+      include: [REACT_I18NEXT_PATH, I18NEXT_PATH]
+    },
 
     miniCssExtractPluginOption: {
       ignoreOrder: true
