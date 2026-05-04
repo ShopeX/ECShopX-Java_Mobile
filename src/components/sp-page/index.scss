@@ -234,6 +234,11 @@
       .title-text {
         font-size: 28px;
         color: #333;
+        display: block;
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
 
       .title-image {
