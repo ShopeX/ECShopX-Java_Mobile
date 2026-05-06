@@ -276,6 +276,10 @@ const memberSetting = {
     title: '优惠券',
     path: '/subpages/marketing/coupon-center'
   },
+  my_coupon: {
+    title: '我的优惠券',
+    path: '/subpages/marketing/coupon'
+  },
   my_collect: {
     title: '我的收藏',
     path: '/pages/member/item-fav'

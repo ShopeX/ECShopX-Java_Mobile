@@ -36,6 +36,8 @@ export function linkPage(type, data) {
     case 'marketing':
       if (id == 'coupon_list') {
         url = '/subpages/marketing/coupon-center'
+      } else if (id == 'my_coupon') {
+        url = '/subpages/marketing/coupon'
       } else if (id == 'groups_list') {
         url = '/marketing/pages/item/group-list'
       }
