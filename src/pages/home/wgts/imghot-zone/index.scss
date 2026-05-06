@@ -25,12 +25,8 @@
       box-sizing: border-box;
   
       .wgt-imghot-zone__body {
-        width: fit-content;
+        width: 100%;
         box-sizing: border-box;
-  
-        .wgt-imghot-zone__body-img {
-          height: 100% !important;
-        }
       }
     }
   
