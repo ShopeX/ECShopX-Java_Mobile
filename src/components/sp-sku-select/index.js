@@ -107,13 +107,18 @@ function SpSkuSelect(props) {
   // }, [open])
 
   const init = () => {
-    const { skuList, specItems } = info
+    const { skuList, specItems, curItem } = info
     console.log('skuList:', skuList)
     console.log('specItems:', specItems)
+    skuDictRef.current = {}
     specItems.forEach((item) => {
       const key = item.specItem.map((spec) => spec.specId).join('_')
       skuDictRef.current[key] = item
     })
+    // 优先使用上一次已选择的规格，避免重新打开后回退到默认规格
+    const matchedSelectedSpecItem = curItem?.itemId
+      ? specItems.find((item) => `${item.itemId}` === `${curItem.itemId}`)
+      : null
     // 默认选中有库存并且前端可销售的sku
     let defaultSpecItem = specItems.find(
       (item) => item.store > 0 && ['onsale'].includes(item.approveStatus)
@@ -124,8 +129,9 @@ function SpSkuSelect(props) {
     }
 
     let selection = Array(skuList.length).fill(null)
-    if (defaultSpecItem) {
-      selection = defaultSpecItem.specItem.map((item) => item.specId)
+    const targetSpecItem = matchedSelectedSpecItem || defaultSpecItem
+    if (targetSpecItem) {
+      selection = targetSpecItem.specItem.map((item) => item.specId)
     }
 
     calcDisabled(selection)
@@ -202,7 +208,7 @@ function SpSkuSelect(props) {
 
     const curItem = skuDictRef.current[selection.join('_')]
     const skuText = curItem
-      ? `已选：${curItem.specItem.map((item) => `${item.skuName}:${item.specName}`).join(',')}`
+      ? `${curItem.specItem.map((item) => `${item.specName}`).join(' ')}`
       : '请选择规格'
 
     setState((draft) => {
@@ -563,8 +569,9 @@ function SpSkuSelect(props) {
             <SpPrice value={curItem ? curItem.price : info.price}></SpPrice>
             <SpPrice value={curItem ? curItem.marketPrice : info.marketPrice} lineThrough></SpPrice>
           </View> */}
+          <View className='title'>{info.itemName}</View>
           <SpGoodsPrice info={curItem || info} />
-          <View className='goods-sku-txt'>{skuText}</View>
+          <View className='goods-sku-txt'>已选：{skuText}</View>
           {info.store_setting && (
             <View className='goods-sku-store'>库存：{curItem ? curItem.store : info.store}</View>
           )}

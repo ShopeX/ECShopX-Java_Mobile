@@ -33,7 +33,6 @@ const CustomNavigationHeader = memo((props) => {
 
   const titleStyle = pageConfig?.titleStyle
   const resolvedTitleStyle = titleStyle || '1'
-  const showHeaderContent = resolvedTitleStyle !== '0'
   const { shopInfo } = useSelector((state) => state.shop)
 
   const headerStyle = useCallback(() => {
@@ -44,9 +43,12 @@ const CustomNavigationHeader = memo((props) => {
       'background-position': 'center',
       'padding-top': `${gStatusBarHeight}px`
     }
-    // 吸顶挂件 > 沉浸式滚动 50px 后显示的导航背景 > 默认导航背景
+    // 吸顶挂件 > 页面显式控制的导航背景 > 沉浸式滚动 50px 后显示的导航背景 > 默认导航背景
     const headerBg =
-      statusBarBgColor ?? immersiveScrollRevealBgColor ?? pageConfig?.navigateBackgroundColor
+      statusBarBgColor ??
+      (navigateMantle ? navigateBackgroundColor : null) ??
+      immersiveScrollRevealBgColor ??
+      pageConfig?.navigateBackgroundColor
     if (headerBg) {
       style['background-color'] = headerBg
     }
@@ -204,7 +206,7 @@ const CustomNavigationHeader = memo((props) => {
 
   const navTitle =
     title ||
-    value?.wgtName ||
+    pageConfig?.wgtName ||
     getCurrentInstance()?.page?.config?.navigationBarTitleText ||
     appName
 
@@ -219,7 +221,7 @@ const CustomNavigationHeader = memo((props) => {
           navigationRSpace,
           gNavbarH,
           gStatusBarHeight,
-          pageConfig: value
+          pageConfig
         })
       : null
 
@@ -231,7 +233,7 @@ const CustomNavigationHeader = memo((props) => {
             className={classNames('header-container', { 'has-nearby': hasNearby, 'is-web': isWeb })}
             style={styleNames({
               width: `calc(100% - ${navigationRSpace}px)`,
-              ...(showHeaderContent ? containerStyle() : {})
+              ...containerStyle()
             })}
           >
             {showNavitionLeft && (
@@ -240,7 +242,7 @@ const CustomNavigationHeader = memo((props) => {
                 style={styleNames({ width: `${navigationRSpace}px` })}
               >
                 {/* 左侧：返回、首页、功能区三者只显示一个 */}
-                {showHeaderContent && showFunctionArea ? (
+                {showFunctionArea ? (
                   <>
                     {/* 有功能区时只显示功能区（热区图或附近门店） */}
                     {functionAreaType === 'hotzone' && hotzoneImgUrl && renderHotZone()}
@@ -267,11 +269,11 @@ const CustomNavigationHeader = memo((props) => {
               style={styleNames({ paddingLeft: !showNavitionLeft ? `20rpx` : `0` })}
             >
             {/* 标题区：搜索 */}
-            {showHeaderContent && resolvedTitleStyle === '3' && renderSearch()}
+            {resolvedTitleStyle === '3' && renderSearch()}
             {/* 标题区：页面名称 */}
-            {showHeaderContent && resolvedTitleStyle === '1' && renderTitleText()}
+            {resolvedTitleStyle === '1' && renderTitleText()}
             {/* 标题区：图片 */}
-            {showHeaderContent && resolvedTitleStyle === '2' && renderTitleImage()}
+            {resolvedTitleStyle === '2' && renderTitleImage()}
             </View>
           </View>
         )}

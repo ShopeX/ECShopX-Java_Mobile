@@ -162,7 +162,7 @@ function GuideRecommendDetail(props) {
         </View>
         <View className='article-bd'>
           <View className='wgts-wrap__cont'>
-            {content.map((item, idx) => (
+            {Array.isArray(content) && content.map((item, idx) => (
               <View className='wgt-wrap' key={`${item.name}${idx}`}>
                 {item.name === 'film' && <WgtFilm info={item} />}
                 {item.name === 'slider' && <WgtSlider info={item} />}
