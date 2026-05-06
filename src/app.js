@@ -16,7 +16,7 @@ import Taro, {
   useError
 } from '@tarojs/taro'
 
-import React, { Component, useState } from 'react'
+import React from 'react'
 import S from '@/spx'
 import { Provider } from 'react-redux'
 import configStore from '@/store'
@@ -74,8 +74,6 @@ if (process.env.APP_BUILD_TARGET == 'app') {
 requestIntercept()
 
 function App({ children }) {
-  const [i18nReady, setI18nReady] = useState(false)
-
   useEffectAsync(async (options) => {
     console.log('useEffect %%%%%%%%%%%%%', options)
     if (isWeixin) {
@@ -108,11 +106,7 @@ function App({ children }) {
       Taro.setStorageSync('lang', lang)
     }
     store.dispatch(updateLang(lang))
-    syncI18nLanguage(lang)
-      .catch(() => {})
-      .finally(() => {
-        setI18nReady(true)
-      })
+    syncI18nLanguage(lang).catch(() => {})
     if (isWeb) {
       document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr'
       if (lang === 'ar') {
@@ -325,7 +319,7 @@ function App({ children }) {
 
   return (
     <Provider store={store}>
-      <I18nextProvider i18n={i18n}>{i18nReady ? children : null}</I18nextProvider>
+      <I18nextProvider i18n={i18n}>{children}</I18nextProvider>
     </Provider>
   )
 }
