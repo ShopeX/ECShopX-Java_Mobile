@@ -97,15 +97,15 @@ function SelectIdentity(props) {
   }
 
   return (
-    <SpPage
-      className='select-identity'
-      loading={loading}
+    <SpPage className='select-identity' loading={loading}
       title='企业购'
       pageConfig={{ navigateBackgroundColor: '#ffffff' }}
       renderNavigation={(navProps) => <CompPurchaseNav {...navProps} />}
     >
       <View className='select-identity__wrap'>
-        <Text className='select-identity__section-title'>选择企业</Text>
+        <View className='select-identity__hd-bar'>
+          <Text className='select-identity__hd-text'>选择企业</Text>
+        </View>
         <View className='select-identity__inner'>
           <ScrollView className='select-identity__scroll' scrollY scrollWithAnimation>
             <View className='select-identity__list'>

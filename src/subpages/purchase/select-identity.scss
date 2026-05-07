@@ -2,17 +2,16 @@
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
  *
- * 选择企业：顶栏 CompPurchaseNav；列表区参考企业购 Figma
+ * 选择企业：企业购 Figma
+ * - 标题栏 node 533-1469（底边线 + 标题）
+ * - 选中行 Button node 533-1478（黑底 14 圆角 16 内边距 + 16/14 文案与 ✓）
+ * - 列表与底部确认 node 533-1377
  * 尺寸按设计稿原始 px，不做除以 2 折算。
  */
 
 .select-identity {
   box-sizing: border-box;
-  background-color: #f9fafb;
-
-  .sp-page__body-children {
-    background-color: #f9fafb;
-  }
+  background-color: #F9FAFB;
 
   .select-identity__wrap {
     display: flex;
@@ -23,14 +22,24 @@
     padding-bottom: 180px;
   }
 
-  .select-identity__section-title {
-    display: block;
+  /* Figma 533:1469 Container — 390×57, padding 12px 20px, bottom hairline */
+  .select-identity__hd-bar {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
     box-sizing: border-box;
     width: 100%;
-    padding: 24px 32px 16px;
+    height: 114px;
+    padding: 24px 40px;
+    // background: #ffffff;
+    border-bottom: 1PX solid #f3f4f6;
+  }
+
+  .select-identity__hd-text {
     font-size: 32px;
     font-weight: 700;
-    line-height: 48px;
+    line-height: 48px;  
     color: #0a0a0a;
   }
 

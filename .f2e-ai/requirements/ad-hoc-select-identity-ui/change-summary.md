@@ -25,3 +25,12 @@
 ## 遗留问题与后续建议
 
 - 无资格文案若需走 `$t('lvc9b0a')`，需在页面接入分包 i18n 调用链后替换字面量。
+
+---
+
+## 2026-05-07 补充提交（工作区已存在改动，仅记录）
+
+| 文件 | 说明 |
+|------|------|
+| `src/subpages/purchase/select-identity.js` | 「选择企业」由 `section-title` 改回 `hd-bar` + `hd-text` 容器；`SpPage` 属性行格式微调。 |
+| `src/subpages/purchase/select-identity.scss` | 恢复 `hd-bar` / `hd-text` 区块样式；去掉 `.sp-page__body-children` 背景覆盖；页底背景色写为 `#F9FAFB`；注释补 Figma 节点说明。 |
