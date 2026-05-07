@@ -5,16 +5,12 @@
 import Taro, { useRouter } from '@tarojs/taro'
 import React, { useEffect } from 'react'
 import { useImmer } from 'use-immer'
-import { View, Text, Image, ScrollView } from '@tarojs/components'
+import { View, Text, ScrollView } from '@tarojs/components'
 import api from '@/api'
 import { classNames, getDistributorId, VERSION_IN_PURCHASE } from '@/utils'
 import { SpPage } from '@/components'
-import {
-  updateValidIdentity,
-  updateEnterpriseId,
-  updateCurEnterpriseName,
-  updateCurDistributorId
-} from '@/store/slices/purchase'
+import { updateEnterpriseId, updateCurEnterpriseName } from '@/store/slices/purchase'
+import CompPurchaseNav from '@/pages/purchase/comps/comp-purchase-nav'
 import { useDispatch, useSelector } from 'react-redux'
 import { useTranslation, $t } from '@/i18n'
 import './select-identity.scss'
@@ -22,14 +18,15 @@ import './select-identity.scss'
 const initialState = {
   identity: [],
   invalidIdentity: [],
-  loading: true
+  loading: true,
+  selectedEnterpriseId: ''
 }
 
 function SelectIdentity(props) {
   const { i18n } = useTranslation()
   const [state, setState] = useImmer(initialState)
 
-  const { identity, invalidIdentity, loading } = state
+  const { identity, loading, selectedEnterpriseId } = state
   const { curEnterpriseId, curDistributorId } = useSelector((_state) => _state.purchase)
   const dispatch = useDispatch()
 
@@ -58,7 +55,7 @@ function SelectIdentity(props) {
       const { confirm } = await Taro.showModal({
         content: $t('c2581d4c.d7c2a1'),
         showCancel: false,
-        confirmText: $t('20b64b82.fe0337')
+        confirmText: '返回'
       })
       if (confirm) {
         Taro.navigateBack()
@@ -76,26 +73,30 @@ function SelectIdentity(props) {
       return
     }
 
-    //多个则用户去选择
-    //多个企业展示身份切换tab
-    // dispatch(updateValidIdentity(true))
-
     setState((draft) => {
       draft.loading = false
       draft.identity = _identity
       draft.invalidIdentity = data.filter((item) => item.disabled == 1)
+      const preferred = _identity.find((it) => it.enterprise_id == curEnterpriseId)
+      draft.selectedEnterpriseId = preferred
+        ? preferred.enterprise_id
+        : _identity[0]?.enterprise_id ?? ''
     })
   }
 
-  // const onAddIdentityChange = () => {
-  //   Taro.navigateTo({
-  //     url: '/pages/purchase/auth?type=addIdentity'
-  //   })
-  // }
+  const onSelectCard = (enterprise_id) => {
+    setState((draft) => {
+      draft.selectedEnterpriseId = enterprise_id
+    })
+  }
 
-  const handleItemClick = ({ enterprise_id, name }) => {
-    dispatch(updateEnterpriseId(enterprise_id))
-    dispatch(updateCurEnterpriseName(name))
+  const onConfirm = () => {
+    const item = identity.find((it) => it.enterprise_id == selectedEnterpriseId)
+    if (!item) {
+      return
+    }
+    dispatch(updateEnterpriseId(item.enterprise_id))
+    dispatch(updateCurEnterpriseName(item.name))
     Taro.navigateTo({
       url: `/pages/purchase/index?activity_id=${activity_id}&is_redirt=1`
     })
@@ -105,66 +106,51 @@ function SelectIdentity(props) {
     <SpPage
       className='select-identity'
       loading={loading}
+      title='企业购'
+      pageConfig={{ navigateBackgroundColor: '#ffffff' }}
+      renderNavigation={(navProps) => <CompPurchaseNav {...navProps} />}
     >
-      <ScrollView className='identity-content' scrollY scrollWithAnimation>
-        {/* <View className='identity-item' onClick={onAddIdentityChange}>
-          <View className='identity-item-avatar'>
-            <Text className='iconfont icon-tianjia1 add-icon avatar'></Text>
-          </View>
-          <View className='add-identity'>{$t('3d3fcde1.8f40f8')}</View>
-        </View> */}
-        <View className='content'>
-          <View className='identity'>
-            {identity.map((item, index) => {
-              return (
-                <View key={index} className='identity-item' onClick={() => handleItemClick(item)}>
-                  <View className='identity-item-avatar'>
-                    <Image src={item?.logo} className='avatar' />
-                  </View>
-                  <View className='identity-item-content'>
-                    <View className='content-top'>
-                      <View className='company'>{item.name}</View>
-                    </View>
-                    <View className='content-bottom'>
-                      <View className={classNames('role', item.is_relative == 1 ? 'friend' : '')}>
-                        {(item.is_employee == 1 && $t('2ed39222.055f8a')) ||
-                          (item.is_relative == 1 && $t('4eca5be6.983d16'))}
-                      </View>
-                      <View className='account'>{item.login_account}</View>
-                    </View>
-                  </View>
-                  {curEnterpriseId == item.enterprise_id && (
-                    <View className='identity-item-right'>{$t('bf94700b.43c6f8')}</View>
-                  )}
-                </View>
-              )
-            })}
-          </View>
-          {/* {invalidIdentity?.length > 0 && (
-          <View className='invalid-identity'>
-            <View className='title'>已失效身份</View>
-            {state.invalidIdentity?.map((item, index) => (
-              <View key={index} className='identity-item'>
-                <View className='identity-item-avatar'>
-                  <Image src={item?.avatar} className='avatar' />
-                </View>
-                <View className='identity-item-content'>
-                  <View className='content-top'>
-                    <View className='company'>{item.name}</View>
-                  </View>
-                  <View className='content-bottom'>
-                    <View className={classNames('role', item.is_relative == 1 ? 'friend' : '')}>
-                      {(item.is_employee == 1 && '员工') || (item.is_relative == 1 && '亲友')}
-                    </View>
-                    <View className='account'>{item.login_account}</View>
-                  </View>
-                </View>
-              </View>
-            ))}
-          </View>
-        )} */}
+      <View className='select-identity__wrap'>
+        <View className='select-identity__hd-bar'>
+          <Text className='select-identity__hd-text'>选择企业</Text>
         </View>
-      </ScrollView>
+        <View className='select-identity__inner'>
+          <ScrollView className='select-identity__scroll' scrollY scrollWithAnimation>
+            <View className='select-identity__list'>
+              {identity.map((item, index) => {
+                const active = selectedEnterpriseId == item.enterprise_id
+                return (
+                  <View
+                    key={item.enterprise_id ?? index}
+                    className={classNames('select-identity__card', {
+                      'select-identity__card--active': active
+                    })}
+                    onClick={() => onSelectCard(item.enterprise_id)}
+                  >
+                    <View className='select-identity__card-main'>
+                      <Text className='select-identity__card-name'>{item.name}</Text>
+                    </View>
+                    {active ? (
+                      <View className='select-identity__card-check'>
+                        <Text className='select-identity__card-check-mark'>✓</Text>
+                      </View>
+                    ) : (
+                      <View className='select-identity__card-check select-identity__card-check--placeholder' />
+                    )}
+                  </View>
+                )
+              })}
+            </View>
+          </ScrollView>
+        </View>
+        {!loading && identity.length > 0 ? (
+          <View className='select-identity__footer'>
+            <View className='select-identity__confirm' onClick={onConfirm}>
+              确认
+            </View>
+          </View>
+        ) : null}
+      </View>
     </SpPage>
   )
 }
