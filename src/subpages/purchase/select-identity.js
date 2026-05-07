@@ -55,7 +55,7 @@ function SelectIdentity(props) {
       const { confirm } = await Taro.showModal({
         content: $t('c2581d4c.d7c2a1'),
         showCancel: false,
-        confirmText: '返回'
+        confirmText: $t('c2581d4c.5f4112')
       })
       if (confirm) {
         Taro.navigateBack()
@@ -106,13 +106,13 @@ function SelectIdentity(props) {
     <SpPage
       className='select-identity'
       loading={loading}
-      title='企业购'
+      title={$t('c2581d4c.6fb7d0')}
       pageConfig={{ navigateBackgroundColor: '#ffffff' }}
       renderNavigation={(navProps) => <CompPurchaseNav {...navProps} />}
     >
       <View className='select-identity__wrap'>
         <View className='select-identity__hd-bar'>
-          <Text className='select-identity__hd-text'>选择企业</Text>
+          <Text className='select-identity__hd-text'>{$t('c2581d4c.0067d7')}</Text>
         </View>
         <View className='select-identity__inner'>
           <ScrollView className='select-identity__scroll' scrollY scrollWithAnimation>
@@ -146,7 +146,7 @@ function SelectIdentity(props) {
         {!loading && identity.length > 0 ? (
           <View className='select-identity__footer'>
             <View className='select-identity__confirm' onClick={onConfirm}>
-              确认
+              {$t('c2581d4c.e83a25')}
             </View>
           </View>
         ) : null}
