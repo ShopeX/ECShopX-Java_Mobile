@@ -2,7 +2,7 @@
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
  */
-import Taro, { useDidShow, useRouter } from '@tarojs/taro'
+import Taro, { useRouter } from '@tarojs/taro'
 import React, { useEffect } from 'react'
 import { useImmer } from 'use-immer'
 import { View, Text, Image, ScrollView } from '@tarojs/components'
@@ -44,11 +44,19 @@ function SelectIdentity(props) {
       distributor_id: curDistributorId ?? getDistributorId()
     })
     const _identity = data.filter((item) => item.disabled == 0)
-    // 没有企业跳认证首页
+    // 内购入口且无可用企业：提示后返回上一页
     if (_identity.length == 0 && (is_redirt || VERSION_IN_PURCHASE)) {
-      Taro.redirectTo({
-        url: `/pages/purchase/auth?activity_id=${activity_id}&is_activity=1`
+      setState((draft) => {
+        draft.loading = false
       })
+      const { confirm } = await Taro.showModal({
+        content: '抱歉，您没有内购资格',
+        showCancel: false,
+        confirmText: '确定'
+      })
+      if (confirm) {
+        Taro.navigateBack()
+      }
       return
     }
 
