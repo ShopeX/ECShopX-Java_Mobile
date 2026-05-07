@@ -124,7 +124,7 @@ function WgtImgHotZone(props) {
         <SpImage
           src={config.imgUrl}
           className='wgt-imghot-zone__body-img'
-          mode={isVertical ? 'heightFix' : 'widthFix'}
+          mode={isVertical ? 'widthFix' : 'heightFix'}
         />
         {isArray(data) && data.length > 0 && data.map(renderHotZone)}
       </View>
