@@ -12,6 +12,7 @@ import { SpPage } from '@/components'
 import {
   updateValidIdentity,
   updateEnterpriseId,
+  updateCurEnterpriseName,
   updateCurDistributorId
 } from '@/store/slices/purchase'
 import { useDispatch, useSelector } from 'react-redux'
@@ -54,6 +55,7 @@ function SelectIdentity(props) {
     //一个选择这个跳活动列表
     if (_identity.length == 1 && is_redirt) {
       dispatch(updateEnterpriseId(_identity[0]?.enterprise_id))
+      dispatch(updateCurEnterpriseName(_identity[0]?.name))
       Taro.redirectTo({
         url: `/pages/purchase/index?activity_id=${activity_id}&is_redirt=1`
       })
@@ -71,14 +73,15 @@ function SelectIdentity(props) {
     })
   }
 
-  const onAddIdentityChange = () => {
-    Taro.navigateTo({
-      url: '/pages/purchase/auth?type=addIdentity'
-    })
-  }
+  // const onAddIdentityChange = () => {
+  //   Taro.navigateTo({
+  //     url: '/pages/purchase/auth?type=addIdentity'
+  //   })
+  // }
 
-  const handleItemClick = ({ enterprise_id }) => {
+  const handleItemClick = ({ enterprise_id, name }) => {
     dispatch(updateEnterpriseId(enterprise_id))
+    dispatch(updateCurEnterpriseName(name))
     Taro.navigateTo({
       url: `/pages/purchase/index?activity_id=${activity_id}&is_redirt=1`
     })
@@ -90,12 +93,12 @@ function SelectIdentity(props) {
       loading={loading}
     >
       <ScrollView className='identity-content' scrollY scrollWithAnimation>
-        <View className='identity-item' onClick={onAddIdentityChange}>
+        {/* <View className='identity-item' onClick={onAddIdentityChange}>
           <View className='identity-item-avatar'>
             <Text className='iconfont icon-tianjia1 add-icon avatar'></Text>
           </View>
           <View className='add-identity'>添加身份</View>
-        </View>
+        </View> */}
         <View className='content'>
           <View className='identity'>
             {identity.map((item, index) => {
