@@ -832,7 +832,6 @@ function TradeDetail(props) {
           </View>
           {/* <View className='block-container'>
         </View> */}
-          {console.log(info, 'info------')}
 
           {info?.prescriptionStatus > 0 && !supplement && (
             <View className='block-container order-info'>

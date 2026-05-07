@@ -21,6 +21,8 @@ function linkPage(data) {
     type,
     distributor_id,
     navigation = false,
+    officialAccountRawId,
+    officialArticleLink,
     content,
     seletedTags = []
   } = data
@@ -159,6 +161,42 @@ function linkPage(data) {
         store.dispatch(setShowGuideConsultModal(true))
         return
       }
+      if (id === 'officialProfile') {
+        wx.openOfficialAccountProfile({
+          username: officialAccountRawId,
+          success: (res) => {
+            console.log('res=========', res)
+          },
+          fail: (err) => {
+            console.log('err=========', err)
+          }
+        })
+        return
+      }
+      if (id === 'officialChat') {
+        wx.openOfficialAccountChat({
+          username: officialAccountRawId,
+          success: (res) => {
+            console.log('res=========', res)
+          },
+          fail: (err) => {
+            console.log('err=========', err)
+          }
+        })
+        return
+      }
+      if (id === 'officialArtical') {
+        wx.openOfficialAccountArticle({
+          url: officialArticleLink,
+          success: (res) => {
+            console.log('res=========', res)
+          },
+          fail: (err) => {
+            console.log('err=========', err)
+          }
+        })
+        return
+      }
       break
     case 'custom':
       url = id
@@ -239,6 +277,10 @@ const memberSetting = {
     title: $t('250b375e.2f3635'),
     path: '/subpages/marketing/coupon-center'
   },
+  my_coupon: {
+    title: '我的优惠券',
+    path: '/subpages/marketing/coupon'
+  },
   my_collect: {
     title: $t('ece5ca3e.975ff6'),
     path: '/pages/member/item-fav'
@@ -288,6 +330,10 @@ const memberSetting = {
   settings: {
     title: $t('162d72a5.e366cc'),
     path: '/subpages/member/settings'
+  },
+  itemList: {
+    title: '商品列表',
+    path: '/subpages/item/list'
   }
 }
 

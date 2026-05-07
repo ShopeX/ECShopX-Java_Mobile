@@ -181,8 +181,11 @@
       &.is-web .title-search {
         flex: 1;
         min-width: 0;
-        max-width: 600px;
-        margin: 0 auto;
+        margin-left: 20px;
+
+      }
+      &.is-web .search-container {
+        max-width: none !important;
       }
       /* Web 端：标题图片整栏水平居中（用 50% + translate 保证不被左侧占位影响） */
       &.is-web .title-image {
@@ -231,6 +234,11 @@
       .title-text {
         font-size: 28px;
         color: #333;
+        display: block;
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
 
       .title-image {

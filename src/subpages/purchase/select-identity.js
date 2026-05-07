@@ -2,7 +2,7 @@
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
  */
-import Taro, { useDidShow, useRouter } from '@tarojs/taro'
+import Taro, { useRouter } from '@tarojs/taro'
 import React, { useEffect } from 'react'
 import { useImmer } from 'use-immer'
 import { View, Text, Image, ScrollView } from '@tarojs/components'
@@ -12,6 +12,7 @@ import { SpPage } from '@/components'
 import {
   updateValidIdentity,
   updateEnterpriseId,
+  updateCurEnterpriseName,
   updateCurDistributorId
 } from '@/store/slices/purchase'
 import { useDispatch, useSelector } from 'react-redux'
@@ -49,17 +50,26 @@ function SelectIdentity(props) {
       distributor_id: curDistributorId ?? getDistributorId()
     })
     const _identity = data.filter((item) => item.disabled == 0)
-    // 没有企业跳认证首页
+    // 内购入口且无可用企业：提示后返回上一页
     if (_identity.length == 0 && (is_redirt || VERSION_IN_PURCHASE)) {
-      Taro.redirectTo({
-        url: `/pages/purchase/auth?activity_id=${activity_id}&is_activity=1`
+      setState((draft) => {
+        draft.loading = false
       })
+      const { confirm } = await Taro.showModal({
+        content: $t('c2581d4c.d7c2a1'),
+        showCancel: false,
+        confirmText: $t('20b64b82.fe0337')
+      })
+      if (confirm) {
+        Taro.navigateBack()
+      }
       return
     }
 
     //一个选择这个跳活动列表
     if (_identity.length == 1 && is_redirt) {
       dispatch(updateEnterpriseId(_identity[0]?.enterprise_id))
+      dispatch(updateCurEnterpriseName(_identity[0]?.name))
       Taro.redirectTo({
         url: `/pages/purchase/index?activity_id=${activity_id}&is_redirt=1`
       })
@@ -77,14 +87,15 @@ function SelectIdentity(props) {
     })
   }
 
-  const onAddIdentityChange = () => {
-    Taro.navigateTo({
-      url: '/pages/purchase/auth?type=addIdentity'
-    })
-  }
+  // const onAddIdentityChange = () => {
+  //   Taro.navigateTo({
+  //     url: '/pages/purchase/auth?type=addIdentity'
+  //   })
+  // }
 
-  const handleItemClick = ({ enterprise_id }) => {
+  const handleItemClick = ({ enterprise_id, name }) => {
     dispatch(updateEnterpriseId(enterprise_id))
+    dispatch(updateCurEnterpriseName(name))
     Taro.navigateTo({
       url: `/pages/purchase/index?activity_id=${activity_id}&is_redirt=1`
     })
@@ -96,12 +107,12 @@ function SelectIdentity(props) {
       loading={loading}
     >
       <ScrollView className='identity-content' scrollY scrollWithAnimation>
-        <View className='identity-item' onClick={onAddIdentityChange}>
+        {/* <View className='identity-item' onClick={onAddIdentityChange}>
           <View className='identity-item-avatar'>
             <Text className='iconfont icon-tianjia1 add-icon avatar'></Text>
           </View>
           <View className='add-identity'>{$t('3d3fcde1.8f40f8')}</View>
-        </View>
+        </View> */}
         <View className='content'>
           <View className='identity'>
             {identity.map((item, index) => {

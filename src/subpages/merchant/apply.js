@@ -620,6 +620,7 @@ const Apply = () => {
                 {step === 3 && (
                   <View className='certificate-information'>
                     <MImgPicker
+                      useMallToken
                       title={
                         <Text>
                           {$t('3c94bb91.b35543')}
@@ -632,6 +633,7 @@ const Apply = () => {
                       info={[$t('3c94bb91.795dd2')]}
                     />
                     <MImgPicker
+                      useMallToken
                       mode='idCard'
                       title={
                         <Text>
@@ -651,6 +653,7 @@ const Apply = () => {
                       ]}
                     />
                     <MImgPicker
+                      useMallToken
                       mode='bankCard'
                       required={false}
                       value={state.bank_card_front_url}

@@ -347,7 +347,6 @@ function StoreIndex() {
       scrollToTopBtn
       ref={pageRef}
       showpoweredBy={false}
-      // navigateMantle
       pageConfig={pageData?.base}
       renderFloat={
         <View>
