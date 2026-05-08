@@ -25,6 +25,26 @@ export const I18N_TO_STORAGE = {
 /** 可选语言顺序（与 Taro 存储 lang 一致） */
 export const SUPPORTED_STORAGE_LANGS = ['zhcn', 'en', 'ar']
 
+const STORAGE_LANG_ALIASES = {
+  'zh-cn': 'zhcn',
+  'zh_cn': 'zhcn',
+  zh: 'zhcn',
+  zhcn: 'zhcn',
+  en: 'en',
+  'en-us': 'en',
+  'en_cn': 'en',
+  ar: 'ar',
+  'ar-sa': 'ar'
+}
+
+export function normalizeStorageLang(storageLang) {
+  const lang = String(storageLang || '').trim()
+  if (!lang) {
+    return ''
+  }
+  return STORAGE_LANG_ALIASES[lang] || STORAGE_LANG_ALIASES[lang.toLowerCase()] || lang
+}
+
 function isNodeCompilerContext() {
   return (
     typeof process !== 'undefined' &&
@@ -40,7 +60,7 @@ function readStorageLang() {
   }
   try {
     const Taro = require('@tarojs/taro').default
-    return Taro.getStorageSync('lang') || ''
+    return normalizeStorageLang(Taro.getStorageSync('lang'))
   } catch {
     return ''
   }
@@ -53,7 +73,7 @@ function resolveInitialLng() {
   }
   const env =
     typeof process !== 'undefined' && process.env && process.env.APP_DEFAULT_LANGUAGE
-      ? process.env.APP_DEFAULT_LANGUAGE
+      ? normalizeStorageLang(process.env.APP_DEFAULT_LANGUAGE)
       : ''
   if (env && STORAGE_TO_I18N[env]) {
     return STORAGE_TO_I18N[env]
@@ -74,7 +94,7 @@ function getLoadedPackageResource(storageLang) {
   if (!Taro || !Taro.__i18nResources) {
     return undefined
   }
-  return Taro.__i18nResources[storageLang]
+  return Taro.__i18nResources[normalizeStorageLang(storageLang)]
 }
 
 function loadLocalePackage() {
@@ -125,15 +145,16 @@ if (!i18n.isInitialized) {
 }
 
 async function loadI18nResource(storageLang) {
-  const lng = STORAGE_TO_I18N[storageLang]
+  const normalizedLang = normalizeStorageLang(storageLang)
+  const lng = STORAGE_TO_I18N[normalizedLang]
   if (!lng || i18n.hasResourceBundle(lng, 'translation')) {
     return lng
   }
 
   await loadLocalePackage()
-  const resource = getLoadedPackageResource(storageLang)
+  const resource = getLoadedPackageResource(normalizedLang)
   if (!resource) {
-    throw new Error(`Missing i18n resource: ${storageLang}`)
+    throw new Error(`Missing i18n resource: ${normalizedLang}`)
   }
   i18n.addResourceBundle(lng, 'translation', resource, true, true)
   return lng
@@ -144,11 +165,17 @@ async function loadI18nResource(storageLang) {
  * @param {string} storageLang
  */
 export async function syncI18nLanguage(storageLang) {
-  const lng = await loadI18nResource(storageLang)
+  const normalizedLang = normalizeStorageLang(storageLang)
+  const targetLng = STORAGE_TO_I18N[normalizedLang]
+  const hadResourceBundle = targetLng ? i18n.hasResourceBundle(targetLng, 'translation') : false
+  const lng = await loadI18nResource(normalizedLang)
   if (!lng) {
     return
   }
   if (i18n.language === lng) {
+    if (!hadResourceBundle) {
+      i18n.emit('languageChanged', lng)
+    }
     return
   }
   await i18n.changeLanguage(lng)

@@ -3,7 +3,7 @@
  * See LICENSE file for license details.
  */
 import '@/lang/index.js' // 📍 必须在入口文件中第一行引入，初始化旧 $t/$iS 兼容运行时
-import i18n, { syncI18nLanguage } from '@/i18n/instance'
+import i18n, { normalizeStorageLang, syncI18nLanguage } from '@/i18n/instance'
 import { $t } from '@/i18n'
 import { I18nextProvider } from 'react-i18next'
 import Taro, {
@@ -100,11 +100,11 @@ function App({ children }) {
     Taro.setStorageSync(SG_CHECK_STORE_RULE, 0)
 
     // Initialize RTL；首次进入时 Taro 无 lang，需写入默认语言，否则 baseinfo 等首请求不会带 country_code
-    let lang = Taro.getStorageSync('lang')
+    let lang = normalizeStorageLang(Taro.getStorageSync('lang'))
     if (!lang) {
-      lang = process.env.APP_DEFAULT_LANGUAGE || 'en'
-      Taro.setStorageSync('lang', lang)
+      lang = normalizeStorageLang(process.env.APP_DEFAULT_LANGUAGE) || 'en'
     }
+    Taro.setStorageSync('lang', lang)
     store.dispatch(updateLang(lang))
     syncI18nLanguage(lang).catch(() => {})
     if (isWeb) {
@@ -117,7 +117,8 @@ function App({ children }) {
     }
 
     Taro.eventCenter.on('languageChanged', (data) => {
-      const newLang = data?.lang || Taro.getStorageSync('lang')
+      const newLang = normalizeStorageLang(data?.lang || Taro.getStorageSync('lang')) || 'en'
+      Taro.setStorageSync('lang', newLang)
       store.dispatch(updateLang(newLang))
       syncI18nLanguage(newLang).catch(() => {})
       if (isWeb) {

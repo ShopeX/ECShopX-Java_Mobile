@@ -15,7 +15,7 @@ import {
   VERSION_IN_PURCHASE
 } from '@/utils'
 import log from '@/utils/log'
-import { $t } from '@/i18n'
+import { $t, normalizeStorageLang } from '@/i18n'
 import { HTTP_STATUS } from './consts'
 
 // 惰性获取 spx：req 与 spx 存在循环依赖（spx→api→req→spx），加载时 spxInstance 可能尚未就绪
@@ -197,7 +197,7 @@ class API {
     if (company_id) {
       query['company_id'] = company_id
     }
-    const lang = Taro.getStorageSync('lang') || process.env.APP_DEFAULT_LANGUAGE
+    const lang = normalizeStorageLang(Taro.getStorageSync('lang') || process.env.APP_DEFAULT_LANGUAGE)
     if (lang) {
       const langMap = {
         zhcn: 'zh-CN',

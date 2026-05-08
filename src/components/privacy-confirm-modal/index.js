@@ -7,7 +7,7 @@ import Taro, { getCurrentInstance } from '@tarojs/taro'
 import { View, Image, Button, Text } from '@tarojs/components'
 import api from '@/api'
 import { connect } from 'react-redux'
-import { $t } from '@/i18n'
+import i18n, { $t } from '@/i18n'
 
 import './index.scss'
 
@@ -25,6 +25,15 @@ export default class PrivacyConfirmModal extends Component {
 
   componentDidMount() {
     this.fetch()
+    i18n.on('languageChanged', this.handleLanguageChanged)
+  }
+
+  componentWillUnmount() {
+    i18n.off('languageChanged', this.handleLanguageChanged)
+  }
+
+  handleLanguageChanged = () => {
+    this.forceUpdate()
   }
 
   handleClickAgreement = (type) => {
@@ -108,9 +117,6 @@ export default class PrivacyConfirmModal extends Component {
                     </Button>
                   )}
 
-                  {/* <Button onClick={() => onChange('agree')}>
-                    <View className='agree'>同意</View>
-                  </Button> */}
                 </View>
               </View>
             </View>

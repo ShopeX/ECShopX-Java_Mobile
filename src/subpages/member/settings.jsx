@@ -10,7 +10,13 @@ import { SpPage, SpCell, SpFloatLayout, SpCheckbox } from '@/components'
 import { isWeb } from '@/utils'
 import { SG_CHECK_STORE_RULE } from '@/consts'
 import { View } from '@tarojs/components'
-import { useTranslation, $t, syncI18nLanguage, SUPPORTED_STORAGE_LANGS } from '@/i18n'
+import {
+  useTranslation,
+  $t,
+  syncI18nLanguage,
+  normalizeStorageLang,
+  SUPPORTED_STORAGE_LANGS
+} from '@/i18n'
 import './settings.scss'
 
 const initialState = {
@@ -22,7 +28,10 @@ const initialState = {
 const Settings = () => {
   const { i18n } = useTranslation()
   const [state, setState] = useImmer(initialState)
-  const lang = Taro.getStorageSync('lang')
+  const lang =
+    normalizeStorageLang(Taro.getStorageSync('lang')) ||
+    normalizeStorageLang(process.env.APP_DEFAULT_LANGUAGE) ||
+    'en'
 
   useEffect(() => {
     setState((draft) => {

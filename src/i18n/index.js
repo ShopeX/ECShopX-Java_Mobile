@@ -6,12 +6,20 @@
  */
 import i18n, {
   syncI18nLanguage,
+  normalizeStorageLang,
   STORAGE_TO_I18N,
   I18N_TO_STORAGE,
   SUPPORTED_STORAGE_LANGS
 } from './instance'
 
-export { i18n, syncI18nLanguage, STORAGE_TO_I18N, I18N_TO_STORAGE, SUPPORTED_STORAGE_LANGS }
+export {
+  i18n,
+  syncI18nLanguage,
+  normalizeStorageLang,
+  STORAGE_TO_I18N,
+  I18N_TO_STORAGE,
+  SUPPORTED_STORAGE_LANGS
+}
 export { useTranslation, Trans } from 'react-i18next'
 
 /**
