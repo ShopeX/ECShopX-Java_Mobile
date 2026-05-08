@@ -125,6 +125,7 @@ function SpInput(props) {
           onBlur={onBlur}
           onFocus={onFocus}
           nativeProps={isWeb ? { onKeyDown: handleKeyDown } : {}}
+          cursorSpacing={props.cursorSpacing}
         />
         {/* <Input
           type={type}
@@ -157,6 +158,7 @@ SpInput.defaultProps = {
   placeholder: '',
   maxLength: null,
   adjustPosition: true,
+  cursorSpacing: 50,
   onChange: () => {},
   onConfirm: () => {},
   onBlur: noop,
