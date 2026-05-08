@@ -37,8 +37,8 @@ function SelectIdentity(props) {
 
   const getUserEnterprises = async () => {
     const data = await api.purchase.getUserEnterprises({
-      activity_id,
-      distributor_id: curDistributorId ?? getDistributorId()
+      activity_id
+      // distributor_id: curDistributorId ?? getDistributorId()
     })
     const _identity = data.filter((item) => item.disabled == 0)
     // 内购入口且无可用企业：提示后返回上一页
