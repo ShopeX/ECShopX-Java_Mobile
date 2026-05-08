@@ -150,7 +150,6 @@ function PurchaseAuthAccount() {
               className='purchase-account-auth__field-sp-input'
               placeholder='请输入账号'
               placeholderClass='purchase-account-auth__field-input-ph'
-              adjustPosition={false}
               value={account}
               onChange={setAccount}
             />
@@ -163,7 +162,6 @@ function PurchaseAuthAccount() {
               placeholder='请输入密码'
               placeholderClass='purchase-account-auth__field-input-ph'
               type='password'
-              adjustPosition={false}
               value={authCode}
               onChange={setAuthCode}
             />

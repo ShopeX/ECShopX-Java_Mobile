@@ -74,7 +74,6 @@ function PurchaseEmailCode({
               className='purchase-email-auth__field-sp-input'
               placeholder='请输入电子邮箱'
               placeholderClass='purchase-email-auth__field-input-ph'
-              adjustPosition={false}
               value={email}
               onChange={setEmail}
             />
@@ -87,7 +86,6 @@ function PurchaseEmailCode({
                 className='purchase-email-auth__code-sp-input'
                 placeholder='请输入邮箱验证码'
                 placeholderClass='purchase-email-auth__field-input-ph'
-                adjustPosition={false}
                 value={vcode}
                 onChange={setVcode}
               />
