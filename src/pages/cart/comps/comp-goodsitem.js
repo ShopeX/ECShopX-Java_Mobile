@@ -2,15 +2,28 @@
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
  */
-import React, { useEffect } from 'react'
+import React, { useEffect, useRef, useState, useCallback } from 'react'
 import { useImmer } from 'use-immer'
 import { useSelector } from 'react-redux'
-import { View, Text, Image } from '@tarojs/components'
+import Taro from '@tarojs/taro'
+import { View, Text } from '@tarojs/components'
 import { SpPrice, SpInputNumber, SpImage } from '@/components'
 import { VERSION_IN_PURCHASE } from '@/utils'
 import { useTranslation, $t, ti } from '@/i18n'
 
 import './comp-goodsitem.scss'
+
+/** 删除按钮区域宽度（rpx），较原 160rpx 窄 40rpx，约等于常见屏宽下少 20px */
+const DELETE_BTN_RPX = 120
+
+function getDeleteBtnWidthPx() {
+  try {
+    const { windowWidth } = Taro.getWindowInfo()
+    return Math.round((DELETE_BTN_RPX / 750) * windowWidth)
+  } catch {
+    return 65
+  }
+}
 
 const initialState = {
   localNum: 0
@@ -26,7 +39,11 @@ function CompGoodsItem(props) {
     goodType,
     onDelete = () => {},
     onChange = () => {},
-    onClickImgAndTitle = () => {}
+    onClickImgAndTitle = () => {},
+    /** 当前行标识（如 cart_id），与购物车页 openSwipeCartId 联动，实现同时只展开一行删除 */
+    swipeRowId,
+    openSwipeCartId,
+    onSwipeOpenChange
   } = props
   const { priceSetting } = useSelector((state) => state.sys)
   const { userInfo = {}, vipInfo = {} } = useSelector((state) => state.user)
@@ -37,6 +54,96 @@ function CompGoodsItem(props) {
   const { activity_price: enPurActivityPrice, sale_price: enPurSalePrice } = pcart_page
   const [state, setState] = useImmer(initialState)
   const { localNum } = state
+
+  const deleteWidthRef = useRef(getDeleteBtnWidthPx())
+  const [translateX, setTranslateX] = useState(0)
+  const [touchDragging, setTouchDragging] = useState(false)
+  const translateRef = useRef(0)
+  const gestureRef = useRef({
+    startX: 0,
+    startY: 0,
+    baseTranslate: 0,
+    axisLocked: null
+  })
+  const openSwipeCartIdRef = useRef(openSwipeCartId)
+
+  useEffect(() => {
+    translateRef.current = translateX
+  }, [translateX])
+
+  useEffect(() => {
+    openSwipeCartIdRef.current = openSwipeCartId
+  }, [openSwipeCartId])
+
+  useEffect(() => {
+    deleteWidthRef.current = getDeleteBtnWidthPx()
+  }, [])
+
+  /** 其它行展开时，收起本行 */
+  useEffect(() => {
+    if (!isShowDeleteIcon || swipeRowId == null || !onSwipeOpenChange) return
+    const mine =
+      openSwipeCartId != null && String(openSwipeCartId) === String(swipeRowId)
+    if (!mine && translateRef.current < -0.5) {
+      setTranslateX(0)
+    }
+  }, [openSwipeCartId, swipeRowId, isShowDeleteIcon, onSwipeOpenChange])
+
+  const onSwipeTouchStart = useCallback((e) => {
+    const t = e.touches[0]
+    gestureRef.current.startX = t.clientX
+    gestureRef.current.startY = t.clientY
+    gestureRef.current.baseTranslate = translateRef.current
+    gestureRef.current.axisLocked = null
+    setTouchDragging(true)
+  }, [])
+
+  const onSwipeTouchMove = useCallback((e) => {
+    const t = e.touches[0]
+    const dx = t.clientX - gestureRef.current.startX
+    const dy = t.clientY - gestureRef.current.startY
+    const dw = deleteWidthRef.current
+
+    if (gestureRef.current.axisLocked === null) {
+      if (Math.abs(dx) > 8 || Math.abs(dy) > 8) {
+        gestureRef.current.axisLocked = Math.abs(dx) > Math.abs(dy) ? 'h' : 'v'
+      }
+    }
+    if (gestureRef.current.axisLocked === 'v') {
+      return
+    }
+
+    let next = gestureRef.current.baseTranslate + dx
+    next = Math.min(0, Math.max(-dw, next))
+    setTranslateX(next)
+  }, [])
+
+  const onSwipeTouchEnd = useCallback(() => {
+    setTouchDragging(false)
+    const dw = deleteWidthRef.current
+    const prev = translateRef.current
+    const next = prev < -dw / 2 ? -dw : 0
+    setTranslateX(next)
+    if (onSwipeOpenChange && swipeRowId != null) {
+      if (next <= -dw + 0.5) {
+        onSwipeOpenChange(swipeRowId)
+      } else if (
+        openSwipeCartIdRef.current != null &&
+        String(openSwipeCartIdRef.current) === String(swipeRowId)
+      ) {
+        onSwipeOpenChange(null)
+      }
+    }
+    gestureRef.current.axisLocked = null
+  }, [onSwipeOpenChange, swipeRowId])
+
+  const handleSwipeDelete = useCallback(() => {
+    if (onSwipeOpenChange && swipeRowId != null) {
+      onSwipeOpenChange(null)
+    }
+    onDelete(info)
+    setTranslateX(0)
+  }, [info, onDelete, onSwipeOpenChange, swipeRowId])
 
   useEffect(() => {
     setState((draft) => {
@@ -106,15 +213,30 @@ function CompGoodsItem(props) {
             {isShowDeleteIcon && (
               <Text className='iconfont icon-shanchu-01' onClick={() => onDelete(info)}></Text>
             )}
+            {info.item_name}
           </View>
+        </View>
 
-          {/* {info.brief && <Text className='spec-brief'>{info.brief}</Text>} */}
+        {info.item_spec_desc && (
+          <View className='item-bd'>
+            <Text className='spec-desc'>{info.item_spec_desc}</Text>
+          </View>
+        )}
 
-          {info.item_spec_desc && (
-            <View className='item-bd'>
-              <Text className='spec-desc'>{info.item_spec_desc}</Text>
+        <View className='item-tags'>
+          {info?.promotions?.map((item, idx) => (
+            <View className='item-tag' key={`${item.promotion_tag}_${idx}`}>
+              {item.promotion_tag}
+            </View>
+          ))}
+          {!isNaN(member_price) && !VERSION_IN_PURCHASE && (
+            <View className='item-tag'>
+              {vipInfo?.isVip ? vipInfo?.grade_name : userInfo?.gradeInfo?.grade_name}
             </View>
           )}
+          {goodType == 'packages' && <View className='item-tag'>组合商品</View>}
+          {limitTxt && <View className='item-tag'>{limitTxt}</View>}
+        </View>
 
           <View className='item-tags'>
             {info?.promotions?.map((item) => (
@@ -169,9 +291,47 @@ function CompGoodsItem(props) {
                 <Text className='item-num'>x {info.num}</Text>
               )}
             </View>
+            {isShowAddInput ? (
+              <SpInputNumber
+                value={info.num}
+                max={parseInt(info?.limitedBuy ? info?.limitedBuy?.limit_buy : info.store)}
+                min={Number(info.start_num) > 0 ? Number(info.start_num) : 1}
+                onChange={onChangeInputNumber}
+              />
+            ) : (
+              <Text className='item-num'>x {info.num}</Text>
+            )}
           </View>
         </View>
       </View>
+    </View>
+  )
+
+  return (
+    <View>
+      {children}
+      {isShowDeleteIcon ? (
+        <View className='comp-goodsitem-swipe'>
+          <View
+            className='comp-goodsitem-swipe__front'
+            style={{
+              transform: `translate3d(${translateX}px, 0, 0)`,
+              transition: touchDragging ? 'none' : 'transform 0.22s ease-out'
+            }}
+            onTouchStart={onSwipeTouchStart}
+            onTouchMove={onSwipeTouchMove}
+            onTouchEnd={onSwipeTouchEnd}
+            onTouchCancel={onSwipeTouchEnd}
+          >
+            {rowBody}
+          </View>
+          <View className='comp-goodsitem-swipe__delete' onClick={handleSwipeDelete}>
+            <Text className='comp-goodsitem-swipe__delete-text'>删除</Text>
+          </View>
+        </View>
+      ) : (
+        rowBody
+      )}
     </View>
   )
 }

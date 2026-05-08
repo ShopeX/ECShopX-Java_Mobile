@@ -27,6 +27,7 @@ function linkPage(data) {
     seletedTags = []
   } = data
   const { id: dtid } = getCurrentInstance()?.router?.params
+  console.log('id----', id)
   if (id === 'homeSearch') {
     Taro.navigateTo({
       url: '/subpages/item/list'
