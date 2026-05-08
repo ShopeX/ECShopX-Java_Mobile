@@ -185,33 +185,23 @@ function CompGoodsItem(props) {
     }
   }
 
-  return (
-    <View>
-      {children}
-      <View className='comp-goodsitem'>
-        <View className='comp-goodsitem-hd' onClick={onClickImgAndTitle}>
-          <SpImage
-            className='comp-goodsitem-image'
-            mode='aspectFill'
-            src={info.pics}
-            width={180}
-            height={180}
-          />
-        </View>
-        <View className='comp-goodsitem-bd'>
-          <View className='item-hd'>
-            <View className='goods-title'>
-              {/* {info.activity_type == 'package' && <Text className='goods-title__tag'>组合商品</Text>} */}
-              {info.is_plus_buy && (
-                <Text className='goods-title__tag'>{$t('7d82f6d2.54e654')}</Text>
-              )}
-              {info?.is_medicine == 1 && info?.is_prescription == 1 && (
-                <Text className='prescription-drug'>{$t('7d82f6d2.e8b7e1')}</Text>
-              )}
-              {info.item_name}
-            </View>
-            {isShowDeleteIcon && (
-              <Text className='iconfont icon-shanchu-01' onClick={() => onDelete(info)}></Text>
+  const rowBody = (
+    <View className='comp-goodsitem'>
+      <View className='comp-goodsitem-hd' onClick={onClickImgAndTitle}>
+        <SpImage
+          className='comp-goodsitem-image'
+          mode='aspectFill'
+          src={info.pics}
+          width={180}
+          height={180}
+        />
+      </View>
+      <View className='comp-goodsitem-bd'>
+        <View className='item-hd'>
+          <View className='goods-title'>
+            {info.is_plus_buy && <Text className='goods-title__tag'>加价购</Text>}
+            {info?.is_medicine == 1 && info?.is_prescription == 1 && (
+              <Text className='prescription-drug'>处方药</Text>
             )}
             {info.item_name}
           </View>
@@ -238,57 +228,31 @@ function CompGoodsItem(props) {
           {limitTxt && <View className='item-tag'>{limitTxt}</View>}
         </View>
 
-          <View className='item-tags'>
-            {info?.promotions?.map((item) => (
-              <View className='item-tag'>{item.promotion_tag}</View>
-            ))}
-            {!isNaN(member_price) && !VERSION_IN_PURCHASE && (
-              <View className='item-tag'>
-                {vipInfo?.isVip ? vipInfo?.grade_name : userInfo?.gradeInfo?.grade_name}
-              </View>
-            )}
-            {goodType == 'packages' && <View className='item-tag'>{$t('7d82f6d2.159f49')}</View>}
-            {limitTxt && <View className='item-tag'>{limitTxt}</View>}
-          </View>
-
-          <View className='item-ft'>
-            <View className='item-fd-hd'></View>
-            <View className='item-ft-bd'>
-              <View className='goods-price-wrap'>
-                {isPurchase && (
-                  <>
-                    {enPurActivityPrice ? (
-                      <View className='act-price-wrap'>
-                        <SpPrice unit='cent' value={info.price} className='act-price' symbol='¥' />
-                        {/* ¥{(info.price / 100).toFixed(2)} */}
-                        <SpPrice
-                          unit='cent'
-                          value={info.sale_price}
-                          size={24}
-                          noSymbol
-                          lineThrough
-                        />
-                        {/* <SpPrice value={info.price / 100} /> */}
-                      </View>
-                    ) : (
-                      <SpPrice unit='cent' value={info.sale_price} />
-                    )}
-                  </>
-                )}
-                {!isPurchase && <SpPrice value={_price / 100} />}
-                {info.market_price > 0 && enMarketPrice && (
-                  <SpPrice className='mkt-price' lineThrough value={info.market_price / 100} />
-                )}
-              </View>
-              {isShowAddInput ? (
-                <SpInputNumber
-                  value={info.num}
-                  max={parseInt(info?.limitedBuy ? info?.limitedBuy?.limit_buy : info.store)}
-                  min={Number(info.start_num) > 0 ? Number(info.start_num) : 1}
-                  onChange={onChangeInputNumber}
-                />
-              ) : (
-                <Text className='item-num'>x {info.num}</Text>
+        <View className='item-ft'>
+          <View className='item-fd-hd'></View>
+          <View className='item-ft-bd'>
+            <View className='goods-price-wrap'>
+              {isPurchase && (
+                <>
+                  {enPurActivityPrice ? (
+                    <View className='act-price-wrap'>
+                      <SpPrice unit='cent' value={info.price} className='act-price' symbol='¥' />
+                      <SpPrice
+                        unit='cent'
+                        value={info.sale_price}
+                        size={24}
+                        noSymbol
+                        lineThrough
+                      />
+                    </View>
+                  ) : (
+                    <SpPrice unit='cent' value={info.sale_price} />
+                  )}
+                </>
+              )}
+              {!isPurchase && <SpPrice value={_price / 100} />}
+              {info.market_price > 0 && enMarketPrice && (
+                <SpPrice className='mkt-price' lineThrough value={info.market_price / 100} />
               )}
             </View>
             {isShowAddInput ? (
