@@ -12,6 +12,7 @@ import api from '@/api'
 import { connect } from 'react-redux'
 import { withPager } from '@/hocs'
 import { formatDateTime, getDistributorId, log } from '@/utils'
+import { $t, i18n } from '@/i18n'
 import './share.scss'
 
 @connect(({ purchase }) => ({

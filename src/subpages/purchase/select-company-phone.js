@@ -12,6 +12,7 @@ import { SpPage, SpPrivacyModal, SpImage, SpPurchaseEnterpriseBar } from '@/comp
 import { useLogin, useModal } from '@/hooks'
 import { classNames, showToast, getDistributorId, isWeb } from '@/utils'
 import { updateEnterpriseId, updateCurDistributorId } from '@/store/slices/purchase'
+import { $t } from '@/i18n'
 import './select-company-phone.scss'
 
 const initialState = {

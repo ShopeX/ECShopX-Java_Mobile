@@ -11,44 +11,42 @@ import { useTranslation, $t, ti } from '@/i18n'
 import CompBottomTip from './comps/comp-bottomTip'
 import './neigou-order.scss'
 
-const MOCK_ORDERS = [
-  {
-    id: 1,
-    titleKey: '023f641f.6651a4',
-    isNeiGou: true,
-    orderNum: '338341400246090',
-    orderTime: '2021.4.30 12:00:00',
-    status: 'waitPay',
-    goods: {
-      url: '',
-      nameKey: 'c34a58f0.d47adb',
-      introKey: '5f8810a1.a20bf1',
-      price: '402.00',
-      count: 10
-    }
-  },
-  {
-    id: 2,
-    titleKey: '023f641f.6651a4',
-    isNeiGou: true,
-    orderNum: '338341400246090',
-    orderTime: '2021.4.30 12:00:00',
-    status: 'waitReceive',
-    goods: {
-      url: '',
-      nameKey: 'c34a58f0.d47adb',
-      introKey: '5f8810a1.a20bf1',
-      price: '402.00',
-      count: 10
-    }
-  }
-]
-
 function SelectComponent(props) {
   const { i18n } = useTranslation()
   const [activeIndex, setActiveIndex] = useState(0)
 
-  const [orders] = useState(MOCK_ORDERS)
+  const [orders] = useState([
+    {
+      id: 1,
+      title: '上海商派员工亲友购',
+      isNeiGou: true,
+      orderNum: '338341400246090',
+      orderTime: '2021.4.30 12:00:00',
+      status: '待支付',
+      goods: {
+        url: '',
+        name: '水晶石无火香薰昆仑煮雪',
+        intro: '昆仑煮雪',
+        price: '402.00',
+        count: 10
+      }
+    },
+    {
+      id: 2,
+      title: '上海商派员工亲友购',
+      isNeiGou: true,
+      orderNum: '338341400246090',
+      orderTime: '2021.4.30 12:00:00',
+      status: '待收货',
+      goods: {
+        url: '',
+        name: '水晶石无火香薰昆仑煮雪',
+        intro: '昆仑煮雪',
+        price: '402.00',
+        count: 10
+      }
+    }
+  ])
 
   const tabbarState = useMemo(
     () => [
@@ -68,9 +66,16 @@ function SelectComponent(props) {
   }
 
   const statusLabel = (status) => {
-    if (status === 'waitPay') return $t('16726e8e.9246fe')
-    if (status === 'waitReceive') return $t('16726e8e.4933ca')
-    return ''
+    if (status === '待支付') return $t('16726e8e.9246fe')
+    if (status === '待收货') return $t('16726e8e.4933ca')
+    return status
+  }
+
+  const mockText = (text) => {
+    if (text === '上海商派员工亲友购') return $t('023f641f.6651a4')
+    if (text === '水晶石无火香薰昆仑煮雪') return $t('c34a58f0.d47adb')
+    if (text === '昆仑煮雪') return $t('5f8810a1.a20bf1')
+    return text
   }
 
   return (
@@ -92,7 +97,7 @@ function SelectComponent(props) {
         {orders?.map((item, index) => {
           return (
             <View key={item.id} className='good-item'>
-              <View className='item-title'>{$t(item.titleKey)}</View>
+              <View className='item-title'>{mockText(item.title)}</View>
               <View className='item-content'>
                 <View className='content-head'>
                   <View className='head-top'>
@@ -112,11 +117,11 @@ function SelectComponent(props) {
                   </View>
                   <View className='good-content'>
                     <View className='good-content-top'>
-                      <View>{$t(item.goods.nameKey)}</View>
+                      <View>{mockText(item.goods?.name)}</View>
                       <View className='good-price'>¥{item.goods?.price}</View>
                     </View>
                     <View className='good-content-bottom'>
-                      <View>{$t(item.goods.introKey)}</View>
+                      <View>{mockText(item.goods?.intro)}</View>
                       <View>x&nbsp;{item.goods?.count}</View>
                     </View>
                   </View>
@@ -131,10 +136,10 @@ function SelectComponent(props) {
                 </View>
                 <View className='item-option'>
                   <View className='option-order'>
-                    {item.status === 'waitPay' ? $t('16726e8e.b21b5e') : $t('64c107ec.edf4b2')}
+                    {item.status === '待支付' ? $t('16726e8e.b21b5e') : $t('64c107ec.edf4b2')}
                   </View>
                   <View className='option-pay'>
-                    {item.status === 'waitPay' ? $t('16726e8e.747349') : $t('2715dbf7.775b01')}
+                    {item.status === '待支付' ? $t('16726e8e.747349') : $t('2715dbf7.775b01')}
                   </View>
                 </View>
               </View>

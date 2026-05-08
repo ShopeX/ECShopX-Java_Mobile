@@ -12,6 +12,7 @@ import { classNames, showToast, getDistributorId, isWeb } from '@/utils'
 import qs from 'qs'
 import { updateEnterpriseId, updateCurDistributorId } from '@/store/slices/purchase'
 import { SpPage, SpPrivacyModal, SpInput, SpImage, SpPurchaseEnterpriseBar } from '@/components'
+import { $t } from '@/i18n'
 import './select-company-email.scss'
 
 function PurchaseAuthEmail() {

@@ -32,7 +32,7 @@ import CompGoodsItem from '@/pages/cart/comps/comp-goodsitem'
 import CompPurchaseNav from '@/pages/purchase/comps/comp-purchase-nav'
 import CompPurchaseActionbar from '@/subpages/purchase/comps/comp-purchase-actionbar'
 import CompPurchaseQuotaSheet from '@/subpages/purchase/comps/comp-purchase-quota-sheet'
-import { useTranslation, $t } from '@/i18n'
+import { useTranslation, $t, ti } from '@/i18n'
 import './espier-index.scss'
 
 const initialState = {

@@ -4,7 +4,7 @@
  *
  * 内购 SKU 弹窗：仅 Figma 稿一种形态（顶弧、把手+关闭、头图+价+已选+步进器、规格、限购双列、购物车+主按钮）
  */
-import React, { useEffect, useMemo, useRef } from 'react'
+import React, { useEffect, useRef } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import Taro, { useRouter } from '@tarojs/taro'
 import { View, Text } from '@tarojs/components'
@@ -14,6 +14,7 @@ import { BUY_TOOL_BTNS } from '@/consts'
 import api from '@/api'
 import { useAsyncCallback } from '@/hooks'
 import { classNames, showToast, navigateTo } from '@/utils'
+import { useTranslation, $t, ti } from '@/i18n'
 import './comp-skuselect.scss'
 
 function resolvePurchaseLimitQty(info, curItem) {
@@ -61,6 +62,7 @@ const initialState = {
 }
 
 function PurchaseSkuSelect(props) {
+  useTranslation()
   const {
     info,
     open = false,
@@ -71,11 +73,10 @@ function PurchaseSkuSelect(props) {
   } = props
   const [state, setState] = useAsyncCallback(initialState)
   const { purchase_share_info = {}, cartCount = 0 } = useSelector((state) => state.purchase)
-  const { selection, disabledSet, curItem, num } = state
+  const { selection, disabledSet, curItem, skuText, num } = state
   const dispatch = useDispatch()
   const skuDictRef = useRef({})
   const router = useRouter()
-
 
   useEffect(() => {
     if (info && !info.nospec) {
@@ -132,15 +133,20 @@ function PurchaseSkuSelect(props) {
     }
 
     const curItem = skuDictRef.current[selection.join('_')]
-    const nextSkuText = skuSummaryText(selection, skuDictRef.current)
+    const skuText = curItem
+      ? ti('47ac6066.aa995b', [
+          curItem.specItem.map((item) => `${item.skuName}:${item.specName}`).join(',')
+        ])
+      : $t('46dc5ce5.4fd966')
 
     setState((draft) => {
       draft.selection = selection
       draft.disabledSet = disabledSet
       draft.curItem = curItem
+      draft.skuText = skuText
     })
 
-    onChange(nextSkuText, curItem)
+    onChange(skuText, curItem)
   }
 
   const handleSelectSku = ({ specId }, idx) => {
