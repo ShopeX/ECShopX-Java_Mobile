@@ -199,9 +199,9 @@ function CompGoodsItem(props) {
       <View className='comp-goodsitem-bd'>
         <View className='item-hd'>
           <View className='goods-title'>
-            {info.is_plus_buy && <Text className='goods-title__tag'>加价购</Text>}
+            {info.is_plus_buy && <Text className='goods-title__tag'>{$t('25211a55.54e654')}</Text>}
             {info?.is_medicine == 1 && info?.is_prescription == 1 && (
-              <Text className='prescription-drug'>处方药</Text>
+              <Text className='prescription-drug'>{$t('7d82f6d2.e8b7e1')}</Text>
             )}
             {info.item_name}
           </View>
@@ -224,7 +224,7 @@ function CompGoodsItem(props) {
               {vipInfo?.isVip ? vipInfo?.grade_name : userInfo?.gradeInfo?.grade_name}
             </View>
           )}
-          {goodType == 'packages' && <View className='item-tag'>组合商品</View>}
+          {goodType == 'packages' && <View className='item-tag'>{$t('7d82f6d2.159f49')}</View>}
           {limitTxt && <View className='item-tag'>{limitTxt}</View>}
         </View>
 
@@ -290,7 +290,7 @@ function CompGoodsItem(props) {
             {rowBody}
           </View>
           <View className='comp-goodsitem-swipe__delete' onClick={handleSwipeDelete}>
-            <Text className='comp-goodsitem-swipe__delete-text'>删除</Text>
+            <Text className='comp-goodsitem-swipe__delete-text'>{$t('fb7ff6e1.2f4aad')}</Text>
           </View>
         </View>
       ) : (
