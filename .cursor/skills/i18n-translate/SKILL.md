@@ -1,6 +1,6 @@
 ---
 name: i18n-translate
-description: 按计划文件顺序逐文件完成 i18n（哈希键 + @/i18n），并在对应 plan 中更新「未翻译完/已翻译」与统计表。用户说「按计划做 i18n」「继续翻译 plans」时触发。
+description: 按计划文件顺序逐文件完成 i18n（哈希键 + @/i18n 的 $t/ti，禁止页面使用 globalThis.$t），维护 subpages/i18n/locales 三语，并在对应 plan 中更新进度与统计。用户说「按计划做 i18n」「继续翻译 plans」时触发。
 ---
 
 # i18n Translate
@@ -10,9 +10,9 @@ description: 按计划文件顺序逐文件完成 i18n（哈希键 + @/i18n）�
 本技能有两层含义：
 
 1. **执行方式（主流程）**：严格按 `.cursor/skills/i18n-translate/plans/` 下各 Markdown **计划文件**的顺序，**逐个**处理其中 **「未翻译完」** 列表里的源文件；每完成一个文件，**立即**在同一份计划里更新进度（列表迁移 + 统计表）。
-2. **翻译规则（技术细节）**：将 `src/` 下面向用户的中文替换为 **脚本生成的哈希键**，接入 **i18next + react-i18next**（`@/i18n`），并维护 `zh-CN` / `en` / `ar` 三份 locale；具体规则见下文「翻译规则与技术步骤」。
+2. **翻译规则（技术细节）**：将 `src/` 下面向用户的中文替换为 **脚本生成的哈希键**，接入 **i18next + react-i18next**（`@/i18n`），并维护 **zhcn / en / ar** 三份 locale；具体规则见下文「翻译规则与技术步骤」。
 
-**本仓库为 Taro + React**：资源为 `src/i18n/locales/*.json`；入口已挂 `I18nextProvider` 并与 Taro `lang` 存储同步。历史 `globalThis.$t` / 分包大表与本案解耦。
+**本仓库为 Taro + React**：文案资源在 **`src/subpages/i18n/locales/*.json`**，运行时用 `syncI18nLanguage` 等与 Taro 存储 `lang`（`zhcn` | `en` | `ar`）对齐并注入 i18next（见 `src/i18n/instance.js`）。**新代码一律用 `@/i18n`，不要在页面/组件里写 `globalThis.$t`**；`src/lang/index.js` 里对 `globalThis.$t` 的挂载仅作历史兼容，不作为本技能推荐的取词方式。
 
 ---
 
@@ -110,20 +110,32 @@ cat << 'EOF' | python3 .cursor/skills/i18n-translate/scripts/gen_i18n_key.py --j
 EOF
 ```
 
-### D) 代码中替换
+### D) 代码中替换（新翻译方式：仅 `@/i18n`）
 
-- 组件：`import { useTranslation, $t } from '@/i18n'`，组件内调用 `useTranslation()`，文案用 `$t("哈希键")`；**不要**为展示中文写 `defaultValue`，中文以 **zh-CN.json** 为准。
-- 占位符：`import { ti } from '@/i18n'`，`ti('哈希键', [arg0, arg1])` 对应 `${0}`、`${1}`。
+- **统一入口**：`import { useTranslation, $t, ti } from '@/i18n'`（按需增删命名导出）。需要随语言刷新时，在组件内调用 `const { i18n } = useTranslation()`。
+- **展示文案**：一律 `$t('哈希键')` 或 `ti('哈希键', [arg0, arg1])`（占位符 `${0}`、`${1}`… 与数组下标对应）。**不要**在业务代码里使用 `globalThis.$t(key, 中文, 'lang')` 或任何 `globalThis.$t` 作为 UI 文案来源。
+- **不要**为 i18next 的 `$t` 手写「展示用 defaultValue」凑中文；中文基准以 **`zhcn.json` 中该键的值**为准（见下节 E）。
+- **导航栏标题**（`Taro.setNavigationBarTitle`）等与语言强相关的副作用，在 `useEffect` 中根据当前词条设置标题，并依赖 **`i18n.language`**，以便切换语言后标题同步更新，例如：
+
+```javascript
+const { i18n } = useTranslation()
+
+useEffect(() => {
+  Taro.setNavigationBarTitle({ title: $t('xxxxxxxx.yyyyyy') })
+}, [i18n.language])
+```
+
+- **非 React 上下文**（极少数）：仍优先通过传入已解析的字符串或抽一层可测的纯函数解决；若必须全局取词，再评估是否沿用旧链，**默认不新增** `globalThis.$t` 依赖。
 
 ### E) 更新 Locale 文件
 
-更新（键已存在则 **覆盖** 值）：
+更新（键已存在则 **覆盖** 值），三语文件路径为：
 
-- `src/i18n/locales/zh-CN.json`
-- `src/i18n/locales/en.json`
-- `src/i18n/locales/ar.json`
+- `src/subpages/i18n/locales/zhcn.json`（中文原文，与存储侧语言码 `zhcn` 对应；i18next 内部 lng 为 `zh-CN`，由 `src/i18n/instance.js` 映射）
+- `src/subpages/i18n/locales/en.json`
+- `src/subpages/i18n/locales/ar.json`
 
-规则：`zh-CN` = 原文；`en` / `ar` **必须先查** `src/subpages/i18n/lang/index.json`（按 `zh-cn` 字段检索），命中则用其中 `en`/`ar`；未命中再自行翻译。新键 **只写入** `src/i18n/locales/*.json`，不要把新键写回 `index.json`。
+规则：`zhcn.json` = 原文；`en` / `ar` **必须先查** `src/subpages/i18n/lang/index.json`（按 `zh-cn` 字段检索），命中则用其中 `en`/`ar`；未命中再自行翻译。新键 **只写入** 上述三份 `locales/*.json`，不要把新键写回 `index.json`。
 
 ### F) Verify
 
@@ -134,19 +146,19 @@ EOF
 
 ## Resources
 
-脚本目录：`.cursor/skills/i18n-translate/scripts/`（相对仓库根）。
+脚本目录：`.cursor/skills/i18n-translate/scripts/`（相对仓库根）。**若目录或脚本尚未纳入仓库**，键生成仍按上文 **C) 哈希规则** 执行，待脚本补齐后再改用命令行生成。
 
-### gen_i18n_key.py
+### gen_i18n_key.py（存在时使用）
 
 ```bash
 python3 .cursor/skills/i18n-translate/scripts/gen_i18n_key.py --path <file> --text <chinese>
 cat items.jsonl | python3 .cursor/skills/i18n-translate/scripts/gen_i18n_key.py --jsonl
 ```
 
-### check_i18n_keys.py
+### check_i18n_keys.py（存在时使用）
 
 ```bash
-python3 .cursor/skills/i18n-translate/scripts/check_i18n_keys.py --src src --locales src/i18n/locales
+python3 .cursor/skills/i18n-translate/scripts/check_i18n_keys.py --src src --locales src/subpages/i18n/locales
 ```
 
 可选：`--list`、`--clean`、`--no-fail`。

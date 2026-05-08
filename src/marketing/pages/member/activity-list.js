@@ -64,6 +64,10 @@ function ActivityIist(props) {
     recordRef.current.reset()
   }, [status, keyword])
 
+  useEffect(() => {
+    Taro.setNavigationBarTitle({ title: $t('f330b238.2bc045') })
+  }, [i18n.language])
+
   const fetch = async ({ pageIndex, pageSize }) => {
     const params = {
       page: pageIndex,

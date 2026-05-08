@@ -37,6 +37,9 @@ const IS_APP = BUILD_TARGET === 'app'
 const IS_APP_SERVER = BUILD_APP_SERVER === 'server'
 
 const copyPatterns = [{ from: 'src/assets', to: `${DIST_PATH}/assets` }]
+const i18nResourceTransform = (content) =>
+  content.toString().replace(/\.\/locales\/(zhcn|en|ar)\.json/g, './locales/$1.js')
+const i18nLocaleTransform = (content) => `module.exports = ${content.toString()}\n`
 
 if (process.env.TARO_ENV == 'h5') {
   copyPatterns.push({ from: 'src/files', to: `${DIST_PATH}` })
@@ -47,7 +50,15 @@ if (process.env.TARO_ENV == 'alipay') {
 if (process.env.TARO_ENV == 'weapp') {
   copyPatterns.push({
     from: 'src/subpages/i18n/resources.js',
-    to: `${DIST_PATH}/subpages/i18n/resources.js`
+    to: `${DIST_PATH}/subpages/i18n/resources.js`,
+    transform: i18nResourceTransform
+  })
+  ;['zhcn', 'en', 'ar'].forEach((lang) => {
+    copyPatterns.push({
+      from: `src/subpages/i18n/locales/${lang}.json`,
+      to: `${DIST_PATH}/subpages/i18n/locales/${lang}.js`,
+      transform: i18nLocaleTransform
+    })
   })
 }
 
