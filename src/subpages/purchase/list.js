@@ -2,7 +2,7 @@
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
  */
-import React, { useRef, useEffect, useState, useCallback } from 'react'
+import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react'
 import { View, Text, ScrollView } from '@tarojs/components'
 import Taro, { getCurrentInstance, useDidShow, useRouter } from '@tarojs/taro'
 import { useSelector, useDispatch } from 'react-redux'
@@ -27,6 +27,7 @@ import {
 import S from '@/spx'
 import CompPurchaseNav from '@/pages/purchase/comps/comp-purchase-nav'
 import CompPurchaseActionbar from '@/subpages/purchase/comps/comp-purchase-actionbar'
+import { useTranslation, $t } from '@/i18n'
 import './list.scss'
 
 const initialState = {

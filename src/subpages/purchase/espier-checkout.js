@@ -40,6 +40,7 @@ import doc from '@/doc'
 import qs from 'qs'
 import S from '@/spx'
 import CompPurchaseNav from '@/pages/purchase/comps/comp-purchase-nav'
+import { useTranslation, $t } from '@/i18n'
 import { initialState } from './const'
 import './espier-checkout.scss'
 

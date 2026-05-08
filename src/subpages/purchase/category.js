@@ -14,6 +14,7 @@ import { useSelector } from 'react-redux'
 import { platformTemplateName } from '@/utils/platform'
 import { SpPage, SpTabbar } from '@/components'
 import CompSeries from '@/pages/category/comps/comp-series'
+import { useTranslation, $t } from '@/i18n'
 import './category.scss'
 
 const initialState = {
