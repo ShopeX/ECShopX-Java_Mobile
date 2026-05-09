@@ -74,7 +74,7 @@ export default class PurchaseIndex extends Component {
       resolve({
         title: info.name,
         imageUrl: info.share_pic,
-        path: `/subpages/purchase/select-company-passcode?code=${data.invite_code}&enterprise_id=${enterprise_id}&activity_id=${activity_id}`
+        path: `/pages/purchase/auth?code=${data.invite_code}&enterprise_id=${enterprise_id}&activity_id=${activity_id}`
       })
     })
   }
@@ -225,7 +225,7 @@ export default class PurchaseIndex extends Component {
                         <View className='share-page__list-mid'>
                           <Text className='share-page__list-name'>{item.username}</Text>
                           <View className='share-page__list-date-row'>
-                            <SpImage 
+                            <SpImage
                               className='share-page__list-clock-icon'
                               src='purchare_time.png'
                               width={28}
