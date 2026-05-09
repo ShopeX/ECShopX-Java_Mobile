@@ -57,9 +57,6 @@ const purchaseSlice = createSlice({
   name: 'purchase',
   initialState,
   reducers: {
-    updatePurchaseTabbar: (state, { payload }) => {
-      state.tabbar = payload.tabbar
-    },
     updatePurchaseShareInfo: (state, { payload = {} }) => {
       state.purchase_share_info = payload
     },
@@ -118,7 +115,6 @@ const purchaseSlice = createSlice({
 })
 
 export const {
-  updatePurchaseTabbar,
   updatePurchaseShareInfo,
   updateInviteCode,
   purchaseClearCart,

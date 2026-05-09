@@ -24,7 +24,6 @@ import {
 } from '@/store/slices/purchase'
 
 import './auth.scss'
-import './passcode.scss'
 
 const initialState = {
   invite_code: '', // 邀请码
@@ -74,7 +73,6 @@ function PurchaseAuth() {
   useEffect(() => {
     fetchEnterpriseInfo()
   }, [enterprise_id])
-
 
 
   useEffect(() => {
@@ -203,7 +201,7 @@ function PurchaseAuth() {
       setToken(token)
       showToast('验证成功')
       setTimeout(() => {
-        Taro.reLaunch({ url: `/pages/purchase/index?is_redirt=1` })
+        Taro.reLaunch({ url: `/subpages/purchase/activity-list?is_redirt=1` })
       }, 700)
     }
   }

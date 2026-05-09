@@ -52,6 +52,7 @@ const config = {
         'category',
         'espier-index',
         'index',
+        'activity-list',
         'list', //商品列表
         'limit-list'
       ]

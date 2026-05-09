@@ -15,7 +15,7 @@ const TABBAR_LIST = [
   {
     title: '活动',
     iconType: 'dianpushouye',
-    url: '/pages/purchase/index'
+    url: '/subpages/purchase/activity-list'
   },
   {
     title: '身份切换',

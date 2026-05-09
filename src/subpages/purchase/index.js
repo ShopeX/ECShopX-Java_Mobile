@@ -6,7 +6,8 @@ import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import Taro, {
   useDidShow,
   useRouter,
-  useShareAppMessage} from '@tarojs/taro'
+  useShareAppMessage
+} from '@tarojs/taro'
 import { View, ScrollView, Button } from '@tarojs/components'
 import { useSelector, useDispatch } from 'react-redux'
 import {
@@ -32,7 +33,6 @@ import {
 } from '@/utils'
 import {
   updatePurchaseShareInfo,
-  updatePurchaseTabbar,
   updatePersistPurchaseShareInfo
 } from '@/store/slices/purchase'
 import doc from '@/doc'
@@ -67,7 +67,7 @@ const { store } = configStore()
 function Home() {
   const [state, setState] = useImmer(initialState)
   const { initState, entryStoreByLBS, appName } = useSelector((state) => state.sys)
-  const { purchase_share_info = {}, curDistributorId, curEnterpriseId } = useSelector(
+  const { purchase_share_info = {}, curDistributorId } = useSelector(
     (state) => state.purchase
   )
   const { checkPolicyChange } = useLogin({
@@ -164,28 +164,17 @@ function Home() {
 
   const fetchWgts = async () => {
     try {
-      const { config, tab_bar } = await api.shop.getShopTemplate({
+      const { config } = await api.shop.getShopTemplate({
         distributor_id: curDistributorId ?? getDistributorId(),
         pages_template_id:
           router?.params?.pages_template_id || purchase_share_info?.pages_template_id,
         e_activity_id: router?.params?.activity_id || purchase_share_info?.activity_id
       })
-      const tabBar = tab_bar && JSON.parse(tab_bar)
-      dispatch(
-        updatePurchaseTabbar({
-          tabbar: tabBar
-        })
-      )
       setState((draft) => {
         draft.wgts = config
         draft.loading = false
       })
     } catch (e) {
-      dispatch(
-        updatePurchaseTabbar({
-          tabbar: null
-        })
-      )
     }
   }
 
@@ -334,7 +323,7 @@ function Home() {
           )}
 
           <View className='purchase-page__head'>
-            <SpPurchaseEnterpriseBar  showSearch />
+            <SpPurchaseEnterpriseBar showSearch />
           </View>
 
           {filterWgts.length > 0 && (
