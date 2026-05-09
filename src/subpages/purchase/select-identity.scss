@@ -43,19 +43,11 @@
     color: #0a0a0a;
   }
 
+  /* 列表随 SpPage 外层滚动，避免小程序内层 scroll-view 高度算成 0 */
   .select-identity__inner {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
     box-sizing: border-box;
-    min-height: 0;
+    width: 100%;
     padding: 32px 32px 0;
-  }
-
-  .select-identity__scroll {
-    flex: 1;
-    height: 0;
-    box-sizing: border-box;
   }
 
   .select-identity__list {
