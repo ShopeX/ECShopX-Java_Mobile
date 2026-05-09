@@ -18,8 +18,7 @@
   }
 
   &__form-card {
-    width: 716px;
-    min-height: 748px;
+    width: 100%;
     box-sizing: border-box;
     padding: 40px 32px;
     display: flex;
@@ -40,7 +39,7 @@
   }
 
   &__field {
-    width: 652px;
+    width: 100%;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
@@ -58,7 +57,7 @@
   }
 
   &__field-sp-input.at-input {
-    width: 652px;
+    width: 100%;
     margin: 0;
     margin-left: 0;
     margin-bottom: 0;
@@ -71,7 +70,7 @@
   }
 
   &__field-sp-input .at-input__input {
-    width: 652px;
+    width: 100%;
     height: 104px;
     box-sizing: border-box;
     border: 4px solid #e5e7eb;
@@ -97,7 +96,7 @@
   }
 
   &__confirm {
-    width: 652px;
+    width: 100%;
     height: 104px;
     border-radius: 99999px;
     display: flex;
@@ -130,6 +129,6 @@
   }
 
   &__protocol {
-    width: 652px;
+    width: 100%;
   }
 }

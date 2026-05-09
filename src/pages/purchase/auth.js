@@ -20,7 +20,8 @@ import {
   updateCurDistributorId,
   updateCurEnterpriseName,
   updateEnterpriselogo,
-  updateCurActivityInfo
+  updateCurActivityInfo,
+  updateIsPasscodeLogin
 } from '@/store/slices/purchase'
 
 import './auth.scss'
@@ -96,7 +97,6 @@ function PurchaseAuth() {
    */
   const fetchActivityConfig = async () => {
     if (!activity_id) {
-      setActivityBg('')
       return
     }
     try {
@@ -124,6 +124,7 @@ function PurchaseAuth() {
       dispatch(updateCurEnterpriseName(list[0].name))
       dispatch(updateCurDistributorId(list[0].distributor_id))
       const { ppe = '' } = await entryLaunch.getRouteParams()
+      dispatch(updateIsPasscodeLogin(ppe == 1))
       setState((draft) => {
         draft.authType = ppe == 1 ? 'code' : list[0].auth_type || ''
       })

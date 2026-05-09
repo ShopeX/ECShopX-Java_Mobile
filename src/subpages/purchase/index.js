@@ -166,9 +166,8 @@ function Home() {
     try {
       const { config } = await api.shop.getShopTemplate({
         distributor_id: curDistributorId ?? getDistributorId(),
-        pages_template_id:
-          router?.params?.pages_template_id || purchase_share_info?.pages_template_id,
-        e_activity_id: router?.params?.activity_id || purchase_share_info?.activity_id
+        pages_template_id: router?.params?.pages_template_id,
+        e_activity_id: router?.params?.activity_id
       })
       setState((draft) => {
         draft.wgts = config

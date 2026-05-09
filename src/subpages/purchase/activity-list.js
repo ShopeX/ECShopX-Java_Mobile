@@ -7,10 +7,11 @@ import React, { useRef, useState, useEffect } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { useImmer } from 'use-immer'
 import { View, Text, ScrollView } from '@tarojs/components'
+import dayjs from 'dayjs'
 import api from '@/api'
 import { classNames, pickBy, getDistributorId, VERSION_IN_PURCHASE } from '@/utils'
 import { updateUserInfo } from '@/store/slices/user'
-import { updateActivityInfo, updateCount } from '@/store/slices/purchase'
+import { updateActivityInfo, updateCount, updateIsPasscodeLogin } from '@/store/slices/purchase'
 import doc from '@/doc'
 import S from '@/spx'
 import { SpPage, SpNote, SpScrollView, SpImage, SpPurchaseEnterpriseBar } from '@/components'
@@ -24,10 +25,21 @@ const initialState = {
 
 /** @returns {'upcoming' | 'ongoing' | 'ended'} */
 function getActivityPhase(item) {
-  const begin = item.beginTs
-  const end = item.endTs
+  let begin = Number(item.beginTs)
+  let end = Number(item.endTs)
+  const tsMissing =
+    !begin ||
+    !end ||
+    Number.isNaN(begin) ||
+    Number.isNaN(end)
+  if (tsMissing && item.employeeBeginTime && item.employeeEndTime) {
+    begin = dayjs(item.employeeBeginTime).valueOf()
+    end = dayjs(item.employeeEndTime).valueOf()
+  }
   const now = Date.now()
-  if (!begin || !end) return 'ongoing'
+  if (!begin || !end || Number.isNaN(begin) || Number.isNaN(end)) {
+    return 'ongoing'
+  }
   if (now < begin) return 'upcoming'
   if (now > end) return 'ended'
   return 'ongoing'
@@ -75,45 +87,36 @@ function PurchaseActivityList() {
         }
       }
     }
-
     const { list, total_count } = await api.purchase.getEmployeeActivityList({
       page: pageIndex,
       pageSize,
       enterprise_id: curEnterpriseId,
       activity_id
     })
-
-    if (pageIndex === 1) {
-      if (total_count == 1 && is_redirt) {
-        const _list = pickBy(list, doc.purchase.ACTIVITY_ITEM)
-        onClickChange(_list[0], 'redirectTo')
-        return { total: total_count }
-      }
-
-      setState((draft) => {
-        draft.loading = false
-      })
-      updataMemberInfo()
-    }
-
     const _list = pickBy(list, doc.purchase.ACTIVITY_ITEM)
     setState((draft) => {
       draft.activityList = [...draft.activityList, ..._list]
+      if (pageIndex === 1) {
+        draft.loading = false
+        updataMemberInfo()
+      }
     })
 
     return { total: total_count }
   }
 
-  const onClickChange = async (item, isRedirectTo) => {
+  const onClickChange = async (item) => {
     const {
       id,
       enterpriseId,
       pages_template_id,
       priceDisplayConfig = {},
       isDiscountDescriptionEnabled,
-      discountDescription
+      discountDescription,
+      isPassphraseEnabled,
+      passphraseUserVerified,
+      authType
     } = item
-    const url = `/subpages/purchase/index?activity_id=${id}&enterprise_id=${enterpriseId}&pages_template_id=${pages_template_id}`
     const _priceDisplayConfig = handlePriceConfig(priceDisplayConfig)
     dispatch(
       updateActivityInfo({
@@ -129,11 +132,30 @@ function PurchaseActivityList() {
         activity_id: id
       })
     )
-    if (isRedirectTo) {
-      Taro.redirectTo({ url })
+    if (isPassphraseEnabled) { //是否开启口令通道
+      dispatch(updateIsPasscodeLogin(true))
+      if (passphraseUserVerified == 1) {
+        Taro.redirectTo({ url: `/subpages/purchase/index?activity_id=${id}&enterprise_id=${enterpriseId}&pages_template_id=${pages_template_id}` })
+      } else {
+        Taro.redirectTo({
+          url: `/subpages/purchase/select-company-passcode?activity_id=${id}&enterprise_id=${enterpriseId}`
+        })
+      }
     } else {
-      Taro.navigateTo({ url })
+      dispatch(updateIsPasscodeLogin(false))
+      let redirectUrl = ''
+      if (authType == 'account') {
+        redirectUrl = `/subpages/purchase/select-company-account?activity_id=${id}&enterprise_id=${enterpriseId}`
+      } else if (authType == 'email') {
+        redirectUrl = `/subpages/purchase/select-company-email?activity_id=${id}&enterprise_id=${enterpriseId}`
+      } else if (authType == 'mobile' || authType == 'qr_code') {
+        redirectUrl = `/subpages/purchase/select-company-phone?activity_id=${id}&enterprise_id=${enterpriseId}`
+      } else if (authType == 'code') {
+        redirectUrl = `/subpages/purchase/select-company-passcode?activity_id=${id}&enterprise_id=${enterpriseId}`
+      }
+      Taro.redirectTo({ url: redirectUrl })
     }
+
   }
 
   const handlePriceConfig = (val) => {
