@@ -36,7 +36,6 @@ function PurchaseAuthPhone(props) {
     enterprise_id,
     is_verify,
     activity_id,
-    is_activity = ''
   } = params
   const { showModal } = useModal()
 
@@ -88,11 +87,11 @@ function PurchaseAuthPhone(props) {
     const { list } = await api.purchase.employeeCheck(checkParams)
     const matched = list[0]
     if (matched) {
-      _params.enterprise_id = matched.enterprise_id
-      _params.enterprise_name = matched.enterprise_name
-      _params.employee_id = matched?.id
+      checkParams.enterprise_id = matched.enterprise_id
+      checkParams.enterprise_name = matched.enterprise_name
+      checkParams.employee_id = matched?.id
     }
-    employeeAuthFetch(_params)
+    employeeAuthFetch(checkParams)
   }
 
   const employeeAuthFetch = async (_params) => {
@@ -103,8 +102,7 @@ function PurchaseAuthPhone(props) {
       showToast('验证成功')
       setTimeout(() => {
         Taro.reLaunch({
-          url: `/subpages/purchase/index?is_redirt=1${is_activity && activity_id ? `&activity_id=${activity_id}` : ''
-            }`
+          url: `/subpages/purchase/index?is_redirt=1&activity_id=${activity_id || ''}&enterprise_id=${enterprise_id || ''}`
         })
       }, 2000)
     } catch (e) {
@@ -121,8 +119,7 @@ function PurchaseAuthPhone(props) {
         contentAlign: 'center'
       })
       Taro.reLaunch({
-        url: `/subpages/purchase/index?is_redirt=1${is_activity && activity_id ? `&activity_id=${activity_id}` : ''
-          }`
+        url: `/subpages/purchase/index?is_redirt=1&activity_id=${activity_id || ''}&enterprise_id=${enterprise_id || ''}`
       })
       getLoginCode()
     }

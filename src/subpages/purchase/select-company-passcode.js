@@ -126,10 +126,8 @@ function PurchasePasscodeAuth() {
       S?.set(INVITE_ACTIVITY_ID, activity_id, true)
     }
 
-    let url = '/subpages/purchase/index?is_redirt=1'
-    if (activity_id) url += `&activity_id=${activity_id}`
-    if (enterprise_id) url += `&enterprise_id=${enterprise_id}`
-    Taro.navigateTo({ url })
+    let url = `/subpages/purchase/index?is_redirt=1&activity_id=${activity_id || ''}&enterprise_id=${enterprise_id || ''}`
+    Taro.redirectTo({ url })
   }
   if (loading) {
     return <SpPage className='passcode-login-page'>

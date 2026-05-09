@@ -71,9 +71,6 @@ export default class PurchaseIndex extends Component {
     const { enterprise_id, activity_id } = this.props.purchase_share_info || {}
     return new Promise(async function (resolve) {
       const data = await api.purchase.getEmployeeInviteCode({ enterprise_id, activity_id })
-      log.debug(
-        `/subpages/purchase/select-company-passcode?code=${data.invite_code}&enterprise_id=${enterprise_id}&activity_id=${activity_id}`
-      )
       resolve({
         title: info.name,
         imageUrl: info.share_pic,
