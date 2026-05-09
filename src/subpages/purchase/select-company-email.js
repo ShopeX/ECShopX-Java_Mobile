@@ -78,10 +78,7 @@ function PurchaseAuthEmail() {
       return
     }
     try {
-      const sendParams = { email: nextEmail }
-      if (!enterprise_id) {
-        sendParams.distributor_id = getDistributorId()
-      }
+      const sendParams = { email: nextEmail, enterprise_id }
       const { status } = await api.purchase.getEmailCode(sendParams)
       if (status) {
         showToast('发送成功')
