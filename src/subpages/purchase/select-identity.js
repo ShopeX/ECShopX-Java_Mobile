@@ -5,7 +5,7 @@
 import Taro, { useRouter } from '@tarojs/taro'
 import React, { useEffect } from 'react'
 import { useImmer } from 'use-immer'
-import { View, Text, ScrollView } from '@tarojs/components'
+import { View, Text } from '@tarojs/components'
 import api from '@/api'
 import { classNames, getDistributorId, VERSION_IN_PURCHASE } from '@/utils'
 import { SpPage } from '@/components'
@@ -115,33 +115,31 @@ function SelectIdentity(props) {
           <Text className='select-identity__hd-text'>{$t('c2581d4c.0067d7')}</Text>
         </View>
         <View className='select-identity__inner'>
-          <ScrollView className='select-identity__scroll' scrollY scrollWithAnimation>
-            <View className='select-identity__list'>
-              {identity.map((item, index) => {
-                const active = selectedEnterpriseId == item.enterprise_id
-                return (
-                  <View
-                    key={item.enterprise_id ?? index}
-                    className={classNames('select-identity__card', {
-                      'select-identity__card--active': active
-                    })}
-                    onClick={() => onSelectCard(item.enterprise_id)}
-                  >
-                    <View className='select-identity__card-main'>
-                      <Text className='select-identity__card-name'>{item.name}</Text>
-                    </View>
-                    {active ? (
-                      <View className='select-identity__card-check'>
-                        <Text className='select-identity__card-check-mark'>✓</Text>
-                      </View>
-                    ) : (
-                      <View className='select-identity__card-check select-identity__card-check--placeholder' />
-                    )}
+          <View className='select-identity__list'>
+            {identity.map((item, index) => {
+              const active = selectedEnterpriseId == item.enterprise_id
+              return (
+                <View
+                  key={item.enterprise_id ?? index}
+                  className={classNames('select-identity__card', {
+                    'select-identity__card--active': active
+                  })}
+                  onClick={() => onSelectCard(item.enterprise_id)}
+                >
+                  <View className='select-identity__card-main'>
+                    <Text className='select-identity__card-name'>{item.name}</Text>
                   </View>
-                )
-              })}
-            </View>
-          </ScrollView>
+                  {active ? (
+                    <View className='select-identity__card-check'>
+                      <Text className='select-identity__card-check-mark'>✓</Text>
+                    </View>
+                  ) : (
+                    <View className='select-identity__card-check select-identity__card-check--placeholder' />
+                  )}
+                </View>
+              )
+            })}
+          </View>
         </View>
         {!loading && identity.length > 0 ? (
           <View className='select-identity__footer'>
