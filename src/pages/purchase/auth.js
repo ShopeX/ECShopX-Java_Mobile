@@ -97,6 +97,7 @@ function PurchaseAuth() {
    */
   const fetchActivityConfig = async () => {
     if (!activity_id) {
+      console.log('activity_id is empty',activity_id)
       return
     }
     try {

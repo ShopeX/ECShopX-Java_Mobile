@@ -82,12 +82,13 @@ export default class PurchaseIndex extends Component {
   onShareAppMessage() {
     const { info } = this.state
     const { enterprise_id, activity_id } = this.props.purchase_share_info || {}
-    return new Promise(async function (resolve) {
+    const ppe = this.props.isPasscodeLogin ? 1 : 0
+    return new Promise(async (resolve) => {
       const data = await api.purchase.getEmployeeInviteCode({ enterprise_id, activity_id })
       resolve({
         title: info.name,
         imageUrl: info.share_pic,
-        path: `/pages/purchase/auth?code=${data.invite_code}&enterprise_id=${enterprise_id}&activity_id=${activity_id}&ppe=${this.props.isPasscodeLogin ? 1 : 0}`
+        path: `/pages/purchase/auth?code=${data.invite_code}&enterprise_id=${enterprise_id}&id=${activity_id}&ppe=${ppe}`
       })
     })
   }
