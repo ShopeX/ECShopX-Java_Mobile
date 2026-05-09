@@ -46,3 +46,21 @@
 ### 测试
 
 - 未跑自动化；建议在小程序真机确认多企业列表可见、可滚动、确认按钮可点。
+
+---
+
+## 2026-05-09：活动信息入 Redux、口令页校验与发邮件参数
+
+### 改动范围
+
+| 文件 | 说明 |
+|------|------|
+| `src/store/slices/purchase.js` | 新增 `curActivityInfo` 与 `updateCurActivityInfo`。 |
+| `src/pages/purchase/auth.js` | 拉取活动详情后 `dispatch(updateCurActivityInfo(data))`。 |
+| `src/subpages/purchase/select-company-passcode.js` | 用 `getEmployeeActivitydata` 校验 `passphrase_user_verified`，已验证则 `redirectTo` 活动首页；加载态 `SpLoading`；拉取后写入 `updateCurActivityInfo`；缺参时结束 loading 避免白屏转圈。 |
+| `src/subpages/purchase/select-company-email.js` | 发验证码参数改为带 `enterprise_id`（格式修正）。 |
+
+### 自检补充（Agent）
+
+- 口令页仅用 Redux 展示海报时需在本次请求的回调里 `dispatch(updateCurActivityInfo)`，否则直连口令页无背景图。
+- `activity_id` / `enterprise_id` 缺失时需 `setLoading(false)`，否则会一直 Loading。

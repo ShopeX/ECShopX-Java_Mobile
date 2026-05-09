@@ -19,7 +19,8 @@ import {
   updateEnterpriseId,
   updateCurDistributorId,
   updateCurEnterpriseName,
-  updateEnterpriselogo
+  updateEnterpriselogo,
+  updateCurActivityInfo
 } from '@/store/slices/purchase'
 
 import './auth.scss'
@@ -105,6 +106,7 @@ function PurchaseAuth() {
         activity_id: activity_id,
       })
       const candidate = data?.pic || ''
+      dispatch(updateCurActivityInfo(data || {}))
       setActivityBg(candidate)
     } catch (e) {
       setActivityBg('')
