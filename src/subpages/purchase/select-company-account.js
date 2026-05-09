@@ -90,8 +90,7 @@ function PurchaseAuthAccount() {
       dispatch(updateEnterpriseId(_params.enterprise_id))
       setTimeout(() => {
         Taro.reLaunch({
-          url: `/pages/purchase/index?is_redirt=1${is_activity && activity_id ? `&activity_id=${activity_id}` : ''
-            }`
+          url: `/subpages/purchase/index?is_redirt=1&activity_id=${activity_id || ''}&enterprise_id=${enterprise_id || ''}`
         })
       }, 700)
     } catch (e) {
@@ -106,8 +105,7 @@ function PurchaseAuthAccount() {
           contentAlign: 'center'
         })
         Taro.reLaunch({
-          url: `/pages/purchase/index?is_redirt=1${is_activity && activity_id ? `&activity_id=${activity_id}` : ''
-            }`
+          url: `/subpages/purchase/index?is_redirt=1&activity_id=${activity_id || ''}&enterprise_id=${enterprise_id || ''}`
         })
       } else {
         showToast(e.message)

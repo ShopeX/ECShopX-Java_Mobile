@@ -20,11 +20,11 @@ import {
   updateCurDistributorId,
   updateCurEnterpriseName,
   updateEnterpriselogo,
-  updateCurActivityInfo
+  updateCurActivityInfo,
+  updateIsPasscodeLogin
 } from '@/store/slices/purchase'
 
 import './auth.scss'
-import './passcode.scss'
 
 const initialState = {
   invite_code: '', // 邀请码
@@ -76,7 +76,6 @@ function PurchaseAuth() {
   }, [enterprise_id])
 
 
-
   useEffect(() => {
     if (invite_code && activity_id) {
       dispatch(updateInviteCode(invite_code))
@@ -98,7 +97,6 @@ function PurchaseAuth() {
    */
   const fetchActivityConfig = async () => {
     if (!activity_id) {
-      setActivityBg('')
       return
     }
     try {
@@ -126,6 +124,7 @@ function PurchaseAuth() {
       dispatch(updateCurEnterpriseName(list[0].name))
       dispatch(updateCurDistributorId(list[0].distributor_id))
       const { ppe = '' } = await entryLaunch.getRouteParams()
+      dispatch(updateIsPasscodeLogin(ppe == 1))
       setState((draft) => {
         draft.authType = ppe == 1 ? 'code' : list[0].auth_type || ''
       })
@@ -203,7 +202,7 @@ function PurchaseAuth() {
       setToken(token)
       showToast('验证成功')
       setTimeout(() => {
-        Taro.reLaunch({ url: `/pages/purchase/index?is_redirt=1` })
+        Taro.reLaunch({ url: `/subpages/purchase/activity-list?is_redirt=1` })
       }, 700)
     }
   }

@@ -45,7 +45,7 @@ function SpPurchaseEnterpriseBar(props) {
             <View
               className='sp-purchase-enterprise-bar__more'
               onClick={() => {
-                Taro.navigateTo({ url: '/pages/purchase/index?is_redirt=1' })
+                Taro.navigateTo({ url: '/subpages/purchase/activity-list?is_redirt=1' })
               }}
             >
               <Text className='sp-purchase-enterprise-bar__more-text'>更多活动</Text>

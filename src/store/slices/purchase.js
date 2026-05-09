@@ -25,6 +25,7 @@ const initialState = {
   curEnterpriseLogo: '',
   persist_purchase_share_info: {}, //持久化存储最近一次活动，用于内购会员中心额度和分享
   curActivityInfo: {}, //当前活动信息 
+  isPasscodeLogin: false, //是否是口令通道登录
 }
 
 export const fetchCartList = createAsyncThunk('purchase/fetchCartList', async (params) => {
@@ -58,9 +59,6 @@ const purchaseSlice = createSlice({
   name: 'purchase',
   initialState,
   reducers: {
-    updatePurchaseTabbar: (state, { payload }) => {
-      state.tabbar = payload.tabbar
-    },
     updatePurchaseShareInfo: (state, { payload = {} }) => {
       state.purchase_share_info = payload
     },
@@ -102,6 +100,9 @@ const purchaseSlice = createSlice({
     },
     updateCurActivityInfo: (state, { payload = {} }) => {
       state.curActivityInfo = payload
+    },
+    updateIsPasscodeLogin: (state, { payload = false }) => {
+      state.isPasscodeLogin = payload
     }
   },
   extraReducers: (builder) => {
@@ -119,7 +120,6 @@ const purchaseSlice = createSlice({
 })
 
 export const {
-  updatePurchaseTabbar,
   updatePurchaseShareInfo,
   updateInviteCode,
   purchaseClearCart,
@@ -131,7 +131,8 @@ export const {
   updatePersistPurchaseShareInfo,
   updateCurEnterpriseName,
   updateEnterpriselogo,
-  updateCurActivityInfo
+  updateCurActivityInfo,
+  updateIsPasscodeLogin
 } = purchaseSlice.actions
 
 export default purchaseSlice.reducer

@@ -16,7 +16,7 @@ const TABBAR_LIST = [
   {
     titleKey: 'f321c16f.36c6f5',
     iconType: 'dianpushouye',
-    url: '/pages/purchase/index'
+    url: '/subpages/purchase/activity-list'
   },
   {
     titleKey: 'f321c16f.2e1148',

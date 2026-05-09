@@ -161,8 +161,7 @@ function PurchaseAuthEmail() {
 
       setTimeout(() => {
         Taro.reLaunch({
-          url: `/pages/purchase/index?is_redirt=1${is_activity && activity_id ? `&activity_id=${activity_id}` : ''
-            }`
+          url: `/subpages/purchase/index?is_redirt=1&activity_id=${activity_id || ''}&enterprise_id=${enterprise_id || ''}`
         })
       }, 700)
     } catch (e) {
@@ -177,8 +176,7 @@ function PurchaseAuthEmail() {
           contentAlign: 'center'
         })
         Taro.reLaunch({
-          url: `/pages/purchase/index?is_redirt=1${is_activity && activity_id ? `&activity_id=${activity_id}` : ''
-            }`
+          url: `/subpages/purchase/index?is_redirt=1&activity_id=${activity_id || ''}&enterprise_id=${enterprise_id || ''}`
         })
       } else {
         showToast(e.message)

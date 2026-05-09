@@ -16,7 +16,8 @@ import { $t, i18n } from '@/i18n'
 import './share.scss'
 
 @connect(({ purchase }) => ({
-  purchase_share_info: purchase.persist_purchase_share_info
+  purchase_share_info: purchase.persist_purchase_share_info,
+  isPasscodeLogin: purchase.isPasscodeLogin
 }))
 @withPager
 export default class PurchaseIndex extends Component {
@@ -83,13 +84,10 @@ export default class PurchaseIndex extends Component {
     const { enterprise_id, activity_id } = this.props.purchase_share_info || {}
     return new Promise(async function (resolve) {
       const data = await api.purchase.getEmployeeInviteCode({ enterprise_id, activity_id })
-      log.debug(
-        `/subpages/purchase/select-company-passcode?code=${data.invite_code}&enterprise_id=${enterprise_id}&activity_id=${activity_id}`
-      )
       resolve({
         title: info.name,
         imageUrl: info.share_pic,
-        path: `/subpages/purchase/select-company-passcode?code=${data.invite_code}&enterprise_id=${enterprise_id}&activity_id=${activity_id}`
+        path: `/pages/purchase/auth?code=${data.invite_code}&enterprise_id=${enterprise_id}&activity_id=${activity_id}&ppe=${this.props.isPasscodeLogin ? 1 : 0}`
       })
     })
   }
@@ -240,7 +238,7 @@ export default class PurchaseIndex extends Component {
                         <View className='share-page__list-mid'>
                           <Text className='share-page__list-name'>{item.username}</Text>
                           <View className='share-page__list-date-row'>
-                            <SpImage 
+                            <SpImage
                               className='share-page__list-clock-icon'
                               src='purchare_time.png'
                               width={28}
