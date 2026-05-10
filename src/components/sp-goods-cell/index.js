@@ -66,7 +66,7 @@ function SpGoodsCell(props) {
   return (
     <View className='sp-goods-cell'>
       <View className='goods-item-hd'>
-        <SpImage mode='aspectFit' src={info.img} width={180} height={180} />
+        <SpImage mode='aspectFit' src={info.img} width={180} height={180} radius={10} />
       </View>
       <View className='goods-item-bd'>
         <View className='item-hd'>

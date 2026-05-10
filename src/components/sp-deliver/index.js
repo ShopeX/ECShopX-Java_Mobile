@@ -393,8 +393,8 @@ function SpDeliver(props, ref) {
   }
 
   return (
-    <View className='page-comp-deliver'>
-      <View className='switch-box'>
+    <View>
+      <View className='page-comp-deliver'>
         <View className={classNames(DELIVERY_LIST().length > 0 && 'switch-tab')}>
           {DELIVERY_LIST().map((item) => {
             if (showSwitchItem(item.key, distributorInfo)) {
@@ -404,155 +404,171 @@ function SpDeliver(props, ref) {
                   className={`switch-item ${receiptType === item.type ? 'active' : ''}`}
                   onClick={handleSwitchExpress.bind(this, item.type)}
                 >
-                  {item.name}
+                  {receiptType === item.type && item.type === 'logistics' && <Text className='iconfont icon-delivery'></Text>}
+                  {receiptType === item.type && item.type === 'dada' && <Text className='iconfont icon-daifahuo-01'></Text>}
+                  {receiptType === item.type && item.type === 'merchant' && <Text className='iconfont icon-local_shipping_outline'></Text>}
+                  {receiptType === item.type && item.type === 'ziti' && <Text className='iconfont icon-shop'></Text>}
+                  <Text>{item.name}</Text>
                 </View>
               )
             }
           })}
         </View>
-      </View>
-      {/** 普通快递 */}
-      {receiptType === 'logistics' && <AddressChoose isAddress={address} />}
-      {/** 同城配 */}
-      {!isPurchase && ['dada', 'merchant'].includes(receiptType) && (
-        <View className='store-module'>
-          <AddressChoose isAddress={address} onCustomChosse={handleChooseAddress} />
-          <View className='store'>配送门店: {distributorInfo.name}</View>
-          {receiptType == 'merchant' && (
-            <View className='delivery-time'>
-              <View className='delivery-time-txt'>送达时间</View>
-              <View className='delivery-time-func' onClick={handleMerchantTimeChoose}>
-                {handleMerchantTimeValue()}
-              </View>
+        {/** 普通快递 */}
+        {receiptType === 'logistics' && <AddressChoose isAddress={address} />}
+        {/** 同城配 */}
+        {!isPurchase && ['dada', 'merchant'].includes(receiptType) && (
+          <View className='store-module'>
+            <AddressChoose isAddress={address} onCustomChosse={handleChooseAddress} />
+            <View className='store-info'>
+              {/*<View className='store'>
+                <View className='store-txt'>配送门店:</View>
+                <View className='store-name'>{distributorInfo.name}</View>
+              </View>*/}
+              {receiptType == 'merchant' && (
+                <View className='delivery-time'>
+                  <View className='delivery-time-txt'>送达时间</View>
+                  <View className='delivery-time-func' onClick={handleMerchantTimeChoose}>
+                    {handleMerchantTimeValue()}
+                  </View>
+                  <view className='iconfont icon-arrowRight'></view>
+                </View>
+              )}
             </View>
-          )}
-        </View>
-      )}
-      {/** 自提 */}
-      {receiptType === 'ziti' && (
-        <View className='address-module'>
-          <View
-            className='ziti-title'
-            onClick={() => {
-              Taro.navigateTo({
-                url: `/subpages/store/ziti-picker?distributor_id=${distributor_id}&cart_type=${cart_type}&type=${checkoutOrderType}`
-              })
-            }}
-          >
-            {zitiAddress?.name || '选择自提地址'}
-            <Text className='iconfont icon-arrowRight'></Text>
           </View>
-          {zitiAddress && (
-            <View className='address-connect'>
-              <View className='ziti-address'>
-                提货地址：
-                {`${zitiAddress?.province}${zitiAddress?.city}${zitiAddress?.area}${zitiAddress?.address}`}
+        )}
+        {/** 自提 */}
+        {receiptType === 'ziti' && (
+          <View className='address-module'>
+            <View
+              className='ziti-title'
+              onClick={() => {
+                Taro.navigateTo({
+                  url: `/subpages/store/ziti-picker?distributor_id=${distributor_id}&cart_type=${cart_type}&type=${checkoutOrderType}`
+                })
+              }}
+            >
+              <View className='ziti-title-left'>{zitiAddress?.name || '选择自提地址'}</View>
+              <View className='ziti-title-right'>选择其他门店<Text className='iconfont icon-arrowRight'></Text></View>
+            </View>
+            {zitiAddress && (
+              <View className='address-connect'>
+                <View className='ziti-address'>
+                  <Text className='iconfont icon-dizhiguanli-01'></Text> {`${zitiAddress?.province}${zitiAddress?.city}${zitiAddress?.area}${zitiAddress?.address}`}
+                </View>
+                <View className='ziti-connect-container'>
+                  <View className='ziti-connect'>联系电话：{zitiAddress?.contract_phone}</View>
+                  <View className='ziti-time'>
+                    营业时间：{zitiAddress?.hour || zitiInfo?.hour}
+                  </View>
+                </View>
               </View>
-              <View className='ziti-connect'>联系电话：{zitiAddress?.contract_phone}</View>
-            </View>
-          )}
+            )}
+          </View>
+        )}
 
-          {zitiAddress && (
-            <View className='ziti-info'>
-              <SpForm ref={formRef} className='applychief-form' formData={form} rules={rules}>
-                <SpFormItem label='提货时间' prop='pickerTime' type='line' labelWidth='70px'>
-                  <SpCell
-                    className='picker-time'
-                    isLink
-                    onClick={() => {
-                      setState((draft) => {
-                        draft.showTimePicker = true
-                      })
-                    }}
-                  >
-                    <Text
-                      className={classNames({
-                        'placeholder': !form.pickerTime
-                      })}
-                    >
-                      {getPickerTime()}
-                    </Text>
-                  </SpCell>
-                </SpFormItem>
-                <SpFormItem label='提货人' prop='pickerName' type='line' labelWidth='70px'>
-                  <AtInput
-                    name='pickerName'
-                    value={form.pickerName}
-                    placeholder='请输入提货人姓名'
-                    onChange={onInputChange.bind(this, 'pickerName')}
-                  />
-                </SpFormItem>
-                <SpFormItem label='手机号码' prop='pickerPhone' type='line' labelWidth='70px'>
-                  <AtInput
-                    name='pickerPhone'
-                    value={form.pickerPhone}
-                    placeholder='请输入提货人手机号码'
-                    onChange={onInputChange.bind(this, 'pickerPhone')}
-                  />
-                </SpFormItem>
-              </SpForm>
-            </View>
-          )}
-        </View>
-      )}
+        {/* 自配送时间选择 */}
+        <SpTimePicker
+          show={showMerchantTimePicker}
+          weekdays={weekdaysMerchant}
+          timeSlots={timeSlotsMerchant}
+          pickerIndex={pickerIndexMerchant}
+          activeTimeId={activeTimeIdMerchant}
+          timeSlotsValueString
+          onClose={() => {
+            setState((draft) => {
+              draft.showMerchantTimePicker = false
+            })
+          }}
+          onChangeWeekDays={onChangeWeekDaysMerchant}
+          onChangeTimeSlot={onChangeTimeSlotMerchant}
+        />
 
-      {/* 自配送时间选择 */}
-      <SpTimePicker
-        show={showMerchantTimePicker}
-        weekdays={weekdaysMerchant}
-        timeSlots={timeSlotsMerchant}
-        pickerIndex={pickerIndexMerchant}
-        activeTimeId={activeTimeIdMerchant}
-        timeSlotsValueString
-        onClose={() => {
-          setState((draft) => {
-            draft.showMerchantTimePicker = false
-          })
-        }}
-        onChangeWeekDays={onChangeWeekDaysMerchant}
-        onChangeTimeSlot={onChangeTimeSlotMerchant}
-      />
+        {/* 自提时间选择 */}
+        <SpTimePicker
+          show={showTimePicker}
+          weekdays={weekdays}
+          timeSlots={timeSlots}
+          pickerIndex={pickerIndex}
+          activeTimeId={activeTimeId}
+          onClose={() => {
+            setState((draft) => {
+              draft.showTimePicker = false
+            })
+          }}
+          onChangeWeekDays={onChangeWeekDays}
+          onChangeTimeSlot={onChangeTimeSlot}
+        />
 
-      {/* 自提时间选择 */}
-      <SpTimePicker
-        show={showTimePicker}
-        weekdays={weekdays}
-        timeSlots={timeSlots}
-        pickerIndex={pickerIndex}
-        activeTimeId={activeTimeId}
-        onClose={() => {
-          setState((draft) => {
+        {/* 自提时间选择 */}
+        {/* <SpFloatLayout className='ziti-time-floatlayout' open={showTimePicker} onClose={() => {
+          setState(draft => {
             draft.showTimePicker = false
           })
-        }}
-        onChangeWeekDays={onChangeWeekDays}
-        onChangeTimeSlot={onChangeTimeSlot}
-      />
-
-      {/* 自提时间选择 */}
-      {/* <SpFloatLayout className='ziti-time-floatlayout' open={showTimePicker} onClose={() => {
-        setState(draft => {
-          draft.showTimePicker = false
-        })
-      }}>
-        <View className='ziti-time-container'>
-          <ScrollView className='week-container' scrollY>
-            {
-              weekdays.map((item, index) => (<View className={classNames('weekday-item', {
-                active: index === pickerIndex
-              })} key={`weekday-item__${index}`} onClick={onChangeWeekDays.bind(this, index)}>{item.title}</View>))
-            }
-          </ScrollView>
-          <ScrollView className='time-container' scrollY>
-            {
-              timeSlots.map((item, index) => (<View className={classNames('timeslot-item', {
-                'active': item.id === activeTimeId,
-                'disabled': item.disabled
-              })} key={`timeslot-item__${index}`} onClick={onChangeTimeSlot.bind(this, item)}>{`${item.value[0]} ~ ${item.value[1]}`}</View>))
-            }
-          </ScrollView>
+        }}>
+          <View className='ziti-time-container'>
+            <ScrollView className='week-container' scrollY>
+              {
+                weekdays.map((item, index) => (<View className={classNames('weekday-item', {
+                  active: index === pickerIndex
+                })} key={`weekday-item__${index}`} onClick={onChangeWeekDays.bind(this, index)}>{item.title}</View>))
+              }
+            </ScrollView>
+            <ScrollView className='time-container' scrollY>
+              {
+                timeSlots.map((item, index) => (<View className={classNames('timeslot-item', {
+                  'active': item.id === activeTimeId,
+                  'disabled': item.disabled
+                })} key={`timeslot-item__${index}`} onClick={onChangeTimeSlot.bind(this, item)}>{`${item.value[0]} ~ ${item.value[1]}`}</View>))
+              }
+            </ScrollView>
+          </View>
+        </SpFloatLayout> */}
+      </View>
+      {receiptType === 'ziti' && zitiAddress && (
+        <View className='ziti-info'>
+          <View className='sp-order-item__idx'>
+            自提信息
+          </View>
+          <SpForm ref={formRef} className='applychief-form' formData={form} rules={rules}>
+            <SpFormItem label='提货时间' prop='pickerTime' type='line' labelWidth='80px'>
+              <SpCell
+                className='picker-time'
+                isLink
+                onClick={() => {
+                  setState((draft) => {
+                    draft.showTimePicker = true
+                  })
+                }}
+              >
+                <Text
+                  className={classNames({
+                    'placeholder': !form.pickerTime
+                  })}
+                >
+                  {getPickerTime()}
+                </Text>
+              </SpCell>
+            </SpFormItem>
+            <SpFormItem label='提货人' prop='pickerName' type='line' labelWidth='80px'>
+              <AtInput
+                name='pickerName'
+                value={form.pickerName}
+                placeholder='请输入提货人姓名'
+                onChange={onInputChange.bind(this, 'pickerName')}
+              />
+            </SpFormItem>
+            <SpFormItem label='手机号码' prop='pickerPhone' type='line' labelWidth='80px'>
+              <AtInput
+                name='pickerPhone'
+                value={form.pickerPhone}
+                placeholder='请输入提货人手机号码'
+                onChange={onInputChange.bind(this, 'pickerPhone')}
+              />
+            </SpFormItem>
+          </SpForm>
         </View>
-      </SpFloatLayout> */}
+      )}
     </View>
   )
 }

@@ -964,8 +964,8 @@ function CartCheckout(props) {
     return (
       <View className='checkout-toolbar'>
         <View className='checkout-toolbar__total'>
-          {`共${totalInfo.items_count}件商品　总计:`}
-          <SpPrice unit='cent' className='primary-price' value={totalInfo.total_fee} />
+          <View className='checkout-toolbar__total-text'>共优惠 <SpPrice unit='cent' className='primary-price' value={totalInfo.market_fee - totalInfo.total_fee} /></View>
+          <View className='checkout-toolbar__total-text'>应付金额 <SpPrice unit='cent' className='primary-price' value={totalInfo.total_fee} /></View>
         </View>
         <AtButton
           circle
@@ -1108,6 +1108,7 @@ function CartCheckout(props) {
 
         {renderGoodsComp()}
 
+        <View className='cart-checkout__section'>
         {type !== 'limited_time_sale' && type !== 'group' && type !== 'seckill' && !bargain_id && (
           <SpCell
             isLink
@@ -1117,6 +1118,29 @@ function CartCheckout(props) {
             value={couponText || '请选择'}
           />
         )}
+        {/* 平台版自营店铺、云店、官方商城支持积分抵扣 */}
+        {(VERSION_STANDARD || VERSION_B2C || (VERSION_PLATFORM && shop_id == 0)) &&
+          pointInfo?.is_open_deduct_point && (
+            <SpCell
+              isLink
+              className='cart-checkout__invoice'
+              title={`${pointName}抵扣`}
+              onClick={() => {
+                setState((draft) => {
+                  draft.isPointOpenModal = true
+                })
+              }}
+              value={
+                <View className='invoice-title'>
+                  {pointInfo.point_use > 0
+                    ? `已使用${pointInfo.real_use_point}${pointName}`
+                    : `使用${pointName}`}
+                </View>
+              }
+            />
+          )}
+        </View>
+
         {totalInfo.invoice_status ? (
           <SpCell
             isLink
@@ -1177,28 +1201,6 @@ function CartCheckout(props) {
           />
         )}
 
-        {/* 平台版自营店铺、云店、官方商城支持积分抵扣 */}
-        {(VERSION_STANDARD || VERSION_B2C || (VERSION_PLATFORM && shop_id == 0)) &&
-          pointInfo?.is_open_deduct_point && (
-            <SpCell
-              isLink
-              className='cart-checkout__invoice'
-              title={`${pointName}抵扣`}
-              onClick={() => {
-                setState((draft) => {
-                  draft.isPointOpenModal = true
-                })
-              }}
-              value={
-                <View className='invoice-title'>
-                  {pointInfo.point_use > 0
-                    ? `已使用${pointInfo.real_use_point}${pointName}`
-                    : `使用${pointName}`}
-                </View>
-              }
-            />
-          )}
-
         {!bargain_id && (
           <View>
             <SpCell
@@ -1229,6 +1231,9 @@ function CartCheckout(props) {
         )}
 
         <View className='cart-checkout__total'>
+          <View className='sp-order-item__idx'>
+            订单金额
+          </View>
           <SpCell
             className='trade-sub__item'
             title='原价：'

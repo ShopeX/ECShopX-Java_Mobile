@@ -61,13 +61,13 @@ export default class AddressChoose extends Component {
             <View className='address-picker__bd'>
               <View className='address-receive'>
                 <View className='info-trade'>
-                  <View className='address-area'>
+                  <View className='address-detail'>
                     {isAddress.is_def && <View className='def'>默认</View>}
                     {isAddress.province}
                     {isAddress.city}
                     {isAddress.county}
+                    {isAddress.adrdetail}
                   </View>
-                  <View className='address-detail'>{isAddress.adrdetail}</View>
                   <View className='user-info-trade'>
                     <Text className='name'>{isAddress.username}</Text>
                     <Text>{isAddress.telephone}</Text>
