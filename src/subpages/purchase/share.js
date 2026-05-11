@@ -76,7 +76,7 @@ export default class PurchaseIndex extends Component {
       resolve({
         title: info.name,
         imageUrl: info.share_pic,
-        path: `/pages/purchase/auth?code=${data.invite_code}&enterprise_id=${enterprise_id}&id=${activity_id}&ppe=${ppe}`
+        path: `/pages/purchase/auth?code=${data.invite_code}&enterprise_id=${enterprise_id}&activity_id=${activity_id}&ppe=${ppe}`
       })
     })
   }
