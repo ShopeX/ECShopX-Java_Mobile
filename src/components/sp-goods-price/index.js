@@ -41,7 +41,7 @@ function SpGoodsPrice(props) {
             <View className='activity-wrap'>
               <SpPrice className='activity-price' value={activityPrice} symbol='¥' />
               {/* <Text className='activity-label'>¥{activityPrice.toFixed(2)}</Text> */}
-              <SpPrice size={24} lineThrough noSymbol value={price} />
+              <SpPrice size={24} lineThrough noSymbol={!isPurchase} value={price} />
 
               {/* <SpPrice size={36} className='activity-price' value={activityPrice} /> */}
             </View>

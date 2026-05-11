@@ -123,7 +123,47 @@
     color: #4a5565;
   }
 
+  &__goods-ft {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+    width: 100%;
+    gap: 16px;
+    margin-top: 4px;
+  }
+
+  &__goods-price {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__goods-price-act {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 8px;
+  }
+
+  &__goods-price-current {
+    .sp-price__symbol,
+    .sp-price__int,
+    .sp-price__decimal {
+      color: var(--color-primary);
+    }
+  }
+
+  &__goods-price-through {
+    .sp-price__symbol,
+    .sp-price__int,
+    .sp-price__decimal {
+      color: #999999;
+    }
+  }
+
   &__goods-num {
+    flex-shrink: 0;
     display: block;
     font-size: 24px;
     font-weight: 600;

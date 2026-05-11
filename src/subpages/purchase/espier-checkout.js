@@ -75,8 +75,11 @@ function PurchaseCheckout(props) {
     purchase_share_info = {},
     curEnterpriseId,
     isDiscountDescriptionEnabled,
-    discountDescription
+    discountDescription,
+    priceDisplayConfig = {}
   } = useSelector((state) => state.purchase)
+  const { checkout_page = {} } = priceDisplayConfig
+  const { activity_price: enPurCheckoutActivityPrice } = checkout_page
 
   const {
     detailInfo,
@@ -722,7 +725,39 @@ function PurchaseCheckout(props) {
                   {item.itemSpecDesc ? (
                     <Text className='page-espier-checkout__goods-spec'>{item.itemSpecDesc}</Text>
                   ) : null}
-                  <Text className='page-espier-checkout__goods-num'>x{item.num}</Text>
+                  <View className='page-espier-checkout__goods-ft'>
+                    <View className='page-espier-checkout__goods-price'>
+                      {enPurCheckoutActivityPrice ? (
+                        <View className='page-espier-checkout__goods-price-act'>
+                          <SpPrice
+                            className='page-espier-checkout__goods-price-current'
+                            value={item.price}
+                            symbol='¥'
+                          />
+                          {Number(item.salePrice) > 0 ? (
+                            <SpPrice
+                              className='page-espier-checkout__goods-price-through'
+                              value={item.salePrice}
+                              size={24}
+                              lineThrough
+                              symbol='¥'
+                            />
+                          ) : null}
+                        </View>
+                      ) : (
+                        <SpPrice
+                          className='page-espier-checkout__goods-price-current'
+                          value={
+                            item.salePrice != null && !Number.isNaN(Number(item.salePrice))
+                              ? item.salePrice
+                              : item.price
+                          }
+                          symbol='¥'
+                        />
+                      )}
+                    </View>
+                    <Text className='page-espier-checkout__goods-num'>x{item.num}</Text>
+                  </View>
                 </View>
               </View>
             ))}

@@ -241,8 +241,8 @@ function CompGoodsItem(props) {
                         unit='cent'
                         value={info.sale_price}
                         size={24}
-                        noSymbol
                         lineThrough
+                        symbol='¥'
                       />
                     </View>
                   ) : (
@@ -251,9 +251,6 @@ function CompGoodsItem(props) {
                 </>
               )}
               {!isPurchase && <SpPrice value={_price / 100} />}
-              {info.market_price > 0 && enMarketPrice && (
-                <SpPrice className='mkt-price' lineThrough value={info.market_price / 100} />
-              )}
             </View>
             {isShowAddInput ? (
               <SpInputNumber

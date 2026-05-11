@@ -239,7 +239,7 @@ function SpGoodsItem(props) {
                     {info.activityPrice && enPurActivityPrice ? (
                       <View className='act-price-wrap'>
                         <SpPrice value={info.activityPrice} className='act-price' symbol='¥' />
-                        <SpPrice size={24} value={info.price} noSymbol lineThrough />
+                        <SpPrice size={24} value={info.price} lineThrough symbol='¥' />
                       </View>
                     ) : (
                       enPurActivityPrice && <SpPrice size={36} value={info.price} />
