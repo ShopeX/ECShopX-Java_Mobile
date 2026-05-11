@@ -185,7 +185,8 @@ function PurchaseSkuSelect(props) {
     return null
   }
 
-  const { skuList } = info
+  const { skuList, specItems = [] } = info
+  const shouldShowSelectedWrap = !info.nospec && specItems.length > 1
 
   const addToCart = async () => {
     const { activity_id, enterprise_id } = purchase_share_info
@@ -393,11 +394,6 @@ function PurchaseSkuSelect(props) {
     )
   }
 
-  const selectedSpecLine =
-    curItem && curItem.specItem
-      ? curItem.specItem.map((s) => s.specName).join(' ')
-      : '请选择'
-
   return (
     <SpFloatLayout
       className='sp-sku-select'
@@ -425,14 +421,20 @@ function PurchaseSkuSelect(props) {
           <View className='sp-sku-select-espier__price-row'>
             <SpGoodsPrice isPurchase info={curItem || info} />
           </View>
-          <View
-            className={classNames('sp-sku-select-espier__selected-wrap', {
-              'sp-sku-select-espier__selected-wrap--placeholder': !curItem
-            })}
-          >
-            <Text className='sp-sku-select-espier__selected-label'>已选：</Text>
-            <Text className='sp-sku-select-espier__selected'>{selectedSpecLine}</Text>
-          </View>
+          {shouldShowSelectedWrap && (
+            <View
+              className={classNames('sp-sku-select-espier__selected-wrap', {
+                'sp-sku-select-espier__selected-wrap--placeholder': !curItem
+              })}
+            >
+              <Text className='sp-sku-select-espier__selected-label'>已选：</Text>
+              <Text className='sp-sku-select-espier__selected'>
+                {curItem && curItem.specItem
+                  ? curItem.specItem.map((s) => s.specName).join(' ')
+                  : '请选择'}
+              </Text>
+            </View>
+          )}
           {!hideInputNumber && renderQtyStepper()}
           {/* {info.store_setting && (
             <Text className='sp-sku-select-espier__store'>
