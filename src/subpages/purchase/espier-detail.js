@@ -6,6 +6,7 @@ import React, { useEffect, useRef, useMemo, useState } from 'react'
 import { useSelector } from 'react-redux'
 import Taro from '@tarojs/taro'
 import { View, Text, Swiper, SwiperItem, Video } from '@tarojs/components'
+import { AtFloatLayout, AtButton } from 'taro-ui'
 import { useImmer } from 'use-immer'
 import {
   SpCell,
@@ -142,7 +143,8 @@ const initialState = {
   curItem: null,
   recommendList: [],
   activityId: '',
-  enterpriseId: ''
+  enterpriseId: '',
+  isParameter: false
 }
 
 function EspierDetail(props) {
@@ -179,7 +181,8 @@ function EspierDetail(props) {
     curItem,
     recommendList,
     activityId,
-    enterpriseId
+    enterpriseId,
+    isParameter
   } = state
 
   useEffect(() => {
@@ -394,6 +397,21 @@ function EspierDetail(props) {
   const showPurchaseLimits = purchaseLimitQty != null || !!purchaseLimitAmountLine
   const deliveryAddressLine = formatEspierDetailAddressLine(address)
 
+  const displayItemParams = useMemo(() => {
+    if (!info || !Array.isArray(info.itemParams)) return []
+    return info.itemParams.filter((item) => {
+      const v = item?.attribute_value_name
+      if (v == null || v === '') return false
+      return typeof v === 'string' ? v.trim() !== '' : String(v).trim() !== ''
+    })
+  }, [info, info?.itemParams])
+
+  const handleGoodsParamsFlatClose = () => {
+    setState((draft) => {
+      draft.isParameter = !draft.isParameter
+    })
+  }
+
   return (
     <SpPage
       className='page-item-espierdetail'
@@ -496,7 +514,12 @@ function EspierDetail(props) {
           )}
 
           <View className='espier-detail-hero-info'>
-            <Text className='espier-detail-hero-info__title'>{info.itemName}</Text>
+            <View className='goods-name-wrap'>
+              <View className='goods-name'>
+                <View className='title'>{info.itemName}</View>
+                {!!info.brief && <View className='brief'>{info.brief}</View>}
+              </View>
+            </View>
             {showPurchaseLimits && (
               <View className='espier-detail-purchase-limits'>
                 {purchaseLimitQty != null && (
@@ -560,6 +583,21 @@ function EspierDetail(props) {
               </View>
             </View>
           </View>
+
+          {displayItemParams.length > 0 && (
+            <View className='goods-params-flat'>
+              <View className='parameter'>参数</View>
+              <View className='parameter-content'>
+                {displayItemParams.map((item, index) => (
+                  <View className='parameter-item' key={`goods-params-flat__${index}`}>
+                    <View className='attribute'>{item.attribute_value_name}</View>
+                    <View className='configuration'>{item.attribute_name}</View>
+                  </View>
+                ))}
+              </View>
+              <Text className='iconfont icon-arrowRight' onClick={handleGoodsParamsFlatClose} />
+            </View>
+          )}
 
           {promotionActivity.length > 0 && (
             <View className='espier-detail-promo-card'>
@@ -685,6 +723,28 @@ function EspierDetail(props) {
             })
           }}
         />
+      )}
+
+      {info && displayItemParams.length > 0 && (
+        <AtFloatLayout
+          isOpened={isParameter}
+          title='商品参数'
+          onClose={handleGoodsParamsFlatClose}
+        >
+          <View className='product-parameter'>
+            <View className='product-parameter-all'>
+              {displayItemParams.map((item, index) => (
+                <View className='product-parameter-item' key={`product-parameter-item__${index}`}>
+                  <Text className='title'>{item.attribute_name}</Text>
+                  <Text className='content'>{item.attribute_value_name}</Text>
+                </View>
+              ))}
+            </View>
+            <AtButton type='primary' circle onClick={handleGoodsParamsFlatClose}>
+              确认
+            </AtButton>
+          </View>
+        </AtFloatLayout>
       )}
     </SpPage>
   )
