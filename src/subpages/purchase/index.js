@@ -255,10 +255,7 @@ function Home() {
       }
 
       const res = await api.purchase.getPurchaseStoreHomePage(pages_template_id)
-      const config =
-        res?.page_template_detail?.config ??
-        res?.config ??
-        (Array.isArray(res) ? res : [])
+      const config = Array.isArray(res?.page_template_detail?.config) ? res?.page_template_detail?.config : []
       setState((draft) => {
         draft.wgts = Array.isArray(config) ? config : []
         draft.loading = false
