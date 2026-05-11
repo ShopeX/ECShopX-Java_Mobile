@@ -112,3 +112,16 @@ export function getPurchaseDistributor(params) {
   // 获取活动商品详情
   return req.get(`/user/enterprise/distributor`, params)
 }
+
+/**
+ * 内购活动首页店铺装修模版（path 传 pages_template_id，与 /employeepurchase/store-home-page/:id 一致）
+ */
+export function getPurchaseStoreHomePage(pages_template_id, params = {}) {
+  const id = encodeURIComponent(String(pages_template_id))
+  return req.get(`/employeepurchase/store-home-page/${id}`, params)
+}
+
+/** 内购资格校验（当前用户）：白名单员工或有效家属 */
+export function getInternalSaleEligibility(params) {
+  return req.get('/employeepurchase/internal-sale-eligibility', params)
+}

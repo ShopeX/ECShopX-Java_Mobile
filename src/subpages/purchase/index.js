@@ -21,7 +21,6 @@ import { SharePurchase } from '@/subpages/components'
 import api from '@/api'
 import {
   isWeixin,
-  getDistributorId,
   VERSION_STANDARD,
   VERSION_PLATFORM,
   classNames,
@@ -69,7 +68,7 @@ function Home() {
   useTranslation()
   const [state, setState] = useImmer(initialState)
   const { initState, entryStoreByLBS, appName } = useSelector((state) => state.sys)
-  const { purchase_share_info = {}, curDistributorId } = useSelector(
+  const { purchase_share_info = {}, persist_purchase_share_info = {} } = useSelector(
     (state) => state.purchase
   )
   const { checkPolicyChange } = useLogin({
@@ -126,10 +125,13 @@ function Home() {
     Taro.hideShareMenu({
       menus: ['shareAppMessage', 'shareTimeline']
     })
-    const { activity_id, enterprise_id, pages_template_id } = router?.params || {}
-    if (activity_id) {
-      dispatch(updatePurchaseShareInfo({ activity_id, enterprise_id, pages_template_id }))
-      dispatch(updatePersistPurchaseShareInfo({ activity_id, enterprise_id, pages_template_id }))
+    const routeContext = {
+      activity_id: normalizeContextValue(router?.params?.activity_id),
+      enterprise_id: normalizeContextValue(router?.params?.enterprise_id),
+      pages_template_id: normalizeContextValue(router?.params?.pages_template_id)
+    }
+    if (routeContext.activity_id) {
+      persistPurchaseContext(routeContext)
     }
   }, [])
 
@@ -160,39 +162,130 @@ function Home() {
   }, [activityInfo])
 
   const init = async () => {
-    await fetchWgts()
-    await fetchActivity()
+    const context = await ensurePurchaseContext()
+    await fetchWgts(context)
+    await fetchActivity(context)
   }
 
-  const fetchWgts = async () => {
-    try {
-      const { config } = await api.shop.getShopTemplate({
-        distributor_id: curDistributorId ?? getDistributorId(),
-        pages_template_id: router?.params?.pages_template_id,
-        e_activity_id: router?.params?.activity_id
-      })
-      setState((draft) => {
-        draft.wgts = config
-        draft.loading = false
-      })
-    } catch (e) {
+  const normalizeContextValue = (value) => {
+    if (value == null || value === '' || value === 'null' || value === 'undefined') {
+      return ''
+    }
+    return value
+  }
+
+  const normalizePurchaseContext = (source = {}) => {
+    return {
+      activity_id: normalizeContextValue(source.activity_id),
+      enterprise_id: normalizeContextValue(source.enterprise_id),
+      pages_template_id: normalizeContextValue(source.pages_template_id)
     }
   }
 
-  const fetchActivity = async () => {
-    const activity_id = router?.params?.activity_id || purchase_share_info?.activity_id
-    const enterprise_id = router?.params?.enterprise_id || purchase_share_info?.enterprise_id
-    const data = await api.purchase.getEmployeeActivitydata({ activity_id, enterprise_id })
-    setState((draft) => {
-      draft.activityInfo = data
-    })
+  const isSamePurchaseContext = (source, activityId, enterpriseId) => {
+    if (!source?.activity_id || String(source.activity_id) !== String(activityId)) {
+      return false
+    }
+    if (!enterpriseId || !source.enterprise_id) {
+      return true
+    }
+    return String(source.enterprise_id) === String(enterpriseId)
+  }
+
+  const persistPurchaseContext = (context = {}) => {
+    if (!context.activity_id) return
+    dispatch(updatePurchaseShareInfo(context))
+    dispatch(updatePersistPurchaseShareInfo(context))
+  }
+
+  const resolvePurchaseContext = () => {
+    const params = normalizePurchaseContext(router?.params || {})
+    const currentContext = normalizePurchaseContext(purchase_share_info)
+    const persistContext = normalizePurchaseContext(persist_purchase_share_info)
+    if (params.activity_id) {
+      const matchedCache = [currentContext, persistContext].find((source) =>
+        isSamePurchaseContext(source, params.activity_id, params.enterprise_id)
+      )
+      return {
+        activity_id: params.activity_id,
+        enterprise_id: params.enterprise_id || matchedCache?.enterprise_id,
+        pages_template_id: params.pages_template_id || matchedCache?.pages_template_id
+      }
+    }
+
+    return currentContext.activity_id ? currentContext : persistContext
+  }
+
+  const ensurePurchaseContext = async () => {
+    const context = resolvePurchaseContext()
+    if (!context.activity_id) {
+      return context
+    }
+
+    if (context.enterprise_id && context.pages_template_id) {
+      return context
+    }
+
+    try {
+      const activityDetail = await api.purchase.getActivitydata({
+        activity_id: context.activity_id,
+        enterprise_id: context.enterprise_id
+      })
+      const nextContext = {
+        activity_id: context.activity_id,
+        enterprise_id:
+          context.enterprise_id ||
+          normalizeContextValue(activityDetail?.enterprise_id || activityDetail?.enterpriseId),
+        pages_template_id:
+          context.pages_template_id || normalizeContextValue(activityDetail?.pages_template_id)
+      }
+      persistPurchaseContext(nextContext)
+      return nextContext
+    } catch (e) {
+      return context
+    }
+  }
+
+  const fetchWgts = async (context = resolvePurchaseContext()) => {
+    try {
+      const { pages_template_id } = context
+      if (!pages_template_id) {
+        return setState((draft) => {
+          draft.wgts = []
+          draft.loading = false
+        })
+      }
+
+      const res = await api.purchase.getPurchaseStoreHomePage(pages_template_id)
+      const config = Array.isArray(res?.page_template_detail?.config) ? res?.page_template_detail?.config : []
+      setState((draft) => {
+        draft.wgts = Array.isArray(config) ? config : []
+        draft.loading = false
+      })
+    } catch (e) {
+      setState((draft) => {
+        draft.loading = false
+      })
+    }
+  }
+
+  const fetchActivity = async (context = resolvePurchaseContext()) => {
+    const { activity_id, enterprise_id } = context
+    if (!activity_id || !enterprise_id) {
+      return
+    }
+    try {
+      const data = await api.purchase.getEmployeeActivitydata({ activity_id, enterprise_id })
+      setState((draft) => {
+        draft.activityInfo = data
+      })
+    } catch (e) {}
   }
 
   useShareAppMessage(async () => {
     return new Promise(async function (resolve) {
       if (isPurchaseShare) {
-        const activity_id = router?.params?.activity_id || purchase_share_info?.activity_id
-        const enterprise_id = router?.params?.enterprise_id || purchase_share_info?.enterprise_id
+        const { activity_id, enterprise_id } = await ensurePurchaseContext()
         const data = await api.purchase.getEmployeeInviteCode({ enterprise_id, activity_id })
         const params = {
           type: 'passcode',

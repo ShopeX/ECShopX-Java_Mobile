@@ -29,7 +29,6 @@ function PurchaseAuthPhone(props) {
   const dispatch = useDispatch()
   const [state, setState] = useImmer(initialState)
   const [policyModal, setPolicyModal] = useState(false)
-  const [enterpriseName, setEnterpriseName] = useState('')
   const { curEnterpriseLogo } = useSelector((state) => state.purchase)
   const { params } = useRouter()
   let {
@@ -37,6 +36,7 @@ function PurchaseAuthPhone(props) {
     enterprise_id,
     is_verify,
     activity_id,
+    pages_template_id = ''
   } = params
   const { showModal } = useModal()
 
@@ -103,7 +103,7 @@ function PurchaseAuthPhone(props) {
       showToast('验证成功')
       setTimeout(() => {
         Taro.reLaunch({
-          url: `/subpages/purchase/index?is_redirt=1&activity_id=${activity_id || ''}&enterprise_id=${enterprise_id || ''}`
+          url: `/subpages/purchase/index?is_redirt=1&activity_id=${activity_id || ''}&enterprise_id=${enterprise_id || ''}&pages_template_id=${pages_template_id || ''}`
         })
       }, 2000)
     } catch (e) {
@@ -120,7 +120,7 @@ function PurchaseAuthPhone(props) {
         contentAlign: 'center'
       })
       Taro.reLaunch({
-        url: `/subpages/purchase/index?is_redirt=1&activity_id=${activity_id || ''}&enterprise_id=${enterprise_id || ''}`
+        url: `/subpages/purchase/index?is_redirt=1&activity_id=${activity_id || ''}&enterprise_id=${enterprise_id || ''}&pages_template_id=${pages_template_id || ''}`
       })
       getLoginCode()
     }

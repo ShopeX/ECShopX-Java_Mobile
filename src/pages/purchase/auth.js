@@ -47,6 +47,7 @@ function PurchaseAuth() {
   const codeRef = useRef()
   const [state, setState] = useImmer(initialState)
   const [activityBg, setActivityBg] = useState('')
+  const [pagesTemplateId, setPagesTemplateId] = useState('')
 
   const { invite_code, activity_id, enterprise_id, authType } = state
 
@@ -110,6 +111,7 @@ function PurchaseAuth() {
       const candidate = data?.pic || ''
       dispatch(updateCurActivityInfo(data || {}))
       setActivityBg(candidate)
+      setPagesTemplateId(data?.pages_template_id || '')
     } catch (e) {
       setActivityBg('')
     }
@@ -217,16 +219,17 @@ function PurchaseAuth() {
 
 
   const buildInviteActivityUrl = () => {
-    return `/subpages/purchase/index?is_redirt=1&activity_id=${activity_id || ''}&enterprise_id=${enterprise_id || ''}`
+    return `/subpages/purchase/index?is_redirt=1&activity_id=${activity_id || ''}&enterprise_id=${enterprise_id || ''}&pages_template_id=${pagesTemplateId || ''}`
   }
 
   const prepareInviteActivity = async () => {
     if (!enterprise_id) return
     const { distributor_id } = await api.purchase.getPurchaseDistributor({ enterprise_id })
+    const shareInfo = { activity_id, enterprise_id, pages_template_id: pagesTemplateId || '' }
     dispatch(updateCurDistributorId(distributor_id))
     dispatch(updateEnterpriseId(enterprise_id))
-    dispatch(updatePurchaseShareInfo({ activity_id, enterprise_id }))
-    dispatch(updatePersistPurchaseShareInfo({ activity_id, enterprise_id }))
+    dispatch(updatePurchaseShareInfo(shareInfo))
+    dispatch(updatePersistPurchaseShareInfo(shareInfo))
   }
 
   const enterInviteActivity = async (delay = 0) => {
@@ -284,7 +287,7 @@ function PurchaseAuth() {
       redirectUrl = '/subpages/purchase/select-company-passcode'
     }
     if (activity_id) {
-      redirectUrl = `${redirectUrl}?activity_id=${activity_id}&enterprise_id=${enterprise_id}`
+      redirectUrl = `${redirectUrl}?activity_id=${activity_id}&enterprise_id=${enterprise_id}&pages_template_id=${pagesTemplateId || ''}`
     }
     Taro.navigateTo({ url: redirectUrl })
   }
