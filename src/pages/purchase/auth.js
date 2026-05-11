@@ -42,9 +42,11 @@ function PurchaseAuth() {
 
   const [policyModal, setPolicyModal] = useState(false)
   const [checked, setChecked] = useState(false)
-  const { userInfo = {} } = useSelector((state) => state.user)
+  const [isAutoEntering, setIsAutoEntering] = useState(false)
+  const { userInfo } = useSelector((state) => state.user)
   const dispatch = useDispatch()
   const codeRef = useRef()
+  const inviteAutoEnterRef = useRef(false)
   const [state, setState] = useImmer(initialState)
   const [activityBg, setActivityBg] = useState('')
   const [pagesTemplateId, setPagesTemplateId] = useState('')
@@ -89,6 +91,35 @@ function PurchaseAuth() {
       }
     }
   }, [invite_code])
+
+  useEffect(() => {
+    if (
+      !invite_code ||
+      !activity_id ||
+      !enterprise_id ||
+      inviteAutoEnterRef.current ||
+      !checked ||
+      !isLogin ||
+      !userInfo
+    ) {
+      return
+    }
+    if (!userInfo?.is_relative && isNewUser) {
+      return
+    }
+    inviteAutoEnterRef.current = true
+    setIsAutoEntering(true)
+    ;(async () => {
+      if (userInfo?.is_relative) {
+        await enterInviteActivity()
+        return
+      }
+      await validateRelativeBind()
+    })().catch(() => {
+      inviteAutoEnterRef.current = false
+      setIsAutoEntering(false)
+    })
+  }, [activity_id, checked, enterprise_id, invite_code, isLogin, isNewUser, userInfo])
 
   const init = async () => {
     //获取扫码参数
@@ -263,6 +294,9 @@ function PurchaseAuth() {
 
 
   const handlePasscodeLandingStart = () => {
+    if (isAutoEntering) {
+      return
+    }
     if (!checked) {
       setPolicyModal(true)
       return
@@ -294,7 +328,11 @@ function PurchaseAuth() {
 
 
   return (
-    <SpPage className='purchase-auth purchase-auth--passcode-landing' showpoweredBy={false}>
+    <SpPage
+      className='purchase-auth purchase-auth--passcode-landing'
+      showpoweredBy={false}
+      loading={isAutoEntering}
+    >
       <SpPrivacyModal open={policyModal} onCancel={onRejectPolicy} onConfirm={onResolvePolicy} />
 
       <View

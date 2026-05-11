@@ -5,6 +5,7 @@
 import React, { useEffect } from 'react'
 import Taro, { useRouter } from '@tarojs/taro'
 import dayjs from 'dayjs'
+import { SpPage } from '@/components'
 import { SG_ROUTER_PARAMS, SG_GUIDE_PARAMS, SG_GUIDE_PARAMS_UPDATETIME } from '@/consts'
 import qs from 'qs'
 import { entryLaunch, showToast } from '@/utils'
@@ -159,7 +160,7 @@ function ShareIand() {
     Taro.redirectTo({ url: targetUrl })
   }
 
-  return null
+  return <SpPage className='page-share-land' loading showpoweredBy={false} />
 }
 
 export default ShareIand
