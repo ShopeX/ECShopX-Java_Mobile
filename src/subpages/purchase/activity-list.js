@@ -91,7 +91,8 @@ function PurchaseActivityList() {
       page: pageIndex,
       pageSize,
       enterprise_id: curEnterpriseId,
-      activity_id
+      activity_id,
+      status: 'warm_up,ongoing'
     })
     const _list = pickBy(list, doc.purchase.ACTIVITY_ITEM)
     setState((draft) => {
