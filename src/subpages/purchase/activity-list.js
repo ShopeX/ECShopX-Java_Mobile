@@ -112,7 +112,7 @@ function PurchaseActivityList() {
     return { total: total_count }
   }
 
-  const onClickChange = async (item) => {
+  const onClickChange = async (item, type) => {
     const {
       id,
       enterpriseId,
@@ -152,18 +152,22 @@ function PurchaseActivityList() {
         activity_id: id
       })
     )
+    let url =''
     if (isPassphraseEnabled) { //是否开启口令通道
       dispatch(updateIsPasscodeLogin(true))
       if (passphraseUserVerified == 1) {
-        Taro.navigateTo({ url: `/subpages/purchase/index?activity_id=${id}&enterprise_id=${enterpriseId}&pages_template_id=${pages_template_id}` })
+        url = `/subpages/purchase/index?activity_id=${id}&enterprise_id=${enterpriseId}&pages_template_id=${pages_template_id}`
       } else {
-        Taro.navigateTo({
-          url: `/subpages/purchase/select-company-passcode?activity_id=${id}&enterprise_id=${enterpriseId}&pages_template_id=${pages_template_id}`
-        })
+        url = `/subpages/purchase/select-company-passcode?activity_id=${id}&enterprise_id=${enterpriseId}&pages_template_id=${pages_template_id}`
       }
     } else {
       dispatch(updateIsPasscodeLogin(false))
-      Taro.navigateTo({ url: `/subpages/purchase/index?activity_id=${id}&enterprise_id=${enterpriseId}&pages_template_id=${pages_template_id}` })
+      url = `/subpages/purchase/index?activity_id=${id}&enterprise_id=${enterpriseId}&pages_template_id=${pages_template_id}`
+    }
+    if (type == 'redirectTo') {
+      Taro.redirectTo({ url })
+    } else {  
+      Taro.navigateTo({ url })
     }
   }
 
