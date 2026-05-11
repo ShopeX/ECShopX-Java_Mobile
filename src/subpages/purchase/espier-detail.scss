@@ -297,32 +297,31 @@
     display: flex;
     flex-direction: row;
     align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
     margin-top: 20px;
     padding: 20px 0 0;
     border-top: 1px solid #f0f0f0;
 
     &__col {
-      flex: 1;
       min-width: 0;
-      padding: 0 12px;
+      padding: 0;
 
       &:first-child {
-        padding-left: 0;
+        flex: 0 0 auto;
       }
 
       &:last-child {
-        padding-right: 0;
-      }
-
-      &:not(:only-child):first-child {
-        border-right: 1px solid #f0f0f0;
+        flex: 0 1 auto;
+        text-align: right;
       }
     }
 
     &__line {
       font-size: 28px;
       line-height: 1.45;
-      word-break: break-all;
+      word-break: normal;
+      white-space: nowrap;
     }
 
     &__label {

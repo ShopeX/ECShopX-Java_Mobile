@@ -72,6 +72,13 @@ function resolvePurchaseLimitQty(info, curItem) {
     return curItem?.limitNum ?? limitNum
   }
   if (activityType === 'group') return 1
+  // 内购等多规格：已选 SKU 有 limit_num 时随 SKU 变化（与秒杀多规格一致）
+  if (!nospec && curItem != null) {
+    const skuL = curItem.limitNum
+    if (skuL != null && skuL !== '') {
+      return skuL
+    }
+  }
   // 内购：优先独立字段，再购物车/立即购限购，再商品 limit_num（用 ?? 避免 0 被当成空）
   const v = purchaseLimitNum ?? purlimitByCart ?? purlimitByFastbuy ?? limitNum
   return v != null && v !== '' ? v : null
@@ -84,10 +91,18 @@ function enrichEspierPurchaseDetail(mapped, raw) {
   if (!mapped || !raw) return mapped
   const activityInfo = mapped.activityInfo ?? raw.activity_info ?? raw.activityInfo
   const fee = mapped.fee ?? raw.fee
+  const rawItemParams = raw.item_params ?? raw.itemParams
+  const itemParams =
+    Array.isArray(mapped.itemParams) && mapped.itemParams.length > 0
+      ? mapped.itemParams
+      : Array.isArray(rawItemParams)
+        ? rawItemParams
+        : mapped.itemParams
   return {
     ...mapped,
     activityInfo,
     fee,
+    itemParams,
     purchaseLimitNum:
       mapped.purchaseLimitNum ?? raw.purchase_limit_num ?? raw.item_purchase_limit_num,
     purlimitByCart: mapped.purlimitByCart ?? raw.purchase_limit_num_by_cart,
@@ -99,14 +114,20 @@ function enrichEspierPurchaseDetail(mapped, raw) {
   }
 }
 
-/** 限购金额：activity_info.fee / 根 fee / 扁平字段（单位分，与 member 额度一致） */
-function resolvePurchaseLimitAmountLine(info) {
+/** 限购金额：多规格时优先当前 SKU 的 limit_fee，否则 activity_info.fee / 根 fee / 扁平（单位分） */
+function resolvePurchaseLimitAmountLine(info, curItem) {
   if (!info) return null
-  const limitFee =
-    info.activityInfo?.fee?.limit_fee ??
-    info.fee?.limit_fee ??
-    info.activityInfo?.limit_fee ??
-    info.purchaseAmountLimitFee
+  let limitFee
+  if (!info.nospec && curItem != null) {
+    limitFee = curItem.limitFee ?? curItem.limit_fee
+  }
+  if (limitFee == null || limitFee === '') {
+    limitFee =
+      info.activityInfo?.fee?.limit_fee ??
+      info.fee?.limit_fee ??
+      info.activityInfo?.limit_fee ??
+      info.purchaseAmountLimitFee
+  }
   if (limitFee == null || limitFee === '') return null
   const n = Number(limitFee) / 100
   if (Number.isNaN(n)) return null
@@ -392,8 +413,8 @@ function EspierDetail(props) {
     [info, curItem]
   )
   const purchaseLimitAmountLine = useMemo(
-    () => (info ? resolvePurchaseLimitAmountLine(info) : null),
-    [info]
+    () => (info ? resolvePurchaseLimitAmountLine(info, curItem) : null),
+    [info, curItem]
   )
   const showPurchaseLimits = purchaseLimitQty != null || !!purchaseLimitAmountLine
   const deliveryAddressLine = formatEspierDetailAddressLine(address)
@@ -678,6 +699,7 @@ function EspierDetail(props) {
         open={skuPanelOpen}
         type={selectType}
         info={info}
+        selectedItem={curItem}
         onClose={() => {
           setState((draft) => {
             draft.skuPanelOpen = false
