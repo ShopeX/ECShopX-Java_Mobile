@@ -17,19 +17,23 @@
     background-color: #f7f8fa;
   }
 
-  /* 图下通栏：白底 + 标题 + 限购 */
+  /* 图下通栏：白底 + 标题 + 限购（标题/副标题结构与普通商品 espier-detail 一致） */
   .espier-detail-hero-info {
     width: 100%;
     box-sizing: border-box;
     padding: 52px 32px 40px;
 
-    &__title {
-      display: block;
-      color: #0A0A0A;
-      font-weight: 500;
-      font-size: 32px;
-      line-height: 32px;
+    .goods-name-wrap {
+      margin-top: 0;
+    }
 
+    /* 主标题下的副标题（与 .goods-name .brief 字号区分，偏说明文案） */
+    &__subtitle {
+      margin-top: 12px;
+      font-size: 24px;
+      line-height: 34px;
+      font-weight: 400;
+      color: #666666;
     }
   }
 
@@ -351,10 +355,6 @@
       margin: 0;
       background: transparent;
       box-shadow: none;
-
-      &:not(:last-child) {
-        border-bottom: 1px solid #f0f0f0;
-      }
     }
 
     .espier-detail-spec-sheet__cell-inner.sp-cell {
@@ -378,7 +378,7 @@
         min-width: 0;
         display: flex;
         align-items: center;
-        justify-content: flex-end;
+        justify-content: flex-start;
         padding-left: 16px;
         padding-right: 8px;
         color: #0A0A0A;
@@ -388,7 +388,6 @@
       .espier-detail-spec-sheet__value-text {
         color: #0A0A0A;
         max-width: 100%;
-        text-align: right;
         @include text-overflow();
       }
 
@@ -444,6 +443,72 @@
     display: inline-block;
     font-size: 24px;
     margin-right: 16px;
+  }
+
+  .goods-params-flat {
+    margin: 0 32px 24px;
+    padding: 32px;
+    background: #fff;
+    border-radius: 24px;
+    display: flex;
+    align-items: center;
+    width: calc(100% - 64px);
+    box-sizing: border-box;
+    .parameter {
+      font-weight: 600;
+      font-size: 28px;
+      width: 100px;
+      white-space: nowrap;
+    }
+    .parameter-content {
+      display: flex;
+      align-items: center;
+      white-space: nowrap;
+      flex: 1;
+      overflow-y: auto;
+      .parameter-item {
+        text-align: center;
+        width: 164px;
+        .attribute {
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        flex-shrink: 0;
+        .configuration {
+          color: #999;
+        }
+      }
+    }
+    .icon-arrowRight {
+      font-size: 36px;
+      color: #999;
+    }
+  }
+
+  .at-float-layout .layout-header__title {
+    text-align: center;
+  }
+
+  .product-parameter {
+    height: 700px;
+    padding: 0 24px;
+    &-all {
+      margin-bottom: 24px;
+      height: 560px;
+      overflow-x: auto;
+      .product-parameter-item {
+        height: 80px;
+        .title {
+          color: #999;
+          width: 260px;
+          display: inline-block;
+        }
+        .content {
+          font-weight: 600;
+        }
+      }
+    }
   }
 
   .sp-goods-price .activity {
