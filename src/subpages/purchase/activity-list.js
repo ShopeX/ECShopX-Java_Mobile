@@ -138,7 +138,7 @@ function PurchaseActivityList() {
         Taro.navigateTo({ url: `/subpages/purchase/index?activity_id=${id}&enterprise_id=${enterpriseId}&pages_template_id=${pages_template_id}` })
       } else {
         Taro.navigateTo({
-          url: `/subpages/purchase/select-company-passcode?activity_id=${id}&enterprise_id=${enterpriseId}`
+          url: `/subpages/purchase/select-company-passcode?activity_id=${id}&enterprise_id=${enterpriseId}&pages_template_id=${pages_template_id}`
         })
       }
     } else {

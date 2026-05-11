@@ -25,7 +25,7 @@ function PurchaseAuthAccount() {
   const [account, setAccount] = useState('')
   const [authCode, setAuthCode] = useState('')
   const { params } = useRouter()
-  const { enterprise_id, activity_id, is_activity = '' } = params
+  const { enterprise_id, activity_id, is_activity = '', pages_template_id = '' } = params
   const { curEnterpriseLogo } = useSelector((state) => state.purchase)
   const { showModal } = useModal()
   const dispatch = useDispatch()
@@ -88,7 +88,7 @@ function PurchaseAuthAccount() {
       dispatch(updateEnterpriseId(_params.enterprise_id))
       setTimeout(() => {
         Taro.reLaunch({
-          url: `/subpages/purchase/index?is_redirt=1&activity_id=${activity_id || ''}&enterprise_id=${enterprise_id || ''}`
+          url: `/subpages/purchase/index?is_redirt=1&activity_id=${activity_id || ''}&enterprise_id=${enterprise_id || ''}&pages_template_id=${pages_template_id || ''}`
         })
       }, 700)
     } catch (e) {
@@ -103,7 +103,7 @@ function PurchaseAuthAccount() {
           contentAlign: 'center'
         })
         Taro.reLaunch({
-          url: `/subpages/purchase/index?is_redirt=1&activity_id=${activity_id || ''}&enterprise_id=${enterprise_id || ''}`
+          url: `/subpages/purchase/index?is_redirt=1&activity_id=${activity_id || ''}&enterprise_id=${enterprise_id || ''}&pages_template_id=${pages_template_id || ''}`
         })
       } else {
         showToast(e.message)

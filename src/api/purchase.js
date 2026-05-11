@@ -112,3 +112,11 @@ export function getPurchaseDistributor(params) {
   // 获取活动商品详情
   return req.get(`/user/enterprise/distributor`, params)
 }
+
+/**
+ * 内购活动首页店铺装修模版（path 传 pages_template_id，与 /employeepurchase/store-home-page/:id 一致）
+ */
+export function getPurchaseStoreHomePage(pages_template_id, params = {}) {
+  const id = encodeURIComponent(String(pages_template_id))
+  return req.get(`/employeepurchase/store-home-page/${id}`, params)
+}

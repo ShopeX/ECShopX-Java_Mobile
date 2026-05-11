@@ -31,7 +31,7 @@ function PurchasePasscodeAuth() {
   const enterprise_id = params?.enterprise_id
   const company_id = params?.company_id || enterprise_id
   const inviteFromRoute = params?.code || ''
-
+  const pages_template_id = params?.pages_template_id || ''
 
   const disabled = useMemo(() => !inviteCode.trim(), [inviteCode])
 
@@ -70,8 +70,8 @@ function PurchasePasscodeAuth() {
       //passphrase_user_verified   0 | 1   当前登录用户是否已在「该活动 + 该企业」下口令校验成功（服务端 Redis 标记）。未开口令或未登录恒为 0。
       let passphrase_user_verified = data?.passphrase_user_verified || 0
       if (passphrase_user_verified == 1) {
-        let url = `/subpages/purchase/index?is_redirt=1&activity_id=${activity_id || ''}&enterprise_id=${enterprise_id || ''}`
-        Taro.redirectTo({ url })
+        let url = `/subpages/purchase/index?is_redirt=1&activity_id=${activity_id || ''}&enterprise_id=${enterprise_id || ''}&pages_template_id=${pages_template_id || ''}`
+        Taro.reLaunch({ url })
         return
       }
       setLoading(false)
@@ -126,8 +126,8 @@ function PurchasePasscodeAuth() {
       S?.set(INVITE_ACTIVITY_ID, activity_id, true)
     }
 
-    let url = `/subpages/purchase/index?is_redirt=1&activity_id=${activity_id || ''}&enterprise_id=${enterprise_id || ''}`
-    Taro.redirectTo({ url })
+    let url = `/subpages/purchase/index?is_redirt=1&activity_id=${activity_id || ''}&enterprise_id=${enterprise_id || ''}&pages_template_id=${pages_template_id || ''}`
+    Taro.reLaunch({ url })
   }
   if (loading) {
     return <SpPage className='passcode-login-page'>
