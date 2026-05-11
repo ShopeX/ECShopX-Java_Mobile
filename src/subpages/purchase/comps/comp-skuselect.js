@@ -69,7 +69,7 @@ function resolvePurchaseLimitAmountLine(info, curItem) {
   if (limitFee == null || limitFee === '') return null
   const n = Number(limitFee) / 100
   if (Number.isNaN(n)) return null
-  return `限购金额：商品总额不超过 ¥${n.toFixed(2)}`
+  return ti('47ac6066.c8d3e2', [n.toFixed(2)])
 }
 
 const initialState = {
@@ -334,13 +334,13 @@ function PurchaseSkuSelect(props) {
           limitTxt = ti('47ac6066.21bb9b', [activityInfo.rule.day, limitNum])
         }
       } else if (activityType == 'seckill' || activityType == 'limited_time_sale') {
-        limitTxt = `（限购${limitNum}件）`
+        limitTxt = ti('47ac6066.244ae6', [limitNum])
       } else if (activityType == 'group') {
-        limitTxt = `（限购${limitNum}件）`
+        limitTxt = ti('47ac6066.244ae6', [limitNum])
       }
     }
     if (!limitTxt && limitNum != null && limitNum !== '') {
-      limitTxt = `（限购${limitNum}件）`
+      limitTxt = ti('47ac6066.244ae6', [limitNum])
     }
     if (limitNum) {
       max = parseInt(limitNum, 10)
@@ -381,7 +381,7 @@ function PurchaseSkuSelect(props) {
     })
     const confirmSelection = () => {
       if (!info.nospec && !curItem) {
-        showToast('请选择规格')
+        showToast($t('d95e19a2.4fd966'))
         return false
       }
       onChange(skuText, curItem)
@@ -404,7 +404,7 @@ function PurchaseSkuSelect(props) {
         {showLimits && (
           <View className='sp-sku-select-espier__limits' key={`purchase-sku-limits-${limitsKey}`}>
             <Text className='sp-sku-select-espier__limit-left'>
-              {limitQty != null ? `限购数量：限购 ${limitQty} 件` : ''}
+              {limitQty != null ? ti('47ac6066.f7a2b1', [limitQty]) : ''}
             </Text>
             <Text className='sp-sku-select-espier__limit-right'>
               {amountLine || ''}
@@ -424,11 +424,11 @@ function PurchaseSkuSelect(props) {
                 </Text>
               )}
             </View>
-            <Text className='sp-sku-select-espier__cart-label'>购物车</Text>
+            <Text className='sp-sku-select-espier__cart-label'>{$t('91cdd6e0.c017be')}</Text>
           </View>
           <View className='sp-sku-select-espier__btn-solid' onClick={onMain}>
             <Text className='sp-sku-select-espier__btn-text'>
-              {type == 'picker' ? '确定' : btnTxt}
+              {type == 'picker' ? $t('cd0f027b.38cf16') : btnTxt}
             </Text>
           </View>
         </View>
@@ -469,11 +469,11 @@ function PurchaseSkuSelect(props) {
                 'sp-sku-select-espier__selected-wrap--placeholder': !curItem
               })}
             >
-              <Text className='sp-sku-select-espier__selected-label'>已选：</Text>
+              <Text className='sp-sku-select-espier__selected-label'>{$t('47ac6066.7c9aea')}</Text>
               <Text className='sp-sku-select-espier__selected'>
                 {curItem && curItem.specItem
                   ? curItem.specItem.map((s) => s.specName).join(' ')
-                  : '请选择'}
+                  : $t('e7ecd058.708c9d')}
               </Text>
             </View>
           )}

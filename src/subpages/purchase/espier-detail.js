@@ -38,7 +38,7 @@ import entryLaunch from '@/utils/entryLaunch'
 import S from '@/spx'
 import { useNavigation } from '@/hooks'
 import { ACTIVITY_LIST } from '@/consts'
-import { $t } from '@/i18n'
+import { $t, ti, useTranslation } from '@/i18n'
 import { WgtFilm, WgtSlider, WgtWriting, WgtGoods, WgtHeading } from '@/pages/home/wgts'
 import CompActivityBar from './comps/comp-activitybar'
 import CompStore from './comps/comp-store'
@@ -131,7 +131,7 @@ function resolvePurchaseLimitAmountLine(info, curItem) {
   if (limitFee == null || limitFee === '') return null
   const n = Number(limitFee) / 100
   if (Number.isNaN(n)) return null
-  return `商品总额不超过 ¥${n.toFixed(2)}`
+  return ti('47ac6066.b8e9f0', [n.toFixed(2)])
 }
 
 /** 详情卡片「配送地址」一行展示 */
@@ -170,6 +170,7 @@ const initialState = {
 }
 
 function EspierDetail(props) {
+  const { i18n } = useTranslation()
   const pageRef = useRef()
   const { userInfo, address } = useSelector((state) => state.user)
   const { colorPrimary, openRecommend } = useSelector((state) => state.sys)
@@ -414,7 +415,7 @@ function EspierDetail(props) {
   )
   const purchaseLimitAmountLine = useMemo(
     () => (info ? resolvePurchaseLimitAmountLine(info, curItem) : null),
-    [info, curItem]
+    [info, curItem, i18n.language]
   )
   const showPurchaseLimits = purchaseLimitQty != null || !!purchaseLimitAmountLine
   const deliveryAddressLine = formatEspierDetailAddressLine(address)

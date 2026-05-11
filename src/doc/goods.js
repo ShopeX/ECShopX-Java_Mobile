@@ -256,7 +256,7 @@ export const GOODS_INFO = {
       const parts = Array.isArray(regions) ? regions : [regions]
       const regionText = parts.filter((x) => x != null && x !== '').join(' ').trim()
       if (regionText) {
-        res.push({ attribute_name: '产地', attribute_value_name: regionText })
+        res.push({ attribute_name: $t('a12c9ae6.2b6d31'), attribute_value_name: regionText })
       }
     }
     const list = item_params ?? itemParams
