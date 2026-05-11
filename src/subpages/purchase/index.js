@@ -59,7 +59,9 @@ const initialState = {
   selectType: 'picker',
   isOpened: false,
   posterModalOpen: false,
-  activityInfo: {}
+  activityInfo: {},
+  curItem: null,
+  skuText: ''
 }
 
 const { store } = configStore()
@@ -87,8 +89,17 @@ function Home() {
   const { openScanQrcode } = useSelector((state) => state.sys)
   const { setNavigationBarTitle } = useNavigation()
 
-  const { wgts, loading, info, skuPanelOpen, selectType, isOpened, posterModalOpen, activityInfo } =
-    state
+  const {
+    wgts,
+    loading,
+    info,
+    skuPanelOpen,
+    selectType,
+    isOpened,
+    posterModalOpen,
+    activityInfo,
+    curItem
+  } = state
 
   const dispatch = useDispatch()
   const { cartCount = 0 } = useSelector((state) => state.purchase)
