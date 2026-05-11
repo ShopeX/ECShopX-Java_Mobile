@@ -95,6 +95,12 @@ function PurchaseActivityList() {
       status: 'warm_up,ongoing'
     })
     const _list = pickBy(list, doc.purchase.ACTIVITY_ITEM)
+    // 如果只有一条数据，直接进入活动首页
+    if (total_count == 1 && is_redirt) {
+      try {
+        onClickChange(_list[0], 'redirectTo')
+      } catch (e) { }
+    }
     setState((draft) => {
       draft.activityList = [...draft.activityList, ..._list]
       if (pageIndex === 1) {
