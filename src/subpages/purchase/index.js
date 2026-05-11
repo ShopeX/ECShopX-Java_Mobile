@@ -151,11 +151,6 @@ function Home() {
     }
   }, [skuPanelOpen])
 
-  useDidShow(() => {
-    // 检查隐私协议是否变更或同意
-    checkPolicyChange()
-  })
-
   //是否可以分享亲友
   const isPurchaseShare = useMemo(() => {
     return !!(activityInfo?.is_employee && activityInfo?.if_relative_join)
@@ -272,15 +267,30 @@ function Home() {
   const fetchActivity = async (context = resolvePurchaseContext()) => {
     const { activity_id, enterprise_id } = context
     if (!activity_id || !enterprise_id) {
-      return
+      return setState((draft) => {
+        draft.activityInfo = {}
+      })
     }
     try {
       const data = await api.purchase.getEmployeeActivitydata({ activity_id, enterprise_id })
       setState((draft) => {
         draft.activityInfo = data
       })
-    } catch (e) {}
+    } catch (e) {
+      setState((draft) => {
+        draft.activityInfo = {}
+      })
+    }
   }
+
+  useDidShow(() => {
+    // 检查隐私协议是否变更或同意
+    checkPolicyChange()
+    ;(async () => {
+      const context = await ensurePurchaseContext()
+      await fetchActivity(context)
+    })()
+  })
 
   useShareAppMessage(async () => {
     return new Promise(async function (resolve) {

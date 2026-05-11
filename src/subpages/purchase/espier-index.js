@@ -72,18 +72,37 @@ function CartIndex() {
   const [activityInfo, setActivityInfo] = useState({})
   const [quotaSheetOpen, setQuotaSheetOpen] = useState(false)
   const [enterpriseName, setEnterpriseName] = useState('')
+  const activityId = purchase_share_info?.activity_id
+  const enterpriseId = purchase_share_info?.enterprise_id
 
-  useEffect(() => {
-    const activity_id = purchase_share_info?.activity_id
-    const enterprise_id = purchase_share_info?.enterprise_id
-    if (!activity_id || !enterprise_id) {
+  const loadActivityInfo = useCallback(async () => {
+    if (!activityId || !enterpriseId) {
       setActivityInfo({})
       return
     }
+    try {
+      const data = await api.purchase.getEmployeeActivitydata({
+        activity_id: activityId,
+        enterprise_id: enterpriseId
+      })
+      setActivityInfo(data || {})
+    } catch (e) {
+      setActivityInfo({})
+    }
+  }, [activityId, enterpriseId])
+
+  useEffect(() => {
     let cancelled = false
     ;(async () => {
+      if (!activityId || !enterpriseId) {
+        if (!cancelled) setActivityInfo({})
+        return
+      }
       try {
-        const data = await api.purchase.getEmployeeActivitydata({ activity_id, enterprise_id })
+        const data = await api.purchase.getEmployeeActivitydata({
+          activity_id: activityId,
+          enterprise_id: enterpriseId
+        })
         if (!cancelled) setActivityInfo(data || {})
       } catch (e) {
         if (!cancelled) setActivityInfo({})
@@ -92,7 +111,7 @@ function CartIndex() {
     return () => {
       cancelled = true
     }
-  }, [purchase_share_info?.activity_id, purchase_share_info?.enterprise_id])
+  }, [activityId, enterpriseId])
 
   useEffect(() => {
     const eid =
@@ -176,8 +195,8 @@ function CartIndex() {
   }, [isLogin])
 
   useDidShow(() => {
-    console.log('useDidShow', isLogin)
     if (isLogin) fetch()
+    loadActivityInfo()
   })
 
   const fetch = () => {

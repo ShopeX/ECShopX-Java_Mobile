@@ -11,6 +11,7 @@
  * fixed：固定在视口底部（配合页面内容区预留 padding-bottom）
  */
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import { useDidShow } from '@tarojs/taro'
 import { useSelector } from 'react-redux'
 import { View, Text } from '@tarojs/components'
 import { SpImage } from '@/components'
@@ -81,6 +82,10 @@ function CompPurchaseActionbar(props) {
   useEffect(() => {
     loadActivity()
   }, [loadActivity])
+
+  useDidShow(() => {
+    loadActivity()
+  })
 
   /** 与活动页一致：员工内购且开启亲友分享时才展示「分享亲友」 */
   const canShowShareFriend = useMemo(() => {
