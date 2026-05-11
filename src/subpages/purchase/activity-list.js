@@ -143,19 +143,8 @@ function PurchaseActivityList() {
       }
     } else {
       dispatch(updateIsPasscodeLogin(false))
-      let redirectUrl = ''
-      if (authType == 'account') {
-        redirectUrl = `/subpages/purchase/select-company-account?activity_id=${id}&enterprise_id=${enterpriseId}`
-      } else if (authType == 'email') {
-        redirectUrl = `/subpages/purchase/select-company-email?activity_id=${id}&enterprise_id=${enterpriseId}`
-      } else if (authType == 'mobile' || authType == 'qr_code') {
-        redirectUrl = `/subpages/purchase/select-company-phone?activity_id=${id}&enterprise_id=${enterpriseId}`
-      } else if (authType == 'code') {
-        redirectUrl = `/subpages/purchase/select-company-passcode?activity_id=${id}&enterprise_id=${enterpriseId}`
-      }
-      Taro.navigateTo({ url: redirectUrl })
+      Taro.navigateTo({ url: `/subpages/purchase/index?activity_id=${id}&enterprise_id=${enterpriseId}&pages_template_id=${pages_template_id}` })
     }
-
   }
 
   const handlePriceConfig = (val) => {

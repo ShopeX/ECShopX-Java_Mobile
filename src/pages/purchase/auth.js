@@ -13,7 +13,7 @@ import entryLaunch from '@/utils/entryLaunch'
 import api from '@/api'
 import { INVITE_ACTIVITY_ID } from '@/consts'
 import { useImmer } from 'use-immer'
-import { useDispatch } from 'react-redux'
+import { useSelector, useDispatch } from 'react-redux'
 import {
   updateInviteCode,
   updateEnterpriseId,
@@ -21,7 +21,9 @@ import {
   updateCurEnterpriseName,
   updateEnterpriselogo,
   updateCurActivityInfo,
-  updateIsPasscodeLogin
+  updateIsPasscodeLogin,
+  updatePurchaseShareInfo,
+  updatePersistPurchaseShareInfo
 } from '@/store/slices/purchase'
 
 import './auth.scss'
@@ -40,6 +42,7 @@ function PurchaseAuth() {
 
   const [policyModal, setPolicyModal] = useState(false)
   const [checked, setChecked] = useState(false)
+  const { userInfo = {} } = useSelector((state) => state.user)
   const dispatch = useDispatch()
   const codeRef = useRef()
   const [state, setState] = useImmer(initialState)
@@ -147,12 +150,12 @@ function PurchaseAuth() {
   // 企业二维码扫码登录
   const getQrcodeEid = async () => {
     try {
-      const { id, enterprise_id, code } = await entryLaunch.getRouteParams()
+      const { id, activity_id, aid, enterprise_id, eid, code } = await entryLaunch.getRouteParams()
       //亲友扫码
       setState((draft) => {
         draft.invite_code = code || ''
-        draft.activity_id = id || ''
-        draft.enterprise_id = enterprise_id || ''
+        draft.activity_id = activity_id || id || aid || ''
+        draft.enterprise_id = enterprise_id || eid || ''
       })
     } catch (error) {
 
@@ -202,9 +205,56 @@ function PurchaseAuth() {
       const { token } = await api.wx.newlogin(sparams)
       setToken(token)
       showToast('验证成功')
-      setTimeout(() => {
-        Taro.reLaunch({ url: `/subpages/purchase/activity-list?is_redirt=1` })
-      }, 700)
+      if (invite_code) {
+        await enterInviteActivity(700)
+      } else {
+        setTimeout(() => {
+          Taro.reLaunch({ url: `/subpages/purchase/activity-list?is_redirt=1` })
+        }, 700)
+      }
+    }
+  }
+
+
+  const buildInviteActivityUrl = () => {
+    return `/subpages/purchase/index?is_redirt=1&activity_id=${activity_id || ''}&enterprise_id=${enterprise_id || ''}`
+  }
+
+  const prepareInviteActivity = async () => {
+    if (!enterprise_id) return
+    const { distributor_id } = await api.purchase.getPurchaseDistributor({ enterprise_id })
+    dispatch(updateCurDistributorId(distributor_id))
+    dispatch(updateEnterpriseId(enterprise_id))
+    dispatch(updatePurchaseShareInfo({ activity_id, enterprise_id }))
+    dispatch(updatePersistPurchaseShareInfo({ activity_id, enterprise_id }))
+  }
+
+  const enterInviteActivity = async (delay = 0) => {
+    await prepareInviteActivity()
+    const redirect = () => {
+      Taro.reLaunch({ url: buildInviteActivityUrl() })
+    }
+    if (delay) {
+      setTimeout(redirect, delay)
+    } else {
+      redirect()
+    }
+  }
+
+  const validateRelativeBind = async () => {
+    try {
+      await api.purchase.getEmployeeRelativeBind({ invite_code, showError: false })
+      showToast('验证成功')
+      await enterInviteActivity(700)
+    } catch (e) {
+      Taro.showModal({
+        content: e.message || e,
+        confirmText: '我知道了',
+        showCancel: false,
+        success: async () => {
+          await enterInviteActivity()
+        }
+      })
     }
   }
 
@@ -212,6 +262,15 @@ function PurchaseAuth() {
   const handlePasscodeLandingStart = () => {
     if (!checked) {
       setPolicyModal(true)
+      return
+    }
+    if (invite_code) {
+      if (!isLogin) return
+      if (userInfo?.is_relative) {
+        enterInviteActivity()
+      } else if (!isNewUser) {
+        validateRelativeBind()
+      }
       return
     }
     let redirectUrl
