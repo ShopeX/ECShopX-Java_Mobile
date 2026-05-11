@@ -447,6 +447,7 @@ function Home() {
         open={skuPanelOpen}
         type={selectType}
         info={info}
+        selectedItem={curItem}
         onClose={() => {
           setState((draft) => {
             draft.skuPanelOpen = false

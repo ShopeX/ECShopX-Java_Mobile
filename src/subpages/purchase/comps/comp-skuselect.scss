@@ -276,7 +276,7 @@
   padding-bottom: calc(24px + env(safe-area-inset-bottom));
 }
 
-/* 限购：左数量、右金额（与稿一致双列） */
+/* 限购：左数量、右金额 */
 .sp-sku-select-espier__limits {
   display: flex;
   flex-direction: row;
@@ -290,14 +290,20 @@
 
 .sp-sku-select-espier__limit-left,
 .sp-sku-select-espier__limit-right {
-  flex: 1;
   min-width: 0;
   font-size: 24px;
   line-height: 1.4;
   color: #999999;
+  word-break: normal;
+  white-space: nowrap;
+}
+
+.sp-sku-select-espier__limit-left {
+  flex: 0 0 auto;
 }
 
 .sp-sku-select-espier__limit-right {
+  flex: 0 1 auto;
   text-align: right;
 }
 

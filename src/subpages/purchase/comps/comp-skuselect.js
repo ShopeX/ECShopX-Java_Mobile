@@ -16,7 +16,7 @@ import { useAsyncCallback } from '@/hooks'
 import { classNames, showToast, navigateTo } from '@/utils'
 import './comp-skuselect.scss'
 
-function resolvePurchaseLimitQty(info, curItem) {
+function resolvePurchaseLimitQty(info, curItem, type) {
   if (!info) return null
   const {
     activityType,
@@ -27,25 +27,44 @@ function resolvePurchaseLimitQty(info, curItem) {
     nospec,
     purchaseLimitNum
   } = info
+  let qty = null
   if (activityType === 'limited_buy' && activityInfo?.rule?.limit != null) {
-    return activityInfo.rule.limit
+    qty = activityInfo.rule.limit
+  } else if (activityType === 'seckill' || activityType === 'limited_time_sale') {
+    qty = nospec ? limitNum : curItem?.limitNum ?? limitNum
+  } else if (activityType === 'group') {
+    qty = 1
+  } else if (!nospec && curItem != null) {
+    const skuL = curItem.limitNum
+    if (skuL != null && skuL !== '') {
+      qty = skuL
+    }
   }
-  if (activityType === 'seckill' || activityType === 'limited_time_sale') {
-    if (nospec) return limitNum
-    return curItem?.limitNum ?? limitNum
+  if (qty == null || qty === '') {
+    qty = purchaseLimitNum ?? purlimitByCart ?? purlimitByFastbuy ?? limitNum
   }
-  if (activityType === 'group') return 1
-  const v = purchaseLimitNum ?? purlimitByCart ?? purlimitByFastbuy ?? limitNum
-  return v != null && v !== '' ? v : null
+  if (type == 'addcart' && purlimitByCart != null && purlimitByCart !== '') {
+    qty = purlimitByCart
+  }
+  if (type == 'fastbuy' && purlimitByFastbuy != null && purlimitByFastbuy !== '') {
+    qty = purlimitByFastbuy
+  }
+  return qty != null && qty !== '' ? qty : null
 }
 
-function resolvePurchaseLimitAmountLine(info) {
+function resolvePurchaseLimitAmountLine(info, curItem) {
   if (!info) return null
-  const limitFee =
-    info.activityInfo?.fee?.limit_fee ??
-    info.fee?.limit_fee ??
-    info.activityInfo?.limit_fee ??
-    info.purchaseAmountLimitFee
+  let limitFee
+  if (!info.nospec && curItem != null) {
+    limitFee = curItem.limitFee ?? curItem.limit_fee
+  }
+  if (limitFee == null || limitFee === '') {
+    limitFee =
+      info.activityInfo?.fee?.limit_fee ??
+      info.fee?.limit_fee ??
+      info.activityInfo?.limit_fee ??
+      info.purchaseAmountLimitFee
+  }
   if (limitFee == null || limitFee === '') return null
   const n = Number(limitFee) / 100
   if (Number.isNaN(n)) return null
@@ -66,6 +85,7 @@ function PurchaseSkuSelect(props) {
     open = false,
     onClose = () => {},
     onChange = () => {},
+    selectedItem = null,
     type,
     hideInputNumber = false
   } = props
@@ -78,12 +98,20 @@ function PurchaseSkuSelect(props) {
 
   useEffect(() => {
     if (info && !info.nospec) {
-      init()
+      init({ selectedItem, commit: true })
     }
   }, [info])
 
-  const init = () => {
+  useEffect(() => {
+    if (open && info && !info.nospec) {
+      init({ selectedItem })
+    }
+  }, [open])
+
+  const init = (options = {}) => {
+    const { selectedItem: committedItem = null, commit = false } = options
     const { skuList, specItems } = info
+    skuDictRef.current = {}
     specItems.forEach((item) => {
       const key = item.specItem.map((spec) => spec.specId).join('_')
       skuDictRef.current[key] = item
@@ -92,14 +120,22 @@ function PurchaseSkuSelect(props) {
       (item) => item.store > 0 && ['onsale', 'offline_sale'].includes(item.approveStatus)
     )
     let selection = Array(specItems.length).fill(null)
-    if (defaultSpecItem) {
+    const committedSpecItem =
+      committedItem?.itemId != null
+        ? specItems.find((item) => String(item.itemId) === String(committedItem.itemId))
+        : null
+    const committedSelection = committedSpecItem?.specItem?.map((item) => item.specId)
+    if (committedSelection && skuDictRef.current[committedSelection.join('_')]) {
+      selection = committedSelection
+    } else if (defaultSpecItem) {
       selection = defaultSpecItem.specItem.map((item) => item.specId)
     }
 
-    calcDisabled(selection)
+    calcDisabled(selection, { commit })
   }
 
-  const calcDisabled = (selection) => {
+  const calcDisabled = (selection, options = {}) => {
+    const { commit = false } = options
     const { skuList } = info
     const disabledSet = new Set()
     const makeReg = (sel, row, val) => {
@@ -141,8 +177,9 @@ function PurchaseSkuSelect(props) {
       draft.curItem = curItem
       draft.skuText = skuText
     })
-
-    onChange(skuText, curItem)
+    if (commit) {
+      onChange(skuText, curItem)
+    }
   }
 
   const handleSelectSku = ({ specId }, idx) => {
@@ -281,36 +318,25 @@ function PurchaseSkuSelect(props) {
   }
 
   const computePurchaseQtyLimits = () => {
-    const { nospec, activityType, activityInfo, purlimitByCart, purlimitByFastbuy } = info
-    let limitNum = null
+    const { nospec, activityType, activityInfo } = info
+    let limitNum = resolvePurchaseLimitQty(info, curItem, type)
     let limitTxt = ''
     let max = 1
     if (activityType) {
       if (activityType == 'limited_buy') {
-        limitNum = activityInfo.rule.limit
         if (activityInfo.rule.day == 0) {
           limitTxt = `（限购${limitNum}件）`
         } else {
           limitTxt = `（每${activityInfo.rule.day}天，限购${limitNum}件）`
         }
       } else if (activityType == 'seckill' || activityType == 'limited_time_sale') {
-        if (nospec) {
-          limitNum = info.limitNum
-        } else if (curItem) {
-          limitNum = curItem.limitNum
-        }
         limitTxt = `（限购${limitNum}件）`
       } else if (activityType == 'group') {
-        limitNum = 1
+        limitTxt = `（限购${limitNum}件）`
       }
     }
-    if (type == 'addcart' && purlimitByCart) {
-      limitNum = purlimitByCart
-      limitTxt = `（限购${purlimitByCart}件）`
-    }
-    if (type == 'fastbuy' && purlimitByFastbuy) {
-      limitNum = purlimitByFastbuy
-      limitTxt = `（限购${purlimitByFastbuy}件）`
+    if (!limitTxt && limitNum != null && limitNum !== '') {
+      limitTxt = `（限购${limitNum}件）`
     }
     if (limitNum) {
       max = parseInt(limitNum, 10)
@@ -338,18 +364,30 @@ function PurchaseSkuSelect(props) {
     )
   }
 
-  const renderFooter = () => {
-    const limitQty = resolvePurchaseLimitQty(info, curItem)
-    const amountLine = resolvePurchaseLimitAmountLine(info)
+  const renderSkuFooter = () => {
+    const limitQty = resolvePurchaseLimitQty(info, curItem, type)
+    const amountLine = resolvePurchaseLimitAmountLine(info, curItem)
     const showLimits = limitQty != null || !!amountLine
+    const limitsKey = curItem?.itemId ?? curItem?.item_id ?? 'none'
     let btnTxt = '确定'
     Object.keys(BUY_TOOL_BTNS()).forEach((key) => {
       if (BUY_TOOL_BTNS()[key].key == type) {
         btnTxt = BUY_TOOL_BTNS()[key].title
       }
     })
+    const confirmSelection = () => {
+      if (!info.nospec && !curItem) {
+        showToast('请选择规格')
+        return false
+      }
+      onChange(skuText, curItem)
+      return true
+    }
     const onMain = () => {
       if (type == 'picker') {
+        if (!confirmSelection()) {
+          return
+        }
         onClose()
       } else if (type == 'addcart') {
         addToCart()
@@ -360,7 +398,7 @@ function PurchaseSkuSelect(props) {
     return (
       <View className='sp-sku-select-espier__footer-inner'>
         {showLimits && (
-          <View className='sp-sku-select-espier__limits'>
+          <View className='sp-sku-select-espier__limits' key={`purchase-sku-limits-${limitsKey}`}>
             <Text className='sp-sku-select-espier__limit-left'>
               {limitQty != null ? `限购数量：限购 ${limitQty} 件` : ''}
             </Text>
@@ -405,7 +443,7 @@ function PurchaseSkuSelect(props) {
       }
       open={open}
       onClose={onClose}
-      renderFooter={renderFooter()}
+      renderFooter={renderSkuFooter}
     >
       <View className='sp-sku-select-espier__header'>
         <SpImage
