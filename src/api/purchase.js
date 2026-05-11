@@ -120,3 +120,8 @@ export function getPurchaseStoreHomePage(pages_template_id, params = {}) {
   const id = encodeURIComponent(String(pages_template_id))
   return req.get(`/employeepurchase/store-home-page/${id}`, params)
 }
+
+/** 内购资格校验（当前用户）：白名单员工或有效家属 */
+export function getInternalSaleEligibility(params) {
+  return req.get('/employeepurchase/internal-sale-eligibility', params)
+}

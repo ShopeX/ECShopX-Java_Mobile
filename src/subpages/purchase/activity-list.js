@@ -9,7 +9,7 @@ import { useImmer } from 'use-immer'
 import { View, Text, ScrollView } from '@tarojs/components'
 import dayjs from 'dayjs'
 import api from '@/api'
-import { classNames, pickBy, getDistributorId, VERSION_IN_PURCHASE } from '@/utils'
+import { classNames, pickBy, getDistributorId, VERSION_IN_PURCHASE, showToast } from '@/utils'
 import { updateUserInfo } from '@/store/slices/user'
 import { updateActivityInfo, updateCount, updateIsPasscodeLogin } from '@/store/slices/purchase'
 import doc from '@/doc'
@@ -117,6 +117,19 @@ function PurchaseActivityList() {
       passphraseUserVerified,
       authType
     } = item
+    try {
+      const eligibility = await api.purchase.getInternalSaleEligibility({
+        activity_id: id,
+        enterprise_id: enterpriseId
+      })
+      if (Number(eligibility?.internal_sale_eligible) !== 1) {
+        showToast('无内购资格')
+        return
+      }
+    } catch (e) {
+      showToast(e?.message || '资格校验失败')
+      return
+    }
     const _priceDisplayConfig = handlePriceConfig(priceDisplayConfig)
     dispatch(
       updateActivityInfo({
