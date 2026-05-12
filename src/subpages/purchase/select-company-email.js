@@ -3,7 +3,7 @@
  * See LICENSE file for license details.
  */
 import Taro, { useRouter } from '@tarojs/taro'
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { View, Text } from '@tarojs/components'
 import { useLogin, useModal } from '@/hooks'
@@ -27,6 +27,7 @@ function PurchaseAuthEmail() {
   const [countdown, setCountdown] = useState(0)
   const [enterpriseName, setEnterpriseName] = useState('')
   const [activityBg, setActivityBg] = useState('')
+  const sendCodeLockRef = useRef(false)
   const { showModal } = useModal()
   const dispatch = useDispatch()
   const { params } = useRouter()
@@ -81,7 +82,7 @@ function PurchaseAuthEmail() {
   }
 
   const handleSendCode = async () => {
-    if (sendDisabled) return
+    if (sendDisabled || sendCodeLockRef.current) return
     const nextEmail = email.trim()
     if (!nextEmail) {
       showToast('请输入电子邮箱')
@@ -92,6 +93,7 @@ function PurchaseAuthEmail() {
       showToast('请输入正确的邮箱')
       return
     }
+    sendCodeLockRef.current = true
     try {
       const sendParams = { email: nextEmail, enterprise_id }
       const { status } = await api.purchase.getEmailCode(sendParams)
@@ -103,6 +105,8 @@ function PurchaseAuthEmail() {
       }
     } catch (e) {
       showToast(e?.message || '发送失败')
+    } finally {
+      sendCodeLockRef.current = false
     }
   }
 
