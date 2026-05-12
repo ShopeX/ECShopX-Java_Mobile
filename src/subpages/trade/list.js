@@ -3,11 +3,10 @@
  * See LICENSE file for license details.
  */
 import React, { useEffect, useRef } from 'react'
-import { useSelector } from 'react-redux'
 import { useImmer } from 'use-immer'
 import Taro, { useRouter, useDidShow } from '@tarojs/taro'
 import { View, ScrollView } from '@tarojs/components'
-import { SpPage, SpScrollView, SpImage, SpTradeItem } from '@/components'
+import { SpPage, SpScrollView } from '@/components'
 import { SpTagBar } from '@/subpages/components'
 import api from '@/api'
 import doc from '@/doc'
@@ -15,7 +14,6 @@ import { pickBy } from '@/utils'
 import { tLang } from '@/utils/i18nLang'
 import CompTradeItem from './comps/comp-tradeitem'
 import CompTrackDetail from './comps/comp-track-detail'
-import CompTrackType from './comps/comp-trade-type'
 import { useNavigation } from '@/hooks'
 import './list.scss'
 
@@ -30,7 +28,6 @@ function buildTradeStatusTabs() {
 
 const initialState = {
   tradeStatus: buildTradeStatusTabs(),
-  typeVal: '0',
   status: '0',
   tradeList: [],
   refresherTriggered: false,
@@ -44,8 +41,6 @@ function TradeList(props) {
   const {
     tradeStatus,
     status,
-    tradeType,
-    typeVal,
     tradeList,
     refresherTriggered,
     trackDetailList,
@@ -106,7 +101,7 @@ function TradeList(props) {
       draft.tradeList = []
     })
     tradeRef.current.reset()
-  }, [status, typeVal])
+  }, [status])
 
   const fetch = async ({ pageIndex, pageSize }) => {
     const { is_rate } = tradeStatus.find((item) => item.value == status)
@@ -115,10 +110,8 @@ function TradeList(props) {
       pageSize,
       order_type: 'normal',
       status,
-      is_rate,
-      order_class: typeVal == '1' ? 'employee_purchase' : 'normal'
+      is_rate
     }
-    // params.order_class = typeVal == '1' ? 'employee_purchase' : 'normal'
 
     const {
       list,
@@ -140,12 +133,6 @@ function TradeList(props) {
     })
   }
 
-  const onChangeTradeType = (e) => {
-    setState((draft) => {
-      draft.typeVal = e
-    })
-  }
-
   const onRefresherRefresh = () => {
     setState((draft) => {
       draft.refresherTriggered = true
@@ -159,7 +146,6 @@ function TradeList(props) {
 
   return (
     <SpPage scrollToTopBtn className='page-trade-list'>
-      <CompTrackType value={typeVal} onChange={onChangeTradeType} />
       <SpTagBar list={tradeStatus} value={status} onChange={onChangeTradeState} />
       <ScrollView
         className='list-scroll-container'
