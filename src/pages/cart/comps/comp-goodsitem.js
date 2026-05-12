@@ -25,7 +25,7 @@ function getDeleteBtnWidthPx() {
 }
 
 const initialState = {
-  localNum: 0
+  localNum: null
 }
 function CompGoodsItem(props) {
   const {
@@ -38,6 +38,7 @@ function CompGoodsItem(props) {
     onDelete = () => {},
     onChange = () => {},
     onClickImgAndTitle = () => {},
+    inputMax,
     /** 当前行标识（如 cart_id），与购物车页 openSwipeCartId 联动，实现同时只展开一行删除 */
     swipeRowId,
     openSwipeCartId,
@@ -153,11 +154,23 @@ function CompGoodsItem(props) {
     return null
   }
 
-  const onChangeInputNumber = (e) => {
+  const onChangeInputNumber = async (e) => {
+    const prevNum = info.num
     setState((draft) => {
       draft.localNum = e
     })
-    onChange(e)
+    try {
+      const result = await onChange(e)
+      if (result === false) {
+        setState((draft) => {
+          draft.localNum = prevNum
+        })
+      }
+    } catch (error) {
+      setState((draft) => {
+        draft.localNum = prevNum
+      })
+    }
   }
 
   const { price, activity_price, member_price, package_price } = info
@@ -182,6 +195,12 @@ function CompGoodsItem(props) {
       limitTxt = `每${info?.limitedBuy?.rule.day}天，限购${limitNum}件`
     }
   }
+  const inputMaxNum =
+    inputMax != null && inputMax !== ''
+      ? inputMax
+      : info?.limitedBuy
+        ? info?.limitedBuy?.limit_buy
+        : info.store
 
   const rowBody = (
     <View className='comp-goodsitem'>
@@ -252,8 +271,8 @@ function CompGoodsItem(props) {
             </View>
             {isShowAddInput ? (
               <SpInputNumber
-                value={info.num}
-                max={parseInt(info?.limitedBuy ? info?.limitedBuy?.limit_buy : info.store)}
+                value={localNum ?? info.num}
+                max={parseInt(inputMaxNum, 10)}
                 min={Number(info.start_num) > 0 ? Number(info.start_num) : 1}
                 onChange={onChangeInputNumber}
               />

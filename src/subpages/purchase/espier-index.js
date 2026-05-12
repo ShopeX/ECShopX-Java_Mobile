@@ -3,7 +3,7 @@
  * See LICENSE file for license details.
  */
 import Taro, { getCurrentInstance, useDidShow } from '@tarojs/taro'
-import React, { useEffect, useState, useMemo, useCallback } from 'react'
+import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { View, Text } from '@tarojs/components'
 import { AtButton } from 'taro-ui'
@@ -12,7 +12,7 @@ import qs from 'qs'
 import api from '@/api'
 import doc from '@/doc'
 import { navigateTo, pickBy, throttle, getDistributorId, showToast } from '@/utils'
-import { useLogin, useDepChange, useDebounce } from '@/hooks'
+import { useLogin, useDepChange } from '@/hooks'
 import {
   fetchCartList,
   deleteCartItem,
@@ -26,7 +26,8 @@ import {
   SpDefault,
   SpCheckboxNew,
   SpPrivacyModal,
-  SpPurchaseEnterpriseBar
+  SpPurchaseEnterpriseBar,
+  SpLoading
 } from '@/components'
 import CompGoodsItem from '@/pages/cart/comps/comp-goodsitem'
 import CompPurchaseNav from '@/pages/purchase/comps/comp-purchase-nav'
@@ -36,7 +37,33 @@ import './espier-index.scss'
 
 const initialState = {
   current: 0, // 0:普通商品  1:跨境商品
-  policyModal: false // 隐私弹框
+  policyModal: false, // 隐私弹框
+  cartUpdating: false
+}
+
+function toPositiveInt(value) {
+  const n = parseInt(value, 10)
+  return Number.isNaN(n) || n <= 0 ? null : n
+}
+
+function toNonNegativeInt(value) {
+  const n = parseInt(value, 10)
+  return Number.isNaN(n) || n < 0 ? null : n
+}
+
+function resolvePurchaseCartItemMax(item = {}) {
+  const stock = toNonNegativeInt(item.store)
+  const limitNum = toPositiveInt(item.limit_num ?? item.limitNum)
+  const currentNum = toNonNegativeInt(item.num) || 0
+  if (!limitNum) {
+    return stock != null ? Math.max(currentNum, stock) : 999999
+  }
+
+  const aggregateNum = toNonNegativeInt(item.aggregate_num ?? item.aggregateNum) || 0
+  const limitRemain = Math.max(0, limitNum - aggregateNum)
+  const limitMax = Math.max(currentNum, limitRemain)
+  const stockMax = stock != null ? Math.min(stock, limitMax) : limitMax
+  return Math.max(currentNum, stockMax)
 }
 
 function CartIndex() {
@@ -52,7 +79,8 @@ function CartIndex() {
   const router = $instance?.router
 
   const [state, setState] = useImmer(initialState)
-  const { current, policyModal } = state
+  const { current, policyModal, cartUpdating } = state
+  const cartUpdatingRef = useRef(false)
 
   const { colorPrimary } = useSelector((state) => state.sys)
   const {
@@ -201,7 +229,6 @@ function CartIndex() {
 
   const getCartList = async () => {
     const { activity_id, enterprise_id } = purchase_share_info
-    Taro.showLoading({ title: '' })
     const { type = 'distributor' } = router?.params || {}
     const params = {
       shop_type: type,
@@ -212,7 +239,6 @@ function CartIndex() {
       fetchCartList({ ...params, distributor_id: curDistributorId ?? getDistributorId() })
     )
     await dispatch(updateCount(params))
-    Taro.hideLoading()
   }
 
   const resolveActiveGroup = () => {
@@ -280,7 +306,6 @@ function CartIndex() {
 
   const onChangeGoodsIsCheck = async (item, type, checked) => {
     const { activity_id, enterprise_id } = purchase_share_info
-    Taro.showLoading({ title: '' })
     let parmas = { is_checked: checked, activity_id, enterprise_id }
     if (type === 'all') {
       const cartIds = item.list.map((item) => item.cart_id)
@@ -312,14 +337,42 @@ function CartIndex() {
     getCartList()
   }
 
-  const onChangeCartGoodsItem = useDebounce(async (item, num) => {
+  const onChangeCartGoodsItem = async (item, num) => {
     const { activity_id, enterprise_id } = purchase_share_info
     console.log(`onChangeCartGoodsItem:`, num)
-    let { shop_id, cart_id } = item
+    const { shop_id, cart_id } = item
+    if (cartUpdatingRef.current) {
+      return false
+    }
+    const nextNum = parseInt(num, 10)
+    const max = resolvePurchaseCartItemMax(item)
+    if (Number.isNaN(nextNum) || nextNum == item.num) return true
+    if (nextNum > max) {
+      const limitNum = toPositiveInt(item.limit_num ?? item.limitNum)
+      showToast(limitNum ? `该商品限购${limitNum}件` : '库存不足')
+      return false
+    }
     const { type = 'distributor' } = router?.params
-    await dispatch(updateCartItemNum({ shop_id, cart_id, num, type, activity_id, enterprise_id }))
-    getCartList()
-  }, 200)
+    cartUpdatingRef.current = true
+    setState((draft) => {
+      draft.cartUpdating = true
+    })
+    try {
+      await dispatch(
+        updateCartItemNum({ shop_id, cart_id, num, type, activity_id, enterprise_id })
+      ).unwrap()
+      await getCartList()
+      return true
+    } catch (e) {
+      showToast(e?.message || '更新购物车失败')
+      return false
+    } finally {
+      cartUpdatingRef.current = false
+      setState((draft) => {
+        draft.cartUpdating = false
+      })
+    }
+  }
 
   const onClickImgAndTitle = async (item) => {
     Taro.navigateTo({
@@ -447,6 +500,7 @@ function CartIndex() {
                                 <CompGoodsItem
                                   info={c_sitem}
                                   isPurchase
+                                  inputMax={resolvePurchaseCartItemMax(c_sitem)}
                                   onDelete={onDeleteCartGoodsItem.bind(this, c_sitem)}
                                   onChange={onChangeCartGoodsItem.bind(this, c_sitem)}
                                   onClickImgAndTitle={onClickImgAndTitle.bind(this, c_sitem)}
@@ -584,6 +638,12 @@ function CartIndex() {
         onShare={onActionBarShare}
         onQuota={onActionBarQuota}
       />
+
+      {cartUpdating && (
+        <View className='page-cart-index__loading-mask'>
+          <SpLoading />
+        </View>
+      )}
     </SpPage>
   )
 }
