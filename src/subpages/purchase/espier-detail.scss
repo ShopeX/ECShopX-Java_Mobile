@@ -2,11 +2,13 @@
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
  */
-.page-item-espierdetail {
+.page-item-purchase-espierdetail {
   /* 底部圆角条由工具栏自身白底+阴影承担 */
   .sp-page__footer {
     background: transparent;
     box-shadow: none;
+    height: auto!important;
+    padding-bottom: 0!important;
   }
 
   .sp-page__body-children {

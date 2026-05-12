@@ -435,7 +435,7 @@ function EspierDetail(props) {
 
   return (
     <SpPage
-      className='page-item-espierdetail'
+      className='page-item-purchase-espierdetail'
       scrollToTopBtn
       isDefault={isDefault}
       defaultMsg={defaultMsg}
