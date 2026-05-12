@@ -151,7 +151,7 @@ function PurchaseSkuSelect(props) {
   }
 
   const calcDisabled = (selection, options = {}) => {
-    const { commit = false } = options
+    const { commit = false, resetNum = false } = options
     const { skuList } = info
     const disabledSet = new Set()
     const makeReg = (sel, row, val) => {
@@ -190,6 +190,9 @@ function PurchaseSkuSelect(props) {
       : $t('46dc5ce5.4fd966')
 
     setState((draft) => {
+      if (resetNum) {
+        draft.num = 1
+      }
       const max = resolvePurchaseQtyMax(info, curItem, type)
       if (!Number.isNaN(max) && Number(draft.num) > max) {
         draft.num = max
@@ -211,7 +214,7 @@ function PurchaseSkuSelect(props) {
         draft.selection[idx] = selection[idx] == specId ? null : specId
       },
       ({ selection }) => {
-        calcDisabled(selection)
+        calcDisabled(selection, { resetNum: true })
       }
     )
   }
