@@ -11,7 +11,6 @@ import { View, Text } from '@tarojs/components'
 import { SpFloatLayout, SpImage, SpInputNumber, SpGoodsPrice } from '@/components'
 import { addCart, updateCount } from '@/store/slices/purchase'
 import { BUY_TOOL_BTNS } from '@/consts'
-import api from '@/api'
 import { useAsyncCallback } from '@/hooks'
 import { classNames, showToast, navigateTo } from '@/utils'
 import { useTranslation, $t, ti } from '@/i18n'
@@ -287,61 +286,6 @@ function PurchaseSkuSelect(props) {
     Taro.hideLoading()
   }
 
-  const fastBuy = async () => {
-    const { nospec } = info
-    if (!nospec && !curItem) {
-      showToast($t('d95e19a2.4fd966'))
-      return
-    }
-    Taro.showLoading({ title: '' })
-    onClose()
-    const { activity_id, enterprise_id } = purchase_share_info
-    const { distributorId, activityType, activityInfo } = info
-    let _activity_id = activity_id
-    let _enterprise_id = enterprise_id
-    if (router?.params.activity_id && router?.params.enterprise_id) {
-      _activity_id = router?.params.activity_id
-      _enterprise_id = router?.params.enterprise_id
-    }
-
-    const itemId = curItem ? curItem.itemId : info.itemId
-    await api.purchase.addPurchaseCart(
-      {
-        item_id: curItem ? curItem.itemId : info.itemId,
-        num,
-        distributor_id: distributorId,
-        activity_id: _activity_id,
-        enterprise_id: _enterprise_id,
-        cart_type: 'fastbuy'
-      },
-      !!info.point
-    )
-    let url = !!info.point
-      ? '/subpages/pointshop/espier-checkout?cart_type=fastbuy&shop_id=0'
-      : `/subpages/purchase/espier-checkout?cart_type=fastbuy&shop_id=${distributorId}`
-    if (activityType == 'seckill' || activityType === 'limited_time_sale') {
-      const { seckill_id } = activityInfo
-      const { ticket } = await api.item.seckillCheck({
-        item_id: itemId,
-        seckill_id: seckill_id,
-        num
-      })
-      url += `&type=${activityType}&seckill_id=${seckill_id}&ticket=${ticket}`
-    } else if (activityType == 'group') {
-      const { groups_activity_id } = activityInfo
-      url += `&type=${activityType}&group_id=${groups_activity_id}`
-    }
-
-    if (router?.params.activity_id && router?.params.enterprise_id) {
-      url += `&activity_id=${_activity_id}&enterprise_id=${_enterprise_id}`
-    }
-
-    Taro.hideLoading()
-    Taro.navigateTo({
-      url
-    })
-  }
-
   const computePurchaseQtyLimits = () => {
     const { nospec, activityType, activityInfo } = info
     let limitNum = resolvePurchaseLimitQty(info, curItem, type)
@@ -400,25 +344,12 @@ function PurchaseSkuSelect(props) {
         btnTxt = BUY_TOOL_BTNS()[key].title
       }
     })
-    const confirmSelection = () => {
+    const onMain = () => {
       if (!info.nospec && !curItem) {
         showToast($t('d95e19a2.4fd966'))
-        return false
+        return
       }
-      onChange(skuText, curItem)
-      return true
-    }
-    const onMain = () => {
-      if (type == 'picker') {
-        if (!confirmSelection()) {
-          return
-        }
-        onClose()
-      } else if (type == 'addcart') {
-        addToCart()
-      } else {
-        fastBuy()
-      }
+      addToCart()
     }
     return (
       <View className='sp-sku-select-espier__footer-inner'>
