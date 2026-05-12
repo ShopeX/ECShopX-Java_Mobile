@@ -102,7 +102,7 @@ function PurchaseAuthPhone(props) {
       showToast('验证成功')
       setTimeout(() => {
         Taro.reLaunch({
-          url: `/subpages/purchase/index?is_redirt=1&activity_id=${activity_id || ''}&enterprise_id=${enterprise_id || ''}&pages_template_id=${pages_template_id || ''}`
+          url: `/subpages/purchase/index?activity_id=${activity_id || ''}&enterprise_id=${enterprise_id || ''}&pages_template_id=${pages_template_id || ''}`
         })
       }, 2000)
     } catch (e) {
@@ -119,7 +119,7 @@ function PurchaseAuthPhone(props) {
         contentAlign: 'center'
       })
       Taro.reLaunch({
-        url: `/subpages/purchase/index?is_redirt=1&activity_id=${activity_id || ''}&enterprise_id=${enterprise_id || ''}&pages_template_id=${pages_template_id || ''}`
+        url: `/subpages/purchase/index?activity_id=${activity_id || ''}&enterprise_id=${enterprise_id || ''}&pages_template_id=${pages_template_id || ''}`
       })
       getLoginCode()
     }

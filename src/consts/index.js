@@ -178,7 +178,7 @@ export const TABBAR_PATH = () => ({
   ugc: '/subpages/mdugc/index',
   customPage: '/pages/custom/custom-page',
   kujiale: '/subpages/case/list',
-  purchase: '/subpages/purchase/select-identity?is_redirt=1'
+  purchase: '/subpages/purchase/select-identity'
 })
 
 export const TABBAR_ICON = () => ({

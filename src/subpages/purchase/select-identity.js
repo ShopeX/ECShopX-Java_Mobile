@@ -62,7 +62,7 @@ function SelectIdentity(props) {
       dispatch(updateEnterpriseId(_identity[0]?.enterprise_id))
       dispatch(updateCurEnterpriseName(_identity[0]?.name))
       Taro.redirectTo({
-        url: `/subpages/purchase/activity-list?activity_id=${activity_id}&is_redirt=1`
+        url: `/subpages/purchase/activity-list?activity_id=${activity_id}&is_redirt=${is_redirt}`
       })
       return
     }
@@ -92,7 +92,7 @@ function SelectIdentity(props) {
     dispatch(updateEnterpriseId(item.enterprise_id))
     dispatch(updateCurEnterpriseName(item.name))
     Taro.navigateTo({
-      url: `/subpages/purchase/activity-list?activity_id=${activity_id}&is_redirt=1`
+      url: `/subpages/purchase/activity-list?activity_id=${activity_id}&is_redirt=${is_redirt}`
     })
   }
 
