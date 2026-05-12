@@ -29,7 +29,7 @@ function SelectIdentity(props) {
   const dispatch = useDispatch()
 
   const { params } = useRouter()
-  let { activity_id = '', is_redirt } = params
+  let { activity_id = '', is_redirt=0 } = params
 
   useEffect(() => {
     getUserEnterprises()

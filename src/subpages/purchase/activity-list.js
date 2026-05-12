@@ -54,7 +54,7 @@ function PurchaseActivityList() {
   const dispatch = useDispatch()
 
   const { params } = useRouter()
-  let { activity_id, is_redirt } = params
+  let { activity_id, is_redirt=0 } = params
 
   useEffect(() => {
     if (!S.getAuthToken()) {
@@ -67,7 +67,7 @@ function PurchaseActivityList() {
   }, [])
 
   useEffect(() => {
-    if (is_redirt) {
+    if (is_redirt==1) {
       fetch({ pageIndex: 1, pageSize: 10 })
     }
   }, [is_redirt])
@@ -102,7 +102,7 @@ function PurchaseActivityList() {
     })
     const _list = pickBy(list, doc.purchase.ACTIVITY_ITEM)
     // 如果只有一条数据，直接进入活动首页
-    if (total_count == 1 && is_redirt) {
+    if (total_count == 1 && is_redirt==1) {
       try {
         onClickChange(_list[0], 'redirectTo')
         return { total: 0 }
@@ -205,12 +205,13 @@ function PurchaseActivityList() {
     onClickChange(item)
   }
 
-  if (is_redirt) {
+  if (is_redirt==1) {
     return <SpPage loading title='企业购' 
       pageConfig={{ navigateBackgroundColor: '#ffffff' }}
       renderNavigation={(navProps) => <CompPurchaseNav {...navProps} />}
     />
   }
+
 
   return (
     <SpPage
