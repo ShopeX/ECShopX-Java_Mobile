@@ -66,6 +66,12 @@ function PurchaseActivityList() {
     scrollRef.current?.reset()
   }, [])
 
+  useEffect(() => {
+    if (is_redirt) {
+      fetch({ pageIndex: 1, pageSize: 10 })
+    }
+  }, [is_redirt])
+
   const updataMemberInfo = async () => {
     const _userInfo = await api.member.memberInfo()
     dispatch(updateUserInfo(_userInfo))
@@ -99,6 +105,7 @@ function PurchaseActivityList() {
     if (total_count == 1 && is_redirt) {
       try {
         onClickChange(_list[0], 'redirectTo')
+        return { total: 0 }
       } catch (e) { }
     }
     setState((draft) => {
@@ -196,6 +203,13 @@ function PurchaseActivityList() {
       return
     }
     onClickChange(item)
+  }
+
+  if (is_redirt) {
+    return <SpPage loading title='企业购' 
+      pageConfig={{ navigateBackgroundColor: '#ffffff' }}
+      renderNavigation={(navProps) => <CompPurchaseNav {...navProps} />}
+    />
   }
 
   return (

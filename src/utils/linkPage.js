@@ -249,7 +249,7 @@ const memberSetting = {
   },
   purchase: {
     title: '内购',
-    path: '/subpages/purchase/select-identity?is_redirt=1'
+    path: '/subpages/purchase/select-identity'
   },
   pointShop: {
     title: '积分商城',
