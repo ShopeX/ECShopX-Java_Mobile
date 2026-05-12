@@ -3,7 +3,7 @@
  * See LICENSE file for license details.
  */
 import Taro, { useRouter } from '@tarojs/taro'
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { View, Text } from '@tarojs/components'
 import { useLogin, useModal } from '@/hooks'
@@ -28,6 +28,7 @@ function PurchaseAuthEmail() {
   const [countdown, setCountdown] = useState(0)
   const [enterpriseName, setEnterpriseName] = useState('')
   const [activityBg, setActivityBg] = useState('')
+  const sendCodeLockRef = useRef(false)
   const { showModal } = useModal()
   const dispatch = useDispatch()
   const { params } = useRouter()
@@ -36,6 +37,21 @@ function PurchaseAuthEmail() {
 
   const disabled = useMemo(() => !email.trim() || !vcode.trim(), [email, vcode])
   const sendDisabled = countdown > 0
+
+  const normalizeInputValue = (value) => {
+    if (value && typeof value === 'object') {
+      return value.detail?.value ?? value.target?.value ?? ''
+    }
+    return value ?? ''
+  }
+
+  const handleEmailChange = (value) => {
+    setEmail(String(normalizeInputValue(value)))
+  }
+
+  const handleVcodeChange = (value) => {
+    setVcode(String(normalizeInputValue(value)))
+  }
 
   useEffect(() => {
     if (countdown <= 0) return
@@ -67,7 +83,7 @@ function PurchaseAuthEmail() {
   }
 
   const handleSendCode = async () => {
-    if (sendDisabled) return
+    if (sendDisabled || sendCodeLockRef.current) return
     const nextEmail = email.trim()
     if (!nextEmail) {
       showToast('请输入电子邮箱')
@@ -78,6 +94,7 @@ function PurchaseAuthEmail() {
       showToast('请输入正确的邮箱')
       return
     }
+    sendCodeLockRef.current = true
     try {
       const sendParams = { email: nextEmail, enterprise_id }
       const { status } = await api.purchase.getEmailCode(sendParams)
@@ -89,6 +106,8 @@ function PurchaseAuthEmail() {
       }
     } catch (e) {
       showToast(e?.message || '发送失败')
+    } finally {
+      sendCodeLockRef.current = false
     }
   }
 
@@ -223,7 +242,7 @@ function PurchaseAuthEmail() {
               placeholder='请输入电子邮箱'
               placeholderClass='purchase-email-auth__field-input-ph'
               value={email}
-              onChange={setEmail}
+              onChange={handleEmailChange}
             />
           </View>
 
@@ -235,7 +254,7 @@ function PurchaseAuthEmail() {
                 placeholder='请输入邮箱验证码'
                 placeholderClass='purchase-email-auth__field-input-ph'
                 value={vcode}
-                onChange={setVcode}
+                onChange={handleVcodeChange}
               />
               <View
                 className={classNames('purchase-email-auth__code-send', {

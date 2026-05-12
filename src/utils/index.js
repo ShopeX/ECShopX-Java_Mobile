@@ -634,7 +634,8 @@ export const hasNavbar = isWeb && !getBrowserEnv().weixin
 export function showToast(title, callback) {
   Taro.showToast({
     title,
-    icon: 'none'
+    icon: 'none',
+    duration: 3000
   })
   setTimeout(() => {
     callback?.()
