@@ -7,7 +7,7 @@ import { useSelector } from 'react-redux'
 import { useImmer } from 'use-immer'
 import Taro, { useRouter } from '@tarojs/taro'
 import { View, ScrollView } from '@tarojs/components'
-import { SpPage, SpScrollView, SpImage, SpTradeItem } from '@/components'
+import { SpPage, SpScrollView } from '@/components'
 import { SpTagBar } from '@/subpages/components'
 import api from '@/api'
 import doc from '@/doc'
@@ -21,6 +21,7 @@ import './list.scss'
 
 const initialState = {
   typeVal: '0',
+  tradeStatus: buildTradeStatusTabs(),
   status: '0',
   tradeList: [],
   refresherTriggered: false,
@@ -32,8 +33,14 @@ function TradeList(props) {
   useTranslation()
   const { setNavigationBarTitle } = useNavigation()
   const [state, setState] = useImmer(initialState)
-  const { status, typeVal, tradeList, refresherTriggered, trackDetailList, openTrackDetail, info } =
-    state
+  const {
+    status,
+    tradeList,
+    refresherTriggered,
+    trackDetailList,
+    openTrackDetail,
+    info
+  } = state
   const tradeRef = useRef()
   const router = useRouter()
 
@@ -85,7 +92,7 @@ function TradeList(props) {
       draft.tradeList = []
     })
     tradeRef.current.reset()
-  }, [status, typeVal])
+  }, [status])
 
   const fetch = async ({ pageIndex, pageSize }) => {
     const { is_rate } = tradeStatus.find((item) => item.value == status)
@@ -94,10 +101,8 @@ function TradeList(props) {
       pageSize,
       order_type: 'normal',
       status,
-      is_rate,
-      order_class: typeVal == '1' ? 'employee_purchase' : 'normal'
+      is_rate
     }
-    // params.order_class = typeVal == '1' ? 'employee_purchase' : 'normal'
 
     const {
       list,
@@ -119,12 +124,6 @@ function TradeList(props) {
     })
   }
 
-  const onChangeTradeType = (e) => {
-    setState((draft) => {
-      draft.typeVal = e
-    })
-  }
-
   const onRefresherRefresh = () => {
     setState((draft) => {
       draft.refresherTriggered = true
@@ -136,7 +135,6 @@ function TradeList(props) {
 
   return (
     <SpPage scrollToTopBtn className='page-trade-list'>
-      <CompTrackType value={typeVal} onChange={onChangeTradeType} />
       <SpTagBar list={tradeStatus} value={status} onChange={onChangeTradeState} />
       <ScrollView
         className='list-scroll-container'

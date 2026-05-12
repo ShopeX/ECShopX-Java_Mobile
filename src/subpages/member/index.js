@@ -398,7 +398,7 @@ function MemberIndex(props) {
         distributor_id: getDistributorId()
       })
       if (data?.length > 0) {
-        Taro.navigateTo({ url: '/subpages/purchase/select-identity?is_redirt=1' })
+        Taro.navigateTo({ url: '/subpages/purchase/select-identity' })
       } else {
         Taro.navigateTo({ url: '/pages/purchase/auth' })
       }

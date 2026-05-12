@@ -214,7 +214,7 @@ function PurchaseAuth() {
         const validIdentityLen = data.filter((item) => item.disabled == 0).length
         if (validIdentityLen) {
           Taro.reLaunch({
-            url: '/subpages/purchase/select-identity?is_redirt=1'
+            url: '/subpages/purchase/select-identity'
           })
         }
       }
@@ -242,7 +242,7 @@ function PurchaseAuth() {
         await enterInviteActivity(700)
       } else {
         setTimeout(() => {
-          Taro.reLaunch({ url: `/subpages/purchase/activity-list?is_redirt=1` })
+          Taro.reLaunch({ url: `/subpages/purchase/activity-list` })
         }, 700)
       }
     }
@@ -250,7 +250,7 @@ function PurchaseAuth() {
 
 
   const buildInviteActivityUrl = () => {
-    return `/subpages/purchase/index?is_redirt=1&activity_id=${activity_id || ''}&enterprise_id=${enterprise_id || ''}&pages_template_id=${pagesTemplateId || ''}`
+    return `/subpages/purchase/index?activity_id=${activity_id || ''}&enterprise_id=${enterprise_id || ''}&pages_template_id=${pagesTemplateId || ''}`
   }
 
   const prepareInviteActivity = async () => {

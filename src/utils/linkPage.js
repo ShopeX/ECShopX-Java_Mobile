@@ -250,7 +250,7 @@ const memberSetting = {
   },
   purchase: {
     title: $t('d0465c10.36d204'),
-    path: '/subpages/purchase/select-identity?is_redirt=1'
+    path: '/subpages/purchase/select-identity'
   },
   pointShop: {
     title: $t('cc8689c4.a13364'),

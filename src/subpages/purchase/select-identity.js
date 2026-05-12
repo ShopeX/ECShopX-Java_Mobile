@@ -31,7 +31,7 @@ function SelectIdentity(props) {
   const dispatch = useDispatch()
 
   const { params } = useRouter()
-  let { activity_id = '', is_redirt } = params
+  let { activity_id = '', is_redirt=0 } = params
 
   useEffect(() => {
     getUserEnterprises()
@@ -68,7 +68,7 @@ function SelectIdentity(props) {
       dispatch(updateEnterpriseId(_identity[0]?.enterprise_id))
       dispatch(updateCurEnterpriseName(_identity[0]?.name))
       Taro.redirectTo({
-        url: `/subpages/purchase/activity-list?activity_id=${activity_id}&is_redirt=1`
+        url: `/subpages/purchase/activity-list?activity_id=${activity_id}&is_redirt=${is_redirt}`
       })
       return
     }
@@ -98,7 +98,7 @@ function SelectIdentity(props) {
     dispatch(updateEnterpriseId(item.enterprise_id))
     dispatch(updateCurEnterpriseName(item.name))
     Taro.navigateTo({
-      url: `/subpages/purchase/activity-list?activity_id=${activity_id}&is_redirt=1`
+      url: `/subpages/purchase/activity-list?activity_id=${activity_id}&is_redirt=${is_redirt}`
     })
   }
 

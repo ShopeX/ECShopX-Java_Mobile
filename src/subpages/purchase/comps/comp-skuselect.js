@@ -29,25 +29,31 @@ function resolvePurchaseLimitQty(info, curItem, type) {
     purchaseLimitNum
   } = info
   let qty = null
+  const skuLimit =
+    !nospec && curItem != null && curItem.limitNum != null && curItem.limitNum !== ''
+      ? curItem.limitNum
+      : null
   if (activityType === 'limited_buy' && activityInfo?.rule?.limit != null) {
     qty = activityInfo.rule.limit
   } else if (activityType === 'seckill' || activityType === 'limited_time_sale') {
-    qty = nospec ? limitNum : curItem?.limitNum ?? limitNum
+    qty = nospec ? limitNum : skuLimit ?? limitNum
   } else if (activityType === 'group') {
     qty = 1
-  } else if (!nospec && curItem != null) {
-    const skuL = curItem.limitNum
-    if (skuL != null && skuL !== '') {
-      qty = skuL
-    }
+  } else if (skuLimit != null) {
+    qty = skuLimit
   }
   if (qty == null || qty === '') {
     qty = purchaseLimitNum ?? purlimitByCart ?? purlimitByFastbuy ?? limitNum
   }
-  if (type == 'addcart' && purlimitByCart != null && purlimitByCart !== '') {
+  if (skuLimit == null && type == 'addcart' && purlimitByCart != null && purlimitByCart !== '') {
     qty = purlimitByCart
   }
-  if (type == 'fastbuy' && purlimitByFastbuy != null && purlimitByFastbuy !== '') {
+  if (
+    skuLimit == null &&
+    type == 'fastbuy' &&
+    purlimitByFastbuy != null &&
+    purlimitByFastbuy !== ''
+  ) {
     qty = purlimitByFastbuy
   }
   return qty != null && qty !== '' ? qty : null
@@ -70,6 +76,14 @@ function resolvePurchaseLimitAmountLine(info, curItem) {
   const n = Number(limitFee) / 100
   if (Number.isNaN(n)) return null
   return ti('47ac6066.c8d3e2', [n.toFixed(2)])
+}
+
+function resolvePurchaseQtyMax(info, curItem, type) {
+  const limitQty = resolvePurchaseLimitQty(info, curItem, type)
+  if (limitQty != null && limitQty !== '') {
+    return parseInt(limitQty, 10)
+  }
+  return parseInt(curItem ? curItem.store : info?.store, 10)
 }
 
 const initialState = {
@@ -176,6 +190,10 @@ function PurchaseSkuSelect(props) {
       : $t('46dc5ce5.4fd966')
 
     setState((draft) => {
+      const max = resolvePurchaseQtyMax(info, curItem, type)
+      if (!Number.isNaN(max) && Number(draft.num) > max) {
+        draft.num = max
+      }
       draft.selection = selection
       draft.disabledSet = disabledSet
       draft.curItem = curItem

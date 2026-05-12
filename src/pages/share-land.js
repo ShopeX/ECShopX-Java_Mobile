@@ -8,8 +8,9 @@ import dayjs from 'dayjs'
 import { SpPage } from '@/components'
 import { SG_ROUTER_PARAMS, SG_GUIDE_PARAMS, SG_GUIDE_PARAMS_UPDATETIME } from '@/consts'
 import qs from 'qs'
-import { entryLaunch, showToast } from '@/utils'
 import { $t } from '@/i18n'
+import { entryLaunch, getExtConfigData, showToast } from '@/utils'
+import api from '@/api'
 
 /**
  * 统一分享落地页
@@ -48,12 +49,39 @@ function ShareIand() {
     if (routeParams?.t == 1) {
       handlePrescription(routeParams)
     } else {
-      handleShareLand(routeParams)
+      await handleShareLand(routeParams)
+    }
+  }
+
+  const reportPurchaseScanBehavior = async (routeParams) => {
+    const activity_id = routeParams.activity_id || routeParams.aid || routeParams.id
+    const enterprise_id = routeParams.enterprise_id || routeParams.eid
+    if (!activity_id || !enterprise_id) return
+
+    const { company_id: extCompanyId } = getExtConfigData()
+    const company_id = routeParams.company_id || routeParams.companyId || extCompanyId
+    const payload = {
+      behavior_type: 'scan',
+      activity_id,
+      enterprise_id
+    }
+    if (company_id) {
+      payload.company_id = company_id
+    }
+    const visitor_key = routeParams.visitor_key || routeParams.visitorKey
+    if (visitor_key) {
+      payload.visitor_key = visitor_key
+    }
+
+    try {
+      await api.purchase.reportEmployeepurchaseBehavior(payload)
+    } catch (e) {
+      console.error('[purchase] scan behavior report failed', e)
     }
   }
 
   // 处理落地页类型
-  const handleShareLand = (routeParams) => {
+  const handleShareLand = async (routeParams) => {
     const { from_scene, ...otherParams } = routeParams
     const welcomeRoutes = {
       // 导购欢迎语
@@ -100,12 +128,17 @@ function ShareIand() {
     // entryLaunch.postGuideUV() // 导购uv上报
     // entryLaunch.postGuideTask(welcomeRoutes[from_scene]) // 导购任务上报
 
-    const targetUrl = queryString
-      ? `${welcomeRoutes[from_scene]}?${queryString}`
-      : welcomeRoutes[from_scene]
-    console.log('导购任务分享跳转:', targetUrl, welcomeRoutes[from_scene])
+    const targetPath = welcomeRoutes[from_scene]
+    if (targetPath === '/pages/purchase/auth') {
+      await reportPurchaseScanBehavior(routeParams)
+    }
 
-    if (welcomeRoutes[from_scene]) {
+    const targetUrl = queryString
+      ? `${targetPath}?${queryString}`
+      : targetPath
+    console.log('导购任务分享跳转:', targetUrl, targetPath)
+
+    if (targetPath) {
       Taro.redirectTo({ url: targetUrl })
     } else {
       showToast($t('9264688e.6ac521'))
