@@ -17,7 +17,6 @@ import {
   SpPage,
   SpPurchaseEnterpriseBar,
   SpPoster,
-  SpFloatMenuItem,
   SpGoodsPrice
 } from '@/components'
 import api from '@/api'
@@ -35,10 +34,9 @@ import {
 } from '@/utils'
 import doc from '@/doc'
 import entryLaunch from '@/utils/entryLaunch'
-import S from '@/spx'
 import { useNavigation } from '@/hooks'
 import { ACTIVITY_LIST } from '@/consts'
-import { WgtFilm, WgtSlider, WgtWriting, WgtGoods, WgtHeading } from '@/pages/home/wgts'
+import { WgtFilm, WgtSlider, WgtImgHotZone } from '@/pages/home/wgts'
 import CompActivityBar from './comps/comp-activitybar'
 import CompStore from './comps/comp-store'
 import CompPackageList from './comps/comp-packagelist'
@@ -653,9 +651,7 @@ function EspierDetail(props) {
                   <View className='wgt-wrap' key={`wgt-wrap__${idx}`}>
                     {item.name === 'film' && <WgtFilm info={item} />}
                     {item.name === 'slider' && <WgtSlider info={item} />}
-                    {item.name === 'writing' && <WgtWriting info={item} />}
-                    {item.name === 'heading' && <WgtHeading info={item} />}
-                    {item.name === 'goods' && <WgtGoods info={item} />}
+                    {item.name === 'imgHotzone' && <WgtImgHotZone info={item} />}
                   </View>
                 ))}
               </View>
