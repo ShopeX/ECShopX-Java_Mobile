@@ -31,70 +31,114 @@ function SpUpload(props) {
   const [state, setState] = useImmer(initialState)
   const { files } = state
 
+  const showUploadError = (title = '图片上传失败，请重试') => {
+    Taro.showToast({
+      title,
+      icon: 'none'
+    })
+  }
+
+  const isCancelError = (error) => {
+    const msg = error?.errMsg || error?.message || ''
+    return String(msg).includes('cancel')
+  }
+
   useEffect(() => {
-    if (value?.length > 0) {
-      setState((draft) => {
-        draft.files = value
-      })
-    }
+    setState((draft) => {
+      draft.files = value || []
+    })
   }, [value])
 
+  const applyUploadResult = (res, sourceFiles) => {
+    if (!res?.length) {
+      showUploadError()
+      return
+    }
+    if (res.length < sourceFiles.length) {
+      showUploadError('部分图片上传失败，请重试')
+    }
+    const _res = mediaType == 'video' ? res : res.map((item) => item.url)
+    const _files = [...files, ..._res]
+    setState((draft) => {
+      draft.files = _files
+    })
+    onChange(_files)
+  }
+
+  const uploadFiles = async (resultFiles, filetype = 'image') => {
+    if (!resultFiles.length) {
+      showUploadError('未选择图片')
+      return
+    }
+    Taro.showLoading({ title: '上传中' })
+    try {
+      const res = await imgUploader.uploadImageFn(resultFiles, filetype)
+      console.log('---uploadImageFn res---', res)
+      applyUploadResult(res, resultFiles)
+    } catch (error) {
+      console.error('sp-upload upload failed', error)
+      showUploadError()
+    } finally {
+      Taro.hideLoading()
+    }
+  }
+
   const handleUploadFile = async () => {
+    const remainCount = max - files.length
+    if (remainCount <= 0) {
+      showUploadError(`最多上传${max}个文件`)
+      return
+    }
     if (process.env.TARO_ENV == 'h5') {
-      const { tempFiles } = await Taro.chooseImage({
-        count: max,
-        sourceType: ['camera', 'album']
-      })
-      console.log('sp-upload handleUploadFile', tempFiles)
-      const resultFiles = tempFiles.map((item) => ({
-        url: item.path,
-        file: item
-      }))
-
-      Taro.showLoading()
-      // console.log("🚀🚀🚀 ~ file: index.js:93 ~ resultFiles ~ resultFiles:", resultFiles)
-
-      imgUploader.uploadImageFn(resultFiles, 'image').then((res) => {
-        // console.log('---uploadImageFn res---', res)
-        Taro.hideLoading()
-        const _res = mediaType == 'video' ? res : res.map((item) => item.url)
-        const _files = [...files, ..._res]
-        setState((draft) => {
-          draft.files = _files
+      try {
+        const { tempFiles = [] } = await Taro.chooseImage({
+          count: remainCount,
+          sourceType: ['camera', 'album']
         })
-        onChange(_files)
-      })
+        console.log('sp-upload handleUploadFile', tempFiles)
+        const resultFiles = tempFiles.map((item) => ({
+          url: item.path,
+          file: item
+        }))
+        await uploadFiles(resultFiles, 'image')
+      } catch (error) {
+        if (!isCancelError(error)) {
+          console.error('sp-upload chooseImage failed', error)
+          showUploadError('选择图片失败，请重试')
+        }
+      }
     }
 
     if (process.env.TARO_ENV == 'weapp') {
-      authSetting('camera', async () => {
-        const { tempFiles, type } = await Taro.chooseMedia({
-          count: max,
-          mediaType: [mediaType],
-          sourceType: ['camera', 'album'],
-          camera: 'back'
-        })
-        console.log('sp-upload handleUploadFile', tempFiles)
-        const resultFiles = tempFiles.map(({ tempFilePath, fileType, thumbTempFilePath }) => ({
-          url: tempFilePath,
-          file: tempFilePath,
-          fileType: fileType,
-          thumb: thumbTempFilePath
-        }))
-        Taro.showLoading()
-        imgUploader
-          .uploadImageFn(resultFiles, mediaType == 'video' ? 'videos' : 'image')
-          .then((res) => {
-            console.log('---uploadImageFn res---', res)
-            Taro.hideLoading()
-            const _res = mediaType == 'video' ? res : res.map((item) => item.url)
-            const _files = [...files, ..._res]
-            setState((draft) => {
-              draft.files = _files
+      authSetting(
+        'camera',
+        async () => {
+          try {
+            const { tempFiles = [] } = await Taro.chooseMedia({
+              count: remainCount,
+              mediaType: [mediaType],
+              sourceType: ['camera', 'album'],
+              camera: 'back'
             })
-            onChange(_files)
-          })
-      })
+            console.log('sp-upload handleUploadFile', tempFiles)
+            const resultFiles = tempFiles.map(({ tempFilePath, fileType, thumbTempFilePath }) => ({
+              url: tempFilePath,
+              file: tempFilePath,
+              fileType: fileType,
+              thumb: thumbTempFilePath
+            }))
+            await uploadFiles(resultFiles, mediaType == 'video' ? 'videos' : 'image')
+          } catch (error) {
+            if (!isCancelError(error)) {
+              console.error('sp-upload chooseMedia failed', error)
+              showUploadError('选择图片失败，请重试')
+            }
+          }
+        },
+        () => {
+          showUploadError('请开启相机或相册权限后重试')
+        }
+      )
     }
   }
 
