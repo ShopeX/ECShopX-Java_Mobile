@@ -349,7 +349,11 @@ function CartIndex() {
     if (Number.isNaN(nextNum) || nextNum == item.num) return true
     if (nextNum > max) {
       const limitNum = toPositiveInt(item.limit_num ?? item.limitNum)
-      showToast(limitNum ? `该商品限购${limitNum}件` : '库存不足')
+      Taro.showToast({
+        title: limitNum ? `该商品限购${limitNum}件` : '库存不足',
+        icon: 'none',
+        duration: 3000
+      })
       return false
     }
     const { type = 'distributor' } = router?.params
@@ -364,7 +368,11 @@ function CartIndex() {
       await getCartList()
       return true
     } catch (e) {
-      showToast(e?.message || '更新购物车失败')
+      Taro.showToast({
+        title: e?.message || '更新购物车失败',
+        icon: 'none',
+        duration: 3000
+      })
       return false
     } finally {
       cartUpdatingRef.current = false

@@ -36,6 +36,21 @@ function PurchaseAuthEmail() {
   const disabled = useMemo(() => !email.trim() || !vcode.trim(), [email, vcode])
   const sendDisabled = countdown > 0
 
+  const normalizeInputValue = (value) => {
+    if (value && typeof value === 'object') {
+      return value.detail?.value ?? value.target?.value ?? ''
+    }
+    return value ?? ''
+  }
+
+  const handleEmailChange = (value) => {
+    setEmail(String(normalizeInputValue(value)))
+  }
+
+  const handleVcodeChange = (value) => {
+    setVcode(String(normalizeInputValue(value)))
+  }
+
   useEffect(() => {
     if (countdown <= 0) return
     const timer = setTimeout(() => {
@@ -222,7 +237,7 @@ function PurchaseAuthEmail() {
               placeholder='请输入电子邮箱'
               placeholderClass='purchase-email-auth__field-input-ph'
               value={email}
-              onChange={setEmail}
+              onChange={handleEmailChange}
             />
           </View>
 
@@ -234,7 +249,7 @@ function PurchaseAuthEmail() {
                 placeholder='请输入邮箱验证码'
                 placeholderClass='purchase-email-auth__field-input-ph'
                 value={vcode}
-                onChange={setVcode}
+                onChange={handleVcodeChange}
               />
               <View
                 className={classNames('purchase-email-auth__code-send', {
