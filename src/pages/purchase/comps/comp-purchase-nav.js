@@ -50,7 +50,7 @@ function CompPurchaseNav(props) {
 
   return (
     <View className='comp-purchase-nav' style={{ paddingRight: `${navigationRSpace}px` }}>
-      <View className='comp-purchase-nav__left'>
+      <View className='comp-purchase-nav__left' style={{ width: `${navigationRSpace}px` }}>
         {btnReturn && (
           <View className='comp-purchase-nav__icon-btn' onClick={onBack}>
             <SpImage src='fv_back.png' width={34} height={34} />
@@ -63,7 +63,7 @@ function CompPurchaseNav(props) {
         )}
         <Button className='comp-purchase-nav__service' openType='contact'>
           <SpImage src='purcharekefu.png' width={42} height={44} />
-          <Text className='comp-purchase-nav__service-text'>{$t('e15eed5a.e7dea7')}</Text>
+          {/* <Text className='comp-purchase-nav__service-text'>{$t('e15eed5a.e7dea7')}</Text> */}
         </Button>
       </View>
       <View className='comp-purchase-nav__title-wrap'>
