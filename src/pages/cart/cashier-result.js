@@ -3,17 +3,17 @@
  * See LICENSE file for license details.
  */
 import React, { useEffect, useRef } from 'react'
-import { useSelector, useDispatch } from 'react-redux'
+import { useDispatch } from 'react-redux'
 import { useImmer } from 'use-immer'
 import Taro, { getCurrentInstance, useDidShow } from '@tarojs/taro'
 import { AtButton } from 'taro-ui'
 import { View, Text } from '@tarojs/components'
 import { SpPage, SpButton, SpLoading } from '@/components'
-import { usePayment } from '@/hooks'
+import { useNavigation } from '@/hooks'
+import { $t } from '@/i18n'
 import { isArray } from '@/utils'
 import api from '@/api'
 import { updateCount } from '@/store/slices/cart'
-import { useTranslation, $t } from '@/i18n'
 import './cashier-result.scss'
 
 const initialState = {
@@ -23,13 +23,10 @@ const initialState = {
 }
 
 function CashierResult(props) {
-  const { i18n } = useTranslation()
-  const $instance = getCurrentInstance() || {}
-
-  const { cashierPayment } = usePayment()
   const [state, setState] = useImmer(initialState)
   const { tradeInfo, orderId, czOrder } = state
   const dispatch = useDispatch()
+  const { setNavigationBarTitle } = useNavigation()
   const pollTimerRef = useRef(null)
 
   const clearPollTimer = () => {
@@ -40,17 +37,29 @@ function CashierResult(props) {
   }
 
   useEffect(() => {
-    Taro.setNavigationBarTitle({ title: $t('8b3a17e4.e5dcb3') })
-    const onLang = () => Taro.setNavigationBarTitle({ title: $t('8b3a17e4.e5dcb3') })
-    i18n.on('languageChanged', onLang)
-    return () => i18n.off('languageChanged', onLang)
-  }, [i18n])
-
-  useEffect(() => {
+    Taro.hideLoading()
     return () => {
       clearPollTimer()
     }
   }, [])
+
+  /** 同步原生导航标题，避免从详情/结算 redirect 后仍显示商品名 */
+  useEffect(() => {
+    if (!tradeInfo || typeof tradeInfo !== 'object') {
+      setNavigationBarTitle('支付结果')
+      return
+    }
+    const ts = tradeInfo.tradeState
+    if (ts === 'SUCCESS') {
+      setNavigationBarTitle($t('45ab5834.eb5dc9'))
+    } else if (ts === 'NOTPAY') {
+      setNavigationBarTitle($t('45ab5834.5e6031'))
+    } else if (ts === 'fail') {
+      setNavigationBarTitle('支付失败')
+    } else {
+      setNavigationBarTitle('支付结果')
+    }
+  }, [tradeInfo])
 
   useDidShow(() => {
     fetch()
@@ -58,12 +67,12 @@ function CashierResult(props) {
 
   const fetch = async () => {
     const instance = getCurrentInstance() || {}
-    const { order_id, code } = instance?.router?.params || {}
+    const { order_id } = instance?.router?.params || {}
     if (!order_id) {
       return
     }
     clearPollTimer()
-    const { orderInfo, tradeInfo } = await api.cashier.getOrderDetail(order_id)
+    const { tradeInfo } = await api.cashier.getOrderDetail(order_id)
 
     setState((draft) => {
       draft.tradeInfo =
@@ -104,27 +113,25 @@ function CashierResult(props) {
         )}
 
         <Text className='trade-txt'>
-          {tradeInfo?.tradeState === 'NOTPAY'
-            ? $t('45ab5834.5e6031')
-            : tradeInfo?.tradeState === 'SUCCESS'
-            ? $t('45ab5834.eb5dc9')
-            : ''}
+          {
+            {
+              'NOTPAY': '等待支付',
+              'SUCCESS': '支付成功'
+            }[tradeInfo.tradeState]
+          }
         </Text>
       </View>
       {tradeInfo && (
         <View className='trade-info'>
           <View>
-            {$t('45ab5834.148237')}
-            <Text className='trade-info-value'>{orderId}</Text>
+            订单编号：<Text className='trade-info-value'>{orderId}</Text>
           </View>
           <View>
-            {$t('45ab5834.296b0f')}
-            <Text className='trade-info-value'>{tradeInfo.tradeId}</Text>
+            支付单号：<Text className='trade-info-value'>{tradeInfo.tradeId}</Text>
           </View>
           {/* <View>{`创建时间：${tradeInfo.orderId}`}</View> */}
           <View>
-            {$t('45ab5834.ca25d2')}
-            <Text className='trade-info-value'>{tradeInfo.payDate}</Text>
+            支付时间：<Text className='trade-info-value'>{tradeInfo.payDate}</Text>
           </View>
         </View>
       )}
@@ -135,8 +142,8 @@ function CashierResult(props) {
           tradeInfo?.tradeSourceType == 'normal_groups') && (
           <View className='btn-wrap'>
             <SpButton
-              resetText={$t('45ab5834.db1c89')}
-              confirmText={$t('45ab5834.8054f7')}
+              resetText='首页'
+              confirmText='订单详情'
               onReset={() => {
                 Taro.redirectTo({ url: '/pages/index' })
               }}
@@ -152,8 +159,8 @@ function CashierResult(props) {
           tradeInfo?.tradeSourceType == 'normal_pointsmall_pointsmall') && (
           <View className='btn-wrap'>
             <SpButton
-              resetText={$t('45ab5834.db1c89')}
-              confirmText={$t('45ab5834.8054f7')}
+              resetText='首页'
+              confirmText='订单详情'
               onReset={() => {
                 Taro.redirectTo({ url: '/pages/index' })
               }}
@@ -176,7 +183,7 @@ function CashierResult(props) {
                 Taro.redirectTo({ url: '/subpages/community/order' })
               }}
             >
-              {$t('45ab5834.07166e')}
+              订单列表
             </AtButton>
           </View>
         )}
@@ -191,7 +198,7 @@ function CashierResult(props) {
                 Taro.redirectTo({ url: '/pages/index' })
               }}
             >
-              {$t('45ab5834.db1c89')}
+              首页
             </AtButton>
           </View>
         )}
