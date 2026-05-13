@@ -135,7 +135,7 @@ useEffect(() => {
 - `src/subpages/i18n/locales/en.json`
 - `src/subpages/i18n/locales/ar.json`
 
-规则：`zhcn.json` = 原文；`en` / `ar` **必须先查** `src/subpages/i18n/lang/index.json`（按 `zh-cn` 字段检索），命中则用其中 `en`/`ar`；未命中再自行翻译。新键 **只写入** 上述三份 `locales/*.json`，不要把新键写回 `index.json`。
+规则：`zhcn.json` = 原文；`en` / `ar` 可先在同键或同语义既有条目中检索 `locales/*.json` 是否已有译文；未命中再自行翻译。新键 **只写入** 上述三份 `locales/*.json`。
 
 ### F) Verify
 
