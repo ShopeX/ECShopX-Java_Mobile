@@ -17,7 +17,7 @@ import {
   SpInput as AtInput
 } from '@/components'
 import { updateChooseAddress } from '@/store/slices/user'
-import { DELIVERY_LIST } from '@/consts'
+import { DELIVERY_LIST, enumdays } from '@/consts'
 import { classNames, VERSION_STANDARD } from '@/utils'
 import dayjs from 'dayjs'
 import api from '@/api'
@@ -225,8 +225,7 @@ function SpDeliver(props, ref) {
     const _weekdays = []
     for (let i = 0; i <= parseInt(wait_pickup_days); i++) {
       const _day = dayjs().add(i, 'day')
-      const title =
-        i < ZITI_DAY_TITLE_KEYS.length ? $t(ZITI_DAY_TITLE_KEYS[i]) : _day.format('YYYY-MM-DD')
+      const title = enumdays()[i] || _day.format('YYYY-MM-DD')
       _weekdays.push({ title, value: _day })
     }
 
