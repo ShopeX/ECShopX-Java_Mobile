@@ -16,6 +16,7 @@ import doc from '@/doc'
 import S from '@/spx'
 import { SpPage, SpNote, SpScrollView, SpImage, SpPurchaseEnterpriseBar } from '@/components'
 import CompPurchaseNav from '@/pages/purchase/comps/comp-purchase-nav'
+import { $t, useTranslation } from '@/i18n'
 import './activity-list.scss'
 
 const initialState = {
@@ -46,6 +47,7 @@ function getActivityPhase(item) {
 }
 
 function PurchaseActivityList() {
+  useTranslation()
   const [state, setState] = useImmer(initialState)
   const { activityList, loading } = state
   const { curEnterpriseId, curEnterpriseName } = useSelector((_state) => _state.purchase)
@@ -107,9 +109,9 @@ function PurchaseActivityList() {
       if (is_redirt == 1) {
         if (_eligibilityList.length == 0) {
           const { confirm } = await Taro.showModal({
-            content: '抱歉，您没有内购资格',
+            content: $t('c2581d4c.d7c2a1'),
             showCancel: false,
-            confirmText: '返回'
+            confirmText: $t('c2581d4c.5f4112')
           })
           if (confirm) {
             Taro.navigateBack()
@@ -151,11 +153,11 @@ function PurchaseActivityList() {
         enterprise_id: enterpriseId
       })
       if (Number(eligibility?.internal_sale_eligible) !== 1) {
-        showToast('抱歉，您没有内购资格')
+        showToast($t('c2581d4c.d7c2a1'))
         return
       }
     } catch (e) {
-      showToast(e?.message || '资格校验失败')
+      showToast(e?.message || $t('e32a7439.c2d481'))
       return
     }
     const _priceDisplayConfig = handlePriceConfig(priceDisplayConfig)
@@ -209,18 +211,18 @@ function PurchaseActivityList() {
   const handleCardAction = (item) => {
     const phase = getActivityPhase(item)
     if (phase === 'upcoming') {
-      Taro.showToast({ title: '活动尚未开始', icon: 'none' })
+      Taro.showToast({ title: $t('e32a7439.f1a90b'), icon: 'none' })
       return
     }
     if (phase === 'ended') {
-      Taro.showToast({ title: '活动已结束', icon: 'none' })
+      Taro.showToast({ title: $t('c4d2fddd.cdae1c'), icon: 'none' })
       return
     }
     onClickChange(item)
   }
 
   if (is_redirt == 1) {
-    return <SpPage loading title='企业购'
+    return <SpPage loading title={$t('c2581d4c.6fb7d0')}
       pageConfig={{ navigateBackgroundColor: '#ffffff' }}
       renderNavigation={(navProps) => <CompPurchaseNav {...navProps} />}
     />
@@ -230,7 +232,7 @@ function PurchaseActivityList() {
   return (
     <SpPage
       className='page-purchase-index page-purchase-activitylist'
-      title='企业购'
+      title={$t('c2581d4c.6fb7d0')}
       pageConfig={{ navigateBackgroundColor: '#ffffff' }}
       renderNavigation={(navProps) => <CompPurchaseNav {...navProps} />}
     >
@@ -243,19 +245,23 @@ function PurchaseActivityList() {
             className=''
             auto={false}
             fetch={fetch}
-            renderEmpty={<SpNote img='empty_activity.png' title='没有查询到内购活动' />}
+            renderEmpty={<SpNote img='empty_activity.png' title={$t('e32a7439.dd530e')} />}
           >
             <View className='purchase-activity-list'>
               {activityList.map((item) => {
                 const phase = getActivityPhase(item)
                 const badgeText =
-                  phase === 'upcoming' ? '即将开始' : phase === 'ended' ? '已结束' : '进行中'
+                  phase === 'upcoming'
+                    ? $t('e32a7439.b73c8a')
+                    : phase === 'ended'
+                      ? $t('e32a7439.047fab')
+                      : $t('da5ae518.fb852f')
                 const btnText =
                   phase === 'upcoming'
-                    ? '敬请期待'
+                    ? $t('e32a7439.e82c9f')
                     : phase === 'ended'
-                      ? '已结束'
-                      : '立即参与'
+                      ? $t('e32a7439.047fab')
+                      : $t('e32a7439.a61d4e')
                 return (
                   <View key={item.id} className='activity-card'>
                     <View className='activity-card__cover'>
@@ -270,11 +276,17 @@ function PurchaseActivityList() {
                       <Text className='activity-card__title'>{item.name}</Text>
                       <View className='activity-card__time-row'>
                         <Text className='iconfont icon-riqi activity-card__time-icon' />
-                        <Text className='activity-card__time-text'>开始时间：{item.employeeBeginTime}</Text>
+                        <Text className='activity-card__time-text'>
+                          {$t('e32a7439.7c4b1a')}
+                          {item.employeeBeginTime}
+                        </Text>
                       </View>
                       <View className='activity-card__time-row'>
                         <Text className='iconfont icon-clock1 activity-card__time-icon' />
-                        <Text className='activity-card__time-text'>结束时间：{item.employeeEndTime}</Text>
+                        <Text className='activity-card__time-text'>
+                          {$t('e32a7439.8d5c2b')}
+                          {item.employeeEndTime}
+                        </Text>
                       </View>
                       <View
                         className={classNames('activity-card__btn', {

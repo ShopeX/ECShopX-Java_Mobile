@@ -477,7 +477,7 @@ function EspierDetail(props) {
               <View className='espier-detail-enterprise-policy'>
                 <Text className='iconfont icon-info espier-detail-enterprise-policy__icon' />
                 <Text className='espier-detail-enterprise-policy__text'>
-                  内购商品非质量问题不予退货
+                  {$t('e32a7439.d4e8f1')}
                 </Text>
               </View>
             }

@@ -105,9 +105,9 @@ function SelectIdentity(props) {
           d.loading = false
         })
         const { confirm } = await Taro.showModal({
-          content: '抱歉，您没有内购资格',
+          content: $t('c2581d4c.d7c2a1'),
           showCancel: false,
-          confirmText: '返回'
+          confirmText: $t('c2581d4c.5f4112')
         })
         if (confirm) {
           Taro.navigateBack()
@@ -131,14 +131,14 @@ function SelectIdentity(props) {
           enterprise_id: enterpriseId
         })
         if (Number(eligibility?.internal_sale_eligible) !== 1) {
-          showToast('抱歉，您没有内购资格')
+          showToast($t('c2581d4c.d7c2a1'))
           setState((d) => {
             d.loading = false
           })
           return false
         }
       } catch (e) {
-        showToast(e?.message || '资格校验失败')
+        showToast(e?.message || $t('e32a7439.c2d481'))
         setState((d) => {
           d.loading = false
         })
