@@ -26,9 +26,7 @@ export default class CashierResult extends Component {
     }
   }
   componentDidMount() {
-    Taro.showLoading({ title: '' })
     setInterval(() => {
-      Taro.hideLoading()
       this.fetch()
     }, 1000)
   }
@@ -46,7 +44,6 @@ export default class CashierResult extends Component {
       orderInfo,
       tradeInfo
     })
-    Taro.hideLoading()
   }
 
   handleClickBack = (orderId) => {
