@@ -58,6 +58,18 @@ import CompPointUse from './comps/comp-pointuse'
 
 import './espier-checkout.scss'
 
+/** 同城配：比较收货城市与店铺城市（去空白、去末尾「市」减少格式差异） */
+function normalizeCheckoutCity(name) {
+  if (name == null || name === '') return ''
+  return String(name).trim().replace(/市\s*$/u, '')
+}
+
+function getShopCityFromShopInfo(shopInfo) {
+  if (!shopInfo || typeof shopInfo !== 'object') return ''
+  const raw = shopInfo.city != null && String(shopInfo.city).trim() !== '' ? shopInfo.city : shopInfo.regions?.[1]
+  return raw != null ? String(raw) : ''
+}
+
 function CartCheckout(props) {
   const { i18n } = useTranslation()
   const $instance = getCurrentInstance() || {}
@@ -1118,6 +1130,7 @@ function CartCheckout(props) {
 
         {renderGoodsComp()}
 
+        <View className='cart-checkout__section'>
         {type !== 'limited_time_sale' && type !== 'group' && type !== 'seckill' && !bargain_id && (
           <SpCell
             isLink
@@ -1127,6 +1140,29 @@ function CartCheckout(props) {
             value={couponText || $t('edc703ce.708c9d')}
           />
         )}
+        {/* 平台版自营店铺、云店、官方商城支持积分抵扣 */}
+        {(VERSION_STANDARD || VERSION_B2C || (VERSION_PLATFORM && shop_id == 0)) &&
+          pointInfo?.is_open_deduct_point && (
+            <SpCell
+              isLink
+              className='cart-checkout__invoice'
+              title={`${pointName}抵扣`}
+              onClick={() => {
+                setState((draft) => {
+                  draft.isPointOpenModal = true
+                })
+              }}
+              value={
+                <View className='invoice-title'>
+                  {pointInfo.point_use > 0
+                    ? `已使用${pointInfo.real_use_point}${pointName}`
+                    : `使用${pointName}`}
+                </View>
+              }
+            />
+          )}
+        </View>
+
         {totalInfo.invoice_status ? (
           <SpCell
             isLink
@@ -1244,6 +1280,9 @@ function CartCheckout(props) {
         )}
 
         <View className='cart-checkout__total'>
+          <View className='sp-order-item__idx'>
+            订单金额
+          </View>
           <SpCell
             className='trade-sub__item'
             title={$t('edc703ce.80193b')}

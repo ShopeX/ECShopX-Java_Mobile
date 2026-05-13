@@ -563,63 +563,91 @@ function SpDeliver(props, ref) {
         </View>
       )}
 
-      {/* 自配送时间选择 */}
-      <SpTimePicker
-        show={showMerchantTimePicker}
-        weekdays={weekdaysMerchant}
-        timeSlots={timeSlotsMerchant}
-        pickerIndex={pickerIndexMerchant}
-        activeTimeId={activeTimeIdMerchant}
-        timeSlotsValueString
-        onClose={() => {
-          setState((draft) => {
-            draft.showMerchantTimePicker = false
-          })
-        }}
-        onChangeWeekDays={onChangeWeekDaysMerchant}
-        onChangeTimeSlot={onChangeTimeSlotMerchant}
-      />
+        {/* 自提时间选择 */}
+        <SpTimePicker
+          show={showTimePicker}
+          weekdays={weekdays}
+          timeSlots={timeSlots}
+          pickerIndex={pickerIndex}
+          activeTimeId={activeTimeId}
+          onClose={() => {
+            setState((draft) => {
+              draft.showTimePicker = false
+            })
+          }}
+          onChangeWeekDays={onChangeWeekDays}
+          onChangeTimeSlot={onChangeTimeSlot}
+        />
 
-      {/* 自提时间选择 */}
-      <SpTimePicker
-        show={showTimePicker}
-        weekdays={weekdays}
-        timeSlots={timeSlots}
-        pickerIndex={pickerIndex}
-        activeTimeId={activeTimeId}
-        onClose={() => {
-          setState((draft) => {
+        {/* 自提时间选择 */}
+        {/* <SpFloatLayout className='ziti-time-floatlayout' open={showTimePicker} onClose={() => {
+          setState(draft => {
             draft.showTimePicker = false
           })
-        }}
-        onChangeWeekDays={onChangeWeekDays}
-        onChangeTimeSlot={onChangeTimeSlot}
-      />
-
-      {/* 自提时间选择 */}
-      {/* <SpFloatLayout className='ziti-time-floatlayout' open={showTimePicker} onClose={() => {
-        setState(draft => {
-          draft.showTimePicker = false
-        })
-      }}>
-        <View className='ziti-time-container'>
-          <ScrollView className='week-container' scrollY>
-            {
-              weekdays.map((item, index) => (<View className={classNames('weekday-item', {
-                active: index === pickerIndex
-              })} key={`weekday-item__${index}`} onClick={onChangeWeekDays.bind(this, index)}>{item.title}</View>))
-            }
-          </ScrollView>
-          <ScrollView className='time-container' scrollY>
-            {
-              timeSlots.map((item, index) => (<View className={classNames('timeslot-item', {
-                'active': item.id === activeTimeId,
-                'disabled': item.disabled
-              })} key={`timeslot-item__${index}`} onClick={onChangeTimeSlot.bind(this, item)}>{`${item.value[0]} ~ ${item.value[1]}`}</View>))
-            }
-          </ScrollView>
+        }}>
+          <View className='ziti-time-container'>
+            <ScrollView className='week-container' scrollY>
+              {
+                weekdays.map((item, index) => (<View className={classNames('weekday-item', {
+                  active: index === pickerIndex
+                })} key={`weekday-item__${index}`} onClick={onChangeWeekDays.bind(this, index)}>{item.title}</View>))
+              }
+            </ScrollView>
+            <ScrollView className='time-container' scrollY>
+              {
+                timeSlots.map((item, index) => (<View className={classNames('timeslot-item', {
+                  'active': item.id === activeTimeId,
+                  'disabled': item.disabled
+                })} key={`timeslot-item__${index}`} onClick={onChangeTimeSlot.bind(this, item)}>{`${item.value[0]} ~ ${item.value[1]}`}</View>))
+              }
+            </ScrollView>
+          </View>
+        </SpFloatLayout> */}
+      </View>
+      {receiptType === 'ziti' && zitiAddress && (
+        <View className='ziti-info'>
+          <View className='sp-order-item__idx'>
+            自提信息
+          </View>
+          <SpForm ref={formRef} className='applychief-form' formData={form} rules={rules}>
+            <SpFormItem label='提货时间' prop='pickerTime' type='line' labelWidth='80px'>
+              <SpCell
+                className='picker-time'
+                isLink
+                onClick={() => {
+                  setState((draft) => {
+                    draft.showTimePicker = true
+                  })
+                }}
+              >
+                <Text
+                  className={classNames({
+                    'placeholder': !form.pickerTime
+                  })}
+                >
+                  {getPickerTime()}
+                </Text>
+              </SpCell>
+            </SpFormItem>
+            <SpFormItem label='提货人' prop='pickerName' type='line' labelWidth='80px'>
+              <AtInput
+                name='pickerName'
+                value={form.pickerName}
+                placeholder='请输入提货人姓名'
+                onChange={onInputChange.bind(this, 'pickerName')}
+              />
+            </SpFormItem>
+            <SpFormItem label='手机号码' prop='pickerPhone' type='line' labelWidth='80px'>
+              <AtInput
+                name='pickerPhone'
+                value={form.pickerPhone}
+                placeholder='请输入提货人手机号码'
+                onChange={onInputChange.bind(this, 'pickerPhone')}
+              />
+            </SpFormItem>
+          </SpForm>
         </View>
-      </SpFloatLayout> */}
+      )}
     </View>
   )
 }
