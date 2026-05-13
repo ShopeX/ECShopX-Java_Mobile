@@ -5,7 +5,6 @@
 import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit'
 import { getDistributorId } from '@/utils'
 import { defaultLang } from '@/utils/lang'
-import { $t } from '@/i18n'
 import api from '@/api'
 
 console.log('defaultLang', defaultLang)
@@ -26,13 +25,8 @@ const initialState = {
   location: null,
   chiefInfo: {}, // 团长信息
   checkIsChief: true, // 检查是否是团长
-  address: {
-    province: $t('c70dbd79.a8e562'),
-    city: $t('c70dbd79.a8e562'),
-    area: $t('c70dbd79.7470a9'),
-    lat: '40.220415',
-    lng: '116.234890'
-  }
+  // 不在此调用 $t：store 初始化早于 i18n，会得到未翻译的 key 串写入 Redux（持久化后详情页会显示成 c70dbd79.xxx）
+  address: null
 }
 
 export const fetchUserFavs = createAsyncThunk('user/fetchUserFavs', async (params) => {

@@ -132,12 +132,26 @@ function resolvePurchaseLimitAmountLine(info, curItem) {
   return ti('47ac6066.b8e9f0', [n.toFixed(2)])
 }
 
+/** 子项目 i18n key：8位hex.6位hex，用于兼容 Redux 里误存的 key 串 */
+function looksLikeI18nAutoKey(value) {
+  if (value == null || typeof value !== 'string') return false
+  return /^[0-9a-f]{8}\.[0-9a-f]{6}$/i.test(value.trim())
+}
+
+function resolveAddressDisplayPart(value) {
+  if (value == null || value === '') return ''
+  const s = String(value).trim()
+  if (looksLikeI18nAutoKey(s)) return $t(s)
+  return s
+}
+
 /** 详情卡片「配送地址」一行展示 */
 function formatEspierDetailAddressLine(addr) {
   if (!addr || !isObjectsValue(addr)) return ''
-  const { county, city, province, adrdetail } = addr
-  const region = county || city || province || ''
-  const tail = adrdetail || ''
+  const { county, city, province, area, adrdetail } = addr
+  const rawRegion = county || city || province || area || ''
+  const region = resolveAddressDisplayPart(rawRegion)
+  const tail = resolveAddressDisplayPart(adrdetail)
   return [region, tail].filter(Boolean).join(' ').trim()
 }
 
