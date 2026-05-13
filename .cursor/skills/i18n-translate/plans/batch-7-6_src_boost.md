@@ -3,6 +3,8 @@
 **扫描目录**: `/Users/lukaijie/workspace/work/shopex/smallP/ecshopx-platform/ecshopx-vshop/src/boost`
 **报告文件**: `batch-7-6_src_boost.md`
 
+**复查备注（2026-05-13）**：`src/boost/pages/` 下运行时代码仅注释含中文；各 `index.config.js` 的 `navigationBarTitleText` 按既有约定保持中文（构建期不 import `@/i18n`），与计划「已翻译」状态一致，本次无代码改动。
+
 ## 统计
 
 | 状态 | 数量 | 占比 |

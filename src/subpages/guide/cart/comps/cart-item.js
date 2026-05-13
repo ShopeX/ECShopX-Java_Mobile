@@ -3,12 +3,12 @@
  * See LICENSE file for license details.
  */
 import React, { Component } from 'react'
-import { withTranslation } from 'react-i18next'
 import Taro, { getCurrentInstance } from '@tarojs/taro'
 import { View, Text, Image } from '@tarojs/components'
 import { Price } from '@/components'
 import InputNumber from '@/components/input-number'
 import { isObject, classNames } from '@/utils'
+import { $t, i18n } from '@/i18n'
 import './cart-item.scss'
 
 class GoodsItem extends Component {
@@ -24,6 +24,17 @@ class GoodsItem extends Component {
 
   static options = {
     addGlobalClass: true
+  }
+
+  componentDidMount() {
+    this._onLanguageChanged = () => this.forceUpdate()
+    i18n.on('languageChanged', this._onLanguageChanged)
+  }
+
+  componentWillUnmount() {
+    if (this._onLanguageChanged) {
+      i18n.off('languageChanged', this._onLanguageChanged)
+    }
   }
 
   // onNumChange= (val) => {
@@ -87,7 +98,7 @@ class GoodsItem extends Component {
             <View className='cart-item__cont-hd'>
               <View className='cart-item__title' onClick={this.props.onClickImgAndTitle}>
                 {info.is_plus_buy && (
-                  <Text className='cart-item__tag'> {this.props.t('25211a55.54e654')} </Text>
+                  <Text className='cart-item__tag'> {$t('25211a55.54e654')} </Text>
                 )}
                 {info.title}
               </View>
@@ -143,4 +154,4 @@ class GoodsItem extends Component {
   }
 }
 
-export default withTranslation()(GoodsItem)
+export default GoodsItem

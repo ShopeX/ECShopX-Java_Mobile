@@ -8,8 +8,8 @@
 | 状态 | 数量 | 占比 |
 |------|------|------|
 | 未翻译完 | 0 | 0.0% |
-| 已翻译 | 49 | 56.3% |
-| 无需翻译 | 38 | 43.7% |
+| 已翻译 | 50 | 57.5% |
+| 无需翻译 | 37 | 42.5% |
 | **合计** | **87** | 100% |
 
 ## 未翻译完
@@ -18,6 +18,7 @@
 
 ## 已翻译
 
+- `cart/comps/cart-item.js`
 - `cart/comps/comp-goodsitem.js`
 - `cart/comps/payment-picker.js`
 - `cart/comps/point-use.js`
@@ -70,7 +71,6 @@
 
 ## 无需翻译
 
-- `cart/comps/cart-item.js`
 - `cart/espier-checkout.config.js`
 - `cart/espier-index.config.js`
 - `category/comps/comp-series.js`

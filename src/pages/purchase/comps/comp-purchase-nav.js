@@ -50,7 +50,7 @@ function CompPurchaseNav(props) {
 
   return (
     <View className='comp-purchase-nav' style={{ paddingRight: `${navigationRSpace}px` }}>
-      <View className='comp-purchase-nav__left' style={{ width: `${navigationRSpace}px` }}>
+      <View className='comp-purchase-nav__left'>
         {btnReturn && (
           <View className='comp-purchase-nav__icon-btn' onClick={onBack}>
             <SpImage src='fv_back.png' width={34} height={34} />

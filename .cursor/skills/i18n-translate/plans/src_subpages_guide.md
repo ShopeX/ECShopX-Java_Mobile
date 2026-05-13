@@ -7,12 +7,16 @@
 
 | 状态 | 数量 | 占比 |
 |------|------|------|
-| 未翻译完 | 43 | 49.4% |
-| 已翻译 | 7 | 8.0% |
+| 未翻译完 | 0 | 0% |
+| 已翻译 | 50 | 57.5% |
 | 无需翻译 | 37 | 42.5% |
 | **合计** | **87** | 100% |
 
 ## 未翻译完
+
+（无）
+
+## 已翻译
 
 - `cart/comps/cart-item.js`
 - `cart/comps/payment-picker.js`
@@ -37,6 +41,12 @@
 - `components/wgts/search-home.js`
 - `components/wgts/slider-hotzone/index.js`
 - `custom/custom-page.js`
+- `cart/comps/comp-goodsitem.js`
+- `cart/espier-checkout.js`
+- `cart/espier-index.js`
+- `category/index.js`
+- `coupon-home/index.js`
+- `index.js`
 - `item/comps/activity-panel.js`
 - `item/comps/buy-toolbar.js`
 - `item/comps/comp-activitybar.js`
@@ -55,18 +65,9 @@
 - `item/comps/vip-guide.js`
 - `item/espier-detail.js`
 - `item/list.js`
+- `item/package-list.js`
 - `recommend/detail.js`
 - `recommend/list.js`
-
-## 已翻译
-
-- `cart/comps/comp-goodsitem.js`
-- `cart/espier-checkout.js`
-- `cart/espier-index.js`
-- `category/index.js`
-- `coupon-home/index.js`
-- `index.js`
-- `item/package-list.js`
 
 ## 无需翻译
 
