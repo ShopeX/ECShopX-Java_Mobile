@@ -25,6 +25,8 @@ export default class CashierResult extends Component {
     }
   }
   componentDidMount() {
+    // 仅兜底：收银台等上一页 showLoading 未关闭时，进入结果页关掉全局 loading（不改变原有轮询与 fetch 逻辑）
+    Taro.hideLoading()
     setInterval(() => {
       this.fetch()
     }, 1000)
