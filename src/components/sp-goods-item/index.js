@@ -98,7 +98,7 @@ function SpGoodsItem(props) {
     await dispatch(fetchUserFavs())
     console.log('fav', fav)
     if (S.getAuthToken()) {
-      showToast(fav ? '已移出收藏' : '已加入收藏')
+      showToast(fav ? $t('21544271.b46077') : $t('21544271.151286'))
     }
   }
 

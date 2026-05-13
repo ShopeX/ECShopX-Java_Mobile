@@ -338,7 +338,7 @@ function PurchaseSkuSelect(props) {
     const amountLine = resolvePurchaseLimitAmountLine(info, curItem)
     const showLimits = limitQty != null || !!amountLine
     const limitsKey = curItem?.itemId ?? curItem?.item_id ?? 'none'
-    let btnTxt = '确定'
+    let btnTxt = $t('250b375e.38cf16')
     Object.keys(BUY_TOOL_BTNS()).forEach((key) => {
       if (BUY_TOOL_BTNS()[key].key == type) {
         btnTxt = BUY_TOOL_BTNS()[key].title

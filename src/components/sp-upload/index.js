@@ -9,7 +9,7 @@ import { View, Text, Video } from '@tarojs/components'
 import imgUploader from '@/utils/upload'
 import { isArray, authSetting, classNames } from '@/utils'
 import { SpImage } from '@/components'
-import { useTranslation, $t } from '@/i18n'
+import { useTranslation, $t, ti } from '@/i18n'
 import './index.scss'
 
 const initialState = {
@@ -38,9 +38,9 @@ function SpUpload(props) {
   const [state, setState] = useImmer(initialState)
   const { files } = state
 
-  const showUploadError = (title = '图片上传失败，请重试') => {
+  const showUploadError = (title) => {
     Taro.showToast({
-      title,
+      title: title || $t('0f33692c.02dd40'),
       icon: 'none'
     })
   }
@@ -62,7 +62,7 @@ function SpUpload(props) {
       return
     }
     if (res.length < sourceFiles.length) {
-      showUploadError('部分图片上传失败，请重试')
+      showUploadError($t('0f33692c.568fe2'))
     }
     const _res = mediaType == 'video' ? res : res.map((item) => item.url)
     const _files = [...files, ..._res]
@@ -74,10 +74,10 @@ function SpUpload(props) {
 
   const uploadFiles = async (resultFiles, filetype = 'image') => {
     if (!resultFiles.length) {
-      showUploadError('未选择图片')
+      showUploadError($t('0f33692c.a62935'))
       return
     }
-    Taro.showLoading({ title: '上传中' })
+    Taro.showLoading({ title: $t('0f33692c.fc09a7') })
     try {
       const res = await imgUploader.uploadImageFn(resultFiles, filetype)
       console.log('---uploadImageFn res---', res)
@@ -93,7 +93,7 @@ function SpUpload(props) {
   const handleUploadFile = async () => {
     const remainCount = max - files.length
     if (remainCount <= 0) {
-      showUploadError(`最多上传${max}个文件`)
+      showUploadError(ti('0f33692c.eb15fc', [max]))
       return
     }
     if (process.env.TARO_ENV == 'h5') {
@@ -111,7 +111,7 @@ function SpUpload(props) {
       } catch (error) {
         if (!isCancelError(error)) {
           console.error('sp-upload chooseImage failed', error)
-          showUploadError('选择图片失败，请重试')
+          showUploadError($t('0f33692c.8f3001'))
         }
       }
     }
@@ -138,12 +138,12 @@ function SpUpload(props) {
           } catch (error) {
             if (!isCancelError(error)) {
               console.error('sp-upload chooseMedia failed', error)
-              showUploadError('选择图片失败，请重试')
+              showUploadError($t('0f33692c.8f3001'))
             }
           }
         },
         () => {
-          showUploadError('请开启相机或相册权限后重试')
+          showUploadError($t('0f33692c.ec9e76'))
         }
       )
     }

@@ -3,6 +3,8 @@
 **扫描目录**: `/Users/lukaijie/workspace/work/shopex/smallP/ecshopx-platform/ecshopx-vshop/src/components`
 **报告文件**: `batch-4-1_src_components.md`
 
+**复查备注（2026-05-13）**：对 `src/components/` 全量 `rg` 中文复核，在「已翻译」队列内为 `sp-deliver`、`sp-upload`、`sp-goods-item`、`sp-page/header.js` 补漏译用户可见文案；新增词条仅 `sp-upload` 的 `0f33692c.*`。其余仍含中文的多为注释、JSDoc、wxParse/海报 helper 等，与「无需翻译」分类一致。
+
 ## 统计
 
 | 状态 | 数量 | 占比 |

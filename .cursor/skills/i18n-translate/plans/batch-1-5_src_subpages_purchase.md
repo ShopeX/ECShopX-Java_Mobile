@@ -3,6 +3,8 @@
 **扫描目录**: `/Users/lukaijie/workspace/work/shopex/smallP/ecshopx-platform/ecshopx-vshop/src/subpages/purchase`
 **报告文件**: `batch-1-5_src_subpages_purchase.md`
 
+**复查备注（2026-05-13）**：`comps/` 下 `rg` 复核，补漏 `comp-skuselect.js` 默认主按钮「确定」、`comp-buytoolbar.js` 购物车标签；无新增 locale 键（复用既有词条）。**同日复扫 `purchase/` 根页面**：`espier-index.js` / `index.js` 分享与购物车相关 Toast、`list.js` 排序 Tab 与活动条提示、去除 `initialState` 中未使用的 `filterList` 中文；新增 `61144037.*`（购物车页路径）、`e7972c3f.*`（商品列表页路径）词条。
+
 ## 统计
 
 | 状态 | 数量 | 占比 |

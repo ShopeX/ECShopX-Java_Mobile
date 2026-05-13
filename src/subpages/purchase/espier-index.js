@@ -201,11 +201,11 @@ function CartIndex() {
 
   const onActionBarShare = useCallback(() => {
     if (!isPurchaseShare) {
-      showToast('当前活动不支持分享亲友')
+      showToast($t('61144037.63023a'))
       return
     }
     if (purchase_share_info.surplus_share_limitnum == '0') {
-      Taro.showToast({ title: '分享次数为0', icon: 'none' })
+      Taro.showToast({ title: $t('63b11dbe.ce0559'), icon: 'none' })
       return
     }
     navigateTo('/subpages/purchase/share')
@@ -356,7 +356,7 @@ function CartIndex() {
     if (nextNum > max) {
       const limitNum = toPositiveInt(item.limit_num ?? item.limitNum)
       Taro.showToast({
-        title: limitNum ? `该商品限购${limitNum}件` : '库存不足',
+        title: limitNum ? ti('61144037.953aca', [limitNum]) : $t('61144037.d10bff'),
         icon: 'none',
         duration: 3000
       })
@@ -375,7 +375,7 @@ function CartIndex() {
       return true
     } catch (e) {
       Taro.showToast({
-        title: e?.message || '更新购物车失败',
+        title: e?.message || $t('61144037.871989'),
         icon: 'none',
         duration: 3000
       })
@@ -428,7 +428,7 @@ function CartIndex() {
   return (
     <SpPage
       className='page-cart-index'
-      title='购物车'
+      title={$t('21544271.c017be')}
       pageConfig={{ navigateBackgroundColor: '#ffffff' }}
       renderNavigation={(navProps) => <CompPurchaseNav {...navProps} />}
     >

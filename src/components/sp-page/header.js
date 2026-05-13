@@ -9,8 +9,10 @@ import { SpImage } from '@/components'
 import { styleNames, classNames, VERSION_STANDARD, isWeb } from '@/utils'
 import { VERSION_IN_PURCHASE, isGoodsShelves, linkPage } from '@/utils'
 import { useSelector } from 'react-redux'
+import { $t, useTranslation } from '@/i18n'
 
 const CustomNavigationHeader = memo((props) => {
+  const { i18n } = useTranslation()
   const {
     pageConfig = {},
     title,
@@ -154,12 +156,12 @@ const CustomNavigationHeader = memo((props) => {
         style={{ color: pageConfig?.titleColor }}
       >
         <Text className='nearby-function-text'>
-          {VERSION_STANDARD ? shopInfo?.name || '总店' : nearbyText || '选择地区'}
+          {VERSION_STANDARD ? shopInfo?.name || $t('cb50ec48.0d7757') : nearbyText || $t('cb50ec48.e9a36d')}
         </Text>
         <Text className='nearby-function-icon iconfont icon-arrowDown' />
       </View>
     )
-  }, [handleNearbyClick, nearbyText, shopInfo?.name, pageConfig?.titleColor])
+  }, [handleNearbyClick, nearbyText, shopInfo?.name, pageConfig?.titleColor, i18n.language])
 
   const renderSearch = useCallback(() => {
     return (
@@ -171,13 +173,13 @@ const CustomNavigationHeader = memo((props) => {
           <Text className='iconfont icon-sousuo-01 search-icon' />
           {pageConfig?.showSearchButton && (
             <View className='search-button' style={styleNames(searchButtonStyle())}>
-              <Text>搜索</Text>
+              <Text>{$t('35994bc0.e5f71f')}</Text>
             </View>
           )}
         </View>
       </View>
     )
-  }, [pageConfig?.showSearchButton, searchButtonStyle])
+  }, [pageConfig?.showSearchButton, searchButtonStyle, i18n.language])
 
   const renderTitleText = useCallback(() => {
     const navTitle =

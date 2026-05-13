@@ -35,12 +35,6 @@ const initialState = {
   rightList: [],
   brandList: [],
   brandSelect: [],
-  filterList: [
-    { title: '综合' },
-    { title: '销量' },
-    { title: '价格从低到高' },
-    { title: '价格从高到低' }
-  ],
   curFilterIdx: 0,
   tagList: [],
   curTagIdx: 0,
@@ -85,8 +79,8 @@ function ItemList() {
     () => [
       { title: $t('ddb371f2.88e7de') },
       { title: $t('ddb371f2.44e7eb') },
-      { title: $t('ddb371f2.0e9fd9'), icon: 'icon-shengxu-01' },
-      { title: $t('ddb371f2.0e9fd9'), icon: 'icon-jiangxu-01' }
+      { title: $t('e7972c3f.2249e3'), icon: 'icon-shengxu-01' },
+      { title: $t('e7972c3f.a9f9e6'), icon: 'icon-jiangxu-01' }
     ],
     [i18n.language]
   )
@@ -369,24 +363,24 @@ function ItemList() {
 
   const onActionBarShare = useCallback(() => {
     if (!purchase_share_info?.activity_id) {
-      showToast('请先进入活动')
+      showToast($t('307aead5.343490'))
       return
     }
     if (purchase_share_info.surplus_share_limitnum == '0') {
-      Taro.showToast({ title: '分享次数为0', icon: 'none' })
+      Taro.showToast({ title: $t('63b11dbe.ce0559'), icon: 'none' })
       return
     }
     navigateTo('/subpages/purchase/share')
   }, [purchase_share_info])
 
   const onActionBarQuota = useCallback(() => {
-    showToast('请在活动首页查看额度')
+    showToast($t('e7972c3f.ed8646'))
   }, [])
 
   return (
     <SpPage
       scrollToTopBtn
-      title='商品列表'
+      title={$t('ddb371f2.437974')}
       pageConfig={{ navigateBackgroundColor: '#ffffff' }}
       renderNavigation={(navProps) => <CompPurchaseNav {...navProps} />}
       className={classNames('page-item-list', 'has-navbar', {
@@ -420,7 +414,7 @@ function ItemList() {
         <View className='purchase-list-top-fixed__search'>
           <SpSearchBar
             keyword={keywords}
-            placeholder='搜索商品'
+            placeholder={$t('bfcc0b96.2470ef')}
             onFocus={handleOnFocus}
             onChange={handleOnChange}
             onClear={handleOnClear}

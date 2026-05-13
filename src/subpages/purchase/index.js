@@ -389,12 +389,12 @@ function Home() {
 
   const onActionBarShare = useCallback(() => {
     if (!isPurchaseShare) {
-      showToast('当前活动不支持分享亲友')
+      showToast($t('61144037.63023a'))
       return
     }
     if (purchase_share_info.surplus_share_limitnum == '0') {
       Taro.showToast({
-        title: '分享次数为0',
+        title: $t('63b11dbe.ce0559'),
         icon: 'none'
       })
       return
@@ -409,7 +409,7 @@ function Home() {
   return (
     <SpPage
       className='page-purchase-index'
-      title='企业购'
+      title={$t('c2581d4c.6fb7d0')}
       pageConfig={{ navigateBackgroundColor: '#ffffff' }}
       renderNavigation={(navProps) => <CompPurchaseNav {...navProps} />}
       scrollToTopBtn

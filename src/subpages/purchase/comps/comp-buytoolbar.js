@@ -16,6 +16,7 @@ import { useTranslation, $t } from '@/i18n'
 import './comp-buytoolbar.scss'
 
 function CompGoodsBuyToolbar(props) {
+  useTranslation()
   const { info, onChange = () => {}, onSubscribe = () => {}, curItem = null } = props
   const { cartCount = 0 } = useSelector((state) => state.purchase)
   const btns = []
@@ -158,7 +159,7 @@ function CompGoodsBuyToolbar(props) {
               </Text>
             )}
           </View>
-          <Text className='comp-goodsbuytoolbar-espier__cart-label'>购物车</Text>
+          <Text className='comp-goodsbuytoolbar-espier__cart-label'>{$t('21544271.c017be')}</Text>
         </View>
 
         <View

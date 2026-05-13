@@ -30,12 +30,12 @@ const PURCHASE_DELIVERY_ICONS = {
   ziti: 'icon-zitidian'
 }
 
-/** 企业购 Figma 58:460 文案（与 DELIVERY_LIST 中「同城配」区分） */
-const PURCHASE_TAB_LABELS = {
-  logistics: '普通快递',
-  dada: '同城配送',
-  merchant: '同城配送',
-  ziti: '到店自提'
+/** 企业购 Figma 58:460 文案（与 DELIVERY_LIST 中「同城配」区分），键与 locales 既有配送文案对齐 */
+const PURCHASE_TAB_LABEL_KEYS = {
+  logistics: '97e6d964.249bfe',
+  dada: '97e6d964.bdcbc9',
+  merchant: '97e6d964.bdcbc9',
+  ziti: '9c730348.93ab28'
 }
 
 const initialState = {
@@ -446,7 +446,9 @@ function SpDeliver(props, ref) {
                         )}
                       />
                       <Text className='switch-item__txt'>
-                        {PURCHASE_TAB_LABELS[item.type] || item.name}
+                        {PURCHASE_TAB_LABEL_KEYS[item.type]
+                          ? $t(PURCHASE_TAB_LABEL_KEYS[item.type])
+                          : item.name}
                       </Text>
                     </>
                   ) : (
