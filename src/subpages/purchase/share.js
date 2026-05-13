@@ -43,7 +43,8 @@ export default class PurchaseIndex extends Component {
       menus: ['shareAppMessage', 'shareTimeline']
     })
     this._setShareNavTitle = () => {
-      Taro.setNavigationBarTitle({ title: $t('d0465c10.36d204') })
+      Taro.setNavigationBarTitle({ title: $t('f367f1ff.83d472') })
+      this.forceUpdate()
     }
     this._setShareNavTitle()
     i18n.on('languageChanged', this._setShareNavTitle)
@@ -162,7 +163,7 @@ export default class PurchaseIndex extends Component {
       <SpPage
         className='page-purchase-share'
         scrollToTopBtn
-        title='分享亲友'
+        title={$t('f367f1ff.83d472')}
         pageConfig={{ navigateBackgroundColor: '#ffffff' }}
         renderNavigation={(navProps) => <CompPurchaseNav {...navProps} />}
       >
@@ -174,22 +175,22 @@ export default class PurchaseIndex extends Component {
           <View className='share-page__card share-page__summary'>
             <View className='share-page__activity-line'>
               <Text className='share-page__activity-line-text'>
-                亲友购开始时间：
+                {$t('a0b18297.a8d93b')}
                 {activityStartTs ? formatDateTime(activityStartTs) : '—'}
               </Text>
             </View>
             <View className='share-page__stats-row share-page__stats-row--four'>
               <View className='share-page__stat'>
                 <Text className='share-page__stat-num'>{info.invite_limit ?? 0}</Text>
-                <Text className='share-page__stat-label'>亲友名额</Text>
+                <Text className='share-page__stat-label'>{$t('a0b18297.1b036b')}</Text>
               </View>
               <View className='share-page__stat'>
                 <Text className='share-page__stat-num'>{info.invited_num ?? 0}</Text>
-                <Text className='share-page__stat-label'>已使用</Text>
+                <Text className='share-page__stat-label'>{$t('2ffc1635.b59b00')}</Text>
               </View>
               <View className='share-page__stat'>
                 <Text className='share-page__stat-num'>{canShareNum}</Text>
-                <Text className='share-page__stat-label'>可分享</Text>
+                <Text className='share-page__stat-label'>{$t('a0b18297.194b22')}</Text>
               </View>
               <View className='share-page__stat share-page__stat--share'>
                 {info.is_employee == 1 ? (
@@ -202,13 +203,13 @@ export default class PurchaseIndex extends Component {
                   >
                     <View className='share-page__stat-share-inner'>
                       <Text className='iconfont icon-share share-page__stat-share-icon' />
-                      <Text className='share-page__stat-label'>分享亲友</Text>
+                      <Text className='share-page__stat-label'>{$t('f367f1ff.83d472')}</Text>
                     </View>
                   </Button>
                 ) : (
                   <View className='share-page__stat-share-inner share-page__stat-share-inner--muted'>
                     <Text className='iconfont icon-share share-page__stat-share-icon' />
-                    <Text className='share-page__stat-label'>分享亲友</Text>
+                    <Text className='share-page__stat-label'>{$t('f367f1ff.83d472')}</Text>
                   </View>
                 )}
               </View>
@@ -251,7 +252,7 @@ export default class PurchaseIndex extends Component {
                           </View>
                         </View>
                         <View className='share-page__list-right'>
-                          <Text className='share-page__list-r-label'>已使用</Text>
+                          <Text className='share-page__list-r-label'>{$t('2ffc1635.b59b00')}</Text>
                           <Text className='share-page__list-r-val'>
                             {this.formatUsedYuan(item.used_limitfee)}
                           </Text>
@@ -262,7 +263,7 @@ export default class PurchaseIndex extends Component {
                 </View>
               </ScrollView>
               {relative_list.length === 0 && (
-                <View className='share-page__empty'>暂无亲友数据</View>
+                <View className='share-page__empty'>{$t('a0b18297.a12247')}</View>
               )}
 
               <SharePurchase

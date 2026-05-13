@@ -524,7 +524,6 @@ function ItemList() {
       <CompPurchaseActionbar
         fixed
         cartCount={cartCount}
-        remainingLabel='活动剩余额度'
         onCart={onActionBarCart}
         onShare={onActionBarShare}
         onQuota={onActionBarQuota}

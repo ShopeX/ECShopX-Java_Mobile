@@ -517,7 +517,6 @@ function Home() {
       <CompPurchaseActionbar
         fixed
         cartCount={cartCount}
-        remainingLabel='活动剩余额度'
         remainingAmount={remainingAmountText}
         onCart={onActionBarCart}
         onShare={onActionBarShare}

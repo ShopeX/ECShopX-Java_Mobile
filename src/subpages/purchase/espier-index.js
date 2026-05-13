@@ -649,7 +649,6 @@ function CartIndex() {
         fixed
         hideCart
         cartCount={cartCount}
-        remainingLabel='活动剩余额度'
         remainingAmount={remainingAmountText}
         onShare={onActionBarShare}
         onQuota={onActionBarQuota}

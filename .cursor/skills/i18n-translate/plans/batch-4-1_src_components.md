@@ -8,9 +8,9 @@
 | 状态 | 数量 | 占比 |
 |------|------|------|
 | 未翻译完 | 0 | 0.0% |
-| 已翻译 | 71 | 50.0% |
-| 无需翻译 | 71 | 50.0% |
-| **合计** | **142** | 100% |
+| 已翻译 | 72 | 50.3% |
+| 无需翻译 | 71 | 49.7% |
+| **合计** | **143** | 100% |
 
 ## 未翻译完
 
@@ -68,6 +68,7 @@
 - `sp-poster/dw-prescriptionCode.js`
 - `sp-poster/index.js`
 - `sp-privacy-modal/index.js`
+- `sp-purchase-enterprise-bar/index.js`
 - `sp-recommend/index.js`
 - `sp-render-goods/compact-card.jsx`
 - `sp-render-goods/grid-card.jsx`

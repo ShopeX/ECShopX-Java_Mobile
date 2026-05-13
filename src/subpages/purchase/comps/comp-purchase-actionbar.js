@@ -17,6 +17,7 @@ import { View, Text } from '@tarojs/components'
 import { SpImage } from '@/components'
 import api from '@/api'
 import { classNames, navigateTo, showToast } from '@/utils'
+import { $t, useTranslation } from '@/i18n'
 import './comp-purchase-actionbar.scss'
 
 function formatRemainingYuan(activityData) {
@@ -32,12 +33,13 @@ function formatRemainingYuan(activityData) {
 }
 
 function CompPurchaseActionbar(props) {
+  const { i18n } = useTranslation()
   const {
     className,
     variant,
     fixed = false,
     hideCart = false,
-    remainingLabel = '活动剩余额度',
+    remainingLabel,
     remainingAmount: remainingAmountFromParent,
     cartCount: cartCountProp,
     onCart,
@@ -100,7 +102,15 @@ function CompPurchaseActionbar(props) {
     return 0
   }, [cartCountProp, cartFromStore, isActivityList])
 
-  const displayRemainingLabel = isActivityList ? '活动剩余额度' : remainingLabel
+  const displayRemainingLabel = useMemo(() => {
+    if (isActivityList) {
+      return $t('307aead5.b2bffd')
+    }
+    if (remainingLabel !== undefined && remainingLabel !== null && remainingLabel !== '') {
+      return remainingLabel
+    }
+    return $t('307aead5.b2bffd')
+  }, [isActivityList, remainingLabel, i18n.language])
 
   const displayRemainingAmount = useMemo(() => {
     if (!useRemoteQuota) {
@@ -119,7 +129,7 @@ function CompPurchaseActionbar(props) {
 
   const handleShare = useCallback(() => {
     if (isActivityList) {
-      showToast('请先进入活动')
+      showToast($t('307aead5.343490'))
       return
     }
     ;(onShare || (() => {}))()
@@ -127,7 +137,7 @@ function CompPurchaseActionbar(props) {
 
   const handleQuota = useCallback(() => {
     if (isActivityList) {
-      showToast('请先进入活动')
+      showToast($t('307aead5.343490'))
       return
     }
     ;(onQuota || (() => {}))()
@@ -152,7 +162,7 @@ function CompPurchaseActionbar(props) {
                 </Text>
               )}
             </View>
-            <Text className='comp-purchase-actionbar__label'>购物车</Text>
+            <Text className='comp-purchase-actionbar__label'>{$t('21544271.c017be')}</Text>
           </View>
         )}
 
@@ -161,7 +171,7 @@ function CompPurchaseActionbar(props) {
             <View className='comp-purchase-actionbar__share-icon'>
               <SpImage src='purcharefriend.png' className='comp-purchase-actionbar__icon' mode='aspectFill' />
             </View>
-            <Text className='comp-purchase-actionbar__label'>分享亲友</Text>
+            <Text className='comp-purchase-actionbar__label'>{$t('f367f1ff.83d472')}</Text>
           </View>
         )}
 

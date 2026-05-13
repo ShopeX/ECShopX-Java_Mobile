@@ -8,9 +8,9 @@
 | 状态 | 数量 | 占比 |
 |------|------|------|
 | 未翻译完 | 0 | 0% |
-| 已翻译 | 44 | 84.6% |
-| 无需翻译 | 8 | 15.4% |
-| **合计** | **52** | 100% |
+| 已翻译 | 45 | 84.9% |
+| 无需翻译 | 8 | 15.1% |
+| **合计** | **53** | 100% |
 
 ## 未翻译完
 
@@ -32,6 +32,7 @@
 - `comps/comp-packagelist.js`
 - `comps/comp-paymentpicker.js`
 - `comps/comp-promation.js`
+- `comps/comp-purchase-actionbar.js`
 - `comps/comp-select-company.js`
 - `comps/comp-share.js`
 - `comps/comp-skuselect.js`
