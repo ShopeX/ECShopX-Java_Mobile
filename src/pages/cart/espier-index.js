@@ -313,7 +313,7 @@ function CartIndex() {
         })
       }}
       immersive={false}
-      title='购物车'
+      title={$t('21544271.c017be')}
       renderFooter={tabbar == 1 && <SpTabbar height={state.footerHeight} />}
     >
       <ScrollView scrollY style='height: 100%;'>
@@ -344,7 +344,7 @@ function CartIndex() {
                     </View>
                     <View className='shop-cart-item-shadow'>
                       <View className='shop-cart-item-hd'>
-                        {all_item.shop_name || '自营'}
+                        {all_item.shop_name || $t('f9ef9536.491c0c')}
                       </View>
                       {/** 店铺商品开始 */}
                       {cus_plus_item_list.map((cus_item, cus_index) => {

@@ -52,5 +52,6 @@
 
 ## 说明
 
+- `espier-index.js`（主包购物车）：`SpPage` 标题「购物车」→ `$t('21544271.c017be')`；店铺名缺省「自营」→ `$t('f9ef9536.491c0c')`。
 - `espier-checkout.js`：补全 `useTranslation()` 并解构 `i18n`，与 `useEffect(..., [i18n.language])` 中 `setNavigationBarTitle` 一致，避免运行时 `i18n` 未定义。
 - `offline-transfer.js`：面向用户文案已走 `$t('1fdf726d.*')` 等键。

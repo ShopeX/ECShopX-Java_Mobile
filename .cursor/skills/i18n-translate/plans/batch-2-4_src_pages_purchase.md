@@ -30,7 +30,8 @@
 
 ## 说明
 
-- `index.js`：底部「身份管理」改为 `$t('e32a7439.e33d3e')`，与 `subpages/i18n/lang` 中「身份管理」英阿译文一致。
+- `index.js`（活动列表入口）：`SpPage` 加载态标题「企业购」→ `$t('c2581d4c.6fb7d0')`。
+- `auth.js`：手机验证成功 Toast、亲友绑定失败弹窗确认按钮 → `$t('ace75665.45001d')`、`$t('ace75665.fe0337')`。
 - `index.config.js`：导航标题改为空字符串，与 `auth.config` 等一致，实际标题由页面内 `setNavigationBarTitle($t('e32a7439.dc7202'))` 设置。
-- `auth.js`、`comp-tabbar.js`：面向用户文案已走 `$t` / 键引用。
+- `comp-tabbar.js`：面向用户文案已走 `$t` / 键引用。
 - `comps/comp-purchase-nav.js`：默认标题 `c2581d4c.6fb7d0`（企业购）、客服文案 `e15eed5a.e7dea7`；父级传入 `title` 时仍优先展示传入值。

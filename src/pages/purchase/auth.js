@@ -25,6 +25,7 @@ import {
   updatePurchaseShareInfo,
   updatePersistPurchaseShareInfo
 } from '@/store/slices/purchase'
+import { $t } from '@/i18n'
 
 import './auth.scss'
 
@@ -237,7 +238,7 @@ function PurchaseAuth() {
       }
       const { token } = await api.wx.newlogin(sparams)
       setToken(token)
-      showToast('验证成功')
+      showToast($t('ace75665.45001d'))
       if (invite_code) {
         await enterInviteActivity(700)
       } else {
@@ -278,12 +279,12 @@ function PurchaseAuth() {
   const validateRelativeBind = async () => {
     try {
       await api.purchase.getEmployeeRelativeBind({ invite_code, showError: false })
-      showToast('验证成功')
+      showToast($t('ace75665.45001d'))
       await enterInviteActivity(700)
     } catch (e) {
       Taro.showModal({
         content: e.message || e,
-        confirmText: '我知道了',
+        confirmText: $t('ace75665.fe0337'),
         showCancel: false,
         success: async () => {
           await enterInviteActivity()

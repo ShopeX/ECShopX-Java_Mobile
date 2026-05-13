@@ -5,8 +5,10 @@
 import Taro, { useRouter } from '@tarojs/taro'
 import React, { useEffect } from 'react'
 import { SpPage } from '@/components'
+import { useTranslation, $t } from '@/i18n'
 
 function PurchaseActivityListEntry() {
+  useTranslation()
   const { params = {} } = useRouter()
 
   useEffect(() => {
@@ -18,7 +20,7 @@ function PurchaseActivityListEntry() {
     Taro.redirectTo({ url })
   }, [params])
 
-  return <SpPage loading title='企业购' />
+  return <SpPage loading title={$t('c2581d4c.6fb7d0')} />
 }
 
 PurchaseActivityListEntry.options = {
