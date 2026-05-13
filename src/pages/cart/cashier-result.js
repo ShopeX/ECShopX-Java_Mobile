@@ -47,7 +47,7 @@ function CashierResult(props) {
   /** 同步原生导航标题，避免从详情/结算 redirect 后仍显示商品名（文案走 i18n） */
   useEffect(() => {
     if (!tradeInfo || typeof tradeInfo !== 'object') {
-      setNavigationBarTitle($t('d3lkz64'))
+      setNavigationBarTitle($t('16726e8e.8f2e91'))
       return
     }
     const ts = tradeInfo.tradeState
@@ -56,9 +56,9 @@ function CashierResult(props) {
     } else if (ts === 'NOTPAY') {
       setNavigationBarTitle($t('45ab5834.5e6031'))
     } else if (ts === 'fail') {
-      setNavigationBarTitle($t('d3fdy54'))
+      setNavigationBarTitle($t('16726e8e.4548cc'))
     } else {
-      setNavigationBarTitle($t('d3lkz64'))
+      setNavigationBarTitle($t('16726e8e.8f2e91'))
     }
   }, [tradeInfo, i18n.language])
 

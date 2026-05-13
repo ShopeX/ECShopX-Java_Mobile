@@ -13,25 +13,14 @@ import api from '@/api'
 import doc from '@/doc'
 import { pickBy } from '@/utils'
 import { useTranslation, $t, i18n } from '@/i18n'
-import { tLang } from '@/utils/i18nLang'
 import { useNavigation } from '@/hooks'
 import CompTradeItem from './comps/comp-tradeitem'
 import CompTrackDetail from './comps/comp-track-detail'
 import CompTrackType from './comps/comp-trade-type'
 import './list.scss'
 
-function buildTradeStatusTabs() {
-  return [
-    { tag_name: tLang('avj59v4', '全部订单'), value: '0' },
-    { tag_name: tLang('ehbda3', '待支付'), value: '5' },
-    { tag_name: tLang('ehnue3', '待收货'), value: '1' },
-    { tag_name: tLang('envnc3', '待评价'), value: '7', is_rate: 0 }
-  ]
-}
-
 const initialState = {
   typeVal: '0',
-  tradeStatus: buildTradeStatusTabs(),
   status: '0',
   tradeList: [],
   refresherTriggered: false,
