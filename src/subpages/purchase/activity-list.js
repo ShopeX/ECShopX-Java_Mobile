@@ -54,7 +54,7 @@ function PurchaseActivityList() {
   const dispatch = useDispatch()
 
   const { params } = useRouter()
-  let { activity_id, is_redirt=0 } = params
+  let { activity_id, is_redirt = 0 } = params
 
   useEffect(() => {
     if (!S.getAuthToken()) {
@@ -67,7 +67,7 @@ function PurchaseActivityList() {
   }, [])
 
   useEffect(() => {
-    if (is_redirt==1) {
+    if (is_redirt == 1) {
       fetch({ pageIndex: 1, pageSize: 10 })
     }
   }, [is_redirt])
@@ -78,6 +78,7 @@ function PurchaseActivityList() {
   }
 
   const fetch = async ({ pageIndex, pageSize }) => {
+
     if (pageIndex === 1) {
       if (VERSION_IN_PURCHASE) {
         const data = await api.purchase.getUserEnterprises({
@@ -93,30 +94,43 @@ function PurchaseActivityList() {
         }
       }
     }
-    const { list, total_count } = await api.purchase.getEmployeeActivityList({
-      page: pageIndex,
-      pageSize,
-      enterprise_id: curEnterpriseId,
-      activity_id,
-      status: 'warm_up,ongoing'
-    })
-    const _list = pickBy(list, doc.purchase.ACTIVITY_ITEM)
-    // 如果只有一条数据，直接进入活动首页
-    if (total_count == 1 && is_redirt==1) {
-      try {
-        onClickChange(_list[0], 'redirectTo')
+    try {
+      const { list, total_count } = await api.purchase.getEmployeeActivityList({
+        page: pageIndex,
+        pageSize,
+        enterprise_id: curEnterpriseId,
+        activity_id,
+        status: 'warm_up,ongoing'
+      })
+      const _list = pickBy(list, doc.purchase.ACTIVITY_ITEM)
+      const _eligibilityList = _list.filter((item) => item.id == activity_id)
+      if (is_redirt == 1) {
+        if (_eligibilityList.length == 0) {
+          const { confirm } = await Taro.showModal({
+            content: '抱歉，您没有内购资格',
+            showCancel: false,
+            confirmText: '返回'
+          })
+          if (confirm) {
+            Taro.navigateBack()
+          }
+          return { total: 0 }
+        }
+        onClickChange(_eligibilityList[0], 'redirectTo')
         return { total: 0 }
-      } catch (e) { }
-    }
-    setState((draft) => {
-      draft.activityList = [...draft.activityList, ..._list]
-      if (pageIndex === 1) {
-        draft.loading = false
-        updataMemberInfo()
       }
-    })
+      setState((draft) => {
+        draft.activityList = [...draft.activityList, ..._list]
+        if (pageIndex === 1) {
+          draft.loading = false
+          updataMemberInfo()
+        }
+      })
 
-    return { total: total_count }
+      return { total: total_count }
+    } catch (error) {
+      return { total: 0 }
+    }
   }
 
   const onClickChange = async (item, type) => {
@@ -137,7 +151,7 @@ function PurchaseActivityList() {
         enterprise_id: enterpriseId
       })
       if (Number(eligibility?.internal_sale_eligible) !== 1) {
-        showToast('无内购资格')
+        showToast('抱歉，您没有内购资格')
         return
       }
     } catch (e) {
@@ -159,7 +173,7 @@ function PurchaseActivityList() {
         activity_id: id
       })
     )
-    let url =''
+    let url = ''
     if (isPassphraseEnabled) { //是否开启口令通道
       dispatch(updateIsPasscodeLogin(true))
       if (passphraseUserVerified == 1) {
@@ -173,7 +187,7 @@ function PurchaseActivityList() {
     }
     if (type == 'redirectTo') {
       Taro.redirectTo({ url })
-    } else {  
+    } else {
       Taro.navigateTo({ url })
     }
   }
@@ -205,8 +219,8 @@ function PurchaseActivityList() {
     onClickChange(item)
   }
 
-  if (is_redirt==1) {
-    return <SpPage loading title='企业购' 
+  if (is_redirt == 1) {
+    return <SpPage loading title='企业购'
       pageConfig={{ navigateBackgroundColor: '#ffffff' }}
       renderNavigation={(navProps) => <CompPurchaseNav {...navProps} />}
     />

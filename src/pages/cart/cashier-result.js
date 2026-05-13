@@ -2,7 +2,7 @@
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
  */
-import React, { useEffect } from 'react'
+import React, { useEffect, useRef } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { useImmer } from 'use-immer'
 import Taro, { getCurrentInstance, useDidShow } from '@tarojs/taro'
@@ -30,6 +30,15 @@ function CashierResult(props) {
   const [state, setState] = useImmer(initialState)
   const { tradeInfo, orderId, czOrder } = state
   const dispatch = useDispatch()
+  const pollTimerRef = useRef(null)
+
+  const clearPollTimer = () => {
+    if (pollTimerRef.current != null) {
+      clearTimeout(pollTimerRef.current)
+      pollTimerRef.current = null
+    }
+  }
+
   useEffect(() => {
     Taro.setNavigationBarTitle({ title: $t('8b3a17e4.e5dcb3') })
     const onLang = () => Taro.setNavigationBarTitle({ title: $t('8b3a17e4.e5dcb3') })
@@ -38,21 +47,22 @@ function CashierResult(props) {
   }, [i18n])
 
   useEffect(() => {
-    const { order_id } = $instance?.router?.params
-    if (order_id) {
-      fetch()
+    return () => {
+      clearPollTimer()
     }
   }, [])
 
-  // useDidShow(() => {
-  //   fetch()
-  // })
+  useDidShow(() => {
+    fetch()
+  })
 
   const fetch = async () => {
-    const { order_id, code } = $instance?.router?.params
+    const instance = getCurrentInstance() || {}
+    const { order_id, code } = instance?.router?.params || {}
     if (!order_id) {
       return
     }
+    clearPollTimer()
     const { orderInfo, tradeInfo } = await api.cashier.getOrderDetail(order_id)
 
     setState((draft) => {
@@ -70,10 +80,12 @@ function CashierResult(props) {
     // }
 
     if (tradeInfo?.tradeState != 'SUCCESS') {
-      setTimeout(() => {
+      pollTimerRef.current = setTimeout(() => {
+        pollTimerRef.current = null
         fetch()
       }, 3000)
     } else if (tradeInfo.tradeState == 'SUCCESS') {
+      clearPollTimer()
       // 更新购物车
       await dispatch(
         updateCount({
