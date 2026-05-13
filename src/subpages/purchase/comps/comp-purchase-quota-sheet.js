@@ -7,6 +7,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { View, Text } from '@tarojs/components'
 import { classNames } from '@/utils'
+import { $t, useTranslation } from '@/i18n'
 import './comp-purchase-quota-sheet.scss'
 
 const SHEET_ANIMATION_DURATION = 240
@@ -23,6 +24,7 @@ function formatQuotaYuan(cents) {
 }
 
 function CompPurchaseQuotaSheet(props) {
+  useTranslation()
   const {
     className,
     open = false,
@@ -87,21 +89,21 @@ function CompPurchaseQuotaSheet(props) {
       <View className='comp-purchase-quota-sheet__panel' catchMove>
         <View className='comp-purchase-quota-sheet__grabber' />
         <View className='comp-purchase-quota-sheet__head'>
-          <Text className='comp-purchase-quota-sheet__title'>我的额度</Text>
+          <Text className='comp-purchase-quota-sheet__title'>{$t('d64ed906.167e4d')}</Text>
           <Text className='comp-purchase-quota-sheet__close-icon' onClick={onClose}>×</Text>
         </View>
         <View className='comp-purchase-quota-sheet__cols'>
           <View className='comp-purchase-quota-sheet__col'>
             <Text className='comp-purchase-quota-sheet__value'>{totalText}</Text>
-            <Text className='comp-purchase-quota-sheet__hint'>总额度</Text>
+            <Text className='comp-purchase-quota-sheet__hint'>{$t('2d09f91d.4d1507')}</Text>
           </View>
           <View className='comp-purchase-quota-sheet__col'>
             <Text className='comp-purchase-quota-sheet__value'>{usedText}</Text>
-            <Text className='comp-purchase-quota-sheet__hint'>已使用</Text>
+            <Text className='comp-purchase-quota-sheet__hint'>{$t('2ffc1635.b59b00')}</Text>
           </View>
           <View className='comp-purchase-quota-sheet__col'>
             <Text className='comp-purchase-quota-sheet__value'>{remainingText}</Text>
-            <Text className='comp-purchase-quota-sheet__hint'>剩余额度</Text>
+            <Text className='comp-purchase-quota-sheet__hint'>{$t('10c783c7.9aa89b')}</Text>
           </View>
         </View>
       </View>

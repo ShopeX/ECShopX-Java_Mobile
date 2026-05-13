@@ -107,6 +107,11 @@
     line-height: 1.2;
     color: #ffffff;
     text-align: center;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+    height: 32px;
+    max-width: 100%;
   }
 
   &__quota {
@@ -137,6 +142,11 @@
     line-height: 1.2;
     color: #ffffff;
     opacity: 0.95;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+    height: 32px;
+    max-width: 100%;
   }
 
   &__quota-amount {
