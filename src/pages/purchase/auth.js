@@ -2,7 +2,7 @@
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
  */
-import Taro, { useRouter } from '@tarojs/taro'
+import Taro from '@tarojs/taro'
 import React, { useState, useEffect, useRef } from 'react'
 import { View, Text, Button } from '@tarojs/components'
 import { SpPrivacyModal, SpPage } from '@/components'
@@ -98,11 +98,14 @@ function PurchaseAuth() {
     getAuthType()
   }, [])
 
+  /** 口令落地 ppe=1；否则 authType 在 fetchEnterpriseInfo 拉企业后写入 */
   const getAuthType = async () => {
     const { ppe = '' } = await entryLaunch.getRouteParams()
     dispatch(updateIsPasscodeLogin(ppe == 1))
     setState((draft) => {
-      draft.authType = ppe == 1 ? 'code' : list[0].auth_type || ''
+      if (ppe == 1) {
+        draft.authType = 'code'
+      }
     })
   }
 
@@ -135,15 +138,19 @@ function PurchaseAuth() {
     inviteAutoEnterRef.current = true
     setIsAutoEntering(true)
       ; (async () => {
-        if (userInfo?.is_relative) {
-          await enterInviteActivity()
-          return
+        try {
+          if (userInfo?.is_relative) {
+            await enterInviteActivity()
+            return
+          }
+          await validateRelativeBind()
+        } catch (e) {
+          inviteAutoEnterRef.current = false
+          throw e
+        } finally {
+          setIsAutoEntering(false)
         }
-        await validateRelativeBind()
-      })().catch(() => {
-        inviteAutoEnterRef.current = false
-        setIsAutoEntering(false)
-      })
+      })().catch(() => {})
   }, [activity_id, checked, enterprise_id, invite_code, isLogin, isNewUser, userInfo])
 
   const init = async () => {
@@ -188,11 +195,15 @@ function PurchaseAuth() {
         dispatch(updateEnterpriselogo(list[0]?.logo))
         dispatch(updateCurEnterpriseName(list[0]?.name))
         dispatch(updateCurDistributorId(list[0]?.distributor_id))
+        setState((draft) => {
+          draft.authType = list[0]?.auth_type || ''
+        })
       } else {
         setEnterpriseUnavailable(true)
         showEnterpriseClosedModal()
       }
     } catch (e) {
+      setEnterpriseUnavailable(false)
       console.error('获取企业信息失败', e)
     }
   }
@@ -351,8 +362,12 @@ function PurchaseAuth() {
     } else if (authType == 'code') {
       redirectUrl = '/subpages/purchase/select-company-passcode'
     }
-    if (activity_id) {
+    if (activity_id && redirectUrl) {
       redirectUrl = `${redirectUrl}?activity_id=${activity_id}&enterprise_id=${enterprise_id}&pages_template_id=${pagesTemplateId || ''}`
+    }
+    if (!redirectUrl) {
+      showToast($t('ace75665.c045de'))
+      return
     }
     Taro.navigateTo({ url: redirectUrl })
   }
