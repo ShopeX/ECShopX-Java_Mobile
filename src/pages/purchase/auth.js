@@ -25,7 +25,7 @@ import {
   updatePurchaseShareInfo,
   updatePersistPurchaseShareInfo
 } from '@/store/slices/purchase'
-import { $t } from '@/i18n'
+import { $t, useTranslation } from '@/i18n'
 
 import './auth.scss'
 
@@ -37,6 +37,7 @@ const initialState = {
 }
 
 function PurchaseAuth() {
+  useTranslation()
   const { isLogin, checkPolicyChange, isNewUser, getUserInfo, setToken, login } = useLogin({
     autoLogin: false
   })
@@ -51,8 +52,19 @@ function PurchaseAuth() {
   const [state, setState] = useImmer(initialState)
   const [activityBg, setActivityBg] = useState('')
   const [pagesTemplateId, setPagesTemplateId] = useState('')
+  /** 接口返回企业列表为空：企业已关闭，再次点「开始选购」需重复提示 */
+  const [enterpriseUnavailable, setEnterpriseUnavailable] = useState(false)
 
   const { invite_code, activity_id, enterprise_id, authType } = state
+
+  const showEnterpriseClosedModal = () => {
+    Taro.showModal({
+      title: $t('ace75665.02d981'),
+      content: $t('ace75665.3cd788'),
+      showCancel: false,
+      confirmText: $t('c2581d4c.e83a25')
+    })
+  }
 
   const shouldUsePhoneAuth = !isLogin && checked
 
@@ -82,6 +94,18 @@ function PurchaseAuth() {
     fetchEnterpriseInfo()
   }, [enterprise_id])
 
+  useEffect(() => {
+    getAuthType()
+  }, [])
+
+  const getAuthType = async () => {
+    const { ppe = '' } = await entryLaunch.getRouteParams()
+    dispatch(updateIsPasscodeLogin(ppe == 1))
+    setState((draft) => {
+      draft.authType = ppe == 1 ? 'code' : list[0].auth_type || ''
+    })
+  }
+
 
   useEffect(() => {
     if (invite_code && activity_id) {
@@ -110,16 +134,16 @@ function PurchaseAuth() {
     }
     inviteAutoEnterRef.current = true
     setIsAutoEntering(true)
-    ;(async () => {
-      if (userInfo?.is_relative) {
-        await enterInviteActivity()
-        return
-      }
-      await validateRelativeBind()
-    })().catch(() => {
-      inviteAutoEnterRef.current = false
-      setIsAutoEntering(false)
-    })
+      ; (async () => {
+        if (userInfo?.is_relative) {
+          await enterInviteActivity()
+          return
+        }
+        await validateRelativeBind()
+      })().catch(() => {
+        inviteAutoEnterRef.current = false
+        setIsAutoEntering(false)
+      })
   }, [activity_id, checked, enterprise_id, invite_code, isLogin, isNewUser, userInfo])
 
   const init = async () => {
@@ -133,7 +157,7 @@ function PurchaseAuth() {
    */
   const fetchActivityConfig = async () => {
     if (!activity_id) {
-      console.log('activity_id is empty',activity_id)
+      console.log('activity_id is empty', activity_id)
       return
     }
     try {
@@ -151,21 +175,23 @@ function PurchaseAuth() {
   // 获取企业信息
   const fetchEnterpriseInfo = async () => {
     if (!enterprise_id) {
+      setEnterpriseUnavailable(false)
       return
     }
     try {
       const { list } = await api.purchase.getEnterprisesList({
         enterprise_id: enterprise_id
       })
-      dispatch(updateEnterpriseId(list[0].id))
-      dispatch(updateEnterpriselogo(list[0].logo))
-      dispatch(updateCurEnterpriseName(list[0].name))
-      dispatch(updateCurDistributorId(list[0].distributor_id))
-      const { ppe = '' } = await entryLaunch.getRouteParams()
-      dispatch(updateIsPasscodeLogin(ppe == 1))
-      setState((draft) => {
-        draft.authType = ppe == 1 ? 'code' : list[0].auth_type || ''
-      })
+      if (list[0]) {
+        setEnterpriseUnavailable(false)
+        dispatch(updateEnterpriseId(list[0]?.id))
+        dispatch(updateEnterpriselogo(list[0]?.logo))
+        dispatch(updateCurEnterpriseName(list[0]?.name))
+        dispatch(updateCurDistributorId(list[0]?.distributor_id))
+      } else {
+        setEnterpriseUnavailable(true)
+        showEnterpriseClosedModal()
+      }
     } catch (e) {
       console.error('获取企业信息失败', e)
     }
@@ -184,12 +210,12 @@ function PurchaseAuth() {
   // 企业二维码扫码登录
   const getQrcodeEid = async () => {
     try {
-      const { id, activity_id, aid, enterprise_id, eid, code } = await entryLaunch.getRouteParams()
+      const { id, enterprise_id, code } = await entryLaunch.getRouteParams()
       //亲友扫码
       setState((draft) => {
         draft.invite_code = code || ''
-        draft.activity_id = activity_id || id || aid || ''
-        draft.enterprise_id = enterprise_id || eid || ''
+        draft.activity_id = id || ''
+        draft.enterprise_id = enterprise_id || ''
       })
     } catch (error) {
 
@@ -302,6 +328,10 @@ function PurchaseAuth() {
       setPolicyModal(true)
       return
     }
+    if (enterprise_id && enterpriseUnavailable) {
+      showEnterpriseClosedModal()
+      return
+    }
     if (invite_code) {
       if (!isLogin) return
       if (userInfo?.is_relative) {
@@ -349,7 +379,7 @@ function PurchaseAuth() {
             onGetPhoneNumber={handleBindPhone}
             onClick={handlePasscodeLandingStart}
           >
-            <Text className='purchase-passcode__start-btn-text'>开始选购</Text>
+            <Text className='purchase-passcode__start-btn-text'>{$t('ace75665.ccd765')}</Text>
           </Button>
         </View>
       </View>
