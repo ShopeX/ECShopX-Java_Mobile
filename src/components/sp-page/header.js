@@ -181,11 +181,7 @@ const CustomNavigationHeader = memo((props) => {
   }, [pageConfig?.showSearchButton, searchButtonStyle])
 
   const renderTitleText = useCallback(() => {
-    const navTitle =
-      title ||
-      pageConfig?.wgtName ||
-      getCurrentInstance()?.page?.config?.navigationBarTitleText ||
-      appName
+    const navTitle = title || appName
     return <Text className='title-text'>{navTitle}</Text>
   }, [title, pageConfig?.wgtName, appName])
 
