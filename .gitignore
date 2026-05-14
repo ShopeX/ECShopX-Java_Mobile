@@ -18,3 +18,4 @@ openspec/
 scripts/
 .agent/
 .codex/
+.cursor/commit-summary
