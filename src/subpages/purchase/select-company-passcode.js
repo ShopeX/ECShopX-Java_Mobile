@@ -113,7 +113,7 @@ function PurchasePasscodeAuth() {
       activity_id,
       enterprise_id,
       passphrase_code: next,
-      visitor_key: ''
+      visitor_key: Taro.getStorageSync('userinfo')?.openid || ''
     }
 
     try {

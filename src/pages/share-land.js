@@ -60,17 +60,15 @@ function ShareIand() {
 
     const { company_id: extCompanyId } = getExtConfigData()
     const company_id = routeParams.company_id || routeParams.companyId || extCompanyId
+    const visitor_key = Taro.getStorageSync('userinfo')?.openid || ''
     const payload = {
       behavior_type: 'scan',
       activity_id,
-      enterprise_id
+      enterprise_id,
+      visitor_key
     }
     if (company_id) {
       payload.company_id = company_id
-    }
-    const visitor_key = routeParams.visitor_key || routeParams.visitorKey
-    if (visitor_key) {
-      payload.visitor_key = visitor_key
     }
 
     try {
