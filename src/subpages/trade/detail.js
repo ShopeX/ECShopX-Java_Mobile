@@ -238,11 +238,12 @@ function TradeDetail(props) {
 
   const onClickItem = ({ itemId, distributorId, activityId, orderClass }) => {
     if (orderClass == 'employee_purchase') {
-      Taro.navigateTo({
-        url: `/subpages/purchase/espier-detail?id=${itemId}&dtid=${
-          distributorId || 0
-        }&activity_id=${activityId}&enterprise_id=${info.enterpriseId}`
-      })
+     //内购不让跳商品详情
+    //  Taro.navigateTo({
+    //   url: `/subpages/purchase/espier-detail?id=${itemId}&dtid=${
+    //     distributorId || 0
+    //   }&activity_id=${activityId}&enterprise_id=${info.enterpriseId}`
+    // })
     } else if (orderClass == 'pointsmall') {
       Taro.navigateTo({
         url: `/subpages/pointshop/espier-detail?id=${itemId}&dtid=${
