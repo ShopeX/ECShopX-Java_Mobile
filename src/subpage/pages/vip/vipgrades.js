@@ -21,7 +21,7 @@ import {
   requestAlipayminiPayment
 } from '@/utils'
 import CompPaymentPicker from '@/pages/cart/comps/comp-paymentpicker'
-import { $t, ti } from '@/i18n'
+import { $t, ti, i18n } from '@/i18n'
 import userIcon from '@/assets/imgs/user-icon.png'
 // import { useDispatch } from 'react-redux'
 import './vipgrades.scss'
@@ -60,7 +60,13 @@ export default class VipIndex extends Component {
     }
   }
 
+  syncVipNavTitle = () => {
+    Taro.setNavigationBarTitle({ title: $t('39e52289.9f0635') })
+  }
+
   componentDidMount() {
+    this.syncVipNavTitle()
+    i18n.on('languageChanged', this.syncVipNavTitle)
     console.log(S.getAuthToken())
     const { colors } = this.props
     Taro.setNavigationBarColor({
@@ -77,6 +83,10 @@ export default class VipIndex extends Component {
         this.fetchUserVipInfo()
       }
     )
+  }
+
+  componentWillUnmount() {
+    i18n.off('languageChanged', this.syncVipNavTitle)
   }
 
   async fetchInfo() {

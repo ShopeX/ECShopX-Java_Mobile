@@ -106,7 +106,7 @@
   }
 
   &__code-sp-input.at-input {
-    width: 388px;
+    flex: 1;
     margin: 0;
     margin-left: 0;
     margin-bottom: 0;
@@ -115,7 +115,6 @@
   }
 
   &__code-sp-input .at-input__input {
-    width: 388px;
     height: 104px;
     display: flex;
     align-items: center;
@@ -135,7 +134,7 @@
   }
 
   &__code-send {
-    width: 244px;
+    width: fit-content;
     height: 104px;
     box-sizing: border-box;
     display: flex;
@@ -156,7 +155,7 @@
   }
 
   &__code-send-text {
-    width: 138px;
+    width: fit-content;
     height: 48px;
     font-family: 'Inter';
     font-style: normal;

@@ -12,7 +12,7 @@ import { SpPage, SpPrivacyModal, SpImage, SpPurchaseEnterpriseBar } from '@/comp
 import { useLogin, useModal } from '@/hooks'
 import { classNames, showToast, getDistributorId, isWeb } from '@/utils'
 import { updateEnterpriseId, updateCurDistributorId } from '@/store/slices/purchase'
-import { $t } from '@/i18n'
+import { useTranslation, $t } from '@/i18n'
 import './select-company-phone.scss'
 
 const initialState = {
@@ -20,6 +20,7 @@ const initialState = {
 }
 
 function PurchaseAuthPhone(props) {
+  const { i18n } = useTranslation()
   const { isNewUser, login } = useLogin({
     autoLogin: true,
     policyUpdateHook: (isUpdate) => {
@@ -39,6 +40,10 @@ function PurchaseAuthPhone(props) {
     pages_template_id = ''
   } = params
   const { showModal } = useModal()
+
+  useEffect(() => {
+    Taro.setNavigationBarTitle({ title: $t('cedd18d3.5f934d') })
+  }, [i18n.language])
 
   useEffect(() => {
     getLoginCode()
@@ -100,10 +105,10 @@ function PurchaseAuthPhone(props) {
       await api.purchase.setEmployeeAuth({ ..._params, showError: false })
       await getQrCodeDtid(_params.enterprise_id)
       dispatch(updateEnterpriseId(_params.enterprise_id))
-      showToast('验证成功')
+      showToast($t('ace75665.45001d'))
       setTimeout(() => {
         Taro.reLaunch({
-          url: `/subpages/purchase/index?activity_id=${activity_id || ''}&enterprise_id=${enterprise_id || ''}&pages_template_id=${pages_template_id || ''}`
+          url: `/subpages/purchase/index?activity_id=${activity_id || ''}&enterprise_id=${_params.enterprise_id || enterprise_id || ''}&pages_template_id=${pages_template_id || ''}`
         })
       }, 2000)
     } catch (e) {
@@ -120,7 +125,7 @@ function PurchaseAuthPhone(props) {
         contentAlign: 'center'
       })
       Taro.reLaunch({
-        url: `/subpages/purchase/index?activity_id=${activity_id || ''}&enterprise_id=${enterprise_id || ''}&pages_template_id=${pages_template_id || ''}`
+        url: `/subpages/purchase/index?activity_id=${activity_id || ''}&enterprise_id=${_params.enterprise_id || enterprise_id || ''}&pages_template_id=${pages_template_id || ''}`
       })
       getLoginCode()
     }
@@ -140,10 +145,10 @@ function PurchaseAuthPhone(props) {
 
       <View className='purchase-phone-auth__form-wrap'>
         <View className='purchase-phone-auth__form-card'>
-          <Text className='purchase-phone-auth__form-title'>请完成身份校验</Text>
+          <Text className='purchase-phone-auth__form-title'>{$t('cedd18d3.5f934d')}</Text>
           <View className='purchase-phone-auth__field'>
             <Text className='purchase-phone-auth__hint'>
-              请授权手机号以继续
+              {$t('d0a93b87.4715ea')}
             </Text>
           </View>
           <View className='purchase-phone-auth__footer'>
@@ -151,7 +156,7 @@ function PurchaseAuthPhone(props) {
               className='purchase-phone-auth__confirm'
               onClick={handleBindPhone}
             >
-              <Text className='purchase-phone-auth__confirm-text'>授权手机号</Text>
+              <Text className='purchase-phone-auth__confirm-text'>{$t('d0a93b87.a2ac7f')}</Text>
             </Button>
           </View>
         </View>

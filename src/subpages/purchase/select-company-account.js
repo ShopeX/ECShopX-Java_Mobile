@@ -16,7 +16,7 @@ import { updateEnterpriseId, updateCurDistributorId } from '@/store/slices/purch
 import './select-company-account.scss'
 
 function PurchaseAuthAccount() {
-  useTranslation()
+  const { i18n } = useTranslation()
   const { isNewUser, login } = useLogin({
     autoLogin: true,
     policyUpdateHook: (isUpdate) => {
@@ -31,6 +31,10 @@ function PurchaseAuthAccount() {
   const { curEnterpriseLogo } = useSelector((state) => state.purchase)
   const { showModal } = useModal()
   const dispatch = useDispatch()
+
+  useEffect(() => {
+    Taro.setNavigationBarTitle({ title: $t('cedd18d3.5f934d') })
+  }, [i18n.language])
 
   const disabled = useMemo(() => !account.trim() || !authCode.trim(), [account, authCode])
 
@@ -86,11 +90,11 @@ function PurchaseAuthAccount() {
     try {
       await api.purchase.setEmployeeAuth({ ..._params, showError: false })
       await getQrCodeDtid(_params.enterprise_id)
-      showToast('验证成功')
+      showToast($t('ace75665.45001d'))
       dispatch(updateEnterpriseId(_params.enterprise_id))
       setTimeout(() => {
         Taro.reLaunch({
-          url: `/subpages/purchase/index?activity_id=${activity_id || ''}&enterprise_id=${enterprise_id || ''}&pages_template_id=${pages_template_id || ''}`
+          url: `/subpages/purchase/index?activity_id=${activity_id || ''}&enterprise_id=${_params.enterprise_id || enterprise_id || ''}&pages_template_id=${pages_template_id || ''}`
         })
       }, 700)
     } catch (e) {
@@ -105,7 +109,7 @@ function PurchaseAuthAccount() {
           contentAlign: 'center'
         })
         Taro.reLaunch({
-          url: `/subpages/purchase/index?activity_id=${activity_id || ''}&enterprise_id=${enterprise_id || ''}&pages_template_id=${pages_template_id || ''}`
+          url: `/subpages/purchase/index?activity_id=${activity_id || ''}&enterprise_id=${_params.enterprise_id || enterprise_id || ''}&pages_template_id=${pages_template_id || ''}`
         })
       } else {
         showToast(e.message)
@@ -142,13 +146,13 @@ function PurchaseAuthAccount() {
 
       <View className='purchase-account-auth__form-wrap'>
         <View className='purchase-account-auth__form-card'>
-          <Text className='purchase-account-auth__form-title'>请完成身份校验</Text>
+          <Text className='purchase-account-auth__form-title'>{$t('cedd18d3.5f934d')}</Text>
 
           <View className='purchase-account-auth__field'>
-            <Text className='purchase-account-auth__field-label'>账号</Text>
+            <Text className='purchase-account-auth__field-label'>{$t('cedd18d3.7035c6')}</Text>
             <SpInput
               className='purchase-account-auth__field-sp-input'
-              placeholder='请输入账号'
+              placeholder={$t('eacb27d9.f821a7')}
               placeholderClass='purchase-account-auth__field-input-ph'
               value={account}
               onChange={setAccount}
@@ -156,10 +160,10 @@ function PurchaseAuthAccount() {
           </View>
 
           <View className='purchase-account-auth__field'>
-            <Text className='purchase-account-auth__field-label'>密码</Text>
+            <Text className='purchase-account-auth__field-label'>{$t('cedd18d3.a81052')}</Text>
             <SpInput
               className='purchase-account-auth__field-sp-input'
-              placeholder='请输入密码'
+              placeholder={$t('3ca883d0.e39ffe')}
               placeholderClass='purchase-account-auth__field-input-ph'
               type='password'
               value={authCode}
@@ -174,7 +178,7 @@ function PurchaseAuthAccount() {
               }`}
               onClick={onFormSubmit}
             >
-              <Text className='purchase-account-auth__confirm-text'>确认</Text>
+              <Text className='purchase-account-auth__confirm-text'>{$t('c2581d4c.e83a25')}</Text>
             </View>
           </View>
         </View>

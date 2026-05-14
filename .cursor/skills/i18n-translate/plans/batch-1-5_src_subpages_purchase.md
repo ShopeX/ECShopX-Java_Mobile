@@ -3,16 +3,16 @@
 **扫描目录**: `/Users/lukaijie/workspace/work/shopex/smallP/ecshopx-platform/ecshopx-vshop/src/subpages/purchase`
 **报告文件**: `batch-1-5_src_subpages_purchase.md`
 
-**复查备注（2026-05-13）**：`comps/` 下 `rg` 复核，补漏 `comp-skuselect.js` 默认主按钮「确定」、`comp-buytoolbar.js` 购物车标签；无新增 locale 键（复用既有词条）。**同日复扫 `purchase/` 根页面**：`espier-index.js` / `index.js` 分享与购物车相关 Toast、`list.js` 排序 Tab 与活动条提示、去除 `initialState` 中未使用的 `filterList` 中文；新增 `61144037.*`（购物车页路径）、`e7972c3f.*`（商品列表页路径）词条。
+**复查备注（2026-05-14）**：`select-company-passcode.js` / `select-company-phone.js` 面向用户中文改 `$t`，口令页新增 `d46c6fdb.*`、手机页新增 `d0a93b87.*` 词条；`select-company-passcode.config.js` 导航标题改运行时设置。
 
 ## 统计
 
 | 状态 | 数量 | 占比 |
 |------|------|------|
-| 未翻译完 | 0 | 0% |
-| 已翻译 | 46 | 85.2% |
-| 无需翻译 | 8 | 14.8% |
-| **合计** | **54** | 100% |
+| 未翻译完 | 0 | 0.0% |
+| 已翻译 | 47 | 83.9% |
+| 无需翻译 | 9 | 16.1% |
+| **合计** | **56** | 100% |
 
 ## 未翻译完
 
@@ -59,6 +59,7 @@
 - `select-company-account.js`
 - `select-company-email.config.js`
 - `select-company-email.js`
+- `select-company-passcode.js`
 - `select-company-phone.config.js`
 - `select-company-phone.js`
 - `select-company.config.js`
@@ -76,4 +77,5 @@
 - `espier-detail.config.js`
 - `espier-index.config.js`
 - `index.config.js`
+- `select-company-passcode.config.js`
 - `select-identity.config.js`

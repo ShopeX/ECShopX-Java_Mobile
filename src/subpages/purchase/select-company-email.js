@@ -12,10 +12,11 @@ import { classNames, showToast, getDistributorId, isWeb } from '@/utils'
 import qs from 'qs'
 import { updateEnterpriseId, updateCurDistributorId } from '@/store/slices/purchase'
 import { SpPage, SpPrivacyModal, SpInput, SpImage, SpPurchaseEnterpriseBar } from '@/components'
-import { $t } from '@/i18n'
+import { useTranslation, $t, ti } from '@/i18n'
 import './select-company-email.scss'
 
 function PurchaseAuthEmail() {
+  const { i18n } = useTranslation()
   const { isNewUser, login } = useLogin({
     autoLogin: true,
     policyUpdateHook: (isUpdate) => {
@@ -62,6 +63,10 @@ function PurchaseAuthEmail() {
   }, [countdown])
 
   useEffect(() => {
+    Taro.setNavigationBarTitle({ title: $t('cedd18d3.5f934d') })
+  }, [i18n.language])
+
+  useEffect(() => {
     syncEnterpriseName()
   }, [enterprise_id, enterprise_name, params?.enterprise_id, params?.enterprise_name])
 
@@ -86,12 +91,12 @@ function PurchaseAuthEmail() {
     if (sendDisabled || sendCodeLockRef.current) return
     const nextEmail = email.trim()
     if (!nextEmail) {
-      showToast('请输入电子邮箱')
+      showToast($t('44e64c13.b457cd'))
       return
     }
     const emailReg = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailReg.test(nextEmail)) {
-      showToast('请输入正确的邮箱')
+      showToast($t('97e3aca2.09f253'))
       return
     }
     sendCodeLockRef.current = true
@@ -99,13 +104,13 @@ function PurchaseAuthEmail() {
       const sendParams = { email: nextEmail, enterprise_id }
       const { status } = await api.purchase.getEmailCode(sendParams)
       if (status) {
-        showToast('发送成功')
+        showToast($t('e1d26b67.9db9a7'))
         setCountdown(60)
       } else {
-        showToast('发送失败')
+        showToast($t('1d9cdff5.9ca6a3'))
       }
     } catch (e) {
-      showToast(e?.message || '发送失败')
+      showToast(e?.message || $t('1d9cdff5.9ca6a3'))
     } finally {
       sendCodeLockRef.current = false
     }
@@ -118,7 +123,7 @@ function PurchaseAuthEmail() {
     const nextVcode = vcode.trim()
     const emailReg = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailReg.test(nextEmail)) {
-      showToast('请输入正确的邮箱')
+      showToast($t('97e3aca2.09f253'))
       return
     }
 
@@ -140,7 +145,7 @@ function PurchaseAuthEmail() {
       }
       const { list } = await api.purchase.employeeCheck(checkParams)
       if (!list?.length) {
-        showToast('未找到企业')
+        showToast($t('f695264d.0f85e7'))
         return
       }
 
@@ -176,11 +181,11 @@ function PurchaseAuthEmail() {
       await api.purchase.setEmployeeAuth(authParams)
       await getQrCodeDtid(authParams.enterprise_id)
       dispatch(updateEnterpriseId(authParams.enterprise_id))
-      showToast('验证成功')
+      showToast($t('ace75665.45001d'))
 
       setTimeout(() => {
         Taro.reLaunch({
-          url: `/subpages/purchase/index?activity_id=${activity_id || ''}&enterprise_id=${enterprise_id || ''}&pages_template_id=${pages_template_id || ''}`
+          url: `/subpages/purchase/index?activity_id=${activity_id || ''}&enterprise_id=${authParams.enterprise_id || enterprise_id || ''}&pages_template_id=${pages_template_id || ''}`
         })
       }, 700)
     } catch (e) {
@@ -195,7 +200,7 @@ function PurchaseAuthEmail() {
           contentAlign: 'center'
         })
         Taro.reLaunch({
-          url: `/subpages/purchase/index?activity_id=${activity_id || ''}&enterprise_id=${enterprise_id || ''}&pages_template_id=${pages_template_id || ''}`
+          url: `/subpages/purchase/index?activity_id=${activity_id || ''}&enterprise_id=${authParams.enterprise_id || enterprise_id || ''}&pages_template_id=${pages_template_id || ''}`
         })
       } else {
         showToast(e.message)
@@ -226,20 +231,20 @@ function PurchaseAuthEmail() {
       <SpImage src={activityBg} className='purchase-email-auth__cover-img' mode='widthFix' />
 
       <SpPurchaseEnterpriseBar
-        name={enterpriseName || appName || '企业购'}
+        name={enterpriseName || appName || $t('c2581d4c.6fb7d0')}
         showMore={false}
         showSearch={false}
       />
 
       <View className='purchase-email-auth__form-wrap'>
         <View className='purchase-email-auth__form-card'>
-          <Text className='purchase-email-auth__form-title'>请完成身份校验</Text>
+          <Text className='purchase-email-auth__form-title'>{$t('cedd18d3.5f934d')}</Text>
 
           <View className='purchase-email-auth__field'>
-            <Text className='purchase-email-auth__field-label'>电子邮箱</Text>
+            <Text className='purchase-email-auth__field-label'>{$t('39274850.7148d5')}</Text>
             <SpInput
               className='purchase-email-auth__field-sp-input'
-              placeholder='请输入电子邮箱'
+              placeholder={$t('44e64c13.b457cd')}
               placeholderClass='purchase-email-auth__field-input-ph'
               value={email}
               onChange={handleEmailChange}
@@ -247,11 +252,11 @@ function PurchaseAuthEmail() {
           </View>
 
           <View className='purchase-email-auth__field'>
-            <Text className='purchase-email-auth__field-label'>邮箱验证码</Text>
+            <Text className='purchase-email-auth__field-label'>{$t('f695264d.e3cf0a')}</Text>
             <View className='purchase-email-auth__code-row'>
               <SpInput
                 className='purchase-email-auth__code-sp-input'
-                placeholder='请输入邮箱验证码'
+                placeholder={$t('f695264d.a5ae49')}
                 placeholderClass='purchase-email-auth__field-input-ph'
                 value={vcode}
                 onChange={handleVcodeChange}
@@ -263,7 +268,7 @@ function PurchaseAuthEmail() {
                 onClick={handleSendCode}
               >
                 <Text className='purchase-email-auth__code-send-text'>
-                  {sendDisabled ? `${countdown}s` : '发送验证码'}
+                  {sendDisabled ? ti('ecf05285.41b9b5', [countdown]) : $t('0eb8dfea.c5c358')}
                 </Text>
               </View>
             </View>
@@ -276,7 +281,7 @@ function PurchaseAuthEmail() {
               }`}
               onClick={onFormSubmit}
             >
-              <Text className='purchase-email-auth__confirm-text'>确认</Text>
+              <Text className='purchase-email-auth__confirm-text'>{$t('c2581d4c.e83a25')}</Text>
             </View>
           </View>
         </View>

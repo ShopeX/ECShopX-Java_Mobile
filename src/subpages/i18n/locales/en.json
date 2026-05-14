@@ -999,7 +999,7 @@
   "20b64b82.44efd1": "Log out",
   "20b64b82.69c414": "Log out current account",
   "20b64b82.38cf16": "Confirm",
-  "20b64b82.8935db": "YYYY年MM月DD日",
+  "20b64b82.8935db": "MMM D, YYYY",
   "21544271.151286": "Added to favorites",
   "21544271.9f91d7": "Subscribed",
   "21544271.a793a0": "Complete arrival notification in mini-program",
@@ -3882,5 +3882,18 @@
   "35e49c82.506a1b": "Used to complete your member profile",
   "95285d68.93f311": "Your location is used to find nearby stores",
   "95285d68.0ed510": "Mini Program",
-  "16726e8e.8f2e91": "Payment result"
+  "16726e8e.8f2e91": "Payment result",
+  "cedd18d3.5f934d": "Complete identity verification",
+  "cedd18d3.7035c6": "Account",
+  "cedd18d3.a81052": "Password",
+  "f695264d.e3cf0a": "Email verification code",
+  "f695264d.a5ae49": "Enter email verification code",
+  "f695264d.0f85e7": "Enterprise not found",
+  "d46c6fdb.41db53": "Enter the activity passphrase",
+  "d46c6fdb.916142": "Activity information is missing. Please re-enter",
+  "d46c6fdb.7cc43c": "Passphrase verification failed. Please try again",
+  "d46c6fdb.8d99c2": "Enter passphrase",
+  "d46c6fdb.068aa5": "Enter the activity passphrase to continue",
+  "d0a93b87.4715ea": "Authorize your mobile number to continue",
+  "d0a93b87.a2ac7f": "Authorize mobile number"
 }

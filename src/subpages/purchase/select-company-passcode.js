@@ -11,12 +11,14 @@ import { reportEmployeepurchaseBehavior } from '@/api/purchase'
 import { SpPage, SpLoading } from '@/components'
 import { useLogin } from '@/hooks'
 import { classNames, showToast } from '@/utils'
+import { useTranslation, $t } from '@/i18n'
 import { updateEnterpriseId, updateCurActivityInfo } from '@/store/slices/purchase'
 import { INVITE_ACTIVITY_ID } from '@/consts'
 import S from '@/spx'
 import './select-company-passcode.scss'
 
 function PurchasePasscodeAuth() {
+  const { i18n } = useTranslation()
   useLogin({
     autoLogin: true
   })
@@ -34,6 +36,10 @@ function PurchasePasscodeAuth() {
   const pages_template_id = params?.pages_template_id || ''
 
   const disabled = useMemo(() => !inviteCode.trim(), [inviteCode])
+
+  useEffect(() => {
+    Taro.setNavigationBarTitle({ title: $t('d46c6fdb.8d99c2') })
+  }, [i18n.language])
 
   useEffect(() => {
     const raw = String(inviteFromRoute || '').trim()
@@ -92,12 +98,12 @@ function PurchasePasscodeAuth() {
   const handleSubmit = async () => {
     const next = inviteCode.trim()
     if (!next) {
-      showToast('请输入活动口令码')
+      showToast($t('d46c6fdb.41db53'))
       return
     }
 
     if (!activity_id || !enterprise_id) {
-      showToast('活动信息缺失，请重新进入')
+      showToast($t('d46c6fdb.916142'))
       return
     }
 
@@ -113,12 +119,12 @@ function PurchasePasscodeAuth() {
     try {
       const { verified } = await reportEmployeepurchaseBehavior(payload)
       if (!verified) {
-        showToast('口令码验证失败，请重试')
+        showToast($t('d46c6fdb.7cc43c'))
         return
       }
     } catch (e) {
-      console.error('口令码验证失败', e)
-      showToast(e?.message || '口令码验证失败，请重试')
+      console.error('passphrase verify', e)
+      showToast(e?.message || $t('d46c6fdb.7cc43c'))
       return
     }
 
@@ -148,7 +154,7 @@ function PurchasePasscodeAuth() {
             className='passcode-login-page__start-btn passcode-login-page__start-btn--reset'
             onClick={handleStart}
           >
-            <Text className='passcode-login-page__start-btn-text'>开始选购</Text>
+            <Text className='passcode-login-page__start-btn-text'>{$t('ace75665.ccd765')}</Text>
           </Button>
         </View>
       </View>
@@ -161,17 +167,17 @@ function PurchasePasscodeAuth() {
               <View className='purchase-passcode__sheet-handle' />
 
               <View className='purchase-passcode__sheet-head'>
-                <Text className='purchase-passcode__sheet-title'>请输入口令码</Text>
+                <Text className='purchase-passcode__sheet-title'>{$t('d46c6fdb.8d99c2')}</Text>
                 <View className='purchase-passcode__sheet-close' onClick={handleSheetClose}>
                   <Text className='purchase-passcode__sheet-close-icon'>×</Text>
                 </View>
               </View>
 
-              <Text className='purchase-passcode__sheet-sub'>请输入活动口令码以继续</Text>
+              <Text className='purchase-passcode__sheet-sub'>{$t('d46c6fdb.068aa5')}</Text>
 
               <Input
                 className='purchase-passcode__sheet-input'
-                placeholder='请输入口令码'
+                placeholder={$t('d46c6fdb.8d99c2')}
                 placeholderClass='purchase-passcode__sheet-input-ph'
                 value={inviteCode}
                 onInput={(e) => setInviteCode(e.detail.value)}
@@ -183,7 +189,7 @@ function PurchasePasscodeAuth() {
                 })}
                 onClick={handleSubmit}
               >
-                <Text className='purchase-passcode__sheet-confirm-text'>确认</Text>
+                <Text className='purchase-passcode__sheet-confirm-text'>{$t('c2581d4c.e83a25')}</Text>
               </View>
             </View>
           </View>
