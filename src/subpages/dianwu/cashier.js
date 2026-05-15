@@ -229,6 +229,16 @@ function DianWuCashier() {
   const handleSelectMember = async () => {
     const [item] = searchMemberResult
     const userInfo = await dianwuApi.getMemberByUserId({ user_id: item.userId })
+    try {
+      await dianwuApi.memberReady({
+        user_id: item.userId,
+        distributor_id,
+        showError: false
+      })
+    } catch (e) {
+      const msg = e?.message || e?.res?.data?.data?.message || '会员就绪同步失败'
+      showToast(msg)
+    }
     const { couponNum, point, vipDiscount } = pickBy(userInfo, doc.dianwu.MEMBER_INFO)
     dispatch(
       selectMember({
