@@ -54,7 +54,7 @@ class AddressChoose extends Component {
             <View className='address-picker__bd'>
               <View className='address-receive'>
                 <View className='info-trade'>
-                  <View className='address-area'>
+                  <View className='address-detail'>
                     {isAddress.is_def && <View className='def'>{$t('73700ece.18c634')}</View>}
                     {isAddress.province}
                     {isAddress.city}
