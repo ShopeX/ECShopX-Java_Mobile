@@ -5,14 +5,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import Taro, { getCurrentInstance, useRouter } from '@tarojs/taro'
-import {
-  SpPage,
-  SpPrice,
-  SpCashier,
-  SpDeliver,
-  SpImage,
-  SpPurchaseEnterpriseBar
-} from '@/components'
+import { SpPage, SpPrice, SpCashier, SpImage, SpPurchaseEnterpriseBar } from '@/components'
 import { View, Text, ScrollView } from '@tarojs/components'
 import { changeCoupon, changeZitiAddress } from '@/store/slices/cart'
 import { updateChooseAddress } from '@/store/slices/user'
@@ -42,6 +35,7 @@ import S from '@/spx'
 import CompPurchaseNav from '@/pages/purchase/comps/comp-purchase-nav'
 import { useTranslation, $t, ti } from '@/i18n'
 import { initialState } from './const'
+import SpPurchaseDeliver from './comps/sp-purchase-deliver'
 import './espier-checkout.scss'
 
 function PurchaseCheckout(props) {
@@ -695,8 +689,7 @@ function PurchaseCheckout(props) {
         />
 
         <View className='page-espier-checkout__deliver-wrap'>
-          <SpDeliver
-            isPurchase
+          <SpPurchaseDeliver
             ref={deliverRef}
             distributor_id={dtid}
             address={address}

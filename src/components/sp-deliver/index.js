@@ -55,7 +55,6 @@ function SpDeliver(props, ref) {
   const {
     address = {},
     distributor_id,
-    isPurchase = false,
     deliveryTimeList = {},
     onChangReceiptType = () => {},
     onChange = () => {},
@@ -441,7 +440,7 @@ function SpDeliver(props, ref) {
         {/** 普通快递 */}
         {receiptType === 'logistics' && <AddressChoose isAddress={address} />}
         {/** 同城配 */}
-        {!isPurchase && ['dada', 'merchant'].includes(receiptType) && (
+        {['dada', 'merchant'].includes(receiptType) && (
           <View className='store-module'>
             <AddressChoose isAddress={address} onCustomChosse={handleChooseAddress} />
             <View className='store-info'>
@@ -469,10 +468,10 @@ function SpDeliver(props, ref) {
               }}
             >
               <View className='ziti-title-left'>
-                {zitiAddress?.name || <Text>{$t('9c730348.be2b37')}</Text>}
+                {zitiAddress?.name || $t('9c730348.be2b36')}
               </View>
               <View className='ziti-title-right'>
-                {!zitiAddress?.name || $t('9c730348.be2b38')}
+                {$t('a47ea9b8.feea19')}
                 <Text className='iconfont icon-arrowRight'></Text>
               </View>
             </View>
@@ -487,10 +486,11 @@ function SpDeliver(props, ref) {
                     {$t('9c730348.7d33dc')}
                     {zitiAddress?.contract_phone}
                   </View>
+                {(zitiAddress?.hour || zitiInfo?.hour) && (
                   <View className='ziti-time'>
-                    {$t('17a2cf99.6cd6e3')}
-                    {zitiAddress?.hour || zitiInfo?.hour}
+                    {ti('a47ea9b8.6cd6e3', [zitiAddress?.hour || zitiInfo?.hour])}
                   </View>
+                )}
                 </View>
               </View>
             )}
@@ -557,7 +557,7 @@ function SpDeliver(props, ref) {
       </View>
       {receiptType === 'ziti' && zitiAddress && (
         <View className='ziti-info'>
-          <View className='sp-order-item__idx'>{$t('9c730348.7d33dd')}</View>
+          <View className='sp-order-item__idx'>{$t('a47ea9b8.a9887c')}</View>
           <SpForm ref={formRef} className='applychief-form' formData={form} rules={rules}>
             <SpFormItem
               label={$t('9c730348.2aa50d')}
