@@ -468,9 +468,11 @@ function SpDeliver(props, ref) {
                 })
               }}
             >
-              <View className='ziti-title-left'>{zitiAddress?.name || $t('9c730348.be2b36')}</View>
+              <View className='ziti-title-left'>
+                {zitiAddress?.name || <Text>{$t('9c730348.be2b37')}</Text>}
+              </View>
               <View className='ziti-title-right'>
-                选择其他自提点
+                {!zitiAddress?.name || $t('9c730348.be2b38')}
                 <Text className='iconfont icon-arrowRight'></Text>
               </View>
             </View>
@@ -486,7 +488,8 @@ function SpDeliver(props, ref) {
                     {zitiAddress?.contract_phone}
                   </View>
                   <View className='ziti-time'>
-                    营业时间：{zitiAddress?.hour || zitiInfo?.hour}
+                    {$t('17a2cf99.6cd6e3')}
+                    {zitiAddress?.hour || zitiInfo?.hour}
                   </View>
                 </View>
               </View>
@@ -554,7 +557,7 @@ function SpDeliver(props, ref) {
       </View>
       {receiptType === 'ziti' && zitiAddress && (
         <View className='ziti-info'>
-          <View className='sp-order-item__idx'>自提信息</View>
+          <View className='sp-order-item__idx'>{$t('9c730348.7d33dd')}</View>
           <SpForm ref={formRef} className='applychief-form' formData={form} rules={rules}>
             <SpFormItem
               label={$t('9c730348.2aa50d')}
