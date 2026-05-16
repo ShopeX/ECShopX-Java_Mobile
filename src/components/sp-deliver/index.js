@@ -451,7 +451,7 @@ function SpDeliver(props, ref) {
                   <View className='delivery-time-func' onClick={handleMerchantTimeChoose}>
                     {handleMerchantTimeValue()}
                   </View>
-                  <view className='iconfont icon-arrowRight'></view>
+                  <Text className='iconfont icon-arrowRight' />
                 </View>
               )}
             </View>
