@@ -468,10 +468,10 @@ function SpDeliver(props, ref) {
               }}
             >
               <View className='ziti-title-left'>
-                {zitiAddress?.name || $t('9c730348.be2b36')}
+                {zitiAddress?.name || <Text>{$t('9c730348.be2b36')}</Text>}
               </View>
               <View className='ziti-title-right'>
-                {$t('a47ea9b8.feea19')}
+                {!zitiAddress?.name || $t('a47ea9b8.feea19')}
                 <Text className='iconfont icon-arrowRight'></Text>
               </View>
             </View>
