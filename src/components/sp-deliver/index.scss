@@ -52,6 +52,15 @@
     }
   }
 
+  .switch-tab:not(.switch-tab--purchase) {
+    .switch-item {
+      .iconfont {
+        font-size: 42px;
+        margin-right: 10px;
+      }
+    }
+  }
+
   /* 选择收货地址卡片：Figma 58:480 */
   .address-picker {
     background: #ffffff;
@@ -104,6 +113,11 @@
       color: #0a0a0a;
       padding: 0 !important;
       margin: 0;
+
+      .def {
+        margin-right: 12px;
+        vertical-align: middle;
+      }
     }
 
     .user-info-trade {
@@ -142,8 +156,8 @@
     }
   }
 
-  /* 到店自提：与 .address-picker 同款卡片与层级 */
-  .address-module {
+  /* 到店自提：内购 Figma */
+  &--purchase .address-module {
     background: #ffffff;
     border-radius: 32px;
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
@@ -151,6 +165,7 @@
     box-sizing: border-box;
     padding: 40px 32px;
     margin-bottom: 20px;
+
     .ziti-title {
       display: flex;
       flex-direction: row;
@@ -211,6 +226,84 @@
           padding: 0;
         }
       }
+    }
+  }
+
+  /* 到店自提：普通结算 46f02852e */
+  &:not(&--purchase) .address-module {
+    background: #ffffff;
+    border-radius: 32px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+    overflow: hidden;
+    box-sizing: border-box;
+    padding: 40px 32px;
+    margin-bottom: 20px;
+
+    .ziti-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 0;
+      padding: 0;
+
+      &-left {
+        color: #222;
+        font-size: 34px;
+        font-weight: 500;
+      }
+
+      &-right {
+        display: flex;
+        align-items: center;
+        font-size: 26px;
+        color: #666;
+
+        .icon-arrowRight {
+          font-size: 36px;
+          color: rgba(170, 170, 170, 0.8);
+        }
+      }
+    }
+
+    .address-connect {
+      margin-top: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .ziti-connect-container {
+      display: flex;
+      align-items: center;
+    }
+
+    .ziti-address {
+      display: flex;
+      align-items: center;
+      padding-bottom: 20px;
+      font-size: 26px;
+      color: #8d8d8d;
+
+      .iconfont {
+        margin-right: 10px;
+        font-size: 32px;
+      }
+    }
+
+    .ziti-connect {
+      padding-right: 20px;
+      border-right: 1px solid #eaeaea;
+      font-size: 26px;
+      line-height: 1;
+      color: #666;
+      font-weight: 400;
+    }
+
+    .ziti-time {
+      padding-left: 20px;
+      font-size: 26px;
+      line-height: 1;
+      color: #666;
     }
   }
   .dada {

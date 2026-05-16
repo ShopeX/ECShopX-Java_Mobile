@@ -241,6 +241,23 @@ function CartCheckout(props) {
         await deliverRef.current.validateZitiInfo()
       } else {
         showToast($t('edc703ce.cb8251'))
+        return
+      }
+    }
+
+    // 同城配（达达 / 商户自配）：收货城市须与当前店铺所在城市一致（ECX-8532）
+    if (receiptType === 'dada' || receiptType === 'merchant') {
+      if (!isObjectsValue(address)) {
+        showToast($t('71426282.5e8a31'))
+        return
+      }
+      const shopCityRaw = getShopCityFromShopInfo(shop?.shopInfo)
+      if (shopCityRaw) {
+        const addrCity = address.city
+        if (normalizeCheckoutCity(shopCityRaw) !== normalizeCheckoutCity(addrCity)) {
+          showToast($t('71426282.9d2f04'))
+          return
+        }
       }
     }
 
@@ -985,8 +1002,18 @@ function CartCheckout(props) {
     return (
       <View className='checkout-toolbar'>
         <View className='checkout-toolbar__total'>
-          {ti('edc703ce.90715c', [totalInfo.items_count])}
-          <SpPrice unit='cent' className='primary-price' value={totalInfo.total_fee} />
+          <View className='checkout-toolbar__total-text'>
+            {$t('71426282.3bb9a1')}
+            <SpPrice
+              unit='cent'
+              className='primary-price'
+              value={totalInfo.market_fee - totalInfo.total_fee}
+            />
+          </View>
+          <View className='checkout-toolbar__total-text'>
+            {$t('71426282.326020')}
+            <SpPrice unit='cent' className='primary-price' value={totalInfo.total_fee} />
+          </View>
         </View>
         <AtButton
           circle

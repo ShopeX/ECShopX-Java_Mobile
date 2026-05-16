@@ -38,6 +38,14 @@ const PURCHASE_TAB_LABEL_KEYS = {
   ziti: '9c730348.93ab28'
 }
 
+/** 普通结算：选中 Tab 展示图标（46f02852e） */
+const DELIVERY_TAB_ACTIVE_ICONS = {
+  logistics: 'icon-delivery',
+  dada: 'icon-daifahuo-01',
+  merchant: 'icon-local_shipping_outline',
+  ziti: 'icon-shop'
+}
+
 const initialState = {
   distributorInfo: null,
   receiptType: '',
@@ -416,7 +424,7 @@ function SpDeliver(props, ref) {
   }
 
   return (
-    <View className={classNames('page-comp-deliver')}>
+    <View className={classNames('page-comp-deliver', isPurchase && 'page-comp-deliver--purchase')}>
       <View className={classNames('switch-box', isPurchase && 'switch-box--purchase')}>
         <View
           className={classNames(
@@ -452,7 +460,14 @@ function SpDeliver(props, ref) {
                       </Text>
                     </>
                   ) : (
-                    item.name
+                    <>
+                      {receiptType === item.type && DELIVERY_TAB_ACTIVE_ICONS[item.type] && (
+                        <Text
+                          className={classNames('iconfont', DELIVERY_TAB_ACTIVE_ICONS[item.type])}
+                        />
+                      )}
+                      <Text>{item.name}</Text>
+                    </>
                   )}
                 </View>
               )
@@ -461,24 +476,32 @@ function SpDeliver(props, ref) {
         </View>
       </View>
       {/** 普通快递 */}
-      {receiptType === 'logistics' && <AddressChoose isAddress={address} />}
+      {receiptType === 'logistics' && (
+        <AddressChoose isAddress={address} isPurchase={isPurchase} />
+      )}
       {/** 同城配 */}
       {!isPurchase && ['dada', 'merchant'].includes(receiptType) && (
         <View className='store-module'>
-          <AddressChoose isAddress={address} onCustomChosse={handleChooseAddress} />
-          <View className='store'>{ti('9c730348.5b67ab', [distributorInfo.name])}</View>
-          {receiptType == 'merchant' && (
-            <View className='delivery-time'>
-              <View className='delivery-time-txt'>{$t('9c730348.0fc40e')}</View>
-              <View className='delivery-time-func' onClick={handleMerchantTimeChoose}>
-                {handleMerchantTimeValue()}
+          <AddressChoose
+            isAddress={address}
+            isPurchase={isPurchase}
+            onCustomChosse={handleChooseAddress}
+          />
+          <View className='store-info'>
+            {receiptType == 'merchant' && (
+              <View className='delivery-time'>
+                <View className='delivery-time-txt'>{$t('9c730348.0fc40e')}</View>
+                <View className='delivery-time-func' onClick={handleMerchantTimeChoose}>
+                  {handleMerchantTimeValue()}
+                </View>
+                <Text className='iconfont icon-arrowRight' />
               </View>
-            </View>
-          )}
+            )}
+          </View>
         </View>
       )}
-      {/** 自提 */}
-      {receiptType === 'ziti' && (
+      {/** 自提：内购保持 master；普通结算 46f02852e */}
+      {receiptType === 'ziti' && isPurchase && (
         <View className='address-module'>
           <View
             className='ziti-title'
@@ -524,7 +547,7 @@ function SpDeliver(props, ref) {
                   >
                     <Text
                       className={classNames({
-                        'placeholder': !form.pickerTime
+                        placeholder: !form.pickerTime
                       })}
                     >
                       {getPickerTime()}
@@ -560,6 +583,104 @@ function SpDeliver(props, ref) {
               </SpForm>
             </View>
           )}
+        </View>
+      )}
+
+      {receiptType === 'ziti' && !isPurchase && (
+        <View className='address-module'>
+          <View
+            className='ziti-title'
+            onClick={() => {
+              Taro.navigateTo({
+                url: `/subpages/store/ziti-picker?distributor_id=${distributor_id}&cart_type=${cart_type}&type=${checkoutOrderType}`
+              })
+            }}
+          >
+            <View className='ziti-title-left'>
+              {zitiAddress?.name || $t('9c730348.be2b36')}
+            </View>
+            <View className='ziti-title-right'>
+              {$t('a47ea9b8.feea19')}
+              <Text className='iconfont icon-arrowRight'></Text>
+            </View>
+          </View>
+          {zitiAddress && (
+            <View className='address-connect'>
+              <View className='ziti-address'>
+                <Text className='iconfont icon-dizhiguanli-01'></Text>
+                {`${zitiAddress?.province}${zitiAddress?.city}${zitiAddress?.area}${zitiAddress?.address}`}
+              </View>
+              <View className='ziti-connect-container'>
+                <View className='ziti-connect'>
+                  {$t('9c730348.7d33dc')}
+                  {zitiAddress?.contract_phone}
+                </View>
+                {(zitiAddress?.hour || zitiInfo?.hour) && (
+                  <View className='ziti-time'>
+                    {ti('a47ea9b8.6cd6e3', [zitiAddress?.hour || zitiInfo?.hour])}
+                  </View>
+                )}
+              </View>
+            </View>
+          )}
+        </View>
+      )}
+
+      {receiptType === 'ziti' && !isPurchase && zitiAddress && (
+        <View className='ziti-info'>
+          <View className='sp-order-item__idx'>{$t('a47ea9b8.a9887c')}</View>
+          <SpForm ref={formRef} className='applychief-form' formData={form} rules={rules}>
+            <SpFormItem
+              label={$t('9c730348.2aa50d')}
+              prop='pickerTime'
+              type='line'
+              labelWidth='80px'
+            >
+              <SpCell
+                className='picker-time'
+                isLink
+                onClick={() => {
+                  setState((draft) => {
+                    draft.showTimePicker = true
+                  })
+                }}
+              >
+                <Text
+                  className={classNames({
+                    placeholder: !form.pickerTime
+                  })}
+                >
+                  {getPickerTime()}
+                </Text>
+              </SpCell>
+            </SpFormItem>
+            <SpFormItem
+              label={$t('9c730348.d5403f')}
+              prop='pickerName'
+              type='line'
+              labelWidth='80px'
+            >
+              <AtInput
+                name='pickerName'
+                value={form.pickerName}
+                placeholder={$t('9c730348.afa2e0')}
+                onChange={onInputChange.bind(this, 'pickerName')}
+              />
+            </SpFormItem>
+            <SpFormItem
+              label={$t('692ba07e.92448a')}
+              prop='pickerPhone'
+              type='line'
+              labelWidth='80px'
+            >
+              <AtInput
+                name='pickerPhone'
+                value={form.pickerPhone}
+                placeholder={$t('9c730348.c1fcd7')}
+                onChange={onInputChange.bind(this, 'pickerPhone')}
+              />
+            </SpFormItem>
+          </SpForm>
         </View>
       )}
 
