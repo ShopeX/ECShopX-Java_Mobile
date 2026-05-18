@@ -9,6 +9,7 @@ import { View, Text } from '@tarojs/components'
 import { SpPrice, SpPoint, SpVipLabel } from '@/components'
 import { classNames } from '@/utils'
 import { useLogin } from '@/hooks'
+import { $t } from '@/i18n'
 import './index.scss'
 
 function SpGoodsPrice(props) {
@@ -54,7 +55,7 @@ function SpGoodsPrice(props) {
           <View className='goods-price'>
             {info.memberPrice < info.price && enMemberPrice && isLogin && (
               <View className='vip-price'>
-                <SpVipLabel content='会员价' type='member' />
+                <SpVipLabel content={$t('d59e9e9d.8fdd6f')} type='member' />
                 <SpPrice size={42} className='sale-price' value={info.memberPrice} />
               </View>
             )}
@@ -88,20 +89,25 @@ function SpGoodsPrice(props) {
                 <SpPrice size={42} className='sale-price' value={price} />
               </View>
             )}
-            {!isPoint && (
-              info.memberPrice === info.price || info.vipPrice === info.price || info.svipPrice === info.price || !enMemberPrice || !isLogin ? (
-                  <SpPrice size={42} className='sale-price' value={price} />
-                ) : (
-                  <View className='retail-price'>
-                    <SpVipLabel content='零售价' type='svip' />
-                    <SpPrice value={price} />
-                  </View>
-                )
-            )}
+            {!isPoint &&
+              (info.memberPrice === info.price ||
+              info.vipPrice === info.price ||
+              info.svipPrice === info.price ||
+              !enMemberPrice ||
+              !isLogin ? (
+                <SpPrice size={42} className='sale-price' value={price} />
+              ) : (
+                <View className='retail-price'>
+                  <SpVipLabel content='零售价' type='svip' />
+                  <SpPrice value={price} />
+                </View>
+              ))}
 
-            {(info.memberPrice === info.price || info.vipPrice === info.price || info.svipPrice === info.price) && marketPrice > 0 && enMarketPrice && (
-              <SpPrice className='mkt-price' lineThrough value={marketPrice} />
-            )}
+            {(info.memberPrice === info.price ||
+              info.vipPrice === info.price ||
+              info.svipPrice === info.price) &&
+              marketPrice > 0 &&
+              enMarketPrice && <SpPrice className='mkt-price' lineThrough value={marketPrice} />}
           </View>
         </View>
       )}

@@ -3,23 +3,16 @@
  * See LICENSE file for license details.
  */
 import React, { Component } from 'react'
-import Taro, { getCurrentInstance } from '@tarojs/taro'
+import Taro from '@tarojs/taro'
 import { View, Text } from '@tarojs/components'
 import { connect } from 'react-redux'
+import { withTranslation } from 'react-i18next'
+import { $t } from '@/i18n'
 import { isObjectsValue } from '@/utils'
 
 import './address.scss'
 
-@connect(
-  ({ user }) => ({
-    address: user.address
-  }),
-  (dispatch) => ({
-    updateChooseAddress: (address) =>
-      dispatch({ type: 'user/updateChooseAddress', payload: address })
-  })
-)
-export default class AddressChoose extends Component {
+class AddressChoose extends Component {
   static defaultProps = {
     onClickBack: () => {},
     salesman: false
@@ -52,7 +45,8 @@ export default class AddressChoose extends Component {
   }
 
   render() {
-    const { isAddress } = this.props
+    const { isAddress, isPurchase = false } = this.props
+    const addressLineClass = isPurchase ? 'address-area' : 'address-detail'
 
     return (
       <View className='address-picker'>
@@ -62,7 +56,7 @@ export default class AddressChoose extends Component {
               <View className='address-receive'>
                 <View className='info-trade'>
                   <View className='address-detail'>
-                    {isAddress.is_def && <View className='def'>默认</View>}
+                    {isAddress.is_def && <View className='def'>{$t('73700ece.18c634')}</View>}
                     {isAddress.province}
                     {isAddress.city}
                     {isAddress.county}
@@ -77,10 +71,20 @@ export default class AddressChoose extends Component {
               <View className='sp-cell__ft-icon iconfont icon-arrowRight'></View>
             </View>
           ) : (
-            <View className='address-info__bd'>+请选择收货地址</View>
+            <View className='address-info__bd'>{$t('73700ece.2b35be')}</View>
           )}
         </View>
       </View>
     )
   }
 }
+
+export default connect(
+  ({ user }) => ({
+    address: user.address
+  }),
+  (dispatch) => ({
+    updateChooseAddress: (address) =>
+      dispatch({ type: 'user/updateChooseAddress', payload: address })
+  })
+)(withTranslation()(AddressChoose))
