@@ -21,6 +21,19 @@ function addQuery(url, query) {
   return url + (url.indexOf('?') >= 0 ? '&' : '?') + query
 }
 
+/** 从 refresh 响应头中解析新 token（兼容 header 大小写、H5 Headers 对象） */
+function parseRefreshTokenFromResponse(res) {
+  const header = res?.header || res?.headers || {}
+  let auth = header.Authorization || header.authorization
+  if (typeof header.get === 'function') {
+    auth = auth || header.get('Authorization') || header.get('authorization')
+  }
+  if (!auth) return null
+
+  const m = String(auth).match(/Bearer\s+(.+)/i)
+  return (m ? m[1] : String(auth)).trim()
+}
+
 const request = (() => {
   if (isWeb) {
     // h5环境，请求失败时，需要额外处理
@@ -99,6 +112,7 @@ class API {
   constructor(options = {}) {
     this.setOptions(options)
     this.isRefreshingToken = false
+    this.refreshTokenPromise = null
     this.requestQueue = new RequestQueue()
   }
 
@@ -154,6 +168,7 @@ class API {
   handleLogout() {
     this.requestQueue.destroy()
     this.isRefreshingToken = false
+    this.refreshTokenPromise = null
     S.logout()
     setTimeout(() => {
       console.log(getCurrentInstance().router)
@@ -279,9 +294,15 @@ class API {
   }
 
   async refreshToken() {
+    if (this.refreshTokenPromise) {
+      return this.refreshTokenPromise
+    }
+
     this.isRefreshingToken = true
+    this.refreshTokenPromise = (async () => {
     const token = S.getAuthToken()
     console.log('refreshToken', 66)
+    let refreshed = false
     try {
       await this.makeReq(
         {
@@ -293,21 +314,36 @@ class API {
           noPending: true
         },
         (res) => {
-          console.log('refreshing token: ', res)
           const { statusCode } = res
           if (statusCode === HTTP_STATUS.UNAUTHORIZED) {
-            return this.handleLogout()
+            this.handleLogout()
+            return
+          }
+          if (statusCode !== HTTP_STATUS.SUCCESS) {
+            return
           }
 
-          const newToken = res.header.Authorization.split(' ')[1]
+          const newToken = parseRefreshTokenFromResponse(res)
+          if (!newToken) {
+            log.debug('[refreshToken] missing token in response headers/body', res)
+            return
+          }
           S.setAuthToken(newToken)
+          refreshed = true
         }
       )
     } catch (e) {
-      console.log(e)
+      console.log(e, 'refreshToken error')
     }
+      return refreshed
+    })()
 
-    this.isRefreshingToken = false
+    try {
+      return await this.refreshTokenPromise
+    } finally {
+      this.isRefreshingToken = false
+      this.refreshTokenPromise = null
+    }
   }
 
   request = request
@@ -336,15 +372,17 @@ class API {
       const res = await this.request(options)
       res.config = options
       if (
+        !config.noPending &&
         res.statusCode === HTTP_STATUS.UNAUTHORIZED &&
         (res.data.data && res.data.data.code) === HTTP_STATUS.TOKEN_NEEDS_REFRESH &&
         S.getAuthToken()
       ) {
         // token失效时重造请求，并刷新token
-        if (!this.isRefreshingToken) {
-          await this.refreshToken()
+        const refreshed = await this.refreshToken()
+        if (!refreshed) {
+          return Promise.reject(this.reqError(res, 'Token refresh failed'))
         }
-        ret = await this.pendingReq(config, intereptorRes, intereptorReq, true)
+        ret = await this.makeReq({ ...config, noPending: true }, intereptorRes, intereptorReq)
       } else {
         if (!this.isRefreshingToken || config.noPending) {
           ret = intereptorRes ? intereptorRes(res) : this.intereptorRes(res)
