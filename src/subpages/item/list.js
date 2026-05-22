@@ -311,7 +311,7 @@ function ItemList() {
   return (
     <SpPage
       scrollToTopBtn
-      className={classNames('page-item-list', {
+      className={classNames('page-item-list', 'page-item-list--page-scroll', {
         'has-tagbar': tagList.length > 0
       })}
       ref={pageRef}
