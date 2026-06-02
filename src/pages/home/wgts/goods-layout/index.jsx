@@ -37,7 +37,7 @@ export default function GoodsLayout(props) {
             className={classNames({
               'mb-18': index != goodsList.length - 1
             })}
-            key={item.item_id}
+            key={item.itemId || item.item_id || index}
             info={item}
             onClick={() => onClickItem(item, index + 1)}
           />
@@ -53,7 +53,7 @@ export default function GoodsLayout(props) {
         <View className={`${classNamePrefix}__two-list-left`}>
           {goodsLeftList?.map((item, index) => (
             <SpGoodsHeroCard
-              key={item.item_id}
+              key={item.itemId || item.item_id || index}
               info={item}
               onClick={() => onClickItem(item, index + 1)}
             />
@@ -62,7 +62,7 @@ export default function GoodsLayout(props) {
         <View className={`${classNamePrefix}__two-list-right`}>
           {goodsRightList?.map((item, index) => (
             <SpGoodsHeroCard
-              key={item.item_id}
+              key={item.itemId || item.item_id || index}
               info={item}
               onClick={() => onClickItem(item, index + 1)}
             />
@@ -78,7 +78,7 @@ export default function GoodsLayout(props) {
       <View className={`${classNamePrefix}__three-list`}>
         {goodsList?.map((item, index) => (
           <SpGoodsHeroCard
-            key={item.item_id}
+            key={item.itemId || item.item_id || index}
             info={item}
             onClick={() => onClickItem(item, index + 1)}
           />

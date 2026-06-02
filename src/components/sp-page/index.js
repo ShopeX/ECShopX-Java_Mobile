@@ -19,11 +19,12 @@ import Taro, {
   usePageScroll,
   getCurrentInstance
 } from '@tarojs/taro'
-import { View, Text, Button, Image } from '@tarojs/components'
+import { View, Text } from '@tarojs/components'
 import { useImmer } from 'use-immer'
-import { SpNavBar, SpFloatMenuItem, SpNote, SpLoading, SpImage, SpPoweredBy } from '@/components'
+import { SpFloatMenuItem, SpNote, SpLoading, SpPoweredBy } from '@/components'
 import { useThemsColor, useLogin } from '@/hooks'
 import CookieConsent from '@/components/cookie-consent'
+import S from '@/spx'
 import {
   TAB_PAGES,
   TABBAR_PATH,
@@ -34,13 +35,10 @@ import {
 import {
   classNames,
   styleNames,
-  hasNavbar,
   isWeixin,
   isAlipay,
+  isWeb,
   isIphoneX,
-  VERSION_IN_PURCHASE,
-  isGoodsShelves,
-  linkPage,
   VERSION_SHUYUN
 } from '@/utils'
 import context from '@/hooks/usePageContext'
@@ -64,11 +62,13 @@ const initialState = {
   mantle: false,
   navigationLSpace: 0,
   navigationRSpace: 0,
-  pageTitle: '',
   pageBackground: {},
   pageTheme: {},
   showLeftContainer: false,
-  windowHeight: 0
+  windowHeight: 0,
+  scrollTop: 0,
+  statusBarBgColor: null,
+  statusBarBgColorSourceId: null // 仅由设置过颜色的挂件 sourceId 清除，避免多挂件冲突
 }
 
 const SpPage = memo(
@@ -78,6 +78,19 @@ const SpPage = memo(
     const [state, setState] = useImmer(initialState)
     const wrapRef = useRef(null)
     const scrollTopRef = useRef(0)
+    const setStatusBarBgColorFromSticky = useCallback((color, sourceId) => {
+      setState((draft) => {
+        if (color != null) {
+          if (draft.statusBarBgColor === color && draft.statusBarBgColorSourceId === sourceId)
+            return
+          draft.statusBarBgColor = color
+          draft.statusBarBgColorSourceId = sourceId
+        } else if (draft.statusBarBgColorSourceId === sourceId) {
+          draft.statusBarBgColor = null
+          draft.statusBarBgColorSourceId = null
+        }
+      })
+    }, [])
     const sys = useSelector((state) => state.sys)
     const { lang } = useSelector((state) => state.user)
     const isRTL = lang === 'ar'
@@ -126,9 +139,14 @@ const SpPage = memo(
       let _navigationLSpace = 0 // 导航栏左间距
       let _navigationRSpace = 0 // 导航栏右间距
       const { screenHeight, windowWidth, windowHeight } = Taro.getWindowInfo()
-      const [absolutePath] = router.path.split('?')
-      const custom_navigation = isWeixin ? navigationStyle === 'custom' : false
-      const _btnReturn = pages.length > 1 && !TAB_PAGES.includes(absolutePath)
+      const [absolutePath] = router?.path.split('?')
+      const forceShowBack = String(router?.params?.showBack || '') === '1'
+      // 小程序/支付宝：按页面 config 是否 custom；H5：有 pageConfig 或 immersive 时也使用自定义顶栏以支持相同顶部样式
+      const custom_navigation =
+        isWeixin || isAlipay
+          ? navigationStyle === 'custom'
+          : isWeb && !!(props.pageConfig || props.immersive)
+      const _btnReturn = pages.length > 1 && (!TAB_PAGES.includes(absolutePath) || forceShowBack)
       const _btnHome = pages.length == 1 && !TAB_PAGES.includes(absolutePath)
       if (isWeixin || isAlipay) {
         const menuButton = Taro.getMenuButtonBoundingClientRect()
@@ -139,6 +157,10 @@ const SpPage = memo(
         _menuWidth = menuButton.width
         _navigationLSpace = windowWidth - menuButton.right
         _navigationRSpace = menuButton.width + (windowWidth - menuButton.right)
+      } else if (isWeb && custom_navigation) {
+        // H5 下使用自定义顶栏时给默认高度，使 pageConfig/immersive 样式生效
+        _gNavbarH = props.navigateHeight || DEFAULT_NAVIGATE_HEIGHT
+        _gStatusBarHeight = 0
       }
       setState((draft) => {
         draft.bodyHeight = windowHeight
@@ -147,7 +169,6 @@ const SpPage = memo(
         draft.customNavigation = custom_navigation
         draft.cusCurrentPage = pages.length
         draft.ipx = isIphoneX()
-        draft.pageTitle = props.title || instanceRef.current?.page?.config?.navigationBarTitleText
         draft.gNavbarH = _gNavbarH
         draft.gStatusBarHeight = _gStatusBarHeight
         draft.height =
@@ -160,7 +181,7 @@ const SpPage = memo(
 
       const _height = props.renderFooter
         ? Taro.pxTransform(props.footerHeight + (isIphoneX() ? DEFAULT_SAFE_AREA_HEIGHT : 0))
-        : 0
+        : Taro.pxTransform(0)
 
       props.onReady({
         gNavbarH: _gNavbarH,
@@ -170,14 +191,14 @@ const SpPage = memo(
         menuWidth: _menuWidth,
         footerHeight: _height
       })
-    }, [props.immersive, isPageVisible])
+    }, [props.immersive, props.pageConfig, isPageVisible])
 
     useEffect(() => {
       const {
         referrerInfo: { appId: fromAppId }
       } = Taro.getLaunchOptionsSync()
 
-      if (fromAppId && !S.getAuthToken() && VERSION_SHUYUN) {
+      if (fromAppId && !S?.getAuthToken() && VERSION_SHUYUN) {
         //数云：第三方小程序跳来需要免登
         login(fromAppId)
       }
@@ -209,18 +230,20 @@ const SpPage = memo(
 
     useDidShow(() => {
       setIsPageVisible(true) // 页面显示时设置为true
-      const { page, router } = getCurrentInstance()
-      const fidx = Object.values(TABBAR_PATH()).findIndex((v) => v == router?.path.split('?')[0])
+      const instance = getCurrentInstance()
+      if (!instance?.router) return
+      const { page, router } = instance
+      const fidx = Object.values(TABBAR_PATH()).findIndex((v) => v == router?.path?.split('?')[0])
       const isTabBarPage = fidx > -1
       setState((draft) => {
         draft.showLeftContainer = !['/subpages/guide/index', '/pages/index'].includes(
-          `/${page?.route}`
+          `/${page?.route ?? ''}`
         )
         draft.isTabBarPage = isTabBarPage
       })
 
       // 导购货架分包路由，隐藏所有分享入口
-      if (router.path.indexOf('/subpages/guide') > -1) {
+      if (router?.path.indexOf('/subpages/guide') > -1) {
         Taro.hideShareMenu({
           menus: ['shareAppMessage', 'shareTimeline']
         })
@@ -244,6 +267,9 @@ const SpPage = memo(
     usePageScroll((res) => {
       if (!state.lock) {
         scrollTopRef.current = res.scrollTop
+        setState((draft) => {
+          draft.scrollTop = res.scrollTop
+        })
       }
       if (res.scrollTop > 20) {
         setState((draft) => {
@@ -276,6 +302,9 @@ const SpPage = memo(
       },
       // 当页面单独处理滚动事件时，调用此函数
       handlePageScroll: (res) => {
+        setState((draft) => {
+          draft.scrollTop = res.scrollTop
+        })
         if (res.scrollTop > 20) {
           setState((draft) => {
             draft.mantle = true
@@ -320,6 +349,14 @@ const SpPage = memo(
             mantle={state.mantle}
             nearbyText={props.nearbyText}
             onSearchConfirm={props.onSearchConfirm}
+            navigationRSpace={state.navigationRSpace}
+            showNavitionLeft={props.showNavitionLeft}
+            statusBarBgColor={state.statusBarBgColor}
+            immersiveScrollRevealBgColor={
+              props.immersive && props.pageConfig?.immersiveScrollBgColor && state.scrollTop >= 50
+                ? props.pageConfig.immersiveScrollBgColor
+                : null
+            }
           />
         )}
         {props.isDefault &&
@@ -340,7 +377,14 @@ const SpPage = memo(
             <View className='sp-page__body-content'>
               {!props.loading && (
                 <View className='sp-page__body-children'>
-                  <context.Provider value={{}}>{props.children}</context.Provider>
+                  <context.Provider
+                    value={{
+                      scrollTop: state.scrollTop,
+                      setStatusBarBgColorFromSticky
+                    }}
+                  >
+                    {props.children}
+                  </context.Provider>
                 </View>
               )}
               {props.loading && (

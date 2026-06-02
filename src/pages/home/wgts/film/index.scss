@@ -6,6 +6,7 @@
   .wgt-film__video-wrap {
     width: 100%;
     overflow: hidden;
+    position: relative;
 
     &--16-9 {
       @include aspect-ratio(16, 9);
@@ -25,18 +26,36 @@
   }
 
   .wgt-film__video-inner {
-    // 作为 aspect-ratio 容器的直接子元素，由 mixin 设为 absolute 填满
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+
     video,
     .flim-video {
       width: 100%;
-      height: 100%;
       display: block;
     }
   }
 
   .flim-video {
-    height: 100%;
     display: block;
     width: 100%;
+  }
+
+  // H5：Taro Video 内层 video 默认 height:100% 会撑满视口，需限制在容器内
+  .taro-video,
+  .taro-video-container {
+    width: 100% !important;
+    height: 100% !important;
+  }
+
+  .taro-video-video {
+    height: auto !important;
+    width: 100% !important;
+    max-height: 100%;
+    object-fit: contain;
   }
 }
