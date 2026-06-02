@@ -1,5 +1,13 @@
-FROM steebchen/nginx-spa:stable
-WORKDIR /app
-COPY ./dist/h5 .
-EXPOSE 80
-CMD ["nginx"]
+FROM reg.ishopex.cn/base-images/nginx:1.21-alpine
+
+COPY ./dist/h5 /usr/share/nginx/html
+
+WORKDIR /usr/share/nginx/html
+
+RUN sed -i '9a\        try_files \$uri \$uri\/ \/index.html;' /etc/nginx/conf.d/default.conf && \
+    sed -i '2c\        listen        8080  default_server;' /etc/nginx/conf.d/default.conf && \
+    sed -i '3c\        server_name   _;' /etc/nginx/conf.d/default.conf
+
+EXPOSE 8080
+
+CMD ["nginx", "-g", "daemon off;"]
