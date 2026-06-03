@@ -265,7 +265,7 @@ function PurchaseActivityList() {
                 return (
                   <View key={item.id} className='activity-card'>
                     <View className='activity-card__cover'>
-                      <SpImage className='activity-card__img' mode='aspectFill' src={item.pic} />
+                      <SpImage className='activity-card__img' mode='aspectFill' src={item.list_pic} />
                       <View
                         className={classNames(
                           'activity-card__badge',
