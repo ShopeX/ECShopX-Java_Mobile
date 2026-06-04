@@ -123,6 +123,7 @@ function CartCheckout(props) {
 
   const {
     type = routerParams.type,
+    shop_type = routerParams.shop_type,
     order_type = 'normal',
     shop_id = routerParams.shop_id,
     cart_type = routerParams.cart_type,
@@ -813,7 +814,7 @@ function CartCheckout(props) {
       // coupon_discount: 0,
       // not_use_coupon: 0,
       // 云店店铺商铺下单这个参数应该是0
-      isNostores: type == 'distributor' ? 0 : 1, // 这个传参需要和后端在确定一下
+      isNostores: type == 'distributor' || shop_type == 'distributor' ? 0 : 1, // 云店店铺下单
       point_use,
       pay_type: payType,
       // pay_type: point_use > 0 && totalInfo.total_fee == 0 ? 'point' : payType,

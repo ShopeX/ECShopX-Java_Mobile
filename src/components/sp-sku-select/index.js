@@ -385,7 +385,7 @@ function SpSkuSelect(props) {
       : `/pages/cart/espier-checkout?cart_type=fastbuy&shop_id=${distributorId}`
 
     if (VERSION_STANDARD) {
-      url += '&type=distributor'
+      url += '&shop_type=distributor'
     }
 
     if (activityType == 'seckill' || activityType === 'limited_time_sale') {
