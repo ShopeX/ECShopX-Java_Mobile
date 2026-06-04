@@ -242,6 +242,7 @@ class EntryLaunch {
             },
             (err) => {
               console.error('getLocationInfo error', err)
+              reslove({})
             },
             { timeout: 8000 }
           )

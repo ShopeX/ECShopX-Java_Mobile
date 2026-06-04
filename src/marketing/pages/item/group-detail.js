@@ -33,16 +33,35 @@ export default class GroupDetail extends Component {
   async componentDidMount() {
     const options = await normalizeQuerys(this.$instance.router.params)
     const curStore = Taro.getStorageSync('curStore')
-    if (!curStore) await entry.entryLaunch({ ...options }, true)
+    const hasCurStore = curStore && !(Array.isArray(curStore) && curStore.length === 0)
+    if (!hasCurStore) {
+      try {
+        await entry.entryLaunch({ ...options }, false)
+      } catch (e) {
+        console.warn('entryLaunch failed:', e)
+      }
+    }
     this.fetchDetail()
   }
 
   async fetchDetail() {
     const { team_id } = this.$instance.router.params
     console.log('team_id', team_id)
-    const { distributor_id } = Taro.getStorageSync('curStore')
-    const params = { distributor_id }
-    const detail = await api.group.groupDetail(team_id, params)
+    let detail
+    try {
+      const curStore = Taro.getStorageSync('curStore') || {}
+      const distributor_id = Array.isArray(curStore) ? 0 : curStore.distributor_id || 0
+      const params = { distributor_id }
+      detail = await api.group.groupDetail(team_id, params)
+    } catch (e) {
+      console.error('fetchDetail failed:', e)
+      showToast('加载拼团详情失败')
+      return
+    }
+    if (!detail || Array.isArray(detail) || !detail.activity_info || !detail.team_info) {
+      showToast('拼团不存在或已失效')
+      return
+    }
     const { activity_info, team_info, member_list } = detail
     console.log('detail', detail)
     const { over_time: total_micro_second, person_num } = activity_info

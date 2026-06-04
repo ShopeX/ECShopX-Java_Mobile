@@ -208,9 +208,14 @@ async function getLocal(isNeedLocate, privacy_time) {
       store = await api.shop.getShop(param)
     } else {
       let locationData = null
-      if (String(privacy_time)) {
-        locationData = await entryLaunchFun.getLocationInfo()
-        if (locationData.lat) await InverseAnalysisGaode(locationData)
+      if (isNeedLocate || privacy_time) {
+        try {
+          locationData = await entryLaunchFun.getLocationInfo()
+          if (locationData && locationData.lat) await InverseAnalysisGaode(locationData)
+        } catch (e) {
+          console.warn('getLocationInfo failed:', e)
+          locationData = null
+        }
       }
       // const locationData = await getLoc()
       if (locationData !== null && locationData !== '') {
