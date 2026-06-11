@@ -512,46 +512,44 @@ function TradeAfterSale(props) {
           )}
       </View>
 
-      {openRefundType && (
-        <SpFloatLayout
-          title={$t('44d65d28.5add21')}
-          className='refund-type'
-          open
-          onClose={() => {
-            setState((draft) => {
-              draft.openRefundType = false
-            })
-          }}
-          renderFooter={
-            <AtButton
-              circle
-              type='primary'
-              onClick={() => {
-                setState((draft) => {
-                  draft.refundType = selectRefundValue
-                  draft.openRefundType = false
-                })
-              }}
+      <SpFloatLayout
+        title={$t('44d65d28.5add21')}
+        className='refund-type'
+        open={openRefundType}
+        onClose={() => {
+          setState((draft) => {
+            draft.openRefundType = false
+          })
+        }}
+        renderFooter={
+          <AtButton
+            circle
+            type='primary'
+            onClick={() => {
+              setState((draft) => {
+                draft.refundType = selectRefundValue
+                draft.openRefundType = false
+              })
+            }}
+          >
+            {$t('44d65d28.38cf16')}
+          </AtButton>
+        }
+      >
+        {refundTypeList.map((item, index) => (
+          <View className='refund-type-item' key={`refund-type-item__${index}`}>
+            <SpCheckbox
+              checked={item.value == selectRefundValue}
+              onChange={onChangeRefundType.bind(this, item)}
             >
-              {$t('44d65d28.38cf16')}
-            </AtButton>
-          }
-        >
-          {refundTypeList.map((item, index) => (
-            <View className='refund-type-item' key={`refund-type-item__${index}`}>
-              <SpCheckbox
-                checked={item.value == selectRefundValue}
-                onChange={onChangeRefundType.bind(this, item)}
-              >
-                <View className='refund-item-wrap'>
-                  <View className='title'>{item.title}</View>
-                  <View className='desc'>{item.desc}</View>
-                </View>
-              </SpCheckbox>
-            </View>
-          ))}
-        </SpFloatLayout>
-      )}
+              <View className='refund-item-wrap'>
+                <View className='title'>{item.title}</View>
+                <View className='desc'>{item.desc}</View>
+              </View>
+            </SpCheckbox>
+          </View>
+        ))}
+      </SpFloatLayout>
     </SpPage>
   )
 }
