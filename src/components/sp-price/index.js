@@ -84,7 +84,8 @@ export default class SpPrice extends Component {
       weight,
       unitSize,
       family = '',
-      showdecimal = false
+      showdecimal = false,
+      inline
     } = this.props
     let _value = value
     if (isString(value)) {
@@ -113,12 +114,14 @@ export default class SpPrice extends Component {
     const fontWeight = weight == 'blod' ? 600 : weight
     const fontFamily =
       family || (weight == 'blod' || weight >= 600 ? 'D-DIN-PRO' : 'D-DIN-PRO-Regular')
+    const Wrapper = inline ? Text : View
     return (
-      <View
+      <Wrapper
         className={classNames(
           'sp-price',
           {
-            'line-through': lineThrough
+            'line-through': lineThrough,
+            'sp-price--inline': inline
           },
           primary ? 'sp-price__primary' : null,
           className
@@ -167,7 +170,7 @@ export default class SpPrice extends Component {
           </Text>
         )}
         {appendText && <Text className='sp-price__append'>{appendText}</Text>}
-      </View>
+      </Wrapper>
     )
   }
 }

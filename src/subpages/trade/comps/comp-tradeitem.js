@@ -114,7 +114,7 @@ function CompTradeItem(props) {
                 </Text>{' '}
                 {totalFee > 0 && (
                   <Text>
-                    +<SpPrice value={totalFee} size={38} />
+                    +<SpPrice inline value={totalFee} size={38} />
                   </Text>
                 )}
               </Text>
@@ -122,9 +122,11 @@ function CompTradeItem(props) {
           )}
           {orderClass != 'pointsmall' && (
             <View>
-              <Text className='num'>{`共${totalNum}件`}</Text>
-              <Text className='label'>实付金额</Text>
-              <SpPrice value={totalFee} size={38} />
+              <Text>
+                <Text className='num'>{`共${totalNum}件`}</Text>
+                <Text className='label'>实付金额</Text>
+                <SpPrice inline value={totalFee} size={38} />
+              </Text>
             </View>
           )}
         </View>

@@ -6,6 +6,11 @@
   font-family: D-DIN-PRO-Regular;
   height: 100%;
 
+  &--inline {
+    height: auto;
+    display: inline;
+  }
+
   &.line-through {
     color: #bfbfbf;
     position: relative;
