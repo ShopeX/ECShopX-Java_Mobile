@@ -55,6 +55,7 @@ function CompTradeCancel(props) {
         <View className='reason-list'>
           {reasonList.map((item, index) => (
             <View
+              key={item}
               className={classNames('reason-item', {
                 'active': index === reasonIndex
               })}

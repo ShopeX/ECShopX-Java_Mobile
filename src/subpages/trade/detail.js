@@ -385,6 +385,7 @@ function TradeDetail(props) {
           <View className='action-button-wrap'>
             {btns.map((btn) => (
               <AtButton
+                key={btn.key}
                 circle
                 className={`btn-${btn.btnStatus}`}
                 onClick={handleClickAction.bind(this, btn)}
@@ -598,38 +599,43 @@ function TradeDetail(props) {
           }
           {
             // 门店自提
-            info?.receiptType == 'ziti' && (
+            info?.receiptType == 'ziti' && info?.zitiInfo && (
               <View className='block-container ziti-info'>
                 <View>
                   <Text className='label'>自提点:</Text>
-                  <Text className='value'>{info.zitiInfo.name}</Text>
+                  <Text className='value'>{info.zitiInfo.name || '-'}</Text>
                 </View>
                 <View>
                   <Text className='label'>自提地址:</Text>
-                  <Text className='value'>{`${info.zitiInfo.province}${info.zitiInfo.city}${info.zitiInfo.area}${info.zitiInfo.address}`}</Text>
+                  <Text className='value'>{`${info.zitiInfo.province || ''}${info.zitiInfo.city || ''}${info.zitiInfo.area || ''}${info.zitiInfo.address || ''}`}</Text>
                 </View>
                 <View>
                   <Text className='label'>联系电话:</Text>
-                  <Text className='value'>{info.zitiInfo.contract_phone}</Text>
-                  <Text
-                    className='iconfont icon-dianhua'
-                    onClick={() => {
-                      const { contract_phone } = info.zitiInfo
-                      handleCallPhone(contract_phone)
-                    }}
-                  />
+                  <Text className='value'>{info.zitiInfo.contract_phone || '-'}</Text>
+                  {info.zitiInfo.contract_phone && (
+                    <Text
+                      className='iconfont icon-dianhua'
+                      onClick={() => {
+                        handleCallPhone(info.zitiInfo.contract_phone)
+                      }}
+                    />
+                  )}
                 </View>
                 <View>
                   <Text className='label'>提货人:</Text>
-                  <Text className='value'>{info.receiverName}</Text>
+                  <Text className='value'>{info.receiverName || '-'}</Text>
                 </View>
                 <View>
                   <Text className='label'>提货时间:</Text>
-                  <Text className='value'>{`${info.zitiInfo.pickup_date} ${info.zitiInfo.pickup_time[0]}-${info.zitiInfo.pickup_time[1]}`}</Text>
+                  <Text className='value'>
+                    {info.zitiInfo.pickup_date && info.zitiInfo.pickup_time?.length >= 2
+                      ? `${info.zitiInfo.pickup_date} ${info.zitiInfo.pickup_time[0]}-${info.zitiInfo.pickup_time[1]}`
+                      : info.zitiInfo.pickup_date || '-'}
+                  </Text>
                 </View>
                 <View>
                   <Text className='label'>提货人手机:</Text>
-                  <Text className='value'>{info.receiverMobile}</Text>
+                  <Text className='value'>{info.receiverMobile || '-'}</Text>
                 </View>
               </View>
             )
