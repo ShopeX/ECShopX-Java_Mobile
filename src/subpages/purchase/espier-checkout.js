@@ -54,7 +54,7 @@ import './espier-checkout.scss'
 function PurchaseCheckout(props) {
   const $instance = getCurrentInstance()
   const { updateAddress } = useLocation()
-  const { isLogin, isNewUser, getUserInfoAuth } = useLogin({
+  const { isLogin, getUserInfoAuth } = useLogin({
     autoLogin: true,
     loginSuccess: () => {
       updateAddress()
@@ -146,12 +146,13 @@ function PurchaseCheckout(props) {
   }, [isLogin])
 
   useEffect(() => {
-    if (isNewUser && !isWeb) {
+    const token = S.getAuthToken()
+    if (!token) {
       Taro.redirectTo({
         url: `/subpages/member/index`
       })
     }
-  }, [isNewUser])
+  }, [])
 
   useEffect(() => {
     console.log('use-effect:', receiptType, payType)

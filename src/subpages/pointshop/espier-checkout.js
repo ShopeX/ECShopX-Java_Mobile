@@ -49,7 +49,7 @@ import './espier-checkout.scss'
 function PointShopEspierCheckout() {
   const $instance = getCurrentInstance()
   const { updateAddress } = useLocation()
-  const { isLogin, isNewUser, getUserInfoAuth } = useLogin({
+  const { isLogin, getUserInfoAuth } = useLogin({
     autoLogin: true,
     loginSuccess: () => {
       updateAddress()
@@ -121,12 +121,13 @@ function PointShopEspierCheckout() {
   }, [isLogin])
 
   useEffect(() => {
-    if (isNewUser) {
+    const token = S.getAuthToken()
+    if (!token) {
       Taro.redirectTo({
         url: `/subpages/member/index`
       })
     }
-  }, [isNewUser])
+  }, [])
 
   useEffect(() => {
     console.log(
