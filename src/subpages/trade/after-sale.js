@@ -89,6 +89,11 @@ function TradeAfterSale(props) {
     return info && info.deliveryStatus != 'DONE'
   }, [info])
 
+  const isRefundGoods = useMemo(() => {
+    const list = OnlyRefundShow ? tabList : tabList1
+    return list[curTabIdx]?.type === 'REFUND_GOODS'
+  }, [OnlyRefundShow, tabList, tabList1, curTabIdx])
+
   useEffect(() => {
     fetch()
     Taro.eventCenter.on('onEventPickerStore', (item) => {
@@ -402,7 +407,7 @@ function TradeAfterSale(props) {
             </View>
           </View>
 
-          {curTabIdx == 1 && (
+          {isRefundGoods && (
             <View className='return-goods-type'>
               <SpCell
                 border
@@ -485,7 +490,6 @@ function TradeAfterSale(props) {
                 value={description}
                 placeholder='请输入您的补充描述（选填）'
                 maxLength={200}
-                placeholderStyle='padding-left: 10px;'
                 onChange={(e) => {
                   setState((draft) => {
                     draft.description = e
