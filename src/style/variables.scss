@@ -2,14 +2,15 @@
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
  */
+@use 'sass:math';
 @import 'md-colors';
 
 $font-family: PingFangSC-Regular, PingFang SC, '微软雅黑', 'Microsoft YaHei', Helvetica, Arial,
   sans-serif;
 $font-size: 14px * 2 !default;
 
-$font-size-small: floor($font-size * 0.9) !default;
-$font-size-large: floor($font-size * 1.2) !default;
+$font-size-small: math.floor($font-size * 0.9) !default;
+$font-size-large: math.floor($font-size * 1.2) !default;
 $edge-size: 15px * 2 !default;
 $edge-margin: 10px * 2 !default;
 

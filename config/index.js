@@ -62,6 +62,68 @@ if (process.env.TARO_ENV == 'weapp') {
   })
 }
 
+const SASS_LOADER_OPTION = {
+  sassOptions: {
+    quietDeps: true,
+    silenceDeprecations: ['legacy-js-api', 'import', 'global-builtin']
+  }
+}
+
+function patchSassDeprecationWarnings(chain) {
+  const mergeSassOptions = (options = {}) => {
+    const base = options.sassOptions || {}
+
+    return {
+      ...options,
+      sassOptions: {
+        ...base,
+        quietDeps: true,
+        silenceDeprecations: [
+          ...new Set([
+            ...(base.silenceDeprecations || []),
+            ...SASS_LOADER_OPTION.sassOptions.silenceDeprecations
+          ])
+        ]
+      }
+    }
+  }
+
+  ;['scss', 'sass'].forEach((ruleName) => {
+    if (!chain.module.rules.has(ruleName)) return
+
+    const rule = chain.module.rule(ruleName)
+    const oneOfNames = [...rule.oneOfs.store.keys()]
+
+    oneOfNames.forEach((oneOfName) => {
+      const oneOf = rule.oneOf(oneOfName)
+      const useNames = [...oneOf.uses.store.keys()]
+
+      useNames.forEach((useName) => {
+        const use = oneOf.use(useName)
+        const loader = String(use.get('loader') || '')
+
+        if (loader.includes('sass-loader')) {
+          use.tap((options) => mergeSassOptions(options))
+        }
+      })
+    })
+  })
+
+  chain.merge({
+    ignoreWarnings: [
+      (warning) => {
+        const message = String(warning.message || warning)
+
+        return (
+          message.includes('Deprecation Warning') ||
+          message.includes('sass-lang.com/d/import') ||
+          message.includes('Global built-in functions are deprecated')
+        )
+      }
+    ]
+  })
+}
+
 const config = {
   projectName: pkg.name,
   date: '2025-04-22',
@@ -81,6 +143,7 @@ const config = {
         : ['src/style/imports.scss', 'src/style/h5-mixins.scss'],
     projectDirectory: path.resolve(__dirname, '..')
   },
+  sassLoaderOption: SASS_LOADER_OPTION,
 
   defineConstants: getDefineConstants(CONST_ENVS),
   alias: {
@@ -106,7 +169,10 @@ const config = {
   ],
 
   mini: {
-    webpackChain(chain) {},
+    sassLoaderOption: SASS_LOADER_OPTION,
+    webpackChain(chain) {
+      patchSassDeprecationWarnings(chain)
+    },
 
     compile: {
       include: [REACT_I18NEXT_PATH, I18NEXT_PATH]
@@ -147,6 +213,7 @@ const config = {
   },
 
   h5: {
+    sassLoaderOption: SASS_LOADER_OPTION,
     publicPath: IS_APP ? (IS_APP_SERVER ? '/' : './') : '/',
 
     router: {
@@ -154,7 +221,9 @@ const config = {
       // mode: 'hash',
       mode: IS_APP ? (IS_APP_SERVER ? 'browser' : 'hash') : 'browser'
     },
-    webpackChain(chain) {},
+    webpackChain(chain) {
+      patchSassDeprecationWarnings(chain)
+    },
     devServer: {
       // https: true,
       // overlay: {
