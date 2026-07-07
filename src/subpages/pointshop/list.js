@@ -104,23 +104,33 @@ function PointShopList() {
   }, [leftList])
 
   const getInitConfig = async () => {
-    const [{ point: _point }, { screen }] = await Promise.all([
-      api.pointitem.getMypoint(),
-      api.pointitem.getPointitemSetting()
-    ])
-    const { point_openstatus, point_section } = screen
-    setState((draft) => {
-      draft.point = _point
-      draft.pointFilter = point_openstatus
-      draft.pointScoreList = point_section.map((item, index) => {
-        return {
-          id: index,
-          name: `${item[0]}~${item[1]}`,
-          value: item
-        }
+    try {
+      const [{ point: _point }, { screen } = {}] = await Promise.all([
+        api.pointitem.getMypoint(),
+        api.pointitem.getPointitemSetting()
+      ])
+      const { point_openstatus, point_section = [] } = screen || {}
+      setState((draft) => {
+        draft.point = _point ?? 0
+        draft.pointFilter = point_openstatus
+        draft.pointScoreList = (point_section || []).map((item, index) => {
+          return {
+            id: index,
+            name: `${item[0]}~${item[1]}`,
+            value: item
+          }
+        })
       })
-    })
+    } catch (e) {
+      setState((draft) => {
+        draft.point = 0
+      })
+    }
   }
+
+  useDidShow(() => {
+    getInitConfig()
+  })
 
   const fetch = async ({ pageIndex, pageSize }) => {
     const { dis_id, cat_id, main_cat_id } = $instance?.router?.params
