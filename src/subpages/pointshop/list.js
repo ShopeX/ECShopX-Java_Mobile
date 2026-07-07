@@ -20,7 +20,9 @@ import {
   SpSelect,
   SpPoint,
   SpImage,
-  SpInput as AtInput
+  SpInput as AtInput,
+  SpPoweredBy,
+  SpNote
 } from '@/components'
 import { SpFilterBar, SpTagBar, SpDrawer } from '@/subpages/components'
 import doc from '@/doc'
@@ -261,7 +263,7 @@ function PointShopList() {
     })
   }
   return (
-    <SpPage scrollToTopBtn className={classNames('page-pointshop-list')}>
+    <SpPage scrollToTopBtn showpoweredBy={false} className={classNames('page-pointshop-list')}>
       <View className='page-hd'>
         <View className='pointshop-hd'>
           <View className='point-info'>
@@ -324,7 +326,18 @@ function PointShopList() {
           </SpFilterBar>
         </View>
       </View>
-      <SpScrollView className='item-list-scroll' auto={false} ref={goodsRef} fetch={fetch}>
+      <SpScrollView
+        className='item-list-scroll'
+        auto={false}
+        ref={goodsRef}
+        fetch={fetch}
+        renderMore={() => (
+          <View className='pointshop-list-footer'>
+            <SpNote className='no-more' title={$t('eb9a3a24.a25652')} />
+            <SpPoweredBy />
+          </View>
+        )}
+      >
         <View className='goods-list'>
           <View className='left-container'>
             {leftList.map((list, idx) => {
