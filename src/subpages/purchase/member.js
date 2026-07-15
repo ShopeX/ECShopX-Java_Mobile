@@ -568,13 +568,13 @@ function MemberIndex(props) {
               onClick={handleClickLink.bind(this, '/subpages/trade/list?status=1&is_purchase=1')}
             >
               <SpImage src='daishouhuo.png' className='icon-style' />
-              {state.waitRecevieNum + state.waitSendNum > 0 && (
+              {state.waitRecevieNum > 0 && (
                 <View
                   className={classNames('order-bradge', {
                     'purchase-order-bradge': VERSION_IN_PURCHASE
                   })}
                 >
-                  <Text>{state.waitRecevieNum + state.waitSendNum}</Text>
+                  <Text>{state.waitRecevieNum}</Text>
                 </View>
               )}
               <Text className='order-txt'>待收货</Text>

@@ -24,13 +24,13 @@ const initList = [
     content: '待收货',
     imgUrl: 'fv_order_daifahuo.png',
     link: '/subpages/trade/list?status=1',
-    key: 'waitSendNum'
+    key: 'waitRecevieNum'
   },
   {
     content: '待评价',
     imgUrl: 'fv_order_daishouhuo.png',
     link: '/subpages/trade/list?status=7',
-    key: 'waitRecevieNum'
+    key: 'waitEvaluateNum'
   },
   {
     content: '售后',
@@ -103,7 +103,10 @@ export default function WgtOrderNavigation(props) {
         ...item,
         ...apiItem,
         content: apiItem?.content ?? item.content,
-        imgUrl: apiItem?.imgUrl || item.imgUrl
+        imgUrl: apiItem?.imgUrl || item.imgUrl,
+        // 角标 key / 跳转与列表 status 口径固定，避免装修配置覆盖导致数量与列表不一致
+        key: item.key,
+        link: item.link
       }
     })
     setOrderList(list)
