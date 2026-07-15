@@ -329,7 +329,7 @@ function TradeAfterSaleDetail(props) {
             <View className='after-sales-type'>
               <SpCell title='售后类型'>{getAfterSalesType()}</SpCell>
               <SpCell title='退款原因'>{info?.reason}</SpCell>
-              <SpCell title='退款凭证'>
+              <SpCell title='补充描述'>
                 <>
                   <View>{info?.description}</View>
                   <View className='evidence-pic'>

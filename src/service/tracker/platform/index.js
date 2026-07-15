@@ -5,8 +5,8 @@
 const providers = {}
 
 if (
-  process.env.TARO_ENV == 'weapp' ||
-  (process.env.TARO_ENV === 'alipay' && process.env.APP_TRACK)
+  process.env.APP_TRACK &&
+  (process.env.TARO_ENV == 'weapp' || process.env.TARO_ENV === 'alipay')
 ) {
   Object.assign(providers, {
     [process.env.APP_TRACK]: require(`./` + process.env.APP_TRACK).default

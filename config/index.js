@@ -23,6 +23,7 @@ const CONST_ENVS = {
     process.env.TARO_ENV == 'h5' ? '/subpage/pages/auth/login' : '/subpages/member/index',
   APP_BUILD_TARGET: BUILD_TARGET,
   APP_LIVE: process.env.APP_LIVE,
+  APP_TRACK: process.env.APP_TRACK || '',
   ...APP_ENVS
 }
 
