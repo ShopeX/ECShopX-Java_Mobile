@@ -177,6 +177,7 @@ export default class GroupList extends Component {
                         className='group-item__price'
                         value={item.act_price}
                         unit='cent'
+                        appendText={item.items && item.items.length > 1 ? '起' : ''}
                       />
                     </View>
                   </View>

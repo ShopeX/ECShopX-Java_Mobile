@@ -55,13 +55,65 @@ const initialState = {
   skuText: '',
   num: 1,
   loading: false,
-  minNum: 1
+  minNum: 1,
+  groupSkuInvalid: false
 }
 const $instance = Taro.getCurrentInstance()
+
+const getGroupActivityList = (activityInfo) => {
+  if (!activityInfo) {
+    return null
+  }
+  if (activityInfo.list && typeof activityInfo.list === 'object') {
+    return activityInfo.list
+  }
+  if (Array.isArray(activityInfo.items) && activityInfo.items.length > 0) {
+    const list = {}
+    activityInfo.items.forEach((item) => {
+      list[String(item.item_id)] = {
+        item_id: item.item_id,
+        activity_price: item.act_price,
+        store: item.store
+      }
+    })
+    return list
+  }
+  return null
+}
+
+const applyGroupSkuActivity = (skuItem, info) => {
+  if (!skuItem || info.activityType !== 'group') {
+    return { item: skuItem, groupSkuInvalid: false }
+  }
+  const list = getGroupActivityList(info.activityInfo)
+  if (!list || Object.keys(list).length === 0) {
+    return { item: skuItem, groupSkuInvalid: true }
+  }
+  const row = list[skuItem.itemId] || list[String(skuItem.itemId)]
+  if (!row) {
+    return { item: skuItem, groupSkuInvalid: true }
+  }
+  const actPrice = Number(row.activity_price) / 100
+  const actStore = Number(row.store)
+  const productStore = Number(skuItem.store)
+  let store = productStore
+  if (!isNaN(actStore) && actStore >= 0) {
+    store = !isNaN(productStore) && productStore >= 0 ? Math.min(actStore, productStore) : actStore
+  }
+  return {
+    item: {
+      ...skuItem,
+      activityPrice: actPrice,
+      store
+    },
+    groupSkuInvalid: false
+  }
+}
 
 function SpSkuSelect(props) {
   const {
     info,
+    teamId = null,
     open = false,
     onClose = () => {},
     onChange = () => {},
@@ -72,7 +124,7 @@ function SpSkuSelect(props) {
   } = props
   // const [state, setState] = useImmer(initialState)
   const [state, setState] = useAsyncCallback(initialState)
-  const { selection, disabledSet, curItem, skuText, num, loading, minNum } = state
+  const { selection, disabledSet, curItem, skuText, num, loading, minNum, groupSkuInvalid } = state
   const { customerLnformation } = useSelector((state) => state.cart)
   const { shopInfo } = useSelector((state) => state.shop)
   const dispatch = useDispatch()
@@ -200,9 +252,10 @@ function SpSkuSelect(props) {
       disabledSet
     )
 
-    const curItem = skuDictRef.current[selection.join('_')]
-    const skuText = curItem
-      ? `已选：${curItem.specItem.map((item) => `${item.skuName}:${item.specName}`).join(',')}`
+    const rawItem = skuDictRef.current[selection.join('_')]
+    const { item: curItem, groupSkuInvalid } = applyGroupSkuActivity(rawItem, info)
+    const skuText = rawItem
+      ? `已选：${rawItem.specItem.map((item) => `${item.skuName}:${item.specName}`).join(',')}`
       : '请选择规格'
 
     setState((draft) => {
@@ -210,6 +263,7 @@ function SpSkuSelect(props) {
       draft.disabledSet = disabledSet
       draft.curItem = curItem
       draft.skuText = skuText
+      draft.groupSkuInvalid = groupSkuInvalid
     })
 
     await specItemed(selection) //处理起订量
@@ -361,6 +415,10 @@ function SpSkuSelect(props) {
       showToast('请选择规格')
       return
     }
+    if (info.activityType === 'group' && groupSkuInvalid) {
+      showToast('该规格未参与拼团')
+      return
+    }
     Taro.showLoading({ title: '' })
     onClose()
     let activityType = ''
@@ -399,6 +457,9 @@ function SpSkuSelect(props) {
     } else if (activityType == 'group') {
       const { groups_activity_id } = activityInfo
       url += `&type=${activityType}&group_id=${groups_activity_id}`
+      if (teamId) {
+        url += `&team_id=${teamId}`
+      }
     }
     Taro.hideLoading()
     console.log('navigateTo:url', url)
@@ -445,6 +506,13 @@ function SpSkuSelect(props) {
       }
     })
     const isNoStore = info.nospec ? info.store <= 0 : curItem?.store <= 0
+    if (info.activityType === 'group' && groupSkuInvalid) {
+      return (
+        <AtButton circle type='primary' disabled>
+          该规格未参与拼团
+        </AtButton>
+      )
+    }
     if (isNoStore) {
       return (
         <AtButton circle type='primary' onClick={handleSubscribe}>
@@ -464,9 +532,10 @@ function SpSkuSelect(props) {
         </AtButton>
       )
     } else {
+      const joinBtnTxt = teamId ? '我要参团' : btnTxt
       return (
         <AtButton circle loading={loading} type='primary' onClick={fastBuy}>
-          {btnTxt}
+          {joinBtnTxt}
         </AtButton>
       )
     }

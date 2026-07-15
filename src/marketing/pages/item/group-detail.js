@@ -134,20 +134,10 @@ export default class GroupDetail extends Component {
     }
 
     const { goods_id, distributor_id = 0, groups_activity_id } = activity_info || {}
-    // const { distributor_id } = Taro.getStorageSync('curStore')
 
-    try {
-      await api.cart.fastBuy({
-        item_id: goods_id,
-        distributor_id: distributor_id, // 店铺端暂不支持拼团活动 所以distributor_id需要传0
-        num: 1
-      })
-      Taro.navigateTo({
-        url: `/pages/cart/espier-checkout?type=group&team_id=${team_id}&group_id=${groups_activity_id}&shop_id=${distributor_id}`
-      })
-    } catch (e) {
-      console.log(e)
-    }
+    Taro.navigateTo({
+      url: `/pages/item/espier-detail?id=${goods_id}&dtid=${distributor_id}&group_id=${groups_activity_id}&team_id=${team_id}`
+    })
   }
 
   handleDetailClick = () => {
@@ -258,6 +248,9 @@ export default class GroupDetail extends Component {
                   <View className='activity-amount'>
                     <Text className='cur'>￥</Text>
                     {activity_info.act_price / 100}
+                    {activity_info.items && activity_info.items.length > 1 && (
+                      <Text className='activity-price-from'>起</Text>
+                    )}
                     <Text className='activity-market-price text-overline'>
                       {activity_info.price / 100}
                     </Text>

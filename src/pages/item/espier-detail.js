@@ -111,7 +111,9 @@ const initialState = {
   imgHeightList: [], // 用于存储banner高度
   navigateMantle: false,
   defaultImageHeight: 520, // 默认图片高度，避免空白
-  backTopScrollTop: 0
+  backTopScrollTop: 0,
+  teamId: null,
+  groupPriceFrom: false
 }
 
 function EspierDetail(props) {
@@ -151,7 +153,9 @@ function EspierDetail(props) {
     imgHeightList,
     navigateMantle,
     defaultImageHeight,
-    backTopScrollTop
+    backTopScrollTop,
+    teamId,
+    groupPriceFrom
   } = state
 
   useEffect(() => {
@@ -267,12 +271,13 @@ function EspierDetail(props) {
 
   const init = async (newDtid) => {
     const routerParams = await entryLaunch.getRouteParams()
-    const { type, id, dtid: routerDtid } = routerParams
+    const { type, id, dtid: routerDtid, team_id } = routerParams
     const dtid = newDtid || routerDtid
     setState((draft) => {
       draft.id = id
       draft.type = type
       draft.dtid = dtid
+      draft.teamId = team_id || null
     })
     if (S.getAuthToken()) {
       await dispatch(fetchUserFavs({ distributor_id: dtid }))
@@ -314,6 +319,19 @@ function EspierDetail(props) {
     // setNavigationBarTitle(data.itemName)
 
     console.log(ACTIVITY_LIST()[data.activityType], data)
+    if (data?.activityType === 'group' && data?.activityInfo?.items?.length) {
+      const items = data.activityInfo.items
+      const list = {}
+      items.forEach((item) => {
+        list[String(item.item_id)] = {
+          item_id: item.item_id,
+          activity_price: item.act_price,
+          store: item.store
+        }
+      })
+      data.activityInfo = { ...data.activityInfo, list }
+      data.groupPriceFrom = items.length > 1
+    }
     if (ACTIVITY_LIST()[data.activityType]) {
       Taro.setNavigationBarColor({
         frontColor: '#ffffff',
@@ -331,8 +349,13 @@ function EspierDetail(props) {
       }
       draft.play = data.video ? true : false // 辉绮需求
       draft.promotionActivity = data.promotionActivity
+      draft.groupPriceFrom = !!data.groupPriceFrom
       // 初始化图片高度数组，使用默认高度
       draft.imgHeightList = new Array(data?.imgs?.length).fill(draft.defaultImageHeight)
+      if (draft.teamId) {
+        draft.skuPanelOpen = true
+        draft.selectType = 'activity_group_buy'
+      }
     })
 
     // 进入详情页算一次浏览，写入本地浏览记录（最多 10 条）
@@ -599,7 +622,10 @@ function EspierDetail(props) {
                   fetch()
                 }}
               >
-                <SpGoodsPrice info={curItem ? curItem : info} />
+                <SpGoodsPrice
+                  info={curItem ? curItem : info}
+                  appendText={!curItem && groupPriceFrom ? '起' : ''}
+                />
               </CompActivityBar>
             )}
 
@@ -836,6 +862,7 @@ function EspierDetail(props) {
         open={skuPanelOpen}
         type={selectType}
         info={info}
+        teamId={teamId}
         onClose={() => {
           setState((draft) => {
             draft.skuPanelOpen = false

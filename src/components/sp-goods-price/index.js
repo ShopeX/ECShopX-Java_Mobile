@@ -12,7 +12,7 @@ import { useLogin } from '@/hooks'
 import './index.scss'
 
 function SpGoodsPrice(props) {
-  const { info, isPurchase = false } = props
+  const { info, isPurchase = false, appendText = '' } = props
   const { priceSetting } = useSelector((state) => state.sys)
   const { cart_page, item_page, order_page } = priceSetting
   const {
@@ -38,7 +38,7 @@ function SpGoodsPrice(props) {
           {/* 内购 && !enPurActivityPrice 不展示,其他情况都展示 */}
           {!(isPurchase && !enPurActivityPrice) ? (
             <View className='activity-wrap'>
-              <SpPrice className='activity-price' value={activityPrice} symbol='¥' />
+              <SpPrice className='activity-price' value={activityPrice} symbol='¥' appendText={appendText} />
               {/* <Text className='activity-label'>¥{activityPrice.toFixed(2)}</Text> */}
               <SpPrice size={24} lineThrough noSymbol value={price} />
 
