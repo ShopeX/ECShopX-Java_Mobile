@@ -607,7 +607,9 @@ function TradeDetail(props) {
                 </View>
                 <View>
                   <Text className='label'>自提地址:</Text>
-                  <Text className='value'>{`${info.zitiInfo.province || ''}${info.zitiInfo.city || ''}${info.zitiInfo.area || ''}${info.zitiInfo.address || ''}`}</Text>
+                  <Text className='value'>{`${info.zitiInfo.province || ''}${
+                    info.zitiInfo.city || ''
+                  }${info.zitiInfo.area || ''}${info.zitiInfo.address || ''}`}</Text>
                 </View>
                 <View>
                   <Text className='label'>联系电话:</Text>

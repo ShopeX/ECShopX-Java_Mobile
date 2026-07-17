@@ -15898,5 +15898,29 @@
 		"en": "",
 		"zh-tw": "",
 		"ar": ""
+	},
+	"rxz1": {
+		"zh-cn": "起",
+		"en": "since",
+		"zh-tw": "起",
+		"ar": "اعتبارا من"
+	},
+	"usdsvq8": {
+		"zh-cn": "加载拼团详情失败",
+		"en": "Failed to load the group-buying details",
+		"zh-tw": "加載拼團詳情失敗",
+		"ar": "فشل تحميل التفاصيل"
+	},
+	"czs43u9": {
+		"zh-cn": "拼团不存在或已失效",
+		"en": "Group buying does not exist or has expired",
+		"zh-tw": "拼團不存在或已失效",
+		"ar": "لا توجد أو لا تعمل"
+	},
+	"siw76p8": {
+		"zh-cn": "该规格未参与拼团",
+		"en": "This specification is not involved in group buying",
+		"zh-tw": "該規格未參與拼團",
+		"ar": "هذه المواصفات لم تشارك في التجميع"
 	}
 }
