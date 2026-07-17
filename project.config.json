@@ -46,6 +46,18 @@
   "compileType": "miniprogram",
   "simulatorType": "wechat",
   "simulatorPluginLibVersion": {},
+  "packOptions": {
+    "ignore": [
+      {
+        "type": "glob",
+        "value": "**/.DS_Store"
+      },
+      {
+        "type": "glob",
+        "value": "**/*.LICENSE.txt"
+      }
+    ]
+  },
   "condition": {
       "search": {
           "list": []

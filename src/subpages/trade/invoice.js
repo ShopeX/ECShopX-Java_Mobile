@@ -12,7 +12,7 @@ import { SpPrice, SpCell, SpFloatLayout, SpPage, SpImage, SpInput as AtInput } f
 import S from '@/spx'
 import api from '@/api'
 import { classNames, isWeixin, entryLaunch, authSetting, showToast, validate } from '@/utils'
-import { debounce } from 'lodash'
+import debounce from 'lodash/debounce'
 import './invoice.scss'
 
 const initialState = {

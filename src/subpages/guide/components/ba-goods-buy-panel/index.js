@@ -12,7 +12,7 @@ import { classNames, pickBy, log } from '@/utils'
 import { Tracker } from '@/service'
 import api from '@/api'
 import entry from '@/utils/entry'
-import { floor } from 'lodash'
+import floor from 'lodash/floor'
 import './index.scss'
 
 @connect(({ colors, guide }) => ({
