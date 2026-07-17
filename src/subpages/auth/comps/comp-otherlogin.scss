@@ -17,19 +17,41 @@
   .loginway {
     padding: 24px 0 10px 0;
     @include flex-center();
+    flex-wrap: wrap;
+    gap: 16px;
 
-    .wechat {
+    .login-item {
       width: 90px;
       height: 90px;
       border: 1px solid #c5cad5;
       border-radius: 50%;
-      color: rgba(0, 200, 0, 1);
-
       @include flex-center();
-
-      .icon-weixin {
+      .iconfont {
         font-size: 40px;
       }
+      .login-item-letter {
+        font-size: 34px;
+        font-weight: 700;
+        line-height: 1;
+        letter-spacing: -0.02em;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      }
+    }
+
+    .wechat {
+      color: rgba(0, 200, 0, 1);
+    }
+    .google {
+      color: #4285f4;
+    }
+    .apple {
+      color: #000;
+    }
+    .facebook {
+      color: #1877f2;
+    }
+    .line {
+      color: #00b900;
     }
   }
 }
