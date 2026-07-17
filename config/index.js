@@ -5,6 +5,7 @@ const webpackPluginsAutoI18n = require('webpack-auto-i18n-plugin')
 const { YoudaoTranslator, EmptyTranslator } = require('webpack-auto-i18n-plugin')
 
 const chalk = require('chalk')
+const webpack = require('webpack')
 const { getEnvs, getDefineConstants, getCacheIdentifier } = require('./utils')
 
 require('dotenv-flow').config()
@@ -99,6 +100,13 @@ const config = {
 
   mini: {
     webpackChain(chain) {
+      // 有数 SDK(sr-sdk-wxapp) 等依赖会访问裸 process，小程序运行时不存在
+      chain.plugin('provide-process').use(webpack.ProvidePlugin, [
+        {
+          process: require.resolve('process/browser')
+        }
+      ])
+
       chain.plugin('auto-i18n').use(webpackPluginsAutoI18n.default, [
         {
           rewriteConfig: false, // 是否重写配置js ， 小程序需要魔改配置文件，所以不要重新生成，以现在的为准
