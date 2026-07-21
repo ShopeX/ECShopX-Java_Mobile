@@ -17,7 +17,7 @@ import { WgtsContext } from '../wgts-context'
 import './index.scss'
 
 export default function WgtGoods(props) {
-  const { info, id } = props
+  const { info, id, dtid } = props
   const [goodsList, setGoodsList] = useState([])
   const [goodsLeftList, setGoodsLeftList] = useState([])
   const [goodsRightList, setGoodsRightList] = useState([])
@@ -29,6 +29,11 @@ export default function WgtGoods(props) {
   const data = params.data || {}
 
   const { onAddToCart } = useContext(WgtsContext)
+  // 店铺页优先使用页面传入的 dtid，避免落到全局店铺 ID
+  const resolveDistributorId = useCallback(
+    (itemDistributorId) => itemDistributorId || dtid || getDistributorId() || '',
+    [dtid]
+  )
 
   // 获取外层样式（包含 outerMargin 和背景配置）
   const outerStyle = useMemo(() => {
@@ -74,7 +79,7 @@ export default function WgtGoods(props) {
         }
 
         // 其他类型：走挂件商品接口
-        const distributorId = getDistributorId()
+        const distributorId = resolveDistributorId()
         let dataValue = data?.id || ''
         if (['items', 'price'].includes(dataType)) {
           dataValue = data?.id?.split(',') || ''
@@ -83,7 +88,7 @@ export default function WgtGoods(props) {
           data_type: dataType,
           data_value: dataValue,
           data_count: count,
-          distributor_id: distributorId || ''
+          distributor_id: distributorId
         })
         if (_data && Array.isArray(_data) && _data.length > 0) {
           const goods = pickBy(_data, doc.goods.WGT_SPEEDKILL_GOODS)
@@ -104,15 +109,23 @@ export default function WgtGoods(props) {
     }
 
     fetchGoods()
-  }, [data.id, base.dataCount, base.dataType])
+  }, [data.id, base.dataCount, base.dataType, resolveDistributorId, refreshHistoryGoods])
 
   // 处理更多按钮点击
   const handleClickMore = () => {
     if (base.moreLink && base.moreLink.length > 0) {
-      linkPage(base.moreLink[0])
+      const moreLink = base.moreLink[0] || {}
+      linkPage({
+        ...moreLink,
+        distributor_id: moreLink.distributor_id || resolveDistributorId()
+      })
     } else if (base.dataType === 'history') {
       Taro.navigateTo({
         url: '/marketing/pages/member/item-history'
+      })
+    } else if (dtid) {
+      Taro.navigateTo({
+        url: `/subpages/store/item-list?dtid=${dtid}`
       })
     } else {
       Taro.navigateTo({
@@ -125,7 +138,8 @@ export default function WgtGoods(props) {
   const handleClickItem = (item) => {
     linkPage({
       linkPage: 'goods',
-      id: item.goodsId || item.item_id || item.itemId
+      id: item.goodsId || item.item_id || item.itemId,
+      distributor_id: resolveDistributorId(item.distributorId || item.distributor_id)
     })
   }
 

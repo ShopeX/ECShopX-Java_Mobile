@@ -16,7 +16,7 @@ import GoodsLayout from '../goods-layout'
 import './index.scss'
 
 export default function WgtGroup(props) {
-  const { info, id } = props
+  const { info, id, dtid } = props
   const [goodsList, setGoodsList] = useState([])
   const [goodsLeftList, setGoodsLeftList] = useState([])
   const [goodsRightList, setGoodsRightList] = useState([])
@@ -28,6 +28,8 @@ export default function WgtGroup(props) {
   const data = params.data || {}
 
   const { onAddToCart } = useContext(WgtsContext)
+  const resolveDistributorId = (itemDistributorId) =>
+    itemDistributorId || dtid || getDistributorId() || ''
 
   // 获取外层样式（包含 outerMargin 和背景配置）
   const outerStyle = useMemo(() => {
@@ -46,12 +48,12 @@ export default function WgtGroup(props) {
 
       setLoading(true)
       try {
-        const distributorId = getDistributorId()
+        const distributorId = resolveDistributorId()
         const _data = await api.seckill.getWidgetItems({
           data_type: 'group',
           data_value: data.id || '',
           data_count: base.dataCount,
-          distributor_id: distributorId || ''
+          distributor_id: distributorId
         })
         if (_data && Array.isArray(_data) && _data.length > 0) {
           const goods = pickBy(_data, doc.goods.WGT_SPEEDKILL_GOODS)
@@ -71,12 +73,16 @@ export default function WgtGroup(props) {
     }
 
     fetchGroupGoods()
-  }, [data.id, base.dataCount])
+  }, [data.id, base.dataCount, dtid])
 
   // 处理更多按钮点击
   const handleClickMore = () => {
     if (base.moreLink && base.moreLink.length > 0) {
-      linkPage(base.moreLink[0])
+      const moreLink = base.moreLink[0] || {}
+      linkPage({
+        ...moreLink,
+        distributor_id: moreLink.distributor_id || resolveDistributorId()
+      })
     } else if (data.id) {
       Taro.navigateTo({
         url: `/marketing/pages/item/group-list?group_id=${data.id}`
@@ -88,7 +94,8 @@ export default function WgtGroup(props) {
   const handleClickItem = (item) => {
     linkPage({
       linkPage: 'goods',
-      id: item.goodsId || item.item_id || item.itemId
+      id: item.goodsId || item.item_id || item.itemId,
+      distributor_id: resolveDistributorId(item.distributorId || item.distributor_id)
     })
   }
 
