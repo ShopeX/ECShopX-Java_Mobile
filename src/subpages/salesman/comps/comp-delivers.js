@@ -375,6 +375,12 @@ function CompDeliver(props, ref) {
     },
     validateZitiInfo: async () => {
       await formRef.current.onSubmitAsync()
+    },
+    setReceiptType: (type) => {
+      if (!type) return
+      setState((draft) => {
+        draft.receiptType = type
+      })
     }
   }))
 

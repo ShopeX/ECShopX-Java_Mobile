@@ -376,6 +376,13 @@ function SpDeliver(props, ref) {
     },
     validateZitiInfo: async () => {
       await formRef.current.onSubmitAsync()
+    },
+    /** 结算页取消库存调整确认时回退 Tab */
+    setReceiptType: (type) => {
+      if (!type) return
+      setState((draft) => {
+        draft.receiptType = type
+      })
     }
   }))
 

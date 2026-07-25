@@ -69,6 +69,10 @@ function CartCheckout(props) {
   const pageRef = useRef()
   const calc = useRef(false)
   const deliverRef = useRef()
+  const receiptSwitchPendingRef = useRef(false)
+  const previousReceiptTypeRef = useRef('')
+  const isRevertingReceiptRef = useRef(false)
+  const storeAdjustAckKeyRef = useRef('')
   const { userInfo, address } = useSelector((state) => state.user)
   const { colorPrimary, pointName } = useSelector((state) => state.sys)
   const { coupon, zitiAddress, customerLnformation, customerSalesman } = useSelector(
@@ -347,6 +351,13 @@ function CartCheckout(props) {
   }
 
   const handleSwitchExpress = ({ receipt_type, distributor_info, address_info }) => {
+    if (isRevertingReceiptRef.current) {
+      isRevertingReceiptRef.current = false
+      receiptSwitchPendingRef.current = false
+    } else if (receiptType && receipt_type && receipt_type !== receiptType) {
+      receiptSwitchPendingRef.current = true
+      previousReceiptTypeRef.current = receiptType
+    }
     // 切换配送模式
     setState((draft) => {
       draft.receiptType = receipt_type
@@ -356,6 +367,49 @@ function CartCheckout(props) {
     setTimeout(() => {
       dispatch(updateChooseAddress(address_info))
     }, 100)
+  }
+
+  const buildStoreQuantityAdjustContent = (adjustments = []) => {
+    const lines = adjustments.map((item) => {
+      const name = item.item_name || `商品${item.item_id || ''}`
+      const from = Number(item.original_num) || 0
+      const to = Number(item.available_num) || 0
+      if (to <= 0) {
+        return `「${name}」库存不足，将从结算中移除（原${from}件）`
+      }
+      return `「${name}」：${from}件 → ${to}件`
+    })
+    return `当前配送方式下部分商品库存不足，确认后将调整本单购买数量：\n${lines.join('\n')}`
+  }
+
+  const buildStoreAdjustAckKey = (receipt, adjustments = []) => {
+    const parts = adjustments.map(
+      (item) => `${item.item_id}:${item.original_num}:${item.available_num}`
+    )
+    return `${receipt || ''}|${parts.join(',')}`
+  }
+
+  const confirmStoreQuantityAdjustments = async (adjustments = []) => {
+    if (!adjustments.length) return true
+    const { confirm } = await Taro.showModal({
+      title: '库存提示',
+      content: buildStoreQuantityAdjustContent(adjustments),
+      confirmText: '确认',
+      cancelText: '取消',
+      confirmColor: colorPrimary
+    })
+    return !!confirm
+  }
+
+  const revertReceiptTypeAfterCancelAdjust = () => {
+    const prev = previousReceiptTypeRef.current
+    receiptSwitchPendingRef.current = false
+    if (!prev) return
+    isRevertingReceiptRef.current = true
+    deliverRef.current?.setReceiptType?.(prev)
+    setState((draft) => {
+      draft.receiptType = prev
+    })
   }
 
   const handleEditZitiClick = async (id) => {
@@ -514,8 +568,47 @@ function CartCheckout(props) {
     Taro.showLoading({ title: '' })
     // calc.current = true
     const cus_parmas = await getParamsInfo()
-    const orderRes = await api.cart.total({ ...cus_parmas, ...customerLnformation })
+    let orderRes
+    try {
+      orderRes = await api.cart.total({ ...cus_parmas, ...customerLnformation })
+    } catch (e) {
+      console.log('e:', e)
+    }
     Taro.hideLoading()
+    if (!orderRes) {
+      if (receiptSwitchPendingRef.current) {
+        revertReceiptTypeAfterCancelAdjust()
+      } else {
+        receiptSwitchPendingRef.current = false
+      }
+      return
+    }
+
+    const storeQuantityAdjustments = Array.isArray(orderRes.store_quantity_adjustments)
+      ? orderRes.store_quantity_adjustments
+      : []
+    const adjustAckKey = buildStoreAdjustAckKey(
+      cus_parmas.receipt_type || receiptType,
+      storeQuantityAdjustments
+    )
+    if (
+      storeQuantityAdjustments.length > 0 &&
+      storeAdjustAckKeyRef.current !== adjustAckKey
+    ) {
+      const confirmed = await confirmStoreQuantityAdjustments(storeQuantityAdjustments)
+      if (!confirmed) {
+        if (receiptSwitchPendingRef.current && previousReceiptTypeRef.current) {
+          revertReceiptTypeAfterCancelAdjust()
+        } else {
+          receiptSwitchPendingRef.current = false
+          Taro.navigateBack({ delta: 1 })
+        }
+        return
+      }
+      storeAdjustAckKeyRef.current = adjustAckKey
+    }
+    receiptSwitchPendingRef.current = false
+
     const {
       items,
       item_fee,
