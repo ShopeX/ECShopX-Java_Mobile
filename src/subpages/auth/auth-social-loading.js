@@ -5,7 +5,7 @@
 import React, { useEffect } from 'react'
 import Taro, { getCurrentInstance } from '@tarojs/taro'
 import { SpPage, SpLoading } from '@/components'
-import { classNames, tokenParseH5 } from '@/utils'
+import { classNames } from '@/utils'
 import api from '@/api'
 import { useLogin } from '@/hooks'
 import { useTranslation, $t } from '@/i18n'
@@ -44,22 +44,9 @@ const AuthSocialLoading = () => {
       auth_type: 'social_oauth'
     })
 
-    const { is_new, unionid } = tokenParseH5(token)
-
-    if (is_new === 1) {
-      try {
-        sessionStorage.removeItem('ecx_social_oauth_redi_url')
-      } catch (e) {
-        // ignore
-      }
-      const url = `/subpages/auth/bindPhone?unionid=${unionid}&redi_url=${redi_url || ''}&user_type=${trustlogin_tag}&trustlogin_tag=${trustlogin_tag}`
-      Taro.redirectTo({ url })
-      return
-    }
-
     setTokenAndRedirect(token, async () => {
       await getUserInfo()
-    })
+    }, { rediUrl: redi_url })
 
     try {
       sessionStorage.removeItem('ecx_social_oauth_redi_url')

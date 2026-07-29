@@ -2,37 +2,35 @@
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
  */
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import Taro, { getCurrentInstance } from '@tarojs/taro'
-import { View, Text } from '@tarojs/components'
+import { View, Text, Image } from '@tarojs/components'
 import { isWxWeb } from '@/utils'
 import api from '@/api'
 import { useTranslation, $t } from '@/i18n'
 import './comp-otherlogin.scss'
 
-const SOCIAL_CLASS = {
-  weixin: 'wechat',
-  google: 'google',
-  apple: 'apple',
-  facebook: 'facebook',
-  line: 'line'
+import googleIcon from '../assets/oauth/google.svg'
+import appleIcon from '../assets/oauth/apple.svg'
+import facebookIcon from '../assets/oauth/facebook.svg'
+import lineIcon from '../assets/oauth/line.svg'
+
+const OAUTH_ICONS = {
+  google: googleIcon,
+  apple: appleIcon,
+  facebook: facebookIcon,
+  line: lineIcon
 }
 
-// 临时占位：iconfont 未接入前用英文字母标识平台
-const SOCIAL_LETTERS = {
-  google: 'G',
-  apple: 'A',
-  facebook: 'F',
-  line: 'L'
+const OAUTH_LABEL_KEYS = {
+  google: 'e7a49201.a1b2c3',
+  apple: 'e7a49201.d4e5f6',
+  facebook: 'e7a49201.g7h8i9',
+  line: 'e7a49201.j0k1l2',
+  weixin: 'e7a49201.p6q7r8'
 }
 
-const renderProviderIcon = (type) => {
-  if (type === 'weixin') {
-    return <Text className='iconfont icon-weixin' />
-  }
-  const letter = SOCIAL_LETTERS[type] || (type ? type.charAt(0).toUpperCase() : '?')
-  return <Text className='login-item-letter'>{letter}</Text>
-}
+const PROVIDER_ORDER = ['google', 'apple', 'facebook', 'line', 'weixin']
 
 const isEnabled = (row) => row && (row.status === true || row.status === 'true' || row.status === 1)
 
@@ -88,12 +86,17 @@ const CompOtherLogin = () => {
     }
   }
 
-  const visibleProviders = providers.filter((row) => {
-    if (row.type === 'weixin') {
-      return isWxWeb
-    }
-    return true
-  })
+  const visibleProviders = useMemo(() => {
+    const filtered = providers.filter((row) => {
+      if (row.type === 'weixin') {
+        return isWxWeb
+      }
+      return PROVIDER_ORDER.includes(row.type)
+    })
+    return filtered.sort(
+      (a, b) => PROVIDER_ORDER.indexOf(a.type) - PROVIDER_ORDER.indexOf(b.type)
+    )
+  }, [providers])
 
   if (!visibleProviders.length) {
     return null
@@ -101,18 +104,43 @@ const CompOtherLogin = () => {
 
   return (
     <View className='comp-other-login' data-testid='auth-other-login-list'>
-      <View className='text'>{$t('8c3959b3.c4a461')}</View>
-      <View className='loginway'>
-        {visibleProviders.map((row) => (
-          <View
-            key={row.type}
-            className={`login-item ${SOCIAL_CLASS[row.type] || row.type}`}
-            data-testid={row.type === 'google' ? 'auth-other-login-google' : `auth-other-login-${row.type}`}
-            onClick={() => handleClickProvider(row)}
-          >
-            {renderProviderIcon(row.type)}
-          </View>
-        ))}
+      <View className='oauth-divider'>
+        <View className='oauth-divider__line' />
+        <Text className='oauth-divider__text'>{$t('e7a49201.m3n4o5')}</Text>
+        <View className='oauth-divider__line' />
+      </View>
+      <View className='oauth-buttons'>
+        {visibleProviders.map((row) => {
+          const isWeixin = row.type === 'weixin'
+          const labelKey = OAUTH_LABEL_KEYS[row.type]
+          const label = labelKey ? $t(labelKey) : row.name || row.type
+
+          return (
+            <View
+              key={row.type}
+              className={`oauth-button oauth-button--${row.type}`}
+              data-testid={
+                row.type === 'google'
+                  ? 'auth-other-login-google'
+                  : `auth-other-login-${row.type}`
+              }
+              onClick={() => handleClickProvider(row)}
+            >
+              <View className='oauth-button__icon-wrap'>
+                {isWeixin ? (
+                  <Text className='iconfont icon-weixin oauth-button__wechat-icon' />
+                ) : (
+                  <Image
+                    className='oauth-button__icon'
+                    src={OAUTH_ICONS[row.type]}
+                    mode='aspectFit'
+                  />
+                )}
+              </View>
+              <Text className='oauth-button__label'>{label}</Text>
+            </View>
+          )
+        })}
       </View>
     </View>
   )
