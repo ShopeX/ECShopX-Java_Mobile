@@ -16,7 +16,7 @@ import { WgtsContext } from '../wgts-context'
 import './index.scss'
 
 export default function WgtHotranking(props) {
-  const { info, id } = props
+  const { info, id, dtid } = props
   const [goodsList, setGoodsList] = useState([])
   const [goodsLeftList, setGoodsLeftList] = useState([])
   const [goodsRightList, setGoodsRightList] = useState([])
@@ -28,6 +28,9 @@ export default function WgtHotranking(props) {
   const data = params.data || {}
 
   const { onAddToCart } = useContext(WgtsContext)
+  // 店铺页优先使用页面传入的 dtid，避免落到全局店铺 ID
+  const resolveDistributorId = (itemDistributorId) =>
+    itemDistributorId || dtid || getDistributorId() || ''
 
   // 获取外层样式（包含 outerMargin 和背景配置）
   const outerStyle = useMemo(() => {
@@ -44,12 +47,12 @@ export default function WgtHotranking(props) {
     const fetchHotrankingGoods = async () => {
       setLoading(true)
       try {
-        const distributorId = getDistributorId()
+        const distributorId = resolveDistributorId()
         const _data = await api.seckill.getWidgetItems({
           data_type: 'sales',
           data_value: data.id || '',
           data_count: base.dataCount,
-          distributor_id: distributorId || ''
+          distributor_id: distributorId
         })
         // 如果 items 已经有数据，直接使用
         if (_data && Array.isArray(_data) && _data.length > 0) {
@@ -72,12 +75,20 @@ export default function WgtHotranking(props) {
     }
 
     fetchHotrankingGoods()
-  }, [data.id, base.dataCount])
+  }, [data.id, base.dataCount, dtid])
 
   // 处理更多按钮点击
   const handleClickMore = () => {
     if (base.moreLink && base.moreLink.length > 0) {
-      linkPage(base.moreLink[0])
+      const moreLink = base.moreLink[0] || {}
+      linkPage({
+        ...moreLink,
+        distributor_id: moreLink.distributor_id || resolveDistributorId()
+      })
+    } else if (dtid) {
+      Taro.navigateTo({
+        url: `/subpages/store/item-list?dtid=${dtid}`
+      })
     } else {
       Taro.navigateTo({
         url: '/subpages/item/list'
@@ -89,7 +100,8 @@ export default function WgtHotranking(props) {
   const handleClickItem = (item) => {
     linkPage({
       linkPage: 'goods',
-      id: item.goodsId || item.item_id || item.itemId
+      id: item.goodsId || item.item_id || item.itemId,
+      distributor_id: resolveDistributorId(item.distributorId || item.distributor_id)
     })
   }
 

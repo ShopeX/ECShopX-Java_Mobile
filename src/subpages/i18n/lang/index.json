@@ -15899,26 +15899,56 @@
 		"zh-tw": "",
 		"ar": ""
 	},
+	"rxz1": {
+		"zh-cn": "起",
+		"en": "since",
+		"zh-tw": "起",
+		"ar": "اعتبارا من"
+	},
 	"usdsvq8": {
 		"zh-cn": "加载拼团详情失败",
-		"en": "",
-		"zh-tw": "",
-		"ar": ""
+		"en": "Failed to load the group-buying details",
+		"zh-tw": "加載拼團詳情失敗",
+		"ar": "فشل تحميل التفاصيل"
 	},
 	"czs43u9": {
 		"zh-cn": "拼团不存在或已失效",
-		"en": "",
-		"zh-tw": "",
-		"ar": ""
-	},
-	"rxz1": {
-		"zh-cn": "起",
-		"en": "",
-		"zh-tw": "",
-		"ar": ""
+		"en": "Group buying does not exist or has expired",
+		"zh-tw": "拼團不存在或已失效",
+		"ar": "لا توجد أو لا تعمل"
 	},
 	"siw76p8": {
 		"zh-cn": "该规格未参与拼团",
+		"en": "This specification is not involved in group buying",
+		"zh-tw": "該規格未參與拼團",
+		"ar": "هذه المواصفات لم تشارك في التجميع"
+	},
+	"eqx231f": {
+		"zh-cn": "」库存不足，将从结算中移除（原",
+		"en": "",
+		"zh-tw": "",
+		"ar": ""
+	},
+	"9ypi604": {
+		"zh-cn": "件 → ",
+		"en": "",
+		"zh-tw": "",
+		"ar": ""
+	},
+	"mka6bs14": {
+		"zh-cn": "当前配送方式下部分商品库存不足，确认后将调整本单购买数量（不会修改购物车）：\n",
+		"en": "",
+		"zh-tw": "",
+		"ar": ""
+	},
+	"cbam334": {
+		"zh-cn": "库存提示",
+		"en": "",
+		"zh-tw": "",
+		"ar": ""
+	},
+	"tbmly7v": {
+		"zh-cn": "当前配送方式下部分商品库存不足，确认后将调整本单购买数量：\n",
 		"en": "",
 		"zh-tw": "",
 		"ar": ""

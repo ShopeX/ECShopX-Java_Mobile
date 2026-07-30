@@ -341,10 +341,7 @@ export default class VipIndex extends Component {
                 mode='aspectFill'
               />
               <View className='header-isauth__info'>
-                <View className='nickname'>
-                  {userInfo.username}
-                  <Image className='icon-vip' src='/assets/imgs/svip.png' />
-                </View>
+                <View className='nickname'>{userInfo.username}</View>
                 <View className='mcode'>
                   {userVipInfo.grade_name
                     ? userVipInfo.grade_name + ' : 有效期至' + (userVipInfo.end_time || '')

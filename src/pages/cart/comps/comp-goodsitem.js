@@ -135,12 +135,7 @@ function CompGoodsItem(props) {
                       <View className='act-price-wrap'>
                         <SpPrice unit='cent' value={info.price} className='act-price' symbol='¥' />
                         {/* ¥{(info.price / 100).toFixed(2)} */}
-                        <SpPrice
-                          unit='cent'
-                          value={info.sale_price}
-                          size={24}
-                          lineThrough
-                        />
+                        <SpPrice unit='cent' value={info.sale_price} size={24} lineThrough />
                         {/* <SpPrice value={info.price / 100} /> */}
                       </View>
                     ) : (

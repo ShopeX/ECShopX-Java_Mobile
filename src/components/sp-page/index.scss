@@ -11,6 +11,9 @@
     box-sizing: border-box;
     padding-left: 20px;
     padding-right: 20px;
+    /* 高于绝对定位的居中标题，避免「选择地区」被挡住无法点击 */
+    position: relative;
+    z-index: 2;
     &.is-web {
       width: 240px !important;
     }
@@ -174,6 +177,8 @@
         width: 100%;
         text-align: center;
         display: block;
+        /* 绝对铺满整栏时不拦截左侧「选择地区」点击 */
+        pointer-events: none;
       }
       &.is-web .title-search {
         flex: 1;
@@ -191,6 +196,7 @@
         transform: translateX(-50%);
         display: flex;
         align-items: center;
+        pointer-events: none;
       }
 
       .nav-left-capsule {

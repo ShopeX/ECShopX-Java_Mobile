@@ -95,12 +95,18 @@ function HomeWgts(props) {
             {/** 全屏轮播 */}
             {item.name === 'couponCard' && <WgtCouponCard info={item} id={item.id || idx} />}{' '}
             {/** 优惠券卡片 */}
-            {item.name === 'speedkill' && <WgtSpeedkill info={item} id={item.id || idx} />}{' '}
+            {item.name === 'speedkill' && (
+              <WgtSpeedkill info={item} id={item.id || idx} dtid={dtid} />
+            )}{' '}
             {/** 秒杀 */}
-            {item.name === 'group' && <WgtGroup info={item} id={item.id || idx} />} {/** 拼团 */}
-            {item.name === 'hotranking' && <WgtHotranking info={item} id={item.id || idx} />}{' '}
+            {item.name === 'group' && <WgtGroup info={item} id={item.id || idx} dtid={dtid} />}{' '}
+            {/** 拼团 */}
+            {item.name === 'hotranking' && (
+              <WgtHotranking info={item} id={item.id || idx} dtid={dtid} />
+            )}{' '}
             {/** 热门排行榜 */}
-            {item.name === 'goods' && <WgtGoods info={item} id={item.id || idx} />} {/** 商品 */}
+            {item.name === 'goods' && <WgtGoods info={item} id={item.id || idx} dtid={dtid} />}{' '}
+            {/** 商品 */}
             {item.name === 'storeAlphabet' && (
               <WgtStoreAlphabet info={item} id={item.id || idx} />
             )}{' '}

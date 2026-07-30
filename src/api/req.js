@@ -300,41 +300,41 @@ class API {
 
     this.isRefreshingToken = true
     this.refreshTokenPromise = (async () => {
-    const token = S.getAuthToken()
-    console.log('refreshToken', 66)
-    let refreshed = false
-    try {
-      await this.makeReq(
-        {
-          header: {
-            Authorization: `Bearer ${token}`
+      const token = S.getAuthToken()
+      console.log('refreshToken', 66)
+      let refreshed = false
+      try {
+        await this.makeReq(
+          {
+            header: {
+              Authorization: `Bearer ${token}`
+            },
+            method: 'get',
+            url: this.getReqUrl('/token/refresh'),
+            noPending: true
           },
-          method: 'get',
-          url: this.getReqUrl('/token/refresh'),
-          noPending: true
-        },
-        (res) => {
-          const { statusCode } = res
-          if (statusCode === HTTP_STATUS.UNAUTHORIZED) {
-            this.handleLogout()
-            return
-          }
-          if (statusCode !== HTTP_STATUS.SUCCESS) {
-            return
-          }
+          (res) => {
+            const { statusCode } = res
+            if (statusCode === HTTP_STATUS.UNAUTHORIZED) {
+              this.handleLogout()
+              return
+            }
+            if (statusCode !== HTTP_STATUS.SUCCESS) {
+              return
+            }
 
-          const newToken = parseRefreshTokenFromResponse(res)
-          if (!newToken) {
-            log.debug('[refreshToken] missing token in response headers/body', res)
-            return
+            const newToken = parseRefreshTokenFromResponse(res)
+            if (!newToken) {
+              log.debug('[refreshToken] missing token in response headers/body', res)
+              return
+            }
+            S.setAuthToken(newToken)
+            refreshed = true
           }
-          S.setAuthToken(newToken)
-          refreshed = true
-        }
-      )
-    } catch (e) {
-      console.log(e, 'refreshToken error')
-    }
+        )
+      } catch (e) {
+        console.log(e, 'refreshToken error')
+      }
       return refreshed
     })()
 

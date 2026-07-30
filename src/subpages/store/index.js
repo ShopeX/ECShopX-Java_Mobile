@@ -168,15 +168,19 @@ function StoreIndex() {
         draft.wgts = []
       })
       return
-    } else {
+    }
+
+    try {
       const storeInfo = await api.shop.getShop({
         distributor_id,
         show_score: 1,
         show_marketing_activity: 1
       })
-      const { config } = await api.shop.getStoreShopTemplate({
+      const res = await api.shop.getStoreShopTemplate({
         distributor_id
       })
+      // 接口可能返回非数组 config，需兜底避免 render 时 .find 报错
+      const config = Array.isArray(res?.config) ? res.config : []
       setState((draft) => {
         draft.wgts = isArray(config) ? config : []
         draft.distributorId = distributor_id
@@ -184,6 +188,13 @@ function StoreIndex() {
         draft.loading = false
       })
       await shopping(distributor_id)
+    } catch (error) {
+      log.error('fetchWgts:', error)
+      setState((draft) => {
+        draft.wgts = []
+        draft.distributorId = distributor_id
+        draft.loading = false
+      })
     }
   }
 
@@ -329,14 +340,14 @@ function StoreIndex() {
     }
   }
 
-  const wgtsList = isArray(wgts) ? wgts : []
-  let searchComp = wgtsList.find((wgt) => wgt.name == 'search')
-  const pageData = wgtsList.find((wgt) => wgt.name == 'page')
+  const safeWgts = isArray(wgts) ? wgts : []
+  let searchComp = safeWgts.find((wgt) => wgt.name == 'search')
+  const pageData = safeWgts.find((wgt) => wgt.name == 'page')
   let filterWgts = []
-  if (searchComp && searchComp.config.fixTop) {
-    filterWgts = wgtsList.filter((wgt) => wgt.name !== 'search')
+  if (searchComp && searchComp.config?.fixTop) {
+    filterWgts = safeWgts.filter((wgt) => wgt.name !== 'search')
   } else {
-    filterWgts = wgtsList
+    filterWgts = safeWgts
     searchComp = null
   }
   // const fixedTop = searchComp && searchComp.config.fixTop
@@ -428,7 +439,7 @@ function StoreIndex() {
         </Text>
       </View>
 
-      {productSwitching && wgtsList.length > 0 ? (
+      {productSwitching && safeWgts.length > 0 ? (
         <WgtsContext.Provider
           value={{
             onAddToCart

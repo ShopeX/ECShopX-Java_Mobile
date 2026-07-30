@@ -5,6 +5,7 @@ const webpackPluginsAutoI18n = require('webpack-auto-i18n-plugin')
 const { YoudaoTranslator, EmptyTranslator } = require('webpack-auto-i18n-plugin')
 
 const chalk = require('chalk')
+const webpack = require('webpack')
 const { getEnvs, getDefineConstants, getCacheIdentifier } = require('./utils')
 
 require('dotenv-flow').config()
@@ -36,10 +37,16 @@ const IS_APP = BUILD_TARGET === 'app'
 // 是否打包成APP服务
 const IS_APP_SERVER = BUILD_APP_SERVER === 'server'
 
-const copyPatterns = [{ from: 'src/assets', to: `${DIST_PATH}/assets` }]
+const copyPatterns = [
+  {
+    from: 'src/assets',
+    to: `${DIST_PATH}/assets`,
+    ignore: ['**/.DS_Store']
+  }
+]
 
 if (process.env.TARO_ENV == 'h5') {
-  copyPatterns.push({ from: 'src/files', to: `${DIST_PATH}` })
+  copyPatterns.push({ from: 'src/files', to: `${DIST_PATH}`, ignore: ['**/.DS_Store'] })
 }
 if (process.env.TARO_ENV == 'alipay') {
   copyPatterns.push({ from: 'mini.project.json', to: `${DIST_PATH}/mini.project.json` })
@@ -73,7 +80,10 @@ const config = {
     // 'lodash': 'lodash-es'
   },
   copy: {
-    patterns: copyPatterns
+    patterns: copyPatterns,
+    options: {
+      ignore: ['**/.DS_Store', '**/*.LICENSE.txt']
+    }
   },
   compiler: {
     type: 'webpack5',
@@ -90,6 +100,13 @@ const config = {
 
   mini: {
     webpackChain(chain) {
+      // 有数 SDK(sr-sdk-wxapp) 等依赖会访问裸 process，小程序运行时不存在
+      chain.plugin('provide-process').use(webpack.ProvidePlugin, [
+        {
+          process: require.resolve('process/browser')
+        }
+      ])
+
       chain.plugin('auto-i18n').use(webpackPluginsAutoI18n.default, [
         {
           rewriteConfig: false, // 是否重写配置js ， 小程序需要魔改配置文件，所以不要重新生成，以现在的为准
@@ -109,6 +126,27 @@ const config = {
           includePath: [/src/] // 仅扫描 src 目录
         }
       ])
+
+      // 小程序代码包体积分析：ANALYZE=true npm run build:weapp
+      if (process.env.ANALYZE === 'true') {
+        chain
+          .plugin('bundle-analyzer')
+          .use(require('webpack-bundle-analyzer').BundleAnalyzerPlugin, [
+            {
+              analyzerMode: 'server',
+              analyzerPort: 'auto',
+              openAnalyzer: true
+            }
+          ])
+      }
+
+      // 不生成 *.js.LICENSE.txt，避免计入主包体积
+      if (chain.optimization.minimizers.has('terserPlugin')) {
+        chain.optimization.minimizer('terserPlugin').tap((args) => {
+          args[0] = Object.assign({}, args[0], { extractComments: false })
+          return args
+        })
+      }
     },
 
     miniCssExtractPluginOption: {
