@@ -97,7 +97,7 @@ function SpShop(props) {
       <View className='sp-shop__wrap'>
         <View className='sp-shop__bd'>
           <View className='sp-shop__info'>
-            <View className='sp-shop__info-left' onClick={() => handleToStore('进入店铺', 1)}>
+            <View className='sp-shop__info-left' onClick={() => handleToStore()}>
               <View className='sp-shop__img'>
                 <SpImage
                   width={108}
@@ -123,7 +123,7 @@ function SpShop(props) {
                   />
                 </View>
               </SpLogin>
-              <View className='sp-shop__link' onClick={() => handleToStore('进店逛逛', 3)}>
+              <View className='sp-shop__link' onClick={() => handleToStore()}>
                 <Text>进店逛逛</Text>
               </View>
             </View>
@@ -154,8 +154,12 @@ function SpShop(props) {
         )}
         {items.length > 0 && !loading && (
           <ScrollView scrollX className='sp-shop__goods-list' enableFlex>
-            {items.map((item) => (
-              <View className='sp-shop__goods-item' onClick={() => handleClickItem(item)}>
+            {items.map((item, index) => (
+              <View
+                className='sp-shop__goods-item'
+                key={item.itemId || `goods-item-${index}`}
+                onClick={() => handleClickItem(item)}
+              >
                 <View className='sp-shop__goods-item-image'>
                   <SpImage src={item.pic} placeholderColor='#f2f3f5' mode='aspectFill' />
                   {item.store === 0 && (
@@ -214,17 +218,17 @@ function SpShop(props) {
                       {item.discount_rate && (
                         <SpTag label={`${item.discount_rate}折`} type='secondary' />
                       )}
-                      {item.tags.slice(0, 3)?.map((tag, index) => (
+                      {item.tags.slice(0, 3)?.map((tag, tagIndex) => (
                         <SpTag
-                          key={index}
+                          key={tagIndex}
                           label={tag.tag_name}
                           type={tag.type || 'primary'}
                           className='item-three__tag'
                         />
                       ))}
-                      {item.couponList?.map((coupon, index) => (
+                      {item.couponList?.map((coupon, couponIndex) => (
                         <SpTag
-                          key={index}
+                          key={couponIndex}
                           label={coupon.discount_rule}
                           type='warning'
                           className='sp-shop__goods-item-tag'

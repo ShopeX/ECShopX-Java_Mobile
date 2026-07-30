@@ -222,6 +222,18 @@ const memberSetting = {
     title: '优惠券',
     path: '/subpages/marketing/coupon-center'
   },
+  my_coupon: {
+    title: '我的优惠券',
+    path: '/subpages/marketing/coupon'
+  },
+  kujiale: {
+    title: '酷家乐',
+    path: '/subpages/case/list'
+  },
+  itemList: {
+    title: '商品列表',
+    path: '/subpages/item/list'
+  },
   my_collect: {
     title: '我的收藏',
     path: '/pages/member/item-fav'

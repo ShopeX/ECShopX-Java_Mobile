@@ -23,7 +23,8 @@ import {
   pickBy,
   log,
   showToast,
-  buildSharePath
+  buildSharePath,
+  isArray
 } from '@/utils'
 import { useImmer } from 'use-immer'
 import { useNavigation } from '@/hooks'
@@ -163,6 +164,8 @@ function StoreIndex() {
     if (!status) {
       setState((draft) => {
         draft.isDefault = true
+        draft.loading = false
+        draft.wgts = []
       })
       return
     } else {
@@ -175,7 +178,7 @@ function StoreIndex() {
         distributor_id
       })
       setState((draft) => {
-        draft.wgts = config
+        draft.wgts = isArray(config) ? config : []
         draft.distributorId = distributor_id
         draft.storeInfo = pickBy(storeInfo, doc.shop.STORE_INFO)
         draft.loading = false
@@ -326,13 +329,14 @@ function StoreIndex() {
     }
   }
 
-  let searchComp = wgts.find((wgt) => wgt.name == 'search')
-  const pageData = wgts.find((wgt) => wgt.name == 'page')
+  const wgtsList = isArray(wgts) ? wgts : []
+  let searchComp = wgtsList.find((wgt) => wgt.name == 'search')
+  const pageData = wgtsList.find((wgt) => wgt.name == 'page')
   let filterWgts = []
   if (searchComp && searchComp.config.fixTop) {
-    filterWgts = wgts.filter((wgt) => wgt.name !== 'search')
+    filterWgts = wgtsList.filter((wgt) => wgt.name !== 'search')
   } else {
-    filterWgts = wgts
+    filterWgts = wgtsList
     searchComp = null
   }
   // const fixedTop = searchComp && searchComp.config.fixTop
@@ -424,7 +428,7 @@ function StoreIndex() {
         </Text>
       </View>
 
-      {productSwitching && wgts.length > 0 ? (
+      {productSwitching && wgtsList.length > 0 ? (
         <WgtsContext.Provider
           value={{
             onAddToCart
