@@ -61,9 +61,9 @@ function UgcIndex() {
 
   useEffect(() => {
     if (tagsList.length > 0) {
-      listRef.current.reset()
+      listRef.current?.reset()
     }
-  }, [curTagIndex, curFilterIndex, tagsList])
+  }, [curTagIndex, curFilterIndex, tagsList, searchKeyword])
 
   // useEffect(() => {
   //   getUgcList()
@@ -92,43 +92,51 @@ function UgcIndex() {
   // 列表
   const fetch = async ({ pageIndex, pageSize }) => {
     Taro.showLoading()
-    let params = {
-      page: pageIndex,
-      pageSize,
-      sort: curFilterIndex == 0 ? 'likes desc' : 'created desc',
-      content: searchKeywordRef.current
-    }
-
-    if (tagsList.length > 0) {
-      params = {
-        ...params,
-        topics: [tagsList[curTagIndex].tag_id]
+    try {
+      let params = {
+        page: pageIndex,
+        pageSize,
+        sort: curFilterIndex == 0 ? 'likes desc' : 'created desc'
       }
-    }
-
-    const { list, total_count: total } = await mdugcApi.postlist(params)
-
-    let nList = pickBy(list, mdugcDoc.UGC_LIST)
-
-    const resLeftList = nList.filter((item, index) => index % 2 == 0)
-    const resRightList = nList.filter((item, index) => index % 2 == 1)
-
-    setState((draft) => {
-      if (pageIndex === 1) {
-        draft.leftList = [resLeftList]
-        draft.rightList = [resRightList]
-      } else {
-        draft.leftList[pageIndex - 1] = resLeftList
-        draft.rightList[pageIndex - 1] = resRightList
+      const keyword = (searchKeywordRef.current || '').trim()
+      if (keyword) {
+        params.content = keyword
       }
-    })
-    Taro.hideLoading()
 
-    return { total: total || 0 }
+      if (tagsList.length > 0 && tagsList[curTagIndex]) {
+        params = {
+          ...params,
+          topics: [tagsList[curTagIndex].tag_id]
+        }
+      }
+
+      const res = (await mdugcApi.postlist(params)) || {}
+      const list = Array.isArray(res.list) ? res.list : []
+      const total = res.total_count
+
+      let nList = pickBy(list, mdugcDoc.UGC_LIST)
+
+      const resLeftList = nList.filter((item, index) => index % 2 == 0)
+      const resRightList = nList.filter((item, index) => index % 2 == 1)
+
+      setState((draft) => {
+        if (pageIndex === 1) {
+          draft.leftList = [resLeftList]
+          draft.rightList = [resRightList]
+        } else {
+          draft.leftList[pageIndex - 1] = resLeftList
+          draft.rightList[pageIndex - 1] = resRightList
+        }
+      })
+
+      return { total: total || 0 }
+    } finally {
+      Taro.hideLoading()
+    }
   }
 
   const refreshBySearch = (val = '') => {
-    const nextKeyword = val || ''
+    const nextKeyword = typeof val === 'string' ? val : ''
     searchKeywordRef.current = nextKeyword
     setState((draft) => {
       draft.keyword = nextKeyword
@@ -136,7 +144,6 @@ function UgcIndex() {
       draft.leftList = []
       draft.rightList = []
     })
-    listRef.current?.reset()
   }
 
   const handleOnClear = () => {
