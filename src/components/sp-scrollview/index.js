@@ -2,14 +2,13 @@
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
  */
-import Taro, { useDidShow } from '@tarojs/taro'
-import React, { useEffect, useImperativeHandle, useRef, useState } from 'react'
-import { View, Text, Image, ScrollView } from '@tarojs/components'
-import { SpImg, SpNote, SpLoading } from '@/components'
-import api from '@/api'
+import Taro from '@tarojs/taro'
+import React, { useEffect, useImperativeHandle, useRef } from 'react'
+import { View } from '@tarojs/components'
+import { SpNote, SpLoading } from '@/components'
 import { usePage } from '@/hooks'
 
-import { isObject, classNames, isWeixin, isAlipay, isWeb } from '@/utils'
+import { classNames, isWeixin, isAlipay, isWeb } from '@/utils'
 import { useTranslation, $t } from '@/i18n'
 
 import './index.scss'
@@ -34,8 +33,6 @@ function SpScrollView(props, ref) {
     pageSize
   })
   const wrapRef = useRef(null)
-  const scrollViewRef = useRef(null)
-  const [loading, setLoading] = useState()
   const vidRef = useRef(`sv-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`)
   const vid = vidRef.current
   useEffect(() => {
@@ -101,7 +98,6 @@ function SpScrollView(props, ref) {
     }
   }, [page.hasMore])
 
-  const observerFn = () => {}
 
   useImperativeHandle(ref, () => ({
     // reset 就是暴露给父组件的方法

@@ -130,6 +130,8 @@ function UgcIndex() {
       })
 
       return { total: total || 0 }
+    } catch (error) {
+      console.error(error)
     } finally {
       Taro.hideLoading()
     }
