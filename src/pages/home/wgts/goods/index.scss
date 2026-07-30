@@ -108,6 +108,15 @@
     }
   }
 
+  &__activity-item-point {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 28px;
+    overflow: hidden;
+    color: #1a1a1a;
+  }
+
   &__activity-item-price {
     display: flex;
     align-items: baseline;
