@@ -4,11 +4,10 @@
  */
 import Taro, { getCurrentPages } from '@tarojs/taro'
 import React, { useEffect, useState } from 'react'
-import { View, Image, Text } from '@tarojs/components'
-import { useSelector, useDispatch } from 'react-redux'
-import { AtTabBar } from 'taro-ui'
+import { View, Text } from '@tarojs/components'
+import { useSelector } from 'react-redux'
 import { TABBAR_PATH, TABBAR_ICON, SG_CHECK_STORE_RULE } from '@/consts'
-import { classNames, styleNames, getCurrentRoute, isWeb, isIphoneX } from '@/utils'
+import { getCurrentRoute, isWeb } from '@/utils'
 import { intercept as routerIntercept } from '@/plugin/routeIntercept'
 import S from '@/spx'
 import './index.scss'
@@ -100,25 +99,6 @@ function SpTabbar() {
         const iconPath = index == currentIndex ? item.selectedIconPath : item.iconPath
         return (
           <View className='sp-tabbar__item' key={index} onClick={() => handleTabbarClick(index)}>
-            {/* {index == 0 &&
-              (index !== currentIndex ? (
-                <>
-                  <SpImage src={item.iconPath} className='sp-tabbar__item-image' mode='aspectFill' />
-                  <View
-                    className='sp-tabbar__item-text'
-                    style={{ color: index == currentIndex ? selectedColor : color }}
-                  >
-                    {item.text}
-                  </View>
-                </>
-              ) : (
-                <SpImage
-                  src={item.selectedIconPath}
-                  className='sp-tabbar__item-cover-image'
-                  mode='aspectFill'
-                />
-              ))} */}
-
             <View className='sp-tabbar__item-image-wrapper'>
               {/^http/.test(iconPath) ? (
                 <SpImage src={iconPath} className='sp-tabbar__item-image' mode='aspectFill' />
@@ -142,12 +122,12 @@ function SpTabbar() {
               )}
             </View>
 
-            <View
+            <Text
               className='sp-tabbar__item-text'
               style={{ color: index == currentIndex ? selectedColor : color }}
             >
               {item.text}
-            </View>
+            </Text>
           </View>
         )
       })}

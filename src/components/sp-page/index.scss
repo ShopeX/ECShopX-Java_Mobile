@@ -72,7 +72,17 @@
     right: 0;
     z-index: $z-index-level-3;
     background: #fff;
+    /* 避免定高裁切 tabbar 底部文案（H5 浏览器底栏场景尤甚） */
+    overflow: visible;
+    box-sizing: content-box;
   }
+
+  /* #ifdef h5 */
+  .sp-page__footer {
+    padding-bottom: constant(safe-area-inset-bottom);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  /* #endif */
 
   &.has-custom-navigation {
     .countDown {
