@@ -74,13 +74,14 @@ export default class SpSearchBar extends Component {
   }
 
   handleConfirm = (e) => {
-    e.preventDefault && e.preventDefault()
-    e.stopPropagation && e.stopPropagation()
-    const keywords = (e.detail.value || '').trim()
+    e?.preventDefault?.()
+    e?.stopPropagation?.()
+    const raw = typeof e === 'string' ? e : e?.detail?.value
+    const keywords = (raw == null ? '' : String(raw)).trim()
     if (keywords) {
       const value = Taro.getStorageSync(this.props.localStorageKey)
       let defaultValue = []
-      if (value) {
+      if (value && typeof value === 'string') {
         const array = value.split(',')
         if (!array.includes(keywords)) {
           array.unshift(keywords)
