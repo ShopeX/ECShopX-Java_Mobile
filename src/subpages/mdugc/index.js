@@ -26,6 +26,7 @@ function UgcIndex() {
   )
   const initialState = {
     keyword: '',
+    searchKeyword: '',
     tagsList: [],
     curTagIndex: 0,
     curFilterIndex: 0,
@@ -34,8 +35,11 @@ function UgcIndex() {
     footerHeight: 0
   }
   const [state, setState] = useImmer(initialState)
-  const { keyword, tagsList, curTagIndex, curFilterIndex, leftList, rightList } = state
+  const { keyword, searchKeyword, tagsList, curTagIndex, curFilterIndex, leftList, rightList } =
+    state
   const listRef = useRef()
+  const searchKeywordRef = useRef('')
+  searchKeywordRef.current = searchKeyword
 
   useEffect(() => {
     Taro.setNavigationBarTitle({ title: $t('d668d0e3.888af1') })
@@ -59,7 +63,7 @@ function UgcIndex() {
     if (tagsList.length > 0) {
       listRef.current.reset()
     }
-  }, [curTagIndex, keyword, curFilterIndex, tagsList])
+  }, [curTagIndex, curFilterIndex, tagsList])
 
   // useEffect(() => {
   //   getUgcList()
@@ -92,7 +96,7 @@ function UgcIndex() {
       page: pageIndex,
       pageSize,
       sort: curFilterIndex == 0 ? 'likes desc' : 'created desc',
-      content: keyword
+      content: searchKeywordRef.current
     }
 
     if (tagsList.length > 0) {
@@ -106,48 +110,45 @@ function UgcIndex() {
 
     let nList = pickBy(list, mdugcDoc.UGC_LIST)
 
-    const resLeftList = nList.filter((item, index) => {
-      if (index % 2 == 0) {
-        return item
-      }
-    })
-    const resRightList = nList.filter((item, index) => {
-      if (index % 2 == 1) {
-        return item
-      }
-    })
+    const resLeftList = nList.filter((item, index) => index % 2 == 0)
+    const resRightList = nList.filter((item, index) => index % 2 == 1)
 
     setState((draft) => {
-      draft.leftList[pageIndex - 1] = resLeftList
-      draft.rightList[pageIndex - 1] = resRightList
+      if (pageIndex === 1) {
+        draft.leftList = [resLeftList]
+        draft.rightList = [resRightList]
+      } else {
+        draft.leftList[pageIndex - 1] = resLeftList
+        draft.rightList[pageIndex - 1] = resRightList
+      }
     })
     Taro.hideLoading()
 
     return { total: total || 0 }
   }
 
-  const handleOnClear = async () => {
-    await setState((draft) => {
-      draft.keyword = ''
+  const refreshBySearch = (val = '') => {
+    const nextKeyword = val || ''
+    searchKeywordRef.current = nextKeyword
+    setState((draft) => {
+      draft.keyword = nextKeyword
+      draft.searchKeyword = nextKeyword
       draft.leftList = []
       draft.rightList = []
     })
+    listRef.current?.reset()
+  }
+
+  const handleOnClear = () => {
+    refreshBySearch('')
   }
 
   const handleSearchCancel = () => {
-    setState((draft) => {
-      draft.keyword = ''
-      draft.leftList = []
-      draft.rightList = []
-    })
+    refreshBySearch('')
   }
 
-  const handleConfirm = async (val) => {
-    setState((draft) => {
-      draft.keyword = val
-      draft.leftList = []
-      draft.rightList = []
-    })
+  const handleConfirm = (val) => {
+    refreshBySearch(val)
   }
 
   const onChangeTag = (index, item) => {
