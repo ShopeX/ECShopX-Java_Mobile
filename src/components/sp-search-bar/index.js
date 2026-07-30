@@ -76,7 +76,7 @@ export default class SpSearchBar extends Component {
   handleConfirm = (e) => {
     e.preventDefault && e.preventDefault()
     e.stopPropagation && e.stopPropagation()
-    const keywords = e.detail.value.trim()
+    const keywords = (e.detail.value || '').trim()
     if (keywords) {
       const value = Taro.getStorageSync(this.props.localStorageKey)
       let defaultValue = []
@@ -90,8 +90,9 @@ export default class SpSearchBar extends Component {
         defaultValue.push(keywords)
       }
       Taro.setStorage({ key: this.props.localStorageKey, data: defaultValue.toString() })
-      this.props.onConfirm(e.detail.value)
     }
+    // 空关键词也要回调，便于清空搜索后重新拉全量列表
+    this.props.onConfirm(keywords)
     this.setState({
       showSearchDailog: false,
       isShowAction: false
