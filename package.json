@@ -41,7 +41,7 @@
   },
   "author": "",
   "engines": {
-    "node": "20.20.2"
+    "node": "20.19.0"
   },
   "browsers": [
     "last 3 versions",
