@@ -27,6 +27,7 @@ import {
 } from '@/components'
 
 import CompGoodsItem from './comps/comp-goodsitem'
+import { resolveGiftsUnderCartItem } from './utils/resolveCartGifts'
 
 import './espier-index.scss'
 
@@ -362,7 +363,19 @@ function CartIndex() {
                             )}
                             {/** 换购结束 */}
                             {/**普通商品开始 */}
-                            {cus_general_goods_list.map((c_sitem, c_index) => (
+                            {cus_general_goods_list.map((c_sitem, c_index) => {
+                              const giftItems = resolveGiftsUnderCartItem(
+                                c_sitem,
+                                c_index,
+                                cus_general_goods_list,
+                                all_item.gift_activity || []
+                              ).map((gift) =>
+                                pickBy(gift, {
+                                  ...doc.cart.GIFT_ITEM,
+                                  activity_id: gift.activity_id
+                                })
+                              )
+                              return (
                               <View className='shop-cart-item-bd' key={c_index}>
                                 <View className='shop-activity'></View>
                                 <View className='cart-item-wrap'>
@@ -398,9 +411,31 @@ function CartIndex() {
                                       />
                                     </View>
                                   ))}
-                                {/**组合商品开始 */}
+                                {/**组合商品结束 */}
+                                {/**满赠赠品开始 */}
+                                {giftItems.map((gift_sitem, gift_index) => (
+                                  <View
+                                    className='cart-item-wrap plus_items_bck'
+                                    key={`gift_${c_sitem.cart_id || c_sitem.item_id}_${gift_index}`}
+                                  >
+                                    <CompGoodsItem
+                                      disabled
+                                      info={gift_sitem}
+                                      goodType='gift'
+                                      isShowAddInput={false}
+                                      isShowDeleteIcon={false}
+                                    />
+                                  </View>
+                                ))}
+                                {c_sitem.gift_unavailable_tip && (
+                                  <View className='cart-item-wrap plus_items_bck gift-unavailable-tip'>
+                                    {c_sitem.gift_unavailable_tip}
+                                  </View>
+                                )}
+                                {/**满赠赠品结束 */}
                               </View>
-                            ))}
+                              )
+                            })}
                             {/**普通商品结束 */}
                             {/**换购商品开始 */}
                             {cus_plus_exchange_item_list && (

@@ -29,6 +29,20 @@ export const PLUS_BUY_ITEM = {
   desc: 'desc'
 }
 
+// 满赠赠品（挂在主品下方展示）
+export const GIFT_ITEM = {
+  item_id: 'item_id',
+  item_name: 'item_name',
+  pics: ({ pics }) => (Array.isArray(pics) ? pics[0] : pics),
+  price: 0,
+  market_price: 'market_price',
+  num: ({ gift_num }) => (gift_num != null ? gift_num : 1),
+  is_gift: true,
+  item_spec_desc: 'item_spec_desc',
+  desc: 'desc',
+  activity_id: 'activity_id'
+}
+
 // export const CART_GOODS_LIST = {
 //   item_id: "item_id",
 //   cart_id: "cart_id",
