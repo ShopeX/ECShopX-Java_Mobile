@@ -29,7 +29,7 @@ const initialState = {
   goodsSort: 0,
   seriesList: [],
   cat_id: undefined,
-  show: false,
+  is_main_category: false,
   secondList: [],
   thirdList: []
 }
@@ -48,6 +48,7 @@ function StoreItemList(props) {
     categorySecondIndex,
     categoryThirdIndex,
     cat_id,
+    is_main_category,
     secondList,
     thirdList
   } = state
@@ -74,17 +75,20 @@ function StoreItemList(props) {
       img: 'image_url',
       id: 'category_id',
       category_id: 'category_id',
+      is_main_category: 'is_main_category',
       children: ({ children }) =>
         pickBy(children, {
           name: 'category_name',
           img: 'image_url',
           id: 'category_id',
           category_id: 'category_id',
+          is_main_category: 'is_main_category',
           children: ({ children: children_ }) =>
             pickBy(children_, {
               name: 'category_name',
               img: 'image_url',
-              id: 'category_id'
+              id: 'category_id',
+              is_main_category: 'is_main_category'
             })
         })
     })
@@ -92,6 +96,7 @@ function StoreItemList(props) {
       draft.seriesList = currentList
       draft.hasSeries = true
       draft.cat_id = currentList[0].id
+      draft.is_main_category = currentList[0]?.is_main_category === true
     })
   }
 
@@ -107,8 +112,12 @@ function StoreItemList(props) {
       distributor_id: dtid,
       // distributor_id: dis_id || Taro.getStorageSync('distributor_id'),
       goodsSort,
-      category_id: cat_id,
       v_store: cusIndex
+    }
+    if (is_main_category === true) {
+      params.main_category = cat_id
+    } else {
+      params.category_id = cat_id
     }
 
     const { list: _list, total_count } = await api.item.search(params)
@@ -146,6 +155,7 @@ function StoreItemList(props) {
       draft.categoryThirdIndex = 0
       draft.allList = []
       draft.cat_id = seriesList[index]?.id
+      draft.is_main_category = seriesList[index]?.is_main_category === true
     })
   }, 200)
 
@@ -156,6 +166,10 @@ function StoreItemList(props) {
       draft.categoryThirdIndex = 0
       draft.allList = []
       draft.cat_id = index == 0 ? seriesList[categoryFirstIndex]?.id : secondList[index]?.id
+      draft.is_main_category =
+        index == 0
+          ? seriesList[categoryFirstIndex]?.is_main_category === true
+          : secondList[index]?.is_main_category === true
     })
   }, 200)
 
@@ -165,6 +179,10 @@ function StoreItemList(props) {
       draft.categoryThirdIndex = index
       draft.allList = []
       draft.cat_id = index == 0 ? secondList[categorySecondIndex]?.id : thirdList[index]?.id
+      draft.is_main_category =
+        index == 0
+          ? secondList[categorySecondIndex]?.is_main_category === true
+          : thirdList[index]?.is_main_category === true
     })
   }, 200)
 
