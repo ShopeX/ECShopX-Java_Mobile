@@ -29,6 +29,7 @@ export default function WgtContentPartition(props) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [scrollView, setScrollView] = useState(``)
   const [children, setChildren] = useState([])
+  const [contentMinHeight, setContentMinHeight] = useState(0)
   const isFirstRender = useRef(true)
   const navBarObserveId = `content-partition-nav-observe-${id}`
   // 从 params 中获取配置和数据，兼容两种数据结构
@@ -36,6 +37,7 @@ export default function WgtContentPartition(props) {
   const base = params.base || {}
   const data = params.data || {}
   const navList = data?.data || []
+  const contentBoxId = `wgt-content-partition-content-${id}`
 
   // 初始化：找到第一个激活的导航项
   useEffect(() => {
@@ -162,7 +164,7 @@ export default function WgtContentPartition(props) {
     }
   }
 
-  // 处理导航项点击
+  // 处理导航项点击（对齐 master：nextTick 后设 scrollIntoView，id 随 index 变以触发滚动）
   const handleNavClick = (index) => {
     initContetn(index)
   }
@@ -186,12 +188,24 @@ export default function WgtContentPartition(props) {
   }
 
   const initContetn = (index) => {
-    let viewIndex = index > 0 ? index - 1 : 0
+    const viewIndex = index > 0 ? index - 1 : 0
+    // H5：切换前锁住内容区高度，避免 ScrollView 因高度塌缩被顶回顶部
+    if (process.env.TARO_ENV === 'h5' && typeof document !== 'undefined') {
+      const el = document.getElementById(contentBoxId)
+      if (el?.offsetHeight) {
+        setContentMinHeight(el.offsetHeight)
+      }
+    }
     setCurrentIndex(index)
     setChildren(navList[index]?.children || [])
     Taro.nextTick(() => {
       setScrollView(`nav-item-${viewIndex}-${id}`)
       setScrollIntoView?.(`wgt-content-partition-section-${index}-${id}`)
+      if (process.env.TARO_ENV === 'h5') {
+        setTimeout(() => {
+          setContentMinHeight(0)
+        }, 150)
+      }
     })
   }
 
@@ -205,7 +219,7 @@ export default function WgtContentPartition(props) {
         style={{ height: 0, overflow: 'hidden' }}
       />
       <View className='wgt-content-partition__container'>
-        {/* 导航栏（吸顶时传 observeId 供观察 top 判断吸顶状态，不包一层 View 以免破坏 sticky） */}
+        {/* 导航栏（吸顶时不要外包一层 View，以免破坏 sticky） */}
         <ContentPartitionNavBar
           navList={navList}
           currentIndex={currentIndex}
@@ -224,8 +238,12 @@ export default function WgtContentPartition(props) {
           handleClickRightImg={handleClickRightImg}
         />
 
-        {/* 内容区域 - 显示所有导航项的 children */}
-        <View className='wgt-content-partition__content'>
+        {/* 内容区域：绝对定位锚点（与 master 一致），不占文档流，避免切 tab 高度抖动 */}
+        <View
+          id={contentBoxId}
+          className='wgt-content-partition__content'
+          style={contentMinHeight ? { minHeight: `${contentMinHeight}px` } : undefined}
+        >
           <View
             id={`wgt-content-partition-section-${currentIndex}-${id}`}
             className='wgt-content-partition__section-line'

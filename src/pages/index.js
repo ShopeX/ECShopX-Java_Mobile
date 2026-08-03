@@ -42,7 +42,8 @@ import {
   log,
   showToast,
   entryLaunch,
-  buildSharePath
+  buildSharePath,
+  isWeb
 } from '@/utils'
 import { updateShopInfo } from '@/store/slices/shop'
 import {
@@ -147,6 +148,47 @@ function Home() {
       pageRef.current.pageUnLock()
     }
   }, [skuPanelOpen])
+
+  // H5：手动滚动到目标 section，等布局完成再测量并预留吸顶导航高度
+  useEffect(() => {
+    if (!isWeb || !scrollIntoView) return
+    const id = String(scrollIntoView).replace(/^#/, '')
+    if (!id) return
+    // titleStyle=3 时非沉浸式，导航在 ScrollView 外；再减 navbarHeight 会滚过头，体感像先回顶
+    const navH = immersive ? state.navbarHeight || 0 : 0
+    let cancelled = false
+    const run = () => {
+      if (cancelled) return
+      Taro.createSelectorQuery()
+        .select('.home-body')
+        .node()
+        .exec((res) => {
+          if (cancelled) return
+          let scrollNode = res?.[0]?.node
+          if (!scrollNode) return
+          if (scrollNode.scrollHeight <= scrollNode.clientHeight && scrollNode.firstElementChild) {
+            const child = scrollNode.firstElementChild
+            if (child.scrollHeight > child.clientHeight) scrollNode = child
+          }
+          const target = document.getElementById(id)
+          if (!target) return
+          const targetRect = target.getBoundingClientRect()
+          const scrollRect = scrollNode.getBoundingClientRect()
+          const top = scrollNode.scrollTop + (targetRect.top - scrollRect.top) - navH
+          // 用 auto 避免从错误位置 smooth 长距离滑过，体感「先回顶再落下」
+          scrollNode.scrollTo({ top: Math.max(0, top), behavior: 'auto' })
+        })
+    }
+    const t = setTimeout(() => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(run)
+      })
+    }, 80)
+    return () => {
+      cancelled = true
+      clearTimeout(t)
+    }
+  }, [scrollIntoView, state.navbarHeight, immersive])
 
   useShareAppMessage(async () => {
     const { title, imageUrl } = await api.wx.shareSetting({ shareindex: 'index' })
@@ -292,11 +334,16 @@ function Home() {
         setState((draft) => {
           draft.backTopScrollTop = 0.1
         })
-        // 立即设置为0，滚动到顶部
+        // 立即设置为0，滚动到顶部；随后释放受控，避免后续 setState 再被 scrollTop=0 拉回顶
         setTimeout(() => {
           setState((draft) => {
             draft.backTopScrollTop = 0
           })
+          setTimeout(() => {
+            setState((draft) => {
+              draft.backTopScrollTop = null
+            })
+          }, 50)
         }, 0)
       }}
       ref={pageRef}
@@ -310,11 +357,11 @@ function Home() {
     >
       <ScrollView
         scrollY
-        scrollTop={state.backTopScrollTop}
+        scrollTop={state.backTopScrollTop != null ? state.backTopScrollTop : undefined}
         onScroll={(e) => {
           pageRef.current.handlePageScroll(e?.detail)
         }}
-        scrollIntoView={scrollIntoView}
+        scrollIntoView={process.env.TARO_ENV === 'h5' ? undefined : scrollIntoView}
         style={{ height: state.bodyHeight }}
         className={classNames('home-body', {
           'has-home-header': isShowHomeHeader && isWeixin
