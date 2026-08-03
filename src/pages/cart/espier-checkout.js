@@ -81,6 +81,10 @@ function CartCheckout(props) {
   const isRevertingReceiptRef = useRef(false)
   /** 已确认过的库存调整指纹，避免同配送方式重复弹窗 */
   const storeAdjustAckKeyRef = useRef('')
+  /** 已确认过的赠品库存提示指纹（与主品弹窗分离） */
+  const giftStoreAdjustAckKeyRef = useRef('')
+  /** 结算重算序号：切换配送/地址并发时只采纳最后一次结果，避免旧请求吞掉弹窗 */
+  const calcSeqRef = useRef(0)
   const { userInfo, address } = useSelector((state) => state.user)
   const { colorPrimary, pointName } = useSelector((state) => state.sys)
   const { coupon, zitiAddress } = useSelector((state) => state.cart)
@@ -400,6 +404,10 @@ function CartCheckout(props) {
     } else if (receiptType && receipt_type && receipt_type !== receiptType) {
       receiptSwitchPendingRef.current = true
       previousReceiptTypeRef.current = receiptType
+      storeAdjustAckKeyRef.current = ''
+      giftStoreAdjustAckKeyRef.current = ''
+      // 作废进行中的重算，避免快递旧响应在自提之后返回把弹窗冲掉
+      calcSeqRef.current += 1
     }
     setState((draft) => {
       draft.receiptType = receipt_type
@@ -413,9 +421,12 @@ function CartCheckout(props) {
       }
     })
 
-    setTimeout(() => {
+    // 地址未变则不派发，避免 useEffect 因 address 再打一次 getFreightFee
+    const nextId = address_info?.address_id
+    const curId = address?.address_id
+    if (address_info && nextId != null && String(nextId) !== String(curId ?? '')) {
       dispatch(updateChooseAddress(address_info))
-    }, 100)
+    }
   }
 
   const buildStoreQuantityAdjustContent = (adjustments = []) => {
@@ -438,16 +449,96 @@ function CartCheckout(props) {
     return `${receipt || ''}|${parts.join(',')}`
   }
 
-  const confirmStoreQuantityAdjustments = async (adjustments = []) => {
-    if (!adjustments.length) return true
+  const confirmStoreQuantityAdjustments = async (adjustments = [], tipText = '') => {
+    const content = String(tipText || '').trim() || buildStoreQuantityAdjustContent(adjustments)
+    if (!content) return true
     const { confirm } = await Taro.showModal({
       title: '库存提示',
-      content: buildStoreQuantityAdjustContent(adjustments),
+      content,
       confirmText: '确认',
       cancelText: '取消',
       confirmColor: colorPrimary
     })
     return !!confirm
+  }
+
+  const buildGiftStoreAdjustContent = (tip, adjustments = []) => {
+    const fromApi = String(tip || '').trim()
+    if (fromApi) return fromApi
+    const lines = adjustments.map((item) => {
+      const name = item.item_name || `赠品${item.item_id || ''}`
+      const from = Number(item.original_num) || 0
+      return `赠品「${name}」应赠${from}件，当前配送方式无货`
+    })
+    const canSwitch = adjustments.some(
+      (item) => item.can_switch_receipt || Number(item.other_receipt_available) > 0
+    )
+    const header = '本单赠品在当前配送方式下库存不足：'
+    const footer = canSwitch
+      ? '该赠品在其他配送方式下仍有库存，可切换配送方式后领取，或继续结算（本单不送该赠品）。'
+      : '继续结算将不送无货赠品。'
+    return `${header}\n${lines.join('\n')}\n${footer}`
+  }
+
+  /**
+   * @returns {'switch'|'continue'|false}
+   */
+  const confirmGiftStoreAdjustments = async (tipText = '', options = {}) => {
+    const content = String(tipText || '').trim()
+    if (!content) return 'continue'
+    const canSwitchReceipt = !!options.canSwitchReceipt
+    if (!canSwitchReceipt) {
+      const { confirm } = await Taro.showModal({
+        title: '赠品库存提示',
+        content,
+        confirmText: '继续结算',
+        showCancel: false,
+        confirmColor: colorPrimary
+      })
+      return confirm ? 'continue' : false
+    }
+    // H5 showModal：confirm/cancel 文案按 Unicode 计长度，中文按 2，总长不可超过 8（约 4 个汉字）
+    const { confirm } = await Taro.showModal({
+      title: '赠品库存提示',
+      content,
+      confirmText: '切换配送',
+      cancelText: '继续结算',
+      confirmColor: colorPrimary
+    })
+    return confirm ? 'switch' : 'continue'
+  }
+
+  const confirmStoreAdjustBlockCheckout = async (orderRes = {}) => {
+    const tip =
+      String(orderRes.store_quantity_adjust_tip || '').trim() ||
+      buildStoreQuantityAdjustContent(orderRes.store_quantity_adjustments || [])
+    const suggested = String(orderRes.suggested_receipt_type || '').trim()
+    const { confirm } = await Taro.showModal({
+      title: '库存提示',
+      content: tip || '当前配送方式下商品暂无库存',
+      confirmText: suggested ? '切换配送' : '知道了',
+      cancelText: '取消',
+      confirmColor: colorPrimary
+    })
+    if (!confirm) {
+      if (receiptSwitchPendingRef.current && previousReceiptTypeRef.current) {
+        revertReceiptTypeAfterCancelAdjust()
+      } else {
+        receiptSwitchPendingRef.current = false
+        Taro.navigateBack({ delta: 1 })
+      }
+      return
+    }
+    receiptSwitchPendingRef.current = false
+    if (!suggested) {
+      Taro.navigateBack({ delta: 1 })
+      return
+    }
+    // 确认后切到有库存的配送方式并触发重算
+    deliverRef.current?.setReceiptType?.(suggested)
+    setState((draft) => {
+      draft.receiptType = suggested
+    })
   }
 
   const revertReceiptTypeAfterCancelAdjust = () => {
@@ -623,9 +714,15 @@ function CartCheckout(props) {
   }
 
   const calcOrder = async () => {
+    const seq = ++calcSeqRef.current
+    const isStale = () => seq !== calcSeqRef.current
     Taro.showLoading({ title: '' })
     // calc.current = true
     const cus_parmas = await getParamsInfo()
+    if (isStale()) {
+      Taro.hideLoading()
+      return
+    }
     console.log('-------cus_parmas------:', cus_parmas)
     let orderRes
     try {
@@ -634,12 +731,24 @@ function CartCheckout(props) {
       console.log('e:', e)
     }
     Taro.hideLoading()
+    if (isStale()) {
+      return
+    }
     if (!orderRes) {
       if (receiptSwitchPendingRef.current) {
         revertReceiptTypeAfterCancelAdjust()
       } else {
         receiptSwitchPendingRef.current = false
       }
+      return
+    }
+
+    // 当前配送方式下勾选商品全部无库存：弹窗确认后切换到建议配送方式
+    if (orderRes.store_adjust_block_checkout) {
+      await confirmStoreAdjustBlockCheckout(orderRes)
+      return
+    }
+    if (isStale()) {
       return
     }
 
@@ -655,7 +764,13 @@ function CartCheckout(props) {
       storeQuantityAdjustments.length > 0 &&
       storeAdjustAckKeyRef.current !== adjustAckKey
     ) {
-      const confirmed = await confirmStoreQuantityAdjustments(storeQuantityAdjustments)
+      const confirmed = await confirmStoreQuantityAdjustments(
+        storeQuantityAdjustments,
+        orderRes.store_quantity_adjust_tip
+      )
+      if (isStale()) {
+        return
+      }
       if (!confirmed) {
         if (receiptSwitchPendingRef.current && previousReceiptTypeRef.current) {
           revertReceiptTypeAfterCancelAdjust()
@@ -666,6 +781,60 @@ function CartCheckout(props) {
         return
       }
       storeAdjustAckKeyRef.current = adjustAckKey
+    }
+
+    const giftStoreAdjustments = Array.isArray(orderRes.gift_store_adjustments)
+      ? orderRes.gift_store_adjustments
+      : []
+    const giftAdjustAckKey = buildStoreAdjustAckKey(
+      cus_parmas.receipt_type || receiptType,
+      giftStoreAdjustments
+    )
+    // 弹窗前先按本次接口 items 刷新清单，避免仍渲染上一配送方式留下的赠品
+    if (Array.isArray(orderRes.items)) {
+      const previewItems = orderRes.items.map((it) => ({ ...it, is_point: false }))
+      setState((draft) => {
+        draft.detailInfo = pickBy(previewItems, doc.checkout.CHECKOUT_GOODS_ITEM)
+        if (orderRes.totalItemNum != null) {
+          draft.totalInfo = {
+            ...draft.totalInfo,
+            items_count: orderRes.totalItemNum
+          }
+        }
+      })
+    }
+    if (
+      giftStoreAdjustments.length > 0 &&
+      giftStoreAdjustAckKeyRef.current !== giftAdjustAckKey
+    ) {
+      const canSwitchReceipt = giftStoreAdjustments.some(
+        (item) => item.can_switch_receipt || Number(item.other_receipt_available) > 0
+      )
+      const suggested =
+        giftStoreAdjustments.find((item) => item.suggested_receipt_type)?.suggested_receipt_type ||
+        ''
+      const action = await confirmGiftStoreAdjustments(
+        buildGiftStoreAdjustContent(orderRes.gift_store_adjust_tip, giftStoreAdjustments),
+        { canSwitchReceipt }
+      )
+      if (isStale()) {
+        return
+      }
+      if (action === 'switch' && suggested) {
+        giftStoreAdjustAckKeyRef.current = ''
+        storeAdjustAckKeyRef.current = ''
+        receiptSwitchPendingRef.current = true
+        previousReceiptTypeRef.current = receiptType
+        deliverRef.current?.setReceiptType?.(suggested)
+        setState((draft) => {
+          draft.receiptType = suggested
+        })
+        return
+      }
+      giftStoreAdjustAckKeyRef.current = giftAdjustAckKey
+    }
+    if (isStale()) {
+      return
     }
     receiptSwitchPendingRef.current = false
 
