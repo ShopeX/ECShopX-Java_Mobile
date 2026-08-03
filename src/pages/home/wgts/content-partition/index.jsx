@@ -200,11 +200,19 @@ export default function WgtContentPartition(props) {
     setChildren(navList[index]?.children || [])
     Taro.nextTick(() => {
       setScrollView(`nav-item-${viewIndex}-${id}`)
-      setScrollIntoView?.(`wgt-content-partition-section-${index}-${id}`)
       if (process.env.TARO_ENV === 'h5') {
+        // H5：走页面层手动测量滚动，锚点 id 随 index 变化即可触发
+        setScrollIntoView?.(`wgt-content-partition-section-${index}-${id}`)
         setTimeout(() => {
           setContentMinHeight(0)
         }, 150)
+      } else {
+        // 小程序：0 高 absolute 锚点 scroll-into-view 经常无效；
+        // 改为滚到有实际高度的挂件根节点，并先清空再设置以强制触发
+        setScrollIntoView?.('')
+        setTimeout(() => {
+          setScrollIntoView?.(`wgt-content-partition-${id}`)
+        }, 50)
       }
     })
   }

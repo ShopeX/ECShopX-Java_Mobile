@@ -357,6 +357,7 @@ function Home() {
     >
       <ScrollView
         scrollY
+        scrollWithAnimation={process.env.TARO_ENV !== 'h5'}
         scrollTop={state.backTopScrollTop != null ? state.backTopScrollTop : undefined}
         onScroll={(e) => {
           pageRef.current.handlePageScroll(e?.detail)
