@@ -4,8 +4,15 @@
     align-items: center;
     box-sizing: border-box;
     background-color: #ffffff;
-    z-index: 99;
+    z-index: 100;
     width: 100%;
+
+    &--sticky {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
     &-area {
       flex: 1;
       display: flex;

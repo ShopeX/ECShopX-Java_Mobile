@@ -321,44 +321,29 @@ function Home() {
         })}
       >
         <>
-          <View
-            className='home-body-content'
-            style={{ minHeight: '100%', display: 'flex', flexDirection: 'column' }}
-          >
-            <View style={{ flex: 1 }}>
-              {filterWgts.length > 0 && (
-                <WgtsContext.Provider
-                  value={{
-                    onAddToCart,
-                    isTab: true,
-                    immersive: pageData?.base?.isImmersive,
-                    isShowHomeHeader: isShowHomeHeader && isWeixin,
-                    navBarHeight: state.navbarHeight,
-                    footerHeight: state.footerHeight,
-                    setScrollIntoView: (view) => {
-                      setState((draft) => {
-                        draft.scrollIntoView = view
-                      })
-                    }
-                  }}
-                >
-                  <HomeWgts wgts={filterWgts} onLoad={fetchLikeList} dtid={state.distributor_id}>
-                    {/* 猜你喜欢 */}
-                    <SpRecommend className='recommend-block' info={likeList} />
-                  </HomeWgts>
-                </WgtsContext.Provider>
-              )}
-            </View>
-            {/* If you remove or alter Shopex brand identifiers, you must obtain a branding removal license from Shopex.  Contact us at:  http://www.shopex.cn to purchase a branding removal license. */}
-            {/* <View className='sp-page__powered-by w-full'>
-            <Text>Powered by</Text>
-            <Image
-              src='/assets/imgs/powered-logo.png'
-              className='powered-logo'
-              mode='contain'
-            />
-          </View> */}
-          </View>
+          {/* 勿在 ScrollView 内再套 display:flex / flex:1，会破坏挂件 CSS sticky 吸顶 */}
+          {filterWgts.length > 0 && (
+            <WgtsContext.Provider
+              value={{
+                onAddToCart,
+                isTab: true,
+                immersive: pageData?.base?.isImmersive,
+                isShowHomeHeader: isShowHomeHeader && isWeixin,
+                navBarHeight: state.navbarHeight,
+                footerHeight: state.footerHeight,
+                setScrollIntoView: (view) => {
+                  setState((draft) => {
+                    draft.scrollIntoView = view
+                  })
+                }
+              }}
+            >
+              <HomeWgts wgts={filterWgts} onLoad={fetchLikeList} dtid={state.distributor_id}>
+                {/* 猜你喜欢 */}
+                <SpRecommend className='recommend-block' info={likeList} />
+              </HomeWgts>
+            </WgtsContext.Provider>
+          )}
 
           {/* 小程序收藏提示 */}
           {isWeixin && <MCompAddTip />}

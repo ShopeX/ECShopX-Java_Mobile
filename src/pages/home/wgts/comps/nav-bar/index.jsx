@@ -6,7 +6,7 @@ import React, { useState, useCallback } from 'react'
 import Taro from '@tarojs/taro'
 import { View, Text, ScrollView } from '@tarojs/components'
 import { SpImage } from '@/components'
-import { classNames, styleNames } from '@/utils'
+import { classNames } from '@/utils'
 import './index.scss'
 
 /**
@@ -42,12 +42,21 @@ export default function LocationModuleNavBar(props) {
     handleScrollToLower()
   }, [handleScrollToLower])
 
-  console.log(scrollIntoView, 'scrollIntoView')
+  // sticky / 间距等用 style 对象（camelCase），避免 styleNames 拼字符串在小程序里失效
+  const rootStyle = navStyle && typeof navStyle === 'object' ? navStyle : undefined
+  const areaStyle =
+    navItemAreaStyle && typeof navItemAreaStyle === 'object' ? navItemAreaStyle : undefined
 
   return (
-    <View className='wgt-comps__nav' id={id} style={styleNames(navStyle)}>
+    <View
+      className={classNames('wgt-comps__nav', {
+        'wgt-comps__nav--sticky': !!rootStyle?.position && rootStyle.position === 'sticky'
+      })}
+      id={id}
+      style={rootStyle}
+    >
       {/* 导航项区域 */}
-      <View className='wgt-comps__nav-area' style={styleNames(navItemAreaStyle)}>
+      <View className='wgt-comps__nav-area' style={areaStyle}>
         {/* 左侧/顶部图片 */}
         {base.leftimgUrl && (
           <SpImage
@@ -82,7 +91,7 @@ export default function LocationModuleNavBar(props) {
                     [`wgt-comps__nav-item--active`]: isActive
                   })}
                   id={`nav-item-${index}-${id}`}
-                  style={styleNames(getNavItemStyle(item, isActive))}
+                  style={getNavItemStyle(item, isActive)}
                   onClick={() => onNavClick(index)}
                 >
                   {item.navitemtype === 'image' && item.imgUrl ? (
