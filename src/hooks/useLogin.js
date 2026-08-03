@@ -49,24 +49,36 @@ export default (props = {}) => {
     }
   }, [userInfo])
 
-  const login = async (shuyunappid) => {
+  /**
+   * @param {string} [shuyunappid]
+   * @param {{ skipPolicyCheck?: boolean }} [options] 隐私弹窗「同意」后应跳过再次校验，避免 POLICY_NOT_AGREE 中断后续注册弹窗
+   */
+  const login = async (shuyunappid, options = {}) => {
+    const { skipPolicyCheck = false } = options
     if (isWeixin || isAlipay) {
       // 隐私协议
-      const checkResult = await checkPolicyChange()
+      const checkResult = skipPolicyCheck ? true : await checkPolicyChange()
       if (checkResult) {
         Taro.showLoading({ title: '' })
         const { code } = await getCode()
 
         try {
-          const { token } = await getToken(code, shuyunappid)
+          const res = await getToken(code, shuyunappid)
+          const token = res && res.token
           Taro.hideLoading()
+          // 后端可能 200 但无 token（新用户需走注册），必须抛错让 SpLogin 弹起注册弹窗
+          if (!token) {
+            dispatch(updateIsNewUser(true))
+            throw new Error('NEW_USER_NEED_REGISTER')
+          }
           setToken(token)
           loginSuccess()
         } catch (e) {
+          // code 登录失败（新用户或接口异常）：置新用户并抛出，由 SpLogin 打开注册弹窗
           dispatch(updateIsNewUser(true))
           Taro.hideLoading()
           console.error('[hooks useLogin] auto login is failed: ', e)
-          throw new Error(e)
+          throw e instanceof Error ? e : new Error(e)
         }
       } else {
         throw new Error('POLICY_NOT_AGREE')
@@ -136,16 +148,16 @@ export default (props = {}) => {
         params = { activity_id }
       }
       const _userInfo = await api.member.memberInfo(params)
-      // 兼容老版本 后续优化
-      const { username, avatar, user_id, mobile, open_id } = _userInfo.memberInfo
+      // 兼容老版本 后续优化；memberInfo 可能为空，需兜底
+      const { username, avatar, user_id, mobile, open_id } = _userInfo?.memberInfo || {}
       Taro.setStorageSync('userinfo', {
         username: username,
         avatar: avatar,
         userId: user_id,
-        isPromoter: _userInfo.is_promoter,
+        isPromoter: _userInfo?.is_promoter,
         mobile: mobile,
         openid: open_id,
-        vip: _userInfo.vipgrade ? _userInfo.vipgrade.vip_type : ''
+        vip: _userInfo?.vipgrade ? _userInfo.vipgrade.vip_type : ''
       })
       dispatch(updateUserInfo(_userInfo))
     }
@@ -211,7 +223,7 @@ export default (props = {}) => {
         // reject()
       }
       if (isWeixin) {
-        const { avatar, username } = userInfo
+        const { avatar, username } = userInfo || {}
         if (avatar && username) {
           resolve()
         } else {

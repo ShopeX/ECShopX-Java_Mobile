@@ -269,7 +269,7 @@ function MemberUserInfo() {
   }
 
   const saveUserInfo = async () => {
-    const { avatar, username } = formUserInfo
+    const { avatar, username } = formUserInfo || {}
     await api.member.updateMemberInfo({
       username,
       avatar
