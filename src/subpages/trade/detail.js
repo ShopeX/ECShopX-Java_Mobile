@@ -245,7 +245,7 @@ function TradeDetail(props) {
       })
     } else {
       Taro.navigateTo({
-        url: `/pages/item/espier-detail?id=${itemId}&dtid=${distributorId}&_original=1`
+        url: `/subpages/item/espier-detail?id=${itemId}&dtid=${distributorId}&_original=1`
       })
     }
   }

@@ -695,10 +695,7 @@ function CartCheckout(props) {
       cus_parmas.receipt_type || receiptType,
       storeQuantityAdjustments
     )
-    if (
-      storeQuantityAdjustments.length > 0 &&
-      storeAdjustAckKeyRef.current !== adjustAckKey
-    ) {
+    if (storeQuantityAdjustments.length > 0 && storeAdjustAckKeyRef.current !== adjustAckKey) {
       const confirmed = await confirmStoreQuantityAdjustments(
         storeQuantityAdjustments,
         orderRes.store_quantity_adjust_tip
@@ -738,10 +735,7 @@ function CartCheckout(props) {
         }
       })
     }
-    if (
-      giftStoreAdjustments.length > 0 &&
-      giftStoreAdjustAckKeyRef.current !== giftAdjustAckKey
-    ) {
+    if (giftStoreAdjustments.length > 0 && giftStoreAdjustAckKeyRef.current !== giftAdjustAckKey) {
       const canSwitchReceipt = giftStoreAdjustments.some(
         (item) => item.can_switch_receipt || Number(item.other_receipt_available) > 0
       )

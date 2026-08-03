@@ -1,0 +1,33 @@
+/**
+ * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
+ * See LICENSE file for license details.
+ */
+.comp-share {
+  .share-bd {
+    display: flex;
+    justify-content: space-around;
+    align-items: flex-start;
+    padding: 50px 0 30px;
+    .share-item {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      &:first-child {
+        background-color: transparent;
+        line-height: normal;
+        margin: 0;
+        padding: 0;
+        overflow: visible;
+        border: none;
+        &:after {
+          border: 0px;
+        }
+      }
+      &-txt {
+        font-size: 26px;
+        color: #333;
+      }
+    }
+  }
+}

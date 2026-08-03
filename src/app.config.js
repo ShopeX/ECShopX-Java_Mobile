@@ -17,7 +17,8 @@ const config = {
     'pages/home/landing', // 跳转等待页面
     'pages/floorguide/index', // 楼层引导页面
 
-    'pages/item/espier-detail', // 商品详情页面
+    // 旧路径兼容：真实详情在 subpages/item/espier-detail，此页仅做 redirect
+    'pages/item/espier-detail',
 
     'pages/article/index', // 文章页面
     'pages/recommend/list', // 种草列表
@@ -94,7 +95,8 @@ const config = {
     {
       root: 'subpages/item',
       pages: [
-        'list' // 商品列表页面
+        'list', // 商品列表页面
+        'espier-detail' // 商品详情（由主包迁入分包）
       ]
     },
     {

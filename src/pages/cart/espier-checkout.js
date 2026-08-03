@@ -760,10 +760,7 @@ function CartCheckout(props) {
       storeQuantityAdjustments
     )
     // 首次进入或切换配送方式后，按当前配送方式库存不足时提示（同指纹已确认过则不再弹）
-    if (
-      storeQuantityAdjustments.length > 0 &&
-      storeAdjustAckKeyRef.current !== adjustAckKey
-    ) {
+    if (storeQuantityAdjustments.length > 0 && storeAdjustAckKeyRef.current !== adjustAckKey) {
       const confirmed = await confirmStoreQuantityAdjustments(
         storeQuantityAdjustments,
         orderRes.store_quantity_adjust_tip
@@ -803,10 +800,7 @@ function CartCheckout(props) {
         }
       })
     }
-    if (
-      giftStoreAdjustments.length > 0 &&
-      giftStoreAdjustAckKeyRef.current !== giftAdjustAckKey
-    ) {
+    if (giftStoreAdjustments.length > 0 && giftStoreAdjustAckKeyRef.current !== giftAdjustAckKey) {
       const canSwitchReceipt = giftStoreAdjustments.some(
         (item) => item.can_switch_receipt || Number(item.other_receipt_available) > 0
       )

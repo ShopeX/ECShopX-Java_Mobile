@@ -58,7 +58,7 @@ function linkPage(data) {
       url = `/subpages/game-activity/index?id=${id}`
       break
     case 'goods':
-      url = `/pages/item/espier-detail?id=${id}&dtid=${distributor_id}`
+      url = `/subpages/item/espier-detail?id=${id}&dtid=${distributor_id}`
       break
     case 'sale_category':
       url = '/subpages/item/list?cat_id=' + id

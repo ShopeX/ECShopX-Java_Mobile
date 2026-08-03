@@ -248,7 +248,7 @@ function CartIndex() {
 
   const onClickImgAndTitle = async (item) => {
     Taro.navigateTo({
-      url: `/pages/item/espier-detail?id=${item.item_id}&dtid=${item.shop_id}`
+      url: `/subpages/item/espier-detail?id=${item.item_id}&dtid=${item.shop_id}`
     })
   }
 
@@ -376,64 +376,66 @@ function CartIndex() {
                                 })
                               )
                               return (
-                              <View className='shop-cart-item-bd' key={c_index}>
-                                <View className='shop-activity'></View>
-                                <View className='cart-item-wrap'>
-                                  <SpCheckboxNew
-                                    checked={c_sitem.is_checked}
-                                    onChange={onChangeGoodsIsCheck.bind(this, c_sitem, 'single')}
-                                  />
-                                  <CompGoodsItem
-                                    info={{
-                                      ...c_sitem,
-                                      promotions: c_sitem.activity_info?.map((c_sitem_item) => ({
-                                        promotion_tag: c_sitem_item.info
-                                      }))
-                                    }}
-                                    onDelete={onDeleteCartGoodsItem.bind(this, c_sitem)}
-                                    onChange={onChangeCartGoodsItem.bind(this, c_sitem)}
-                                    onClickImgAndTitle={onClickImgAndTitle.bind(this, c_sitem)}
-                                  />
-                                </View>
-                                {/**组合商品开始 */}
-                                {c_sitem.packages &&
-                                  c_sitem.packages.map((pack_sitem, pack_index) => (
+                                <View className='shop-cart-item-bd' key={c_index}>
+                                  <View className='shop-activity'></View>
+                                  <View className='cart-item-wrap'>
+                                    <SpCheckboxNew
+                                      checked={c_sitem.is_checked}
+                                      onChange={onChangeGoodsIsCheck.bind(this, c_sitem, 'single')}
+                                    />
+                                    <CompGoodsItem
+                                      info={{
+                                        ...c_sitem,
+                                        promotions: c_sitem.activity_info?.map((c_sitem_item) => ({
+                                          promotion_tag: c_sitem_item.info
+                                        }))
+                                      }}
+                                      onDelete={onDeleteCartGoodsItem.bind(this, c_sitem)}
+                                      onChange={onChangeCartGoodsItem.bind(this, c_sitem)}
+                                      onClickImgAndTitle={onClickImgAndTitle.bind(this, c_sitem)}
+                                    />
+                                  </View>
+                                  {/**组合商品开始 */}
+                                  {c_sitem.packages &&
+                                    c_sitem.packages.map((pack_sitem, pack_index) => (
+                                      <View
+                                        className='cart-item-wrap plus_items_bck'
+                                        key={pack_index}
+                                      >
+                                        <CompGoodsItem
+                                          disabled
+                                          info={pack_sitem}
+                                          goodType='packages'
+                                          isShowAddInput={false}
+                                          isShowDeleteIcon={false}
+                                        />
+                                      </View>
+                                    ))}
+                                  {/**组合商品结束 */}
+                                  {/**满赠赠品开始 */}
+                                  {giftItems.map((gift_sitem, gift_index) => (
                                     <View
                                       className='cart-item-wrap plus_items_bck'
-                                      key={pack_index}
+                                      key={`gift_${
+                                        c_sitem.cart_id || c_sitem.item_id
+                                      }_${gift_index}`}
                                     >
                                       <CompGoodsItem
                                         disabled
-                                        info={pack_sitem}
-                                        goodType='packages'
+                                        info={gift_sitem}
+                                        goodType='gift'
                                         isShowAddInput={false}
                                         isShowDeleteIcon={false}
                                       />
                                     </View>
                                   ))}
-                                {/**组合商品结束 */}
-                                {/**满赠赠品开始 */}
-                                {giftItems.map((gift_sitem, gift_index) => (
-                                  <View
-                                    className='cart-item-wrap plus_items_bck'
-                                    key={`gift_${c_sitem.cart_id || c_sitem.item_id}_${gift_index}`}
-                                  >
-                                    <CompGoodsItem
-                                      disabled
-                                      info={gift_sitem}
-                                      goodType='gift'
-                                      isShowAddInput={false}
-                                      isShowDeleteIcon={false}
-                                    />
-                                  </View>
-                                ))}
-                                {c_sitem.gift_unavailable_tip && (
-                                  <View className='cart-item-wrap plus_items_bck gift-unavailable-tip'>
-                                    {c_sitem.gift_unavailable_tip}
-                                  </View>
-                                )}
-                                {/**满赠赠品结束 */}
-                              </View>
+                                  {c_sitem.gift_unavailable_tip && (
+                                    <View className='cart-item-wrap plus_items_bck gift-unavailable-tip'>
+                                      {c_sitem.gift_unavailable_tip}
+                                    </View>
+                                  )}
+                                  {/**满赠赠品结束 */}
+                                </View>
                               )
                             })}
                             {/**普通商品结束 */}

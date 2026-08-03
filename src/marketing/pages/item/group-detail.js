@@ -136,7 +136,7 @@ export default class GroupDetail extends Component {
     const { goods_id, distributor_id = 0, groups_activity_id } = activity_info || {}
 
     Taro.navigateTo({
-      url: `/pages/item/espier-detail?id=${goods_id}&dtid=${distributor_id}&group_id=${groups_activity_id}&team_id=${team_id}`
+      url: `/subpages/item/espier-detail?id=${goods_id}&dtid=${distributor_id}&group_id=${groups_activity_id}&team_id=${team_id}`
     })
   }
 
@@ -147,7 +147,7 @@ export default class GroupDetail extends Component {
     } = detail
 
     Taro.redirectTo({
-      url: `/pages/item/espier-detail?id=${goods_id}&dtid=${distributor_id}`
+      url: `/subpages/item/espier-detail?id=${goods_id}&dtid=${distributor_id}`
     })
   }
 

@@ -453,6 +453,7 @@ class EntryLaunch {
     const { path, params } = $instance.router
     const paths = customPath || path
     const routePath = {
+      '/subpages/item/espier-detail': 'activeItemDetail',
       '/pages/item/espier-detail': 'activeItemDetail',
       '/pages/custom/custom-page': 'activeCustomPage',
       '/subpage/pages/recommend/detail': 'activeSeedingDetail',
