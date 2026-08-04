@@ -117,6 +117,7 @@ function Home() {
     navigateMantle,
     scrollIntoView
   } = state
+  const immersive = pageData?.base?.isImmersive
 
   const dispatch = useDispatch()
 
