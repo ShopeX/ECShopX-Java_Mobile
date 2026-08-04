@@ -2,7 +2,7 @@
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
  */
-.comp-tradeitem {
+.comp-aftertrade-item {
   background: #fff;
   box-shadow: 0px 2px 10px 0px #eae7e0;
   padding: 24px 16px;
@@ -38,16 +38,18 @@
 
   .trade-total {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-end;
     align-items: center;
     background-color: #f8f8f8;
     height: 80px;
     padding: 0 20px;
     margin-top: 30px;
 
-    .delivery {
-      font-size: 24px;
-      color: #666666;
+    &__inner {
+      display: flex;
+      align-items: center;
+      flex-shrink: 0;
+      white-space: nowrap;
     }
 
     .num {
@@ -59,7 +61,12 @@
     .label {
       font-size: 24px;
       color: #333;
-      margin-right: 20px;
+      margin-right: 8px;
+
+      &--fee {
+        margin-left: 4px;
+        margin-right: 4px;
+      }
     }
 
     .point-value {
@@ -67,6 +74,13 @@
       color: #222;
       position: relative;
       top: 2px;
+    }
+
+    .sp-price {
+      display: inline-flex;
+      align-items: center;
+      height: auto;
+      line-height: 1;
     }
   }
 

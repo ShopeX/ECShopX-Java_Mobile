@@ -60,7 +60,7 @@ function CompTradeItem(props) {
   const totalPrice = Number(refundFee) + Number(freight)
 
   return (
-    <View className='comp-tradeitem'>
+    <View className='comp-aftertrade-item'>
       <View className='trade-item-hd' onClick={onViewTradeDetail}>
         <View>
           <View className='shop-info' onClick={onViewStorePage}>
@@ -80,9 +80,8 @@ function CompTradeItem(props) {
           <SpTradeItem key={goodIns} info={{ ...good }} />
         ))}
         <View className='trade-total'>
-          <View className='delivery'></View>
           {orderClass == 'pointsmall' && (
-            <View>
+            <View className='trade-total__inner'>
               <Text className='num'>{`共${totalNum}件`}</Text>
               <Text className='label'>{pointName}</Text>
               <Text className='point-value' style='font-size: 20px;'>
@@ -91,11 +90,12 @@ function CompTradeItem(props) {
             </View>
           )}
           {orderClass == 'normal' && (
-            <View>
+            <View className='trade-total__inner'>
               <Text className='num'>{`共${totalNum}件`}</Text>
               <Text className='label'>退款金额</Text>
-              <SpPrice value={refundFee} size={38} />+<Text className='label'>运费</Text>
-              {freightType == 'cash' && <SpPrice value={freight} />}
+              <SpPrice inline value={refundFee} size={38} />
+              <Text className='label label--fee'>+运费</Text>
+              {freightType == 'cash' && <SpPrice inline value={freight} />}
               {freightType == 'point' && <SpPoint value={freightPoint} />}
             </View>
           )}
