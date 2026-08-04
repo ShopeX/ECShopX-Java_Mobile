@@ -65,9 +65,11 @@ function TradeLogisticsInfo(props) {
         aftersales_data: aftersInfo?.aftersalesBn
       })
       showToast('操作成功')
+      Taro.eventCenter.trigger('onEventAfterSalesSendback')
       setTimeout(() => {
+        // 批量：列表→物流 回 1 层；单笔：详情→物流 回 2 层到列表
         Taro.navigateBack({
-          delta: 2
+          delta: type == 'more' ? 1 : 2
         })
       }, 1000)
     } catch (error) {
