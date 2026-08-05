@@ -66,8 +66,15 @@ function CompTradeItem(props) {
       <View className='trade-item-hd' onClick={onViewTradeDetail}>
         <View>
           <View className='shop-info' onClick={onViewStorePage}>
+            {isShowChecked && (
+              <SpCheckboxNew
+                className='aftersale-checkbox'
+                checked={selectAftersn.includes(aftersalesBn)}
+                onChange={() => onSelect(aftersalesBn)}
+              />
+            )}
             <SpImage src={distributorInfo?.logo} width={100} height={100} />
-            <View className='shop-name'>
+            <View className={`shop-name ${isShowChecked ? '' : 'nochecked'}`}>
               {distributorInfo?.name}
               {!VERSION_STANDARD && <Text className='iconfont icon-qianwang-01'></Text>}
             </View>
