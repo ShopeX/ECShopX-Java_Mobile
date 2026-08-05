@@ -233,7 +233,7 @@ function ItemList() {
     }
 
     if (main_cat_id) {
-      params['main_category'] = main_cat_id
+      params['main_cat_id'] = main_cat_id
     }
 
     if (VERSION_STANDARD) {
