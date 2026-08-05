@@ -2,9 +2,9 @@
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
  */
-import React, { useEffect, useRef, useMemo } from 'react'
+import React, { useEffect, useRef, useMemo, useCallback } from 'react'
 import { useSelector } from 'react-redux'
-import Taro, { useRouter } from '@tarojs/taro'
+import Taro, { useRouter, useDidShow } from '@tarojs/taro'
 import { View, ScrollView } from '@tarojs/components'
 import { AtButton } from 'taro-ui'
 import { useImmer } from 'use-immer'
@@ -33,6 +33,15 @@ function TradeAfterSaleList(props) {
   const [state, setState] = useImmer(initialState)
   const { status, tradeList, refresherTriggered, typeVal, order_id, selectAftersn } = state
   const tradeRef = useRef()
+  const needRefreshRef = useRef(false)
+
+  const refreshList = useCallback(() => {
+    setState((draft) => {
+      draft.tradeList = []
+      draft.selectAftersn = []
+    })
+    tradeRef.current?.reset()
+  }, [setState])
 
   const tradeStatus = useMemo(
     () => [
@@ -53,18 +62,25 @@ function TradeAfterSaleList(props) {
   }, [setNavigationBarTitle])
 
   useEffect(() => {
-    // 撤销售后事件
-    Taro.eventCenter.on('onEventAfterSalesCancel', () => {
-      setState((draft) => {
-        draft.tradeList = []
-      })
-      tradeRef.current.reset()
-    })
+    const handleRefresh = () => {
+      needRefreshRef.current = true
+    }
+    // 撤销售后 / 填写物流回寄成功后刷新列表
+    Taro.eventCenter.on('onEventAfterSalesCancel', handleRefresh)
+    Taro.eventCenter.on('onEventAfterSalesSendback', handleRefresh)
 
     return () => {
-      Taro.eventCenter.off('onEventAfterSalesCancel')
+      Taro.eventCenter.off('onEventAfterSalesCancel', handleRefresh)
+      Taro.eventCenter.off('onEventAfterSalesSendback', handleRefresh)
     }
   }, [])
+
+  useDidShow(() => {
+    if (needRefreshRef.current) {
+      needRefreshRef.current = false
+      refreshList()
+    }
+  })
 
   useEffect(() => {
     setState((draft) => {
@@ -153,7 +169,6 @@ function TradeAfterSaleList(props) {
     const fliterList = tradeList?.filter(
       (item) => selectAftersn.includes(item.aftersalesBn) && item.aftersalesAddress
     )
-    debugger
     const address = fliterList[0].aftersalesAddress
     Taro.setStorageSync('moreAftersalesBn', {
       aftersalesBn: selectAftersn,
