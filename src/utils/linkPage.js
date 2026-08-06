@@ -222,6 +222,11 @@ function linkPage(data) {
       path: data.extra.path
     })
   } else {
+    // 空路径或 `/` 不是有效 Taro 页面（H5 browser 根路径会报 page / is not found）
+    if (!url || url === '/') {
+      console.warn('linkPage: invalid url, skip navigate', data)
+      return
+    }
     Taro.navigateTo({
       url
     })

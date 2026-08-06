@@ -23,6 +23,7 @@ import S from '@/spx'
 import { $t } from '@/i18n'
 import { SG_POLICY } from '@/consts/localstorage'
 import { INVITE_ACTIVITY_ID, SG_CHECK_STORE_RULE } from '@/consts'
+import { normalizeAuthRedirectParam } from '@/subpages/auth/util'
 
 export default (props = {}) => {
   const { autoLogin = false, policyUpdateHook = () => {}, loginSuccess = () => {} } = props
@@ -135,7 +136,8 @@ export default (props = {}) => {
     Taro.setStorageSync(SG_CHECK_STORE_RULE, 0)
     console.log('useLogin setToken redirect_url:', redirect_url, decodeURIComponent(redirect_url))
     if (redirect_url) {
-      Taro.redirectTo({ url: decodeURIComponent(redirect_url) })
+      const target = normalizeAuthRedirectParam(redirect_url)
+      Taro.redirectTo({ url: target })
     }
   }
 

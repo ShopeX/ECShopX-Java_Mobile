@@ -120,10 +120,11 @@ export default function WgtGoods(props) {
     fetchGoods()
   }, [data.id, base.dataCount, base.dataType, eActivityId])
 
-  // 处理更多按钮点击
+  // 处理更多按钮点击（装修 moreLink 多为数组，需取首项）
   const handleClickMore = () => {
-    if (base.moreLink) {
-      linkPage(base.moreLink)
+    const moreLink = Array.isArray(base.moreLink) ? base.moreLink[0] : base.moreLink
+    if (moreLink && (moreLink.linkPage || moreLink.linkUrl || moreLink.linkType == 1)) {
+      linkPage(moreLink)
     } else if (base.dataType === 'history') {
       Taro.navigateTo({
         url: '/marketing/pages/member/item-history'

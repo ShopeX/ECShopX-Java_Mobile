@@ -19,7 +19,7 @@ const BUILD_APP_SERVER = process.env.SERVER
 const CONST_ENVS = {
   APP_NAME: pkg.app_name,
   APP_AUTH_PAGE:
-    process.env.TARO_ENV == 'h5' ? '/subpage/pages/auth/login' : '/subpages/member/index',
+    process.env.TARO_ENV == 'h5' ? '/subpages/auth/login' : '/subpages/member/index',
   APP_BUILD_TARGET: BUILD_TARGET,
   APP_LIVE: process.env.APP_LIVE,
   ...APP_ENVS,
@@ -152,9 +152,20 @@ const config = {
     router: {
       // mode: 'browser'
       // mode: 'hash',
-      mode: IS_APP ? (IS_APP_SERVER ? 'browser' : 'hash') : 'browser'
+      mode: IS_APP ? (IS_APP_SERVER ? 'browser' : 'hash') : 'browser',
+      // browser 模式下把首页映射到 `/`，避免 navigateTo('/') / 根地址回跳失败
+      customRoutes: {
+        '/pages/index': '/'
+      }
     },
-    webpackChain(chain) {},
+    webpackChain(chain) {
+      chain.performance.hints(false)
+    },
+    sassLoaderOption: {
+      sassOptions: {
+        quietDeps: true
+      }
+    },
     devServer: {
       // https: true,
       // overlay: {

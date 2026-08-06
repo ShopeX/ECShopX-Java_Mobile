@@ -24,6 +24,13 @@ export function normalizeAuthRedirectParam(raw) {
       break
     }
   }
+  // H5 browser 根路径 `/` 不是 Taro 页面，回跳到首页
+  const pathname = s.split('?')[0]
+  if (!pathname || pathname === '/') {
+    const home = process.env.APP_HOME_PAGE || '/pages/index'
+    const query = s.includes('?') ? s.slice(s.indexOf('?')) : ''
+    return `${home}${query}`
+  }
   return s
 }
 
