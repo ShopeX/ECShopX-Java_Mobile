@@ -5,7 +5,7 @@
 import React, { useMemo, useEffect } from 'react'
 import Taro, { getCurrentInstance } from '@tarojs/taro'
 import { View } from '@tarojs/components'
-import { classNames, pickBy, isWeixin, showToast } from '@/utils'
+import { classNames, pickBy, isWeixin, showToast, styleNames } from '@/utils'
 import { useImmer } from 'use-immer'
 import { SpLogin } from '@/components'
 import api from '@/api'
@@ -174,7 +174,7 @@ function WgtCouponCard(props) {
   console.log('coupon-outerStyle', outerStyle)
   console.log('coupon-innerStyle', innerStyle)
   return (
-    <View className='wgt-couponcard' style={outerStyle} id={`wgt-couponcard-${id}`}>
+    <View className='wgt-couponcard' style={styleNames(outerStyle)} id={`wgt-couponcard-${id}`}>
       <View
         className={classNames('wgt-couponcard-inner', {
           'wgt-couponcard-one': couponCardList.length == 1,
@@ -182,7 +182,7 @@ function WgtCouponCard(props) {
           'wgt-couponcard-three': couponCardList.length == 3,
           'wgt-couponcard-more': couponCardList.length >= 4
         })}
-        style={innerStyle}
+        style={styleNames(innerStyle)}
       >
         <View className='wgt-couponcard-item-list'>
           {couponCardList?.map((item, index) => (

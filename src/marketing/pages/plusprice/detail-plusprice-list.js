@@ -143,8 +143,8 @@ class DetailPluspriceList extends Component {
       <View
         className='page-plusprice'
         style={{
-          'background-image': `url(${isSetBackground})`,
-          'background-size': isSetBackground ? 'cover' : 'contain'
+          backgroundImage: `url(${isSetBackground})`,
+          backgroundSize: isSetBackground ? 'cover' : 'contain'
         }}
       >
         <SpNavBar title={$t('c4d2fddd.d1ca1e')} />
@@ -152,7 +152,7 @@ class DetailPluspriceList extends Component {
           <View className='title'> {promotion_activity.marketing_name} </View>
           <View
             className='plusprice-goods__timer'
-            style={{ 'background-color': timeBackgroundColor ? timeBackgroundColor : '#FC682D' }}
+            style={{ backgroundColor: timeBackgroundColor ? timeBackgroundColor : '#FC682D' }}
           >
             <View>
               <Text className='time-text'>{$t('6f27b25d.85423b')}</Text>

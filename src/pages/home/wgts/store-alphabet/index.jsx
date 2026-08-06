@@ -5,6 +5,7 @@
 import React, { useMemo, useCallback } from 'react'
 import { View } from '@tarojs/components'
 import { SpBrandIndexes } from '@/components'
+import { styleNames } from '@/utils'
 import { getGlobalBaseStyle } from '../helper'
 import './index.scss'
 
@@ -24,8 +25,8 @@ function WgtStoreAlphabet(props) {
   }, [base])
 
   return (
-    <View className='wgt-store-alphabet' style={outStyle()} id={`wgt-store-alphabet-${id}`}>
-      <View className='wgt-store-alphabet__content-inner' style={innerStyle}>
+    <View className='wgt-store-alphabet' style={styleNames(outStyle())} id={`wgt-store-alphabet-${id}`}>
+      <View className='wgt-store-alphabet__content-inner' style={styleNames(innerStyle)}>
         <SpBrandIndexes data={dataType == 'all' ? [] : data} dataType={dataType} base={base} />
       </View>
     </View>

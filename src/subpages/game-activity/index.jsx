@@ -170,10 +170,10 @@ const GameActivity = () => {
   const getPageStyle = () => {
     if (activityConfig?.backgroundImage) {
       return {
-        'background-image': `url(${activityConfig.backgroundImage})`,
-        'background-size': 'cover',
-        'background-position': 'center',
-        'background-repeat': 'no-repeat'
+        backgroundImage: `url(${activityConfig.backgroundImage})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat'
       }
     }
     return {}

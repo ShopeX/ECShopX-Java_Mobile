@@ -9,6 +9,16 @@ import { SpImage } from '@/components'
 import { classNames } from '@/utils'
 import './index.scss'
 
+const toReactStyle = (style) => {
+  if (!style || typeof style !== 'object') return undefined
+
+  return Object.entries(style).reduce((result, [key, value]) => {
+    const reactKey = key.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase())
+    result[reactKey] = value
+    return result
+  }, {})
+}
+
 /**
  * 位置模块导航栏组件
  * showLeftImg 在组件内部维护，避免父组件 setState 导致整块回滚
@@ -43,9 +53,9 @@ export default function LocationModuleNavBar(props) {
   }, [handleScrollToLower])
 
   // sticky / 间距等用 style 对象（camelCase），避免 styleNames 拼字符串在小程序里失效
-  const rootStyle = navStyle && typeof navStyle === 'object' ? navStyle : undefined
+  const rootStyle = toReactStyle(navStyle)
   const areaStyle =
-    navItemAreaStyle && typeof navItemAreaStyle === 'object' ? navItemAreaStyle : undefined
+    toReactStyle(navItemAreaStyle)
 
   return (
     <View
@@ -106,7 +116,7 @@ export default function LocationModuleNavBar(props) {
                   {base.navitemborder && isActive && (
                     <View
                       className='wgt-comps__nav-item-border'
-                      style={{ 'background-color': `${base.navitembordercolor || 'transparent'}` }}
+                      style={{ backgroundColor: `${base.navitembordercolor || 'transparent'}` }}
                     />
                   )}
                 </View>

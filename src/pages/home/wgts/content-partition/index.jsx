@@ -148,11 +148,11 @@ export default function WgtContentPartition(props) {
     return {
       height: Taro.pxTransform(base.navitemheight || 40),
       color: textColor,
-      'background-color': isActive
+      backgroundColor: isActive
         ? item.navitemactivebg || 'transparent'
         : item.navitembg || 'transparent',
-      'padding-left': `${Taro.pxTransform(base.navitemmargin || 0)}`,
-      'padding-right': `${Taro.pxTransform(base.navitemmargin || 0)}`
+      paddingLeft: `${Taro.pxTransform(base.navitemmargin || 0)}`,
+      paddingRight: `${Taro.pxTransform(base.navitemmargin || 0)}`
     }
   }
 

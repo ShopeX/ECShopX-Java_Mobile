@@ -2,7 +2,7 @@ import React, { useMemo, useState, useEffect, useCallback } from 'react'
 import Taro from '@tarojs/taro'
 import { View, Swiper, SwiperItem, Text } from '@tarojs/components'
 import { useSelector } from 'react-redux'
-import { classNames } from '@/utils'
+import { classNames, styleNames } from '@/utils'
 import { SpShop } from '@/components'
 import api from '@/api'
 import isArray from 'lodash/isArray'
@@ -96,7 +96,7 @@ function WgtShop(props) {
       className={classNames('wgt-shop', {
         'wgt-shop--single': displayData.length === 1
       })}
-      style={outStyle()}
+      style={styleNames(outStyle())}
       id={`wgt-shop-${id}`}
     >
       <View className='wgt-shop__content'>
@@ -129,7 +129,7 @@ function WgtShop(props) {
                   >
                     <SpShop
                       info={item}
-                      style={innerStyle}
+                      style={styleNames(innerStyle)}
                       isActive={currentIndex === index}
                       moduleName={base?.track}
                       id={index}

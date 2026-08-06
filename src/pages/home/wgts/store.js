@@ -65,7 +65,7 @@ export default class WgtStore extends Component {
           <View
             className='store-wrap'
             key={item.id}
-            style={{ 'background-color': base.backgroundColor || '#FFF' }}
+            style={{ backgroundColor: base.backgroundColor || '#FFF' }}
           >
             <View className='store-info' onClick={this.handleStoreClick.bind(this, item.id)}>
               <SpImage

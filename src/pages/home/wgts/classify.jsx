@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect } from 'react'
 import Taro from '@tarojs/taro'
 import { View } from '@tarojs/components'
-import { pickBy } from '@/utils'
+import { pickBy, styleNames } from '@/utils'
 import doc from '@/doc'
 import { SpClassifyHorizontal, SpClassifyVertical } from '@/components'
 import './classify.scss'
@@ -66,7 +66,7 @@ function WgtClassify(props) {
 
   const renderHorizontal = useMemo(() => {
     return (
-      <View className='wgt-classify__content-horizontal-item' style={innerStyle}>
+      <View className='wgt-classify__content-horizontal-item' style={styleNames(innerStyle)}>
         <SpClassifyHorizontal data={list?.children || []} onClick={handleSubCategoryClick} />
       </View>
     )
@@ -74,7 +74,7 @@ function WgtClassify(props) {
 
   const renderVertical = useMemo(() => {
     return (
-      <View className='wgt-classify__content-vertical-item' style={innerStyle}>
+      <View className='wgt-classify__content-vertical-item' style={styleNames(innerStyle)}>
         <SpClassifyVertical data={list} onClick={handleSubCategoryClick} />
       </View>
     )
@@ -82,7 +82,7 @@ function WgtClassify(props) {
 
   return (
     <View className='wgt-classify' id={`wgt-classify-${id}`}>
-      <View className='wgt-classify__content' style={outStyle}>
+      <View className='wgt-classify__content' style={styleNames(outStyle)}>
         {animate === 'horizontal' && renderHorizontal}
         {animate === 'vertical' && renderVertical}
       </View>

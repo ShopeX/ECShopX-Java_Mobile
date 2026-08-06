@@ -97,7 +97,7 @@ function SpSearchOne(props) {
     >
       <View
         className='sp-search-one__input-wrap'
-        style={{ 'background-color': props.backgroundColor, 'border-color': props.borderColor }}
+        style={{ backgroundColor: props.backgroundColor, borderColor: props.borderColor }}
       >
         <SpImage src='fv_search.png' width={40} height={40} />
         {!props.inputEnabled && (
