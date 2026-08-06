@@ -1,7 +1,6 @@
 @mixin aspect-ratio($width: 1, $height: 1, $useFallback: true) {
   // 计算 padding-top 降级比例
-  $ratio: $width / $height;
-  $padding: percentage($height / $width);
+  $padding: calc(#{$height} / #{$width} * 100%);
   // 降级方案：使用 padding-top 模拟宽高比
 
   position: relative;

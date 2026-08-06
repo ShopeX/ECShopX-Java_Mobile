@@ -264,7 +264,7 @@ $height-percent: 82%;
     background: #f5f5f5;
     min-height: calc(100vh - #{$banner-height} - #{2 * $tabbar-height});
     /*  #ifdef  h5  */
-    height: calc(100vh - #{$banner-height} - #{2 * $tabbar-height} - $navigate-height-h5);
+    height: calc(100vh - #{$banner-height} - #{2 * $tabbar-height} - #{$navigate-height-h5});
     /*  #endif  */
     .goodItem {
       flex-shrink: 0;
