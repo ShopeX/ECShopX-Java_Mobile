@@ -9,6 +9,7 @@ import { connect } from 'react-redux'
 import { AtTabBar } from 'taro-ui'
 import { getCurrentRoute, isIphoneX } from '@/utils'
 import { DEFAULT_SAFE_AREA_HEIGHT } from '@/consts'
+import { $t, i18n } from '@/i18n'
 import S from '@/spx'
 // import { getTotalCount } from '@/store/cart'
 
@@ -30,7 +31,15 @@ export default class TabBar extends Component {
   }
 
   componentDidMount() {
+    this._onLanguageChanged = () => this.initTabbarData()
+    i18n.on('languageChanged', this._onLanguageChanged)
     this.initTabbarData()
+  }
+
+  componentWillUnmount() {
+    if (this._onLanguageChanged) {
+      i18n.off('languageChanged', this._onLanguageChanged)
+    }
   }
 
   componentWillReceiveProps(nextProps) {
@@ -59,35 +68,35 @@ export default class TabBar extends Component {
     let list = []
     list = [
       {
-        title: '首页',
+        title: $t('1734e75c.db1c89'),
         iconType: 'home',
         iconPrefixClass: 'iconfont icon-home',
         url: '/subpages/guide/index',
         urlRedirect: true
       },
       {
-        title: '分类',
+        title: $t('e6f782b6.d0771a'),
         iconType: 'category',
         iconPrefixClass: 'iconfont icon-category',
         url: '/subpages/guide/category/index',
         urlRedirect: true
       },
       {
-        title: '优惠券',
+        title: $t('250b375e.2f3635'),
         iconType: 'member',
         iconPrefixClass: 'iconfont icon-coupon',
         url: '/subpages/guide/coupon-home/index',
         urlRedirect: true
       },
       {
-        title: '种草',
+        title: $t('f742d318.93f34a'),
         iconType: 'member',
         iconPrefixClass: 'iconfont icon-faverite',
         url: '/subpages/guide/recommend/list',
         urlRedirect: true
       },
       {
-        title: '购物车',
+        title: $t('d886af7d.c017be'),
         iconType: 'cart',
         iconPrefixClass: 'iconfont icon-cart',
         url: '/subpages/guide/cart/espier-index',
@@ -121,7 +130,7 @@ export default class TabBar extends Component {
   updateCurTab() {
     this.fetchCart()
     const { tabList, localCurrent } = this.state
-    const fullPath = getCurrentRoute(getCurrentInstance().router).fullPath.split('?')[0]
+    const fullPath = getCurrentRoute(getCurrentInstance()?.router).fullPath.split('?')[0]
     if (tabList.length == 0) {
       return
     }
@@ -145,7 +154,7 @@ export default class TabBar extends Component {
       })
     }
 
-    const { path } = getCurrentRoute(getCurrentInstance().router)
+    const { path } = getCurrentRoute(getCurrentInstance()?.router)
     if (this.state.tabList[cartTabIdx] && path === this.state.tabList[cartTabIdx].url) {
       updateCartCount('')
       return
@@ -163,7 +172,7 @@ export default class TabBar extends Component {
       const curTab = this.state.tabList[current]
       const { url, withLogin } = curTab
       console.log('tabbar-withLogin', url, withLogin)
-      const fullPath = getCurrentRoute(getCurrentInstance().router).fullPath.split('?')[0]
+      const fullPath = getCurrentRoute(getCurrentInstance()?.router).fullPath.split('?')[0]
       // if (withLogin && !S.getAuthToken()) {
       //   return Taro.navigateTo({
       //     url: process.env.APP_AUTH_PAGE

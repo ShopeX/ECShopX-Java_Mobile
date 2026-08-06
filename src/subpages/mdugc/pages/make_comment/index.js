@@ -5,12 +5,12 @@
 import React, { Component } from 'react'
 import Taro from '@tarojs/taro'
 import { View, Text, Image, ScrollView } from '@tarojs/components'
-import S from '@/spx'
 import { SpNote, BackToTop, Loading } from '@/components'
 import { pickBy } from '@/utils'
 import { withPager, withBackToTop } from '@/hocs'
-
 import api from '@/api'
+import * as mdugcApi from '@/api/mdugc'
+import { $t, i18n } from '@/i18n'
 
 import './index.scss'
 
@@ -27,17 +27,29 @@ export default class make_comment extends Component {
   }
 
   async componentDidMount() {
-    let { num } = this.$router.params
+    let { num } = this.$router?.params
     let data = {
       type: 'reply'
     }
     if (num) {
-      let { type } = await api.mdugc.messagesetTohasRead(data)
+      let { type } = await mdugcApi.messagesetTohasRead(data)
     }
     this.nextPage()
+    Taro.setNavigationBarTitle({ title: $t('f3624dc7.0a2020') })
+    this._onMakeCommentLang = () => {
+      Taro.setNavigationBarTitle({ title: $t('f3624dc7.0a2020') })
+      this.forceUpdate()
+    }
+    i18n.on('languageChanged', this._onMakeCommentLang)
   }
   config = {
-    navigationBarTitleText: '收到的评论'
+    navigationBarTitleText: ''
+  }
+
+  componentWillUnmount() {
+    if (this._onMakeCommentLang) {
+      i18n.off('languageChanged', this._onMakeCommentLang)
+    }
   }
   // 列表
   async fetch(params) {
@@ -47,7 +59,7 @@ export default class make_comment extends Component {
       pageSize,
       type: 'reply'
     }
-    const { list, total_count: total } = await api.mdugc.messagelist(params)
+    const { list, total_count: total } = await mdugcApi.messagelist(params)
     console.log('list, total', list, total)
 
     const nList = pickBy(list, {
@@ -125,9 +137,9 @@ export default class make_comment extends Component {
                 )
               })}
             </View>
-            {page.isLoading && <Loading>正在加载...</Loading>}
+            {page.isLoading && <Loading>{$t('f3624dc7.bd0271')}</Loading>}
             {!page.isLoading && !page.hasNext && !list.length && (
-              <SpNote img='trades_empty.png'>列表页为空!</SpNote>
+              <SpNote img='trades_empty.png'>{$t('f3624dc7.1feb58')}</SpNote>
             )}
           </ScrollView>
         </View>

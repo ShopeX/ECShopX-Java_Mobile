@@ -2,38 +2,25 @@
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
  */
-import React, { useEffect, useRef, useCallback } from 'react'
-import Taro, {
-  getCurrentInstance,
-  useShareAppMessage,
-  useShareTimeline,
-  useDidShow
-} from '@tarojs/taro'
-import { View, Image, ScrollView, Text } from '@tarojs/components'
+import React, { useEffect, useRef } from 'react'
+import Taro, { useShareAppMessage, useShareTimeline, useDidShow } from '@tarojs/taro'
+import { View, ScrollView } from '@tarojs/components'
 import { useSelector, useDispatch } from 'react-redux'
-import throttle from 'lodash/throttle'
 import {
   SpScreenAd,
   SpPage,
-  SpSearch,
   SpRecommend,
   SpTabbar,
   SpCouponPackage,
-  SpSkuSelect,
-  SpPrivacyModal,
-  SpLogin,
-  SpLoading
+  SpPoweredBy,
+  SpSkuSelect
 } from '@/components'
 import api from '@/api'
 import {
   isWeixin,
-  isAPP,
-  isEmpty,
   getDistributorId,
   VERSION_STANDARD,
   VERSION_PLATFORM,
-  VERSION_IN_PURCHASE,
-  VERSION_B2C,
   classNames,
   getCurrentPageRouteParams,
   resolveStringifyParams,
@@ -41,22 +28,19 @@ import {
   pickBy,
   log,
   showToast,
-  entryLaunch,
   buildSharePath,
   isWeb
 } from '@/utils'
-import { updateShopInfo } from '@/store/slices/shop'
 import {
   updatePurchaseShareInfo,
   updateInviteCode,
   updateEnterpriseId
 } from '@/store/slices/purchase'
-import S from '@/spx'
 import { useImmer } from 'use-immer'
 import { useLogin, useNavigation, useLocation, useModal, useEffectAsync } from '@/hooks'
 import doc from '@/doc'
-import { SG_ROUTER_PARAMS } from '@/consts/localstorage'
 import withPageWrapper from '@/hocs/withPageWrapper'
+import FloatSalesperson from '@/subpages/store/comps/float-salesperson'
 import HomeWgts from './home/comps/home-wgts'
 import { WgtsContext } from './home/wgts/wgts-context'
 import CompAddTip from './home/comps/comp-addtip'
@@ -99,11 +83,13 @@ function Home() {
 
   const { openRecommend, appName, openScanQrcode, entryStoreByLBS, openWechatappLocation } =
     useSelector((state) => state.sys)
-  const { shopInfo } = useSelector((state) => state.shop)
 
   const showAdv = useSelector((member) => member.user.showAdv)
+  const { shopInfo } = useSelector((state) => state.shop)
   const { location, address } = useSelector((state) => state.user)
-  const nearbyText = address?.city || location?.city || ''
+  const nearbyText = address?.adrdetail
+    ? address?.city || address?.province || ''
+    : location?.city || location?.province || address?.city || ''
   const { setNavigationBarTitle } = useNavigation()
   const { updateAddress } = useLocation()
   const {
@@ -117,46 +103,51 @@ function Home() {
     navigateMantle,
     scrollIntoView
   } = state
-  const immersive = pageData?.base?.isImmersive
 
   const dispatch = useDispatch()
 
   useEffectAsync(async () => {
     fetchWgts()
     setNavigationBarTitle(appName)
+  }, [])
 
-    log.info({ str: 'hello world' }, 'info log', 100, [1, 2, 3])
+  // 首次进入时 useDidShow 可能在组件挂载前就触发了，导致不会执行，这里补一次
+  useEffect(() => {
+    updateAddress()
   }, [])
 
   useDidShow(() => {
     dispatch(updatePurchaseShareInfo())
     dispatch(updateInviteCode())
     dispatch(updateEnterpriseId())
+    // 从店铺页返回时刷新地址/店铺信息，使顶部 nearby-function-text 立即更新
+    updateAddress()
     // 通知挂件（如浏览记录）刷新本地数据
     Taro.eventCenter.trigger('homePageShow')
   })
 
+  // 定位变化或选择店铺后（distributor_id 变化）重新拉取首页
   useEffect(() => {
-    if (location && VERSION_STANDARD) {
+    if (VERSION_STANDARD && (location || shopInfo?.distributor_id)) {
       fetchWgts()
     }
-  }, [location])
+  }, [location, shopInfo?.distributor_id])
 
   useEffect(() => {
     if (skuPanelOpen) {
-      pageRef.current.pageLock()
+      pageRef.current?.pageLock()
     } else {
-      pageRef.current.pageUnLock()
+      pageRef.current?.pageUnLock()
     }
   }, [skuPanelOpen])
 
   // H5：手动滚动到目标 section，等布局完成再测量并预留吸顶导航高度
   useEffect(() => {
     if (!isWeb || !scrollIntoView) return
+    console.log('scrollIntoView:', scrollIntoView)
     const id = String(scrollIntoView).replace(/^#/, '')
     if (!id) return
-    // titleStyle=3 时非沉浸式，导航在 ScrollView 外；再减 navbarHeight 会滚过头，体感像先回顶
-    const navH = immersive ? state.navbarHeight || 0 : 0
+    const navH = state.navbarHeight || 0
     let cancelled = false
     const run = () => {
       if (cancelled) return
@@ -176,8 +167,7 @@ function Home() {
           const targetRect = target.getBoundingClientRect()
           const scrollRect = scrollNode.getBoundingClientRect()
           const top = scrollNode.scrollTop + (targetRect.top - scrollRect.top) - navH
-          // 用 auto 避免从错误位置 smooth 长距离滑过，体感「先回顶再落下」
-          scrollNode.scrollTo({ top: Math.max(0, top), behavior: 'auto' })
+          scrollNode.scrollTo({ top: Math.max(0, top), behavior: 'smooth' })
         })
     }
     const t = setTimeout(() => {
@@ -189,7 +179,7 @@ function Home() {
       cancelled = true
       clearTimeout(t)
     }
-  }, [scrollIntoView, state.navbarHeight, immersive])
+  }, [scrollIntoView, state.navbarHeight])
 
   useShareAppMessage(async () => {
     const { title, imageUrl } = await api.wx.shareSetting({ shareindex: 'index' })
@@ -323,45 +313,47 @@ function Home() {
       className='page-index'
       scrollToTopBtn
       immersive={pageData?.base?.isImmersive}
-      // renderNavigation={renderNavigation()}
       showpoweredBy={false}
       pageConfig={pageData?.base || {}}
-      nearbyText={nearbyText}
-      renderFloat={wgts.length > 0 && <CompFloatMenu />}
+      renderFloat={
+        wgts.length > 0 && (
+          <>
+            <CompFloatMenu />
+            <FloatSalesperson />
+          </>
+        )
+      }
       renderFooter={<SpTabbar />}
+      nearbyText={nearbyText}
       onScrollToTop={() => {
-        console.log('onScrollToTop')
         // 先设置为一个很小的非0值，确保触发滚动变化
         setState((draft) => {
           draft.backTopScrollTop = 0.1
         })
-        // 立即设置为0，滚动到顶部；随后释放受控，避免后续 setState 再被 scrollTop=0 拉回顶
+        // 立即设置为0，滚动到顶部
         setTimeout(() => {
           setState((draft) => {
             draft.backTopScrollTop = 0
           })
-          setTimeout(() => {
-            setState((draft) => {
-              draft.backTopScrollTop = null
-            })
-          }, 50)
         }, 0)
       }}
       ref={pageRef}
       navigateMantle={navigateMantle}
-      onReady={({ height, gNavbarH }) => {
+      onReady={({ gNavbarH, footerHeight }) => {
         setState((draft) => {
-          draft.bodyHeight = height
+          draft.bodyHeight = `calc(100vh - ${
+            pageData?.base?.isImmersive ? 0 : gNavbarH
+          }px - ${footerHeight})`
           draft.navbarHeight = gNavbarH
+          draft.footerHeight = footerHeight
         })
       }}
     >
       <ScrollView
         scrollY
-        scrollWithAnimation={process.env.TARO_ENV !== 'h5'}
         scrollTop={state.backTopScrollTop != null ? state.backTopScrollTop : undefined}
         onScroll={(e) => {
-          pageRef.current.handlePageScroll(e?.detail)
+          pageRef.current?.handlePageScroll(e?.detail)
         }}
         scrollIntoView={process.env.TARO_ENV === 'h5' ? undefined : scrollIntoView}
         style={{ height: state.bodyHeight }}
@@ -370,7 +362,6 @@ function Home() {
         })}
       >
         <>
-          {/* 勿在 ScrollView 内再套 display:flex / flex:1，会破坏挂件 CSS sticky 吸顶 */}
           {filterWgts.length > 0 && (
             <WgtsContext.Provider
               value={{
@@ -393,15 +384,13 @@ function Home() {
               </HomeWgts>
             </WgtsContext.Provider>
           )}
+          {/* If you remove or alter Shopex brand identifiers, you must obtain a branding removal license from Shopex.  Contact us at:  http://www.shopex.cn to purchase a branding removal license. */}
+          <View className='sp-page__powered-by w-full'>
+            <SpPoweredBy />
+          </View>
 
           {/* 小程序收藏提示 */}
           {isWeixin && <MCompAddTip />}
-
-          {/* 开屏广告 */}
-          {isWeixin && !showAdv && <SpScreenAd />}
-
-          {/* 优惠券包 */}
-          {VERSION_STANDARD && <SpCouponPackage />}
 
           {/* Sku选择器 */}
           <MSpSkuSelect
@@ -422,6 +411,12 @@ function Home() {
           />
         </>
       </ScrollView>
+
+      {/* 全屏弹层需放在 ScrollView 外，真机上 scroll-view 内 fixed 层叠会异常 */}
+      {/* 开屏广告 */}
+      {isWeixin && !showAdv && <SpScreenAd />}
+      {/* 优惠券包 微信端等开屏广告关闭（showAdv=true）后再弹券包，避免与开屏叠层 */}
+      {VERSION_STANDARD && (!isWeixin || showAdv) && <SpCouponPackage />}
     </SpPage>
   )
 }

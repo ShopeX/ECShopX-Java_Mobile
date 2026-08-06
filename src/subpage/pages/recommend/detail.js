@@ -6,13 +6,15 @@ import React, { Component } from 'react'
 import Taro, { getCurrentInstance } from '@tarojs/taro'
 import { View, Text, Button } from '@tarojs/components'
 import api from '@/api'
+import { $t, ti } from '@/i18n'
 import { withPager } from '@/hocs'
-import { FloatMenus, FloatMenuItem, SpNavBar } from '@/components'
+import { SpNavBar } from '@/components'
+import { FloatMenus, FloatMenuItem } from '@/subpages/components'
 import { connect } from 'react-redux'
 import { formatTime, log, isWeixin, entryLaunch } from '@/utils'
 import S from '@/spx'
 // import { Tracker } from '@/service'
-import { WgtFilm, WgtSlider, WgtWriting, WgtGoods, WgtHeading } from '../../../pages/home/wgts'
+import { WgtFilm, WgtSlider, WgtWriting, WgtGoodsCard, WgtHeading } from '../../../pages/home/wgts'
 import './detail.scss'
 
 @connect(({ colors }) => ({
@@ -20,7 +22,7 @@ import './detail.scss'
 }))
 @withPager
 export default class recommendDetail extends Component {
-  $instance = getCurrentInstance()
+  $instance = getCurrentInstance() || {}
   constructor(props) {
     props = props || {}
     // props.pageSize = 50
@@ -78,8 +80,8 @@ export default class recommendDetail extends Component {
 
   // 确认本人文章是否已收藏
   confirmCollectArticle = async () => {
-    const { id } = this.$instance.router.params
-    console.log('this.$instance.router:', this.$instance.router)
+    const { id } = this.$instance?.router?.params
+    console.log('this.$instance?.router:', this.$instance?.router)
     if (S.getAuthToken()) {
       const res = await api.article.collectArticleInfo({ article_id: id })
       if (res.length === 0) {
@@ -96,7 +98,7 @@ export default class recommendDetail extends Component {
 
   // 拉取详情
   detailInfo = async (id) => {
-    const info = S.getAuthToken() ? await api.article.detailAuth(id) : await api.article.detail(id)
+    const info = S?.getAuthToken() ? await api.article.detailAuth(id) : await api.article.detail(id)
 
     info.updated_str = formatTime(info.updated * 1000, 'YYYY-MM-DD')
 
@@ -106,8 +108,8 @@ export default class recommendDetail extends Component {
   }
 
   async fetchContent() {
-    const { id } = this.$instance.router.params
-    console.log('this.$instance.router:', this.$instance.router)
+    const { id } = this.$instance?.router?.params
+    console.log('this.$instance?.router:', this.$instance?.router)
     // 关注数加1
     const resFocus = await api.article.focus(id)
 
@@ -144,7 +146,7 @@ export default class recommendDetail extends Component {
     if(!S.getAuthToken()){
       return false
     }
-    const { id } = getCurrentInstance().params
+    const { id } = getCurrentInstance()?.params
     const { status } = await api.article.praiseCheck(id)
     this.setState({
       praiseCheckStatus: status
@@ -152,7 +154,7 @@ export default class recommendDetail extends Component {
   }*/
 
   handleClickBar = async (type) => {
-    const { id } = this.$instance.router.params
+    const { id } = this.$instance?.router?.params
     if (type === 'like') {
       const { count } = await api.article.praise(id)
       this.detailInfo(id)
@@ -171,7 +173,7 @@ export default class recommendDetail extends Component {
           collectArticleStatus: true
         })
         Taro.showToast({
-          title: '已加入心愿单',
+          title: $t('a8e160ea.bee805'),
           icon: 'none'
         })
       } else {
@@ -183,7 +185,7 @@ export default class recommendDetail extends Component {
           collectArticleStatus: false
         })
         Taro.showToast({
-          title: '已移出心愿单',
+          title: $t('a8e160ea.2cddac'),
           icon: 'none'
         })
       }
@@ -193,7 +195,7 @@ export default class recommendDetail extends Component {
   handleShare() {}
 
   handleClickGoods = () => {
-    const { id } = this.$instance.router.params
+    const { id } = this.$instance?.router?.params
     this.detailInfo(id)
   }
 
@@ -218,16 +220,12 @@ export default class recommendDetail extends Component {
 
     return (
       <View className='page-recommend-detail'>
-        <SpNavBar title='微商城' leftIconType='chevron-left' fixed='true' />
+        <SpNavBar title={$t('c4d2fddd.d1ca1e')} leftIconType='chevron-left' fixed='true' />
         <View className='recommend-detail__title'>{info.title}</View>
         <View className='recommend-detail-info'>
           <View className='recommend-detail-info__time'>
             <Text className={`iconfont icon-31shijian ${info.is_like ? '' : ''}`}> </Text>
             {info.updated_str}
-          </View>
-          <View className='recommend-detail-info__time'>
-            <Text className={`iconfont icon-eye ${info.is_like ? '' : ''}`}> </Text>
-            {info.articleFocusNum.count ? info.articleFocusNum.count : 0}关注
           </View>
         </View>
         <View className='recommend-detail__content' scrollY>
@@ -239,8 +237,8 @@ export default class recommendDetail extends Component {
                   {item.name === 'slider' && <WgtSlider info={item} width={screenWidth} />}
                   {item.name === 'writing' && <WgtWriting info={item} />}
                   {item.name === 'heading' && <WgtHeading info={item} />}
-                  {item.name === 'goods' && (
-                    <WgtGoods onClick={this.handleClickGoods.bind('goods')} info={item} />
+                  {item.name === 'goodsCard' && (
+                    <WgtGoodsCard onClick={this.handleClickGoods.bind(this)} info={item} />
                   )}
                 </View>
               )
@@ -275,7 +273,7 @@ export default class recommendDetail extends Component {
           >
             <Text className='iconfont icon-like'> </Text>
             <Text>
-              {info.isPraise ? '已赞' : '点赞'} ·{' '}
+              {info.isPraise ? $t('a8e160ea.d10f66') : $t('a8e160ea.75f0fa')} ·{' '}
               {info.articlePraiseNum.count ? info.articlePraiseNum.count : 0}
             </Text>
           </View>
@@ -285,7 +283,7 @@ export default class recommendDetail extends Component {
             onClick={this.handleClickBar.bind(this, 'mark')}
           >
             <Text className='iconfont icon-star_on'> </Text>
-            <Text>{collectArticleStatus ? '已加入' : '加入心愿'}</Text>
+            <Text>{collectArticleStatus ? $t('a8e160ea.711785') : $t('a8e160ea.56d0b8')}</Text>
           </View>
           {isWeixin && (
             <Button
@@ -294,7 +292,7 @@ export default class recommendDetail extends Component {
               onClick={this.handleClickBar.bind(this, 'share')}
             >
               <Text className='iconfont icon-share1'> </Text>
-              <Text>分享</Text>
+              <Text>{$t('593377c2.c31f48')}</Text>
             </Button>
           )}
         </View>

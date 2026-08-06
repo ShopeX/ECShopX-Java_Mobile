@@ -46,18 +46,17 @@ import api from '@/api'
 import doc from '@/doc'
 import qs from 'qs'
 import S from '@/spx'
-
+import { $t, ti, useTranslation } from '@/i18n'
 import { initialState } from './const'
-
 import CompDelivers from './comps/comp-delivers'
 import CompSelectPackage from './comps/comp-selectpackage'
 import CompPointUse from './comps/comp-pointuse'
-
 import './espier-checkout.scss'
 
 function CartCheckout(props) {
-  const $instance = getCurrentInstance()
-  const { isLogin, getUserInfoAuth } = useLogin({
+  const { i18n } = useTranslation()
+  const $instance = getCurrentInstance() || {}
+  const { isLogin, isNewUser, getUserInfoAuth } = useLogin({
     autoLogin: true
   })
 
@@ -69,13 +68,6 @@ function CartCheckout(props) {
   const pageRef = useRef()
   const calc = useRef(false)
   const deliverRef = useRef()
-  const receiptSwitchPendingRef = useRef(false)
-  const previousReceiptTypeRef = useRef('')
-  const isRevertingReceiptRef = useRef(false)
-  const storeAdjustAckKeyRef = useRef('')
-  const giftStoreAdjustAckKeyRef = useRef('')
-  /** 结算重算序号：切换配送/地址并发时只采纳最后一次结果，避免旧请求吞掉弹窗 */
-  const calcSeqRef = useRef(0)
   const { userInfo, address } = useSelector((state) => state.user)
   const { colorPrimary, pointName } = useSelector((state) => state.sys)
   const { coupon, zitiAddress, customerLnformation, customerSalesman } = useSelector(
@@ -138,7 +130,12 @@ function CartCheckout(props) {
     scene, // 情景值
     goodType = routerParams.goodType
   } = $instance?.router?.params || {}
-  console.log('$instance.router?.params:', $instance.router)
+  console.log('$instance?.router?.params:', $instance?.router)
+
+  useEffect(() => {
+    Taro.setNavigationBarTitle({ title: $t('edc703ce.337fd5') })
+  }, [i18n.language])
+
   useEffect(() => {
     if (isLogin) {
       getTradeSetting()
@@ -153,13 +150,12 @@ function CartCheckout(props) {
   }, [isLogin])
 
   useEffect(() => {
-    const token = S.getAuthToken()
-    if (!token) {
+    if (isNewUser) {
       Taro.redirectTo({
         url: `/subpages/member/index`
       })
     }
-  }, [])
+  }, [isNewUser])
 
   useEffect(() => {
     console.log(
@@ -202,7 +198,7 @@ function CartCheckout(props) {
       if (zitiAddress) {
         await deliverRef.current.validateZitiInfo()
       } else {
-        showToast('请选择自提地址')
+        showToast($t('edc703ce.cb8251'))
       }
     }
 
@@ -216,7 +212,7 @@ function CartCheckout(props) {
       ...customerLnformation
     })
     if (!isValid) {
-      showToast('该商品已下架')
+      showToast($t('edc703ce.f0010a'))
       setState((draft) => {
         draft.submitLoading = false
       })
@@ -224,7 +220,7 @@ function CartCheckout(props) {
     }
 
     if (!payType) {
-      showToast('请选择支付方式')
+      showToast($t('edc703ce.a49dc0'))
       setState((draft) => {
         draft.submitLoading = false
       })
@@ -267,10 +263,10 @@ function CartCheckout(props) {
       // 验证余额额度是否可用
       if (userInfo.deposit < totalInfo.total_fee / 100) {
         const { confirm } = await Taro.showModal({
-          content: '余额额度不足，请充值',
-          cancelText: '取消',
+          content: $t('edc703ce.de4d2f'),
+          cancelText: $t('61e2d21a.625fb2'),
           confirmColor: colorPrimary,
-          confirmText: '去充值'
+          confirmText: $t('edc703ce.e4ff95')
         })
         if (confirm) {
           Taro.navigateTo({
@@ -284,11 +280,11 @@ function CartCheckout(props) {
       }
 
       const { confirm } = await Taro.showModal({
-        title: '余额支付',
-        content: `确认使用余额支付吗？`,
-        cancelText: '取消',
+        title: $t('edc703ce.89ac23'),
+        content: $t('edc703ce.d9e16c'),
+        cancelText: $t('61e2d21a.625fb2'),
         confirmColor: colorPrimary,
-        confirmText: '确认'
+        confirmText: $t('61e2d21a.e83a25')
       })
       if (!confirm) {
         setState((draft) => {
@@ -299,7 +295,7 @@ function CartCheckout(props) {
     }
 
     Taro.showLoading({
-      title: '正在提交',
+      title: $t('edc703ce.415038'),
       mask: true
     })
 
@@ -354,149 +350,15 @@ function CartCheckout(props) {
   }
 
   const handleSwitchExpress = ({ receipt_type, distributor_info, address_info }) => {
-    if (isRevertingReceiptRef.current) {
-      isRevertingReceiptRef.current = false
-      receiptSwitchPendingRef.current = false
-    } else if (receiptType && receipt_type && receipt_type !== receiptType) {
-      receiptSwitchPendingRef.current = true
-      previousReceiptTypeRef.current = receiptType
-      storeAdjustAckKeyRef.current = ''
-      giftStoreAdjustAckKeyRef.current = ''
-      calcSeqRef.current += 1
-    }
     // 切换配送模式
     setState((draft) => {
       draft.receiptType = receipt_type
       draft.distributorInfo = distributor_info
     })
 
-    const nextId = address_info?.address_id
-    const curId = address?.address_id
-    if (address_info && nextId != null && String(nextId) !== String(curId ?? '')) {
+    setTimeout(() => {
       dispatch(updateChooseAddress(address_info))
-    }
-  }
-
-  const buildStoreQuantityAdjustContent = (adjustments = []) => {
-    const lines = adjustments.map((item) => {
-      const name = item.item_name || `商品${item.item_id || ''}`
-      const from = Number(item.original_num) || 0
-      const to = Number(item.available_num) || 0
-      if (to <= 0) {
-        return `「${name}」库存不足，将从结算中移除（原${from}件）`
-      }
-      return `「${name}」：${from}件 → ${to}件`
-    })
-    return `当前配送方式下部分商品库存不足，确认后将调整本单购买数量：\n${lines.join('\n')}`
-  }
-
-  const buildStoreAdjustAckKey = (receipt, adjustments = []) => {
-    const parts = adjustments.map(
-      (item) => `${item.item_id}:${item.original_num}:${item.available_num}`
-    )
-    return `${receipt || ''}|${parts.join(',')}`
-  }
-
-  const confirmStoreQuantityAdjustments = async (adjustments = [], tipText = '') => {
-    const content = String(tipText || '').trim() || buildStoreQuantityAdjustContent(adjustments)
-    if (!content) return true
-    const { confirm } = await Taro.showModal({
-      title: '库存提示',
-      content,
-      confirmText: '确认',
-      cancelText: '取消',
-      confirmColor: colorPrimary
-    })
-    return !!confirm
-  }
-
-  const buildGiftStoreAdjustContent = (tip, adjustments = []) => {
-    const fromApi = String(tip || '').trim()
-    if (fromApi) return fromApi
-    const lines = adjustments.map((item) => {
-      const name = item.item_name || `赠品${item.item_id || ''}`
-      const from = Number(item.original_num) || 0
-      return `赠品「${name}」应赠${from}件，当前配送方式无货`
-    })
-    const canSwitch = adjustments.some(
-      (item) => item.can_switch_receipt || Number(item.other_receipt_available) > 0
-    )
-    const header = '本单赠品在当前配送方式下库存不足：'
-    const footer = canSwitch
-      ? '该赠品在其他配送方式下仍有库存，可切换配送方式后领取，或继续结算（本单不送该赠品）。'
-      : '继续结算将不送无货赠品。'
-    return `${header}\n${lines.join('\n')}\n${footer}`
-  }
-
-  /**
-   * @returns {'switch'|'continue'|false}
-   */
-  const confirmGiftStoreAdjustments = async (tipText = '', options = {}) => {
-    const content = String(tipText || '').trim()
-    if (!content) return 'continue'
-    const canSwitchReceipt = !!options.canSwitchReceipt
-    if (!canSwitchReceipt) {
-      const { confirm } = await Taro.showModal({
-        title: '赠品库存提示',
-        content,
-        confirmText: '继续结算',
-        showCancel: false,
-        confirmColor: colorPrimary
-      })
-      return confirm ? 'continue' : false
-    }
-    const { confirm } = await Taro.showModal({
-      // H5 showModal：confirm/cancel 文案中文约最多 4 字，过长会 silent fail
-      title: '赠品库存提示',
-      content,
-      confirmText: '切换配送',
-      cancelText: '继续结算',
-      confirmColor: colorPrimary
-    })
-    return confirm ? 'switch' : 'continue'
-  }
-
-  const confirmStoreAdjustBlockCheckout = async (orderRes = {}) => {
-    const tip =
-      String(orderRes.store_quantity_adjust_tip || '').trim() ||
-      buildStoreQuantityAdjustContent(orderRes.store_quantity_adjustments || [])
-    const suggested = String(orderRes.suggested_receipt_type || '').trim()
-    const { confirm } = await Taro.showModal({
-      title: '库存提示',
-      content: tip || '当前配送方式下商品暂无库存',
-      confirmText: suggested ? '切换配送' : '知道了',
-      cancelText: '取消',
-      confirmColor: colorPrimary
-    })
-    if (!confirm) {
-      if (receiptSwitchPendingRef.current && previousReceiptTypeRef.current) {
-        revertReceiptTypeAfterCancelAdjust()
-      } else {
-        receiptSwitchPendingRef.current = false
-        Taro.navigateBack({ delta: 1 })
-      }
-      return
-    }
-    receiptSwitchPendingRef.current = false
-    if (!suggested) {
-      Taro.navigateBack({ delta: 1 })
-      return
-    }
-    deliverRef.current?.setReceiptType?.(suggested)
-    setState((draft) => {
-      draft.receiptType = suggested
-    })
-  }
-
-  const revertReceiptTypeAfterCancelAdjust = () => {
-    const prev = previousReceiptTypeRef.current
-    receiptSwitchPendingRef.current = false
-    if (!prev) return
-    isRevertingReceiptRef.current = true
-    deliverRef.current?.setReceiptType?.(prev)
-    setState((draft) => {
-      draft.receiptType = prev
-    })
+    }, 100)
   }
 
   const handleEditZitiClick = async (id) => {
@@ -610,7 +472,7 @@ function CartCheckout(props) {
     let multiValue = []
     let multiIndex = [0, 0]
     let streetCommunityList = []
-    let streetCommunityTxt = '请选择'
+    let streetCommunityTxt = $t('edc703ce.708c9d')
     let street = null
     let community = null
 
@@ -638,7 +500,7 @@ function CartCheckout(props) {
       multiValue[0] = streetCommunityList.map((item) => item.label)
       multiValue[1] = streetCommunityList[multiIndex[0]].children.map((item) => item.label)
     } else {
-      showToast('暂无街道、社区配置')
+      showToast($t('edc703ce.a5544d'))
     }
 
     return {
@@ -652,121 +514,11 @@ function CartCheckout(props) {
   }
 
   const calcOrder = async () => {
-    const seq = ++calcSeqRef.current
-    const isStale = () => seq !== calcSeqRef.current
     Taro.showLoading({ title: '' })
     // calc.current = true
     const cus_parmas = await getParamsInfo()
-    if (isStale()) {
-      Taro.hideLoading()
-      return
-    }
-    let orderRes
-    try {
-      orderRes = await api.cart.total({ ...cus_parmas, ...customerLnformation })
-    } catch (e) {
-      console.log('e:', e)
-    }
+    const orderRes = await api.cart.total({ ...cus_parmas, ...customerLnformation })
     Taro.hideLoading()
-    if (isStale()) {
-      return
-    }
-    if (!orderRes) {
-      if (receiptSwitchPendingRef.current) {
-        revertReceiptTypeAfterCancelAdjust()
-      } else {
-        receiptSwitchPendingRef.current = false
-      }
-      return
-    }
-
-    if (orderRes.store_adjust_block_checkout) {
-      await confirmStoreAdjustBlockCheckout(orderRes)
-      return
-    }
-    if (isStale()) {
-      return
-    }
-
-    const storeQuantityAdjustments = Array.isArray(orderRes.store_quantity_adjustments)
-      ? orderRes.store_quantity_adjustments
-      : []
-    const adjustAckKey = buildStoreAdjustAckKey(
-      cus_parmas.receipt_type || receiptType,
-      storeQuantityAdjustments
-    )
-    if (storeQuantityAdjustments.length > 0 && storeAdjustAckKeyRef.current !== adjustAckKey) {
-      const confirmed = await confirmStoreQuantityAdjustments(
-        storeQuantityAdjustments,
-        orderRes.store_quantity_adjust_tip
-      )
-      if (isStale()) {
-        return
-      }
-      if (!confirmed) {
-        if (receiptSwitchPendingRef.current && previousReceiptTypeRef.current) {
-          revertReceiptTypeAfterCancelAdjust()
-        } else {
-          receiptSwitchPendingRef.current = false
-          Taro.navigateBack({ delta: 1 })
-        }
-        return
-      }
-      storeAdjustAckKeyRef.current = adjustAckKey
-    }
-
-    const giftStoreAdjustments = Array.isArray(orderRes.gift_store_adjustments)
-      ? orderRes.gift_store_adjustments
-      : []
-    const giftAdjustAckKey = buildStoreAdjustAckKey(
-      cus_parmas.receipt_type || receiptType,
-      giftStoreAdjustments
-    )
-    // 弹窗前先按本次接口 items 刷新清单，避免仍渲染上一配送方式留下的赠品
-    if (Array.isArray(orderRes.items)) {
-      const previewItems = orderRes.items.map((it) => ({ ...it, is_point: false }))
-      setState((draft) => {
-        draft.detailInfo = pickBy(previewItems, doc.checkout.CHECKOUT_GOODS_ITEM)
-        if (orderRes.totalItemNum != null) {
-          draft.totalInfo = {
-            ...draft.totalInfo,
-            items_count: orderRes.totalItemNum
-          }
-        }
-      })
-    }
-    if (giftStoreAdjustments.length > 0 && giftStoreAdjustAckKeyRef.current !== giftAdjustAckKey) {
-      const canSwitchReceipt = giftStoreAdjustments.some(
-        (item) => item.can_switch_receipt || Number(item.other_receipt_available) > 0
-      )
-      const suggested =
-        giftStoreAdjustments.find((item) => item.suggested_receipt_type)?.suggested_receipt_type ||
-        ''
-      const action = await confirmGiftStoreAdjustments(
-        buildGiftStoreAdjustContent(orderRes.gift_store_adjust_tip, giftStoreAdjustments),
-        { canSwitchReceipt }
-      )
-      if (isStale()) {
-        return
-      }
-      if (action === 'switch' && suggested) {
-        giftStoreAdjustAckKeyRef.current = ''
-        storeAdjustAckKeyRef.current = ''
-        receiptSwitchPendingRef.current = true
-        previousReceiptTypeRef.current = receiptType
-        deliverRef.current?.setReceiptType?.(suggested)
-        setState((draft) => {
-          draft.receiptType = suggested
-        })
-        return
-      }
-      giftStoreAdjustAckKeyRef.current = giftAdjustAckKey
-    }
-    if (isStale()) {
-      return
-    }
-    receiptSwitchPendingRef.current = false
-
     const {
       items,
       item_fee,
@@ -879,7 +631,7 @@ function CartCheckout(props) {
     }
 
     if (real_use_point && real_use_point < point_use) {
-      showToast(`${pointName}有调整`)
+      showToast(ti('edc703ce.ee9ca4', [pointName]))
     }
 
     Taro.hideLoading()
@@ -932,7 +684,7 @@ function CartCheckout(props) {
     if (extraTips) {
       Taro.showModal({
         content: extraTips,
-        confirmText: '知道了',
+        confirmText: $t('edc703ce.ce2695'),
         showCancel: false
       })
     }
@@ -1058,7 +810,7 @@ function CartCheckout(props) {
   const bindMultiPickerChange = (e) => {
     const [a, b] = e.detail.value
     if (streetCommunityList[a].children == 0) {
-      return showToast('居委不能为空')
+      return showToast($t('edc703ce.a4c155'))
     }
     setState((draft) => {
       draft.multiIndex = [a, b]
@@ -1072,7 +824,7 @@ function CartCheckout(props) {
     if (payChannel == 'offline_pay') {
       return paymentName
     } else {
-      return payChannel ? PAYMENT_TYPE()[payChannel] : '请选择'
+      return payChannel ? PAYMENT_TYPE()[payChannel] : $t('edc703ce.708c9d')
     }
   }
 
@@ -1109,7 +861,7 @@ function CartCheckout(props) {
     return (
       <View className='checkout-toolbar'>
         <View className='checkout-toolbar__total'>
-          {`共${totalInfo.items_count}件商品　总计:`}
+          {ti('edc703ce.90715c', [totalInfo.items_count])}
           <SpPrice unit='cent' className='primary-price' value={totalInfo.total_fee} />
         </View>
         <AtButton
@@ -1119,7 +871,7 @@ function CartCheckout(props) {
           disabled={orderSubmitDisabled()}
           onClick={onSubmitPayChange}
         >
-          提交订单
+          {$t('edc703ce.c3898c')}
         </AtButton>
       </View>
     )
@@ -1131,7 +883,10 @@ function CartCheckout(props) {
         <View className='cart-checkout__group'>
           <View className='cart-group__cont'>
             <View className='sp-order-item__idx'>
-              商品清单 <Text style={{ color: '#222' }}>（{totalInfo.items_count}）</Text>
+              {$t('edc703ce.08ea4e')}{' '}
+              <Text style={{ color: '#222' }}>
+                {ti('edc703ce.a20466', [totalInfo.items_count])}
+              </Text>
             </View>
             <View className='goods-list'>
               {detailInfo.map((item, idx) => (
@@ -1145,7 +900,7 @@ function CartCheckout(props) {
             <SpCell className='trade-remark' border={false}>
               <AtInput
                 className='trade-remark__input'
-                placeholder='给商家留言：选填（50字以内）'
+                placeholder={$t('edc703ce.0e9ca2')}
                 onChange={handleRemarkChange}
                 value={remark}
                 maxLength={50}
@@ -1172,7 +927,7 @@ function CartCheckout(props) {
       <ScrollView className='scroll-view-container' scrollY>
         {isObjectsValue(shoppingGuideData) && (
           <View className='shopping-guide__header'>
-            此订单商品来自“{shoppingGuideData.store_name}”导购“ {shoppingGuideData.name}”的推荐
+            {ti('edc703ce.a4919d', [shoppingGuideData.store_name, shoppingGuideData.name])}
           </View>
         )}
 
@@ -1190,7 +945,7 @@ function CartCheckout(props) {
         {/* 街道、社区信息填写 */}
         {openStreet && (
           <View className='cart-checkout__stree'>
-            <SpCell isLink title='街道居委'>
+            <SpCell isLink title={$t('edc703ce.6e548b')}>
               <Picker
                 mode='multiSelector'
                 onChange={bindMultiPickerChange}
@@ -1198,43 +953,44 @@ function CartCheckout(props) {
                 value={multiIndex}
                 range={multiValue}
               >
-                <View className='picker-value'>{streetCommunityTxt}</View>
+                <View className='picker-value'>{streetCommunityTxt || $t('edc703ce.708c9d')}</View>
               </Picker>
             </SpCell>
             <View className='cart-checkout__stree-desc'>
-              <Text className='required'>*</Text>疫情期间按小区统一配送！
+              <Text className='required'>*</Text>
+              {$t('edc703ce.555eaa')}
             </View>
           </View>
         )}
 
         {openBuilding && (
           <View className='cart-checkout__building'>
-            <SpCell border title='楼号'>
+            <SpCell border title={$t('edc703ce.372624')}>
               <AtInput
                 name='buildingNumber'
-                placeholder='请输入楼号'
+                placeholder={$t('edc703ce.116ba7')}
                 value={buildingNumber}
                 onChange={onChangeBuildInput.bind(this, 'buildingNumber')}
               >
-                楼/栋
+                {$t('edc703ce.ddc3a9')}
               </AtInput>
             </SpCell>
 
-            <SpCell border title='房号'>
+            <SpCell border title={$t('edc703ce.be5014')}>
               <AtInput
                 name='houseNumber'
-                placeholder='请输入房号'
+                placeholder={$t('edc703ce.e56a75')}
                 value={houseNumber}
                 onChange={onChangeBuildInput.bind(this, 'houseNumber')}
               >
-                号/室
+                {$t('edc703ce.ca2e65')}
               </AtInput>
             </SpCell>
           </View>
         )}
 
         <View className='cart-checkout__info'>
-          <View className='cart-checkout__info_guide'>下单顾客：</View>
+          <View className='cart-checkout__info_guide'>{$t('edc703ce.32db61')}</View>
           <View className='cart-checkout__info_guides'>
             <Text>{customerSalesman.username}</Text>
             <Text>{customerSalesman.mobile}</Text>
@@ -1247,15 +1003,15 @@ function CartCheckout(props) {
           <SpCell
             isLink
             className='cart-checkout__coupons'
-            title='优惠券'
+            title={$t('250b375e.2f3635')}
             onClick={handleCouponsClick}
-            value={couponText || '请选择'}
+            value={couponText || $t('edc703ce.708c9d')}
           />
         )}
         {isWeixin && !bargain_id && totalInfo.invoice_status && (
           <SpCell
             isLink
-            title='开发票'
+            title={$t('edc703ce.63dd82')}
             className='cart-checkout__invoice'
             onClick={handleInvoiceClick}
             value={
@@ -1266,7 +1022,7 @@ function CartCheckout(props) {
                     className='iconfont icon-close invoice-close'
                   />
                 )}
-                {invoiceTitle || '否'}
+                {invoiceTitle || $t('edc703ce.c9744f')}
               </View>
             }
           />
@@ -1282,7 +1038,11 @@ function CartCheckout(props) {
                 draft.isPackageOpend = true
               })
             }}
-            value={<View className='invoice-title'>{isNeedPackage ? '需要' : '不需要'}</View>}
+            value={
+              <View className='invoice-title'>
+                {isNeedPackage ? $t('edc703ce.df16ff') : $t('edc703ce.8755a5')}
+              </View>
+            }
           />
         )}
 
@@ -1292,7 +1052,7 @@ function CartCheckout(props) {
             <SpCell
               isLink
               className='cart-checkout__invoice'
-              title={`${pointName}抵扣`}
+              title={ti('edc703ce.74dcf4', [pointName])}
               onClick={() => {
                 setState((draft) => {
                   draft.isPointOpenModal = true
@@ -1301,8 +1061,8 @@ function CartCheckout(props) {
               value={
                 <View className='invoice-title'>
                   {pointInfo.point_use > 0
-                    ? `已使用${pointInfo.real_use_point}${pointName}`
-                    : `使用${pointName}`}
+                    ? ti('edc703ce.c47d8f', [pointInfo.real_use_point, pointName])
+                    : ti('edc703ce.7f2392', [pointName])}
                 </View>
               }
             />
@@ -1313,14 +1073,14 @@ function CartCheckout(props) {
             <SpCell
               isLink
               className='cart-checkout__pay'
-              title='支付方式'
+              title={$t('250b375e.0c9d2b')}
               onClick={handlePaymentShow}
               value={
                 <View>
                   {totalInfo.deduction && (
                     <Text>
                       {totalInfo.remainpt}
-                      {`${pointName}可用`}
+                      {ti('edc703ce.dfb3e1', [pointName])}
                     </Text>
                   )}
                   <Text className='invoice-title'>{getPayChannelLabel()}</Text>
@@ -1329,9 +1089,10 @@ function CartCheckout(props) {
             />
             {totalInfo.deduction && (
               <View>
-                可用{totalInfo.point}
-                {pointName}，抵扣 <SpPrice unit='cent' value={totalInfo.deduction} />
-                包含运费 <SpPrice unit='cent' value={totalInfo.freight_fee} />
+                {ti('9c730348.c72db2', [totalInfo.point, pointName])}
+                <SpPrice unit='cent' value={totalInfo.deduction} />
+                {$t('9c730348.5e162f')}
+                <SpPrice unit='cent' value={totalInfo.freight_fee} />
               </View>
             )}
           </View>
@@ -1340,27 +1101,27 @@ function CartCheckout(props) {
         <View className='cart-checkout__total'>
           <SpCell
             className='trade-sub__item'
-            title='原价：'
+            title={$t('edc703ce.80193b')}
             value={<SpPrice unit='cent' value={totalInfo.market_fee} />}
           />
           <SpCell
             className='trade-sub__item'
-            title='总价：'
+            title={$t('edc703ce.f07c73')}
             value={<SpPrice unit='cent' value={totalInfo.item_fee_new} />}
           />
           <SpCell
             className='trade-sub__item'
-            title='运费：'
+            title={$t('edc703ce.94a6a5')}
             value={<SpPrice unit='cent' value={totalInfo.freight_fee} />}
           />
           <SpCell
             className='trade-sub__item'
-            title='促销：'
+            title={$t('edc703ce.ea537d')}
             value={<SpPrice unit='cent' primary value={0 - totalInfo.promotion_discount} />}
           />
           <SpCell
             className='trade-sub__item'
-            title='优惠券：'
+            title={$t('edc703ce.692cfd')}
             value={<SpPrice unit='cent' primary value={0 - totalInfo.coupon_discount} />}
           />
           {/* <SpCell className='trade-sub__item' title='优惠金额：'>
@@ -1370,7 +1131,7 @@ function CartCheckout(props) {
             pointInfo.is_open_deduct_point && (
               <SpCell
                 className='trade-sub__item'
-                title={`${pointName}抵扣：`}
+                title={ti('edc703ce.7d6716', [pointName])}
                 value={<SpPrice unit='cent' primary value={0 - totalInfo.point_fee} />}
               />
             )}

@@ -16,17 +16,10 @@ import { updateUserInfo } from '@/store/slices/user'
 import { updateIsOpenPurchase } from '@/store/slices/purchase'
 import { useSelector, useDispatch } from 'react-redux'
 import { useImmer } from 'use-immer'
-
-import {
-  SpLogin,
-  SpImage,
-  SpPrice,
-  CouponModal,
-  SpPrivacyModal,
-  SpTabbar,
-  SpPage
-} from '@/components'
+import { SpLogin, SpImage, SpPrice, SpPrivacyModal, SpTabbar, SpPage } from '@/components'
+import { CouponModal } from '@/subpages/components'
 import api from '@/api'
+import * as dianwuApi from '@/api/dianwu'
 import {
   navigateTo,
   getThemeStyle,
@@ -41,15 +34,13 @@ import {
   VERSION_IN_PURCHASE
 } from '@/utils'
 import { useLogin, useLocation } from '@/hooks'
+import { useTranslation, $t } from '@/i18n'
 import S from '@/spx'
-import CompTabbarActivity from '@/pages/purchase/comps/comp-tabbar'
 import CompVipCard from './comps/comp-vipcard'
 import CompBanner from './comps/comp-banner'
 import CompPanel from './comps/comp-panel'
 import CompMenu from './comps/comp-menu'
-import CompTabbar from './comps/comp-tabbar'
 import CompHelpCenter from './comps/comp-helpcenter'
-
 import './member.scss'
 
 const initialConfigState = {
@@ -111,6 +102,7 @@ const initialState = {
 }
 
 function MemberIndex(props) {
+  const { i18n } = useTranslation()
   console.log('===>getCurrentPages==>', getCurrentPages(), getCurrentInstance())
   const { updateAddress } = useLocation()
   const { isLogin, isNewUser, getUserInfoAuth } = useLogin({
@@ -134,7 +126,7 @@ function MemberIndex(props) {
   log.debug(`store userInfo: ${JSON.stringify(userInfo)}`)
   const { purchaseInfo, whitelist_status } = state
   const dispatch = useDispatch()
-  const isPurchaseHome = router.params?.from == 'purchase_home'
+  const isPurchaseHome = router?.params?.from == 'purchase_home'
 
   useDidShow(() => {
     getMemberCenterData()
@@ -153,9 +145,13 @@ function MemberIndex(props) {
     getMemberCenterConfig()
   }, [])
 
+  useEffect(() => {
+    Taro.setNavigationBarTitle({ title: $t('75e226b0.12688a') })
+  }, [i18n.language])
+
   useDidShow(() => {
     if (S.get(MERCHANT_TOKEN, true)) {
-      S.delete(MERCHANT_TOKEN, true)
+      S?.delete(MERCHANT_TOKEN, true)
     }
     if (S.get(SG_TOKEN)) {
       setHeaderBlock()
@@ -179,7 +175,7 @@ function MemberIndex(props) {
 
   // 分享
   useShareAppMessage(async (res) => {
-    const { share_title = '震惊！这店绝了！', share_pic_wechatapp } =
+    const { share_title = $t('c05644bc.6c8e49'), share_pic_wechatapp } =
       await api.member.getMemberShareConfig()
     const { logo } = await api.distribution.getDistributorInfo({
       distributor_id: 0
@@ -228,8 +224,8 @@ function MemberIndex(props) {
       menu = { ...menuRes.list[0].params.data }
     }
     // if (S.getAuthToken() && (VERSION_PLATFORM || VERSION_IN_PURCHASE)) {
-    //   const { result, status } = await api.dianwu.is_admin()
-    //   S.set('DIANWU_CONFIG', result, status)
+    //   const { result, status } = await dianwuApi.is_admin()
+    //   S?.set('DIANWU_CONFIG', result, status)
     //   menu = {
     //     ...menu,
     //     dianwu: status
@@ -271,7 +267,7 @@ function MemberIndex(props) {
 
   const setMemberBackground = async () => {
     let params = {}
-    const activity_id = purchase_share_info?.activity_id || S.get(INVITE_ACTIVITY_ID, true)
+    const activity_id = purchase_share_info?.activity_id || S?.get(INVITE_ACTIVITY_ID, true)
 
     if (activity_id) {
       params = { activity_id }
@@ -344,21 +340,21 @@ function MemberIndex(props) {
         Taro.navigateTo({ url: link })
       } else {
         const { confirm } = await Taro.showModal({
-          title: '邀请推广',
-          content: '确定申请成为推广员？',
+          title: $t('3009e832.75716c'),
+          content: $t('3009e832.7785f6'),
           showCancel: true,
-          cancel: '取消',
-          confirmText: '确认',
+          cancel: $t('3009e832.625fb2'),
+          confirmText: $t('3009e832.e83a25'),
           confirmColor: '#0b4137'
         })
         if (!confirm) return
         const { status } = await api.distribution.become()
         if (status) {
           Taro.showModal({
-            title: '恭喜',
-            content: '已成为推广员',
+            title: $t('3009e832.a1651e'),
+            content: $t('3009e832.44fafb'),
             showCancel: false,
-            confirmText: '好'
+            confirmText: $t('3009e832.ac2c8f')
           })
         }
       }
@@ -383,14 +379,14 @@ function MemberIndex(props) {
       return (
         <View className='user-grade-name'>
           <View className='username'>
-            {(userInfo && (userInfo.username || userInfo.mobile)) || '获取昵称'}
+            {(userInfo && (userInfo.username || userInfo.mobile)) || $t('44d8cdf5.88b2b0')}
           </View>
           <View className='gradename'>
-            {userInfo?.is_employee && '员工'}
+            {userInfo?.is_employee && $t('2ed39222.055f8a')}
             {/* {userInfo?.is_dependent && '员工亲友'} */}
-            {userInfo?.is_relative && '员工亲友'}
+            {userInfo?.is_relative && $t('5f633990.a32887')}
             <Text className='identity-change' onClick={handleIdentityChange}>
-              切换身份
+              {$t('5f46773c.f0c92e')}
             </Text>
           </View>
         </View>
@@ -398,7 +394,7 @@ function MemberIndex(props) {
     } else {
       return (
         <SpLogin newUser={isNewUser}>
-          <Text className='join-us-txt'>加入我们?</Text>
+          <Text className='join-us-txt'>{$t('ef704b38.03c6bd')}</Text>
         </SpLogin>
       )
     }
@@ -427,10 +423,7 @@ function MemberIndex(props) {
   console.log('====config===', config.menu)
 
   return (
-    <SpPage
-      className='page-purchase-member'
-      renderFooter={isPurchaseHome || !S.getAuthToken() ? <CompTabbarActivity /> : <CompTabbar />}
-    >
+    <SpPage className='page-purchase-member'>
       <View
         className='header-block'
         style={styleNames({
@@ -463,12 +456,12 @@ function MemberIndex(props) {
         {Object.keys(purchase_share_info).length > 0 && (
           <>
             <View className='header-limit' onClick={hanleLimitListCheck}>
-              查看额度列表
+              {$t('1dcef6c1.6a56b7')}
               <Text className='iconfont icon-qianwang-01'></Text>
             </View>
             <View className='header-bd'>
               <View className='bd-item'>
-                <View className='bd-item-label'>总额度</View>
+                <View className='bd-item-label'>{$t('2d09f91d.4d1507')}</View>
                 <View className='bd-item-value'>
                   {isLogin
                     ? purchaseInfo.limit_fee
@@ -478,7 +471,7 @@ function MemberIndex(props) {
                 </View>
               </View>
               <View className='bd-item'>
-                <View className='bd-item-label'>已使用额度</View>
+                <View className='bd-item-label'>{$t('3bfb8e27.159198')}</View>
                 <View className='bd-item-value'>
                   {isLogin
                     ? purchaseInfo.aggregate_fee
@@ -488,7 +481,7 @@ function MemberIndex(props) {
                 </View>
               </View>
               <View className='bd-item deposit-item'>
-                <View className='bd-item-label'>剩余额度</View>
+                <View className='bd-item-label'>{$t('10c783c7.9aa89b')}</View>
                 <View className='bd-item-value'>
                   {isLogin
                     ? purchaseInfo.left_fee
@@ -526,8 +519,8 @@ function MemberIndex(props) {
         )}
 
         <CompPanel
-          title='订单'
-          extra='查看全部订单'
+          title={$t('9696edd5.4c117f')}
+          extra={$t('423e4b3f.fc388d')}
           onLink={handleClickLink.bind(this, '/subpages/trade/list?status=0&is_purchase=1')}
         >
           {config.menu.ziti_order && (
@@ -536,10 +529,11 @@ function MemberIndex(props) {
               onClick={handleClickLink.bind(this, '/subpages/trade/ziti-list?is_purchase=1')}
             >
               <View className='ziti-order-info'>
-                <View className='title'>自提订单</View>
+                <View className='title'>{$t('d5036137.9c9137')}</View>
                 <View className='ziti-txt'>
-                  您有<Text className='ziti-num'>{state.zitiNum}</Text>
-                  个等待自提的订单
+                  {$t('cb4bb044.d969b4')}
+                  <Text className='ziti-num'>{state.zitiNum}</Text>
+                  {$t('d43f3913.cfb6e5')}
                 </View>
               </View>
               <Text className='iconfont icon-qianwang-01'></Text>
@@ -561,7 +555,7 @@ function MemberIndex(props) {
                   <Text>{state.waitPayNum}</Text>
                 </View>
               )}
-              <Text className='order-txt'>待支付</Text>
+              <Text className='order-txt'>{$t('16726e8e.9246fe')}</Text>
             </View>
             <View
               className='order-item'
@@ -577,7 +571,7 @@ function MemberIndex(props) {
                   <Text>{state.waitRecevieNum}</Text>
                 </View>
               )}
-              <Text className='order-txt'>待收货</Text>
+              <Text className='order-txt'>{$t('16726e8e.4933ca')}</Text>
             </View>
             <View
               className='order-item'
@@ -591,7 +585,7 @@ function MemberIndex(props) {
                   <Text>{state.afterSalesNum}</Text>
                 </View>
               )}
-              <Text className='order-txt'>售后</Text>
+              <Text className='order-txt'>{$t('16726e8e.59bd68')}</Text>
             </View>
           </View>
         </CompPanel>

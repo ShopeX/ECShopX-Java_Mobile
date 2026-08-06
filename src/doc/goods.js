@@ -3,6 +3,7 @@
  * See LICENSE file for license details.
  */
 import { pickBy } from '@/utils'
+import { $t } from '@/i18n'
 
 export const GOODS_DETAIL_PROMOTION_TAG = (
   { promotion_activity = [], discount_rate, specific_crowd = {}, activity_info = {} },
@@ -213,7 +214,7 @@ export const ITEM_LIST_POINT_GOODS = {
 export const GOODS_INFO = {
   itemId: 'item_id',
   itemBn: 'item_bn',
-  itemName: 'itemName',
+  itemName: 'item_name',
   brief: 'brief',
   img: 'pics[0]',
   imgs: 'pics',
@@ -241,20 +242,28 @@ export const GOODS_INFO = {
   // 内购限购
   purlimitByCart: 'purchase_limit_num_by_cart',
   purlimitByFastbuy: 'purchase_limit_num_by_fastbuy',
+  /** 部分 employeepurchase 接口单独返回 purchase_limit_num */
+  purchaseLimitNum: 'purchase_limit_num',
+  /** 内购详情常在根节点返回 fee（与 activity_info.fee 二选一） */
+  fee: 'fee',
   isGift: 'is_gift',
-  itemParams: ({ regions, item_unit, item_params }) => {
+  itemParams: ({ regions, item_unit, item_params, itemParams }) => {
     const res = []
-    if (!Array.isArray(regions)) {
-      // 如果 regions 不是数组，可以将它转换成数组   把 regions 转换成只包含一个元素的数组
-      regions = [regions]
-    }
     if (item_unit) {
-      res.push({ attribute_name: '计量单位', attribute_value_name: item_unit })
+      res.push({ attribute_name: $t('a12c9ae6.251549'), attribute_value_name: item_unit })
     }
-    if (regions) {
-      res.push({ attribute_name: '产地', attribute_value_name: regions.join(' ') })
+    if (regions != null && regions !== '') {
+      const parts = Array.isArray(regions) ? regions : [regions]
+      const regionText = parts
+        .filter((x) => x != null && x !== '')
+        .join(' ')
+        .trim()
+      if (regionText) {
+        res.push({ attribute_name: $t('a12c9ae6.2b6d31'), attribute_value_name: regionText })
+      }
     }
-    return res.concat(item_params)
+    const list = item_params ?? itemParams
+    return res.concat(Array.isArray(list) ? list : [])
   },
   groupsList: 'groups_list',
   orderItemType: 'item_type',
@@ -310,6 +319,8 @@ export const GOODS_INFO = {
       startNum: 'start_num', // 起订量
       store: 'store',
       limitNum: 'limit_num',
+      /** 内购等：单 SKU 限购金额（分） */
+      limitFee: 'limit_fee',
       // price: ({ price }) => price / 100,
       // marketPrice: ({ market_price }) => market_price / 100,
       // memberPrice: ({ member_price }) => {
@@ -351,7 +362,7 @@ export const GOODS_INFO = {
 export const ESPIER_DETAIL_GOODS_INFO = {
   itemId: 'item_id',
   itemBn: 'item_bn',
-  itemName: 'itemName',
+  itemName: 'item_name',
   brief: 'brief',
   img: 'pics[0]',
   imgs: 'pics',
@@ -379,20 +390,12 @@ export const ESPIER_DETAIL_GOODS_INFO = {
   // 内购限购
   purlimitByCart: 'purchase_limit_num_by_cart',
   purlimitByFastbuy: 'purchase_limit_num_by_fastbuy',
+  purchaseLimitNum: 'purchase_limit_num',
+  fee: 'fee',
   isGift: 'is_gift',
-  itemParams: ({ regions, item_unit, item_params }) => {
-    const res = []
-    if (!Array.isArray(regions)) {
-      // 如果 regions 不是数组，可以将它转换成数组   把 regions 转换成只包含一个元素的数组
-      regions = [regions]
-    }
-    // if (item_unit) {
-    //   res.push({ attribute_name: '计量单位', attribute_value_name: item_unit })
-    // }
-    // if (regions) {
-    //   res.push({ attribute_name: '产地', attribute_value_name: regions.join(' ') })
-    // }
-    return res.concat(item_params)
+  itemParams: ({ item_params, itemParams }) => {
+    const list = item_params ?? itemParams
+    return Array.isArray(list) ? list : []
   },
   groupsList: 'groups_list',
   orderItemType: 'item_type',
@@ -447,6 +450,7 @@ export const ESPIER_DETAIL_GOODS_INFO = {
       itemId: 'item_id',
       store: 'store',
       limitNum: 'limit_num',
+      limitFee: 'limit_fee',
       // price: ({ price }) => price / 100,
       // marketPrice: ({ market_price }) => market_price / 100,
       // memberPrice: ({ member_price }) => {
@@ -489,7 +493,7 @@ export const ESPIER_DETAIL_GOODS_INFO = {
 
 export const PACKGOODS_INFO = {
   img: 'pics[0]',
-  itemName: 'itemName',
+  itemName: 'item_name',
   num: '',
   price: ({ price }) => price / 100,
   marketPrice: ({ market_price }) => market_price / 100
@@ -504,6 +508,7 @@ export const WGT_SPEEDKILL_GOODS = {
   distributorId: 'distributor_id',
   pic: ({ pics, main_img }) => main_img || pics[0] || '',
   mainPrice: ({ price, activity_price }) => (activity_price || price) / 100,
+  marketPrice: ({ market_price }) => market_price / 100,
   price: ({ price }) => price / 100, // 销售价
   activityPrice: ({ activity_price }) => activity_price / 100, // 秒杀价、内购价
   sales: 'sales',
@@ -549,7 +554,7 @@ export const WGT_SPEEDKILL_GOODS = {
   productPrice_var: ({ activity_price, price }) => {
     return (activity_price || price) / 100
   },
-  discount_var: ({ discount_rate }) =>
+  discountRate: ({ discount_rate }) =>
     discount_rate ? String((discount_rate / 10).toFixed(1)) : null,
   // 积分商品：data_type=pointsmall_items 时接口返回，用于挂件展示积分不展示价格
   point: ({ point, point_exchange }) =>

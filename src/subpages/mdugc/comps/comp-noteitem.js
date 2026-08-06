@@ -10,7 +10,8 @@ import { View, Text, Image } from '@tarojs/components'
 import { AtButton } from 'taro-ui'
 import { SpImage, SpPoint, SpPrice, SpVipLabel, SpLogin } from '@/components'
 import { classNames } from '@/utils'
-import api from '@/api'
+import * as mdugcApi from '@/api/mdugc'
+import { useTranslation, $t } from '@/i18n'
 
 import './comp-noteitem.scss'
 
@@ -20,17 +21,23 @@ const initialState = {
 }
 
 function CompNoteItem(props) {
+  useTranslation()
   const { info = null, mode = 'widthFix' } = props
   const [state, setState] = useImmer(initialState)
   const { likes, likeStatus } = state
   const { userInfo = {} } = useSelector((state) => state.user)
 
   useEffect(() => {
+    if (!info) return
     setState((draft) => {
       draft.likes = info.likes
       draft.likeStatus = info.likeStatus
     })
   }, [info])
+
+  if (!info) {
+    return null
+  }
 
   const handleClick = () => {
     const { postId, status } = info
@@ -47,7 +54,7 @@ function CompNoteItem(props) {
 
   const handleCollection = async () => {
     const { postId } = info
-    const { action, likes } = await api.mdugc.postlike({
+    const { action, likes } = await mdugcApi.postlike({
       user_id: userInfo.user_id,
       post_id: postId
     })
@@ -60,7 +67,7 @@ function CompNoteItem(props) {
   return (
     <View className='comp-note-item'>
       <View className='badges-list'>
-        {info.badges.map((item, index) => (
+        {(info?.badges || []).map((item, index) => (
           <View className='badge-item' key={`badge-item__${index}`}>
             {item.badge_name}
           </View>
@@ -72,9 +79,9 @@ function CompNoteItem(props) {
           <View className='verify-fail'>
             <View className='message'>
               <Text className='iconfont icon-jingshiFilled'></Text>
-              审核未通过
+              <Text>{$t('9c45fd09.f50e9d')}</Text>
             </View>
-            <View className='btn-edit'>重新编辑</View>
+            <View className='btn-edit'>{$t('9c45fd09.d04b2f')}</View>
           </View>
         )}
       </View>

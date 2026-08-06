@@ -1,17 +1,15 @@
 import path from 'path'
 import pkg from '../package.json'
 
-const webpackPluginsAutoI18n = require('webpack-auto-i18n-plugin')
-const { YoudaoTranslator, EmptyTranslator } = require('webpack-auto-i18n-plugin')
-
 const chalk = require('chalk')
-const webpack = require('webpack')
 const { getEnvs, getDefineConstants, getCacheIdentifier } = require('./utils')
 
 require('dotenv-flow').config()
 
 const DIST_PATH = `dist/${process.env.TARO_ENV}`
 const APP_ENVS = getEnvs()
+const REACT_I18NEXT_PATH = path.dirname(require.resolve('react-i18next/package.json'))
+const I18NEXT_PATH = path.dirname(require.resolve('i18next/package.json'))
 
 // 是否为生产模式
 const IS_PROD = process.env.NODE_ENV === 'production'
@@ -24,8 +22,9 @@ const CONST_ENVS = {
     process.env.TARO_ENV == 'h5' ? '/subpage/pages/auth/login' : '/subpages/member/index',
   APP_BUILD_TARGET: BUILD_TARGET,
   APP_LIVE: process.env.APP_LIVE,
-  APP_TRACK: process.env.APP_TRACK || '',
-  ...APP_ENVS
+  ...APP_ENVS,
+  // 显式列入，保证 defineConstants 注入；否则客户端会保留 process.env.* 引用导致「process is not defined」
+  APP_DEFAULT_MEMBER_GRADE_ID: process.env.APP_DEFAULT_MEMBER_GRADE_ID || ''
 }
 
 Object.keys(CONST_ENVS).forEach((key) => {
@@ -37,19 +36,30 @@ const IS_APP = BUILD_TARGET === 'app'
 // 是否打包成APP服务
 const IS_APP_SERVER = BUILD_APP_SERVER === 'server'
 
-const copyPatterns = [
-  {
-    from: 'src/assets',
-    to: `${DIST_PATH}/assets`,
-    ignore: ['**/.DS_Store']
-  }
-]
+const copyPatterns = [{ from: 'src/assets', to: `${DIST_PATH}/assets` }]
+const i18nResourceTransform = (content) =>
+  content.toString().replace(/\.\/locales\/(zhcn|zhtw|en|ar)\.json/g, './locales/$1.js')
+const i18nLocaleTransform = (content) => `module.exports = ${content.toString()}\n`
 
 if (process.env.TARO_ENV == 'h5') {
-  copyPatterns.push({ from: 'src/files', to: `${DIST_PATH}`, ignore: ['**/.DS_Store'] })
+  copyPatterns.push({ from: 'src/files', to: `${DIST_PATH}` })
 }
 if (process.env.TARO_ENV == 'alipay') {
   copyPatterns.push({ from: 'mini.project.json', to: `${DIST_PATH}/mini.project.json` })
+}
+if (process.env.TARO_ENV == 'weapp') {
+  copyPatterns.push({
+    from: 'src/subpages/i18n/resources.js',
+    to: `${DIST_PATH}/subpages/i18n/resources.js`,
+    transform: i18nResourceTransform
+  })
+  ;['zhcn', 'zhtw', 'en', 'ar'].forEach((lang) => {
+    copyPatterns.push({
+      from: `src/subpages/i18n/locales/${lang}.json`,
+      to: `${DIST_PATH}/subpages/i18n/locales/${lang}.js`,
+      transform: i18nLocaleTransform
+    })
+  })
 }
 
 const config = {
@@ -80,10 +90,7 @@ const config = {
     // 'lodash': 'lodash-es'
   },
   copy: {
-    patterns: copyPatterns,
-    options: {
-      ignore: ['**/.DS_Store', '**/*.LICENSE.txt']
-    }
+    patterns: copyPatterns
   },
   compiler: {
     type: 'webpack5',
@@ -99,54 +106,10 @@ const config = {
   ],
 
   mini: {
-    webpackChain(chain) {
-      // 有数 SDK(sr-sdk-wxapp) 等依赖会访问裸 process，小程序运行时不存在
-      chain.plugin('provide-process').use(webpack.ProvidePlugin, [
-        {
-          process: require.resolve('process/browser')
-        }
-      ])
+    webpackChain(chain) {},
 
-      chain.plugin('auto-i18n').use(webpackPluginsAutoI18n.default, [
-        {
-          rewriteConfig: false, // 是否重写配置js ， 小程序需要魔改配置文件，所以不要重新生成，以现在的为准
-          excludedPath: [
-            path.resolve(__dirname, './../src/lang/index.js'),
-            path.resolve(__dirname, './../src/lang/consts.js')
-          ],
-          globalPath: path.resolve(__dirname, './../src/subpages/i18n/lang'),
-          targetLangList: ['en', 'zh-tw', 'ar'], // 目标语言
-          originLang: 'zh-cn', // 源语言
-          translator: process.env.APP_I18N_APP_KEY
-            ? new YoudaoTranslator({
-                appId: process.env.APP_I18N_APP_ID,
-                appKey: process.env.APP_I18N_APP_KEY
-              })
-            : new EmptyTranslator(),
-          includePath: [/src/] // 仅扫描 src 目录
-        }
-      ])
-
-      // 小程序代码包体积分析：ANALYZE=true npm run build:weapp
-      if (process.env.ANALYZE === 'true') {
-        chain
-          .plugin('bundle-analyzer')
-          .use(require('webpack-bundle-analyzer').BundleAnalyzerPlugin, [
-            {
-              analyzerMode: 'server',
-              analyzerPort: 'auto',
-              openAnalyzer: true
-            }
-          ])
-      }
-
-      // 不生成 *.js.LICENSE.txt，避免计入主包体积
-      if (chain.optimization.minimizers.has('terserPlugin')) {
-        chain.optimization.minimizer('terserPlugin').tap((args) => {
-          args[0] = Object.assign({}, args[0], { extractComments: false })
-          return args
-        })
-      }
+    compile: {
+      include: [REACT_I18NEXT_PATH, I18NEXT_PATH]
     },
 
     miniCssExtractPluginOption: {
@@ -191,27 +154,7 @@ const config = {
       // mode: 'hash',
       mode: IS_APP ? (IS_APP_SERVER ? 'browser' : 'hash') : 'browser'
     },
-    webpackChain(chain) {
-      chain.plugin('auto-i18n').use(webpackPluginsAutoI18n.default, [
-        {
-          rewriteConfig: false, // 是否重写配置js ， 小程序需要魔改配置文件，所以不要重新生成，以现在的为准
-          excludedPath: [
-            path.resolve(__dirname, './../src/lang/index.js'),
-            path.resolve(__dirname, './../src/lang/consts.js')
-          ],
-          globalPath: path.resolve(__dirname, './../src/subpages/i18n/lang'),
-          targetLangList: ['en', 'zh-tw', 'ar'], // 目标语言
-          originLang: 'zh-cn', // 源语言
-          translator: process.env.APP_I18N_APP_KEY
-            ? new YoudaoTranslator({
-                appId: process.env.APP_I18N_APP_ID,
-                appKey: process.env.APP_I18N_APP_KEY
-              })
-            : new EmptyTranslator(),
-          includePath: [/src/] // 仅扫描 src 目录
-        }
-      ])
-    },
+    webpackChain(chain) {},
     devServer: {
       // https: true,
       // overlay: {

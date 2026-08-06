@@ -11,8 +11,10 @@ import { SpPage, SpScrollView, SpCheckbox } from '@/components'
 import { AtButton } from 'taro-ui'
 import { pickBy } from '@/utils'
 import api from '@/api'
+import * as communityApi from '@/api/community'
 import doc from '@/subpages/doc'
 import { updateSelectCommunityZiti } from '@/store/slices/community'
+import { useTranslation, $t } from '@/i18n'
 import './picker-community.scss'
 
 const initialState = {
@@ -20,6 +22,7 @@ const initialState = {
   list: []
 }
 function PickerCommunity(props) {
+  const { i18n } = useTranslation()
   const [state, setState] = useImmer(initialState)
   const { selectCommunityZiti } = useSelector((state) => state.community)
   const { list, selection } = state
@@ -31,12 +34,16 @@ function PickerCommunity(props) {
   //   })
   // }, [])
 
+  useEffect(() => {
+    Taro.setNavigationBarTitle({ title: $t('7c569259.fc0da6') })
+  }, [i18n.language])
+
   useDidShow(() => {
     fetchZitiList()
   })
 
   const fetchZitiList = async () => {
-    const res = await api.community.getActivityZiti()
+    const res = await communityApi.getActivityZiti()
     setState((draft) => {
       draft.list = pickBy(res, doc.community.COMMUNITY_ZITI)
     })
@@ -59,7 +66,7 @@ function PickerCommunity(props) {
       renderFooter={
         <View className='btn-wrap'>
           <AtButton circle type='primary' onClick={handleConfirm}>
-            添加自提点
+            {$t('d6bb96e4.1f6bf1')}
           </AtButton>
         </View>
       }

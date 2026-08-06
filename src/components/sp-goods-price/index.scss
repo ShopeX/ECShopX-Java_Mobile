@@ -3,13 +3,26 @@
  * See LICENSE file for license details.
  */
 .sp-goods-price {
+  .goods-price {
+    display: flex;
+    align-items: center;
+    > view {  
+      margin-right: 24px;
+    }
+  }
   .mkt-price {
     margin-left: 8px;
   }
   .vip-price,
-  .svip-price {
+  .svip-price,
+  .retail-price {
     display: flex;
     align-items: center;
+  }
+  .retail-price {
+    .sp-vip-label {
+      color: #666;
+    }
     .sp-price__symbol,
     .sp-price__int,
     .sp-price__decimal {
@@ -36,5 +49,9 @@
   .point-plus-price {
     display: inline-block;
     margin: 0 10px;
+  }
+  .point-plus-price-wrap {
+    display: flex;
+    align-items: center;
   }
 }

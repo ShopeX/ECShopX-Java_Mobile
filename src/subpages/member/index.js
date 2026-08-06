@@ -3,12 +3,12 @@
  * See LICENSE file for license details.
  */
 import Taro, { useDidShow, useShareAppMessage, getCurrentInstance } from '@tarojs/taro'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { updateUserInfo, updateCheckChief } from '@/store/slices/user'
 import { WgtsContext } from '@/pages/home/wgts/wgts-context'
 import { platformTemplateName } from '@/utils/platform'
-import { View, Text } from '@tarojs/components'
-import { SG_APP_CONFIG } from '@/consts'
+import { View, Text, ScrollView } from '@tarojs/components'
+import { SG_APP_CONFIG, DEFAULT_POINT_NAME } from '@/consts'
 import { useSelector, useDispatch } from 'react-redux'
 import HomeWgts from '@/pages/home/comps/home-wgts'
 import { useImmer } from 'use-immer'
@@ -16,24 +16,10 @@ import S from '@/spx'
 import qs from 'qs'
 import req from '@/api/req'
 import { buildSharePath, getMemberLevel } from '@/utils'
-
-import { SpLogin, SpImage, SpTabbar, SpPage, SpCell } from '@/components'
+import { SpLogin, SpImage, SpTabbar, SpPage, SpPoweredBy } from '@/components'
 import api from '@/api'
-import {
-  navigateTo,
-  getThemeStyle,
-  styleNames,
-  classNames,
-  showToast,
-  showModal,
-  isWeixin,
-  normalizeQuerys,
-  log,
-  VERSION_PLATFORM,
-  VERSION_STANDARD,
-  VERSION_SHUYUN,
-  getDistributorId
-} from '@/utils'
+import * as communityApi from '@/api/community'
+import { log, VERSION_PLATFORM, VERSION_STANDARD } from '@/utils'
 import {
   updatePurchaseShareInfo,
   updateInviteCode,
@@ -42,7 +28,7 @@ import {
 } from '@/store/slices/purchase'
 import { useLogin, useLocation } from '@/hooks'
 import { updateDeliveryPersonnel } from '@/store/slices/cart'
-
+import { useTranslation, $t } from '@/i18n'
 import CompMenu from './comps/comp-menu'
 import './index.scss'
 
@@ -111,12 +97,14 @@ const initialState = {
   shareInfo: {},
   footerHeight: 0,
   pageData: null,
-  shareInfo: {}
+  bodyHeight: 0
 }
 
 function MemberIndex(props) {
   // console.log('===>getCurrentPages==>', getCurrentPages(), getCurrentInstance())
-  const $instance = getCurrentInstance()
+  const { i18n } = useTranslation()
+  const pageRef = useRef(null)
+  const $instance = getCurrentInstance() || {}
   const { updateAddress } = useLocation()
   const { isLogin, getUserInfo, isNewUser } = useLogin({
     autoLogin: false,
@@ -135,7 +123,7 @@ function MemberIndex(props) {
   const [policyModal, setPolicyModal] = useState(false)
 
   const { userInfo = {}, vipInfo = {} } = useSelector((state) => state.user)
-  const { pointName } = useSelector((state) => state.sys)
+  const pointName = useSelector((state) => state.sys?.pointName ?? DEFAULT_POINT_NAME())
   log.debug(`store userInfo: ${JSON.stringify(userInfo)}`)
   const dispatch = useDispatch()
 
@@ -144,7 +132,7 @@ function MemberIndex(props) {
       getMemberCenterData()
       setMemberBackground()
       getEmployeeIsOpen()
-      const { redirect } = $instance.router.params
+      const { redirect } = $instance?.router?.params
       if (redirect) {
         Taro.redirectTo({ url: decodeURIComponent(redirect) })
       }
@@ -157,6 +145,10 @@ function MemberIndex(props) {
     getSettings()
     fetchWgts()
   }, [])
+
+  useEffect(() => {
+    Taro.setNavigationBarTitle({ title: $t('75e226b0.12688a') })
+  }, [i18n.language])
 
   useDidShow(() => {
     if (isLogin) {
@@ -175,8 +167,8 @@ function MemberIndex(props) {
       })
       const url = `/pageparams/setting?${pathparams}`
       const { config = [], share } = await req.get(url)
-      console.log('🚀🚀🚀 ~ fetchWgts ~ config:', config, share)
       const pageData = config.find((wgt) => wgt.name == 'page')
+      console.log('🚀🚀🚀 ~ fetchWgts ~ config:', config, share, pageData)
       setState((draft) => {
         draft.wgts = config
         draft.pageData = pageData
@@ -262,7 +254,7 @@ function MemberIndex(props) {
       const { result, status } = await api.member.is_admin()
       console.log('env:result', result)
       console.log('env:status', status)
-      S.set('DIANWU_CONFIG', result, status)
+      S?.set('DIANWU_CONFIG', result, status)
       menu = {
         ...menu,
         dianwu: status
@@ -356,21 +348,21 @@ function MemberIndex(props) {
         Taro.navigateTo({ url: link })
       } else {
         const { confirm } = await Taro.showModal({
-          title: '邀请推广',
-          content: '确定申请成为推广员？',
+          title: $t('3009e832.75716c'),
+          content: $t('3009e832.7785f6'),
           showCancel: true,
-          cancelText: '取消',
-          confirmText: '确认',
+          cancelText: $t('3009e832.625fb2'),
+          confirmText: $t('3009e832.e83a25'),
           confirmColor: '#0b4137'
         })
         if (!confirm) return
         const { status } = await api.distribution.become()
         if (status) {
           Taro.showModal({
-            title: '恭喜',
-            content: '已成为推广员',
+            title: $t('3009e832.a1651e'),
+            content: $t('3009e832.44fafb'),
             showCancel: false,
-            confirmText: '好'
+            confirmText: $t('3009e832.ac2c8f')
           })
         }
       }
@@ -386,7 +378,7 @@ function MemberIndex(props) {
       }
     }
     if (key == 'community') {
-      const res = await api.community.checkChief()
+      const res = await communityApi.checkChief()
       dispatch(updateCheckChief(res))
       if (res.status) {
         Taro.navigateTo({ url: link })
@@ -397,11 +389,10 @@ function MemberIndex(props) {
 
     if (key == 'purchase') {
       const data = await api.purchase.getUserEnterprises({
-        disabled: 0,
-        distributor_id: getDistributorId()
+        disabled: 0
       })
       if (data?.length > 0) {
-        Taro.navigateTo({ url: '/subpages/purchase/select-identity?is_redirt=1' })
+        Taro.navigateTo({ url: '/subpages/purchase/select-identity' })
       } else {
         Taro.navigateTo({ url: '/pages/purchase/auth' })
       }
@@ -430,7 +421,7 @@ function MemberIndex(props) {
         <Text>
           {
             {
-              true: vipInfo.grade_name || '会员',
+              true: vipInfo.grade_name || $t('3009e832.4d9dd5'),
               false: userInfo?.gradeInfo?.grade_name || ''
             }[vipInfo.isVip]
           }
@@ -449,8 +440,31 @@ function MemberIndex(props) {
   }
 
   return (
-    <SpPage className='pages-member-index' immersive renderFooter={<SpTabbar />} title='会员中心'>
-      <View className='user-info-card-wrapper min-h-full'>
+    <SpPage
+      ref={pageRef}
+      className='pages-member-index'
+      loading={state.loading}
+      immersive={state.pageData?.base?.isImmersive}
+      showpoweredBy={false}
+      pageConfig={state.pageData?.base || {}}
+      renderFooter={<SpTabbar />}
+      title={$t('75e226b0.12688a')}
+      onReady={({ gNavbarH, footerHeight }) => {
+        setState((draft) => {
+          draft.bodyHeight = `calc(100vh - ${
+            state.pageData?.base?.isImmersive ? 0 : gNavbarH
+          }px - ${footerHeight})`
+        })
+      }}
+    >
+      <ScrollView
+        scrollY
+        className='user-info-card-wrapper'
+        style={{ height: state.bodyHeight }}
+        onScroll={(e) => {
+          pageRef.current?.handlePageScroll?.({ scrollTop: e.detail.scrollTop })
+        }}
+      >
         <View
           className='header-block'
           style={userInfo?.gradeInfo?.grade_background ? memberBckStyle : {}}
@@ -460,13 +474,14 @@ function MemberIndex(props) {
               <View
                 className='user-avatar'
                 onClick={() => onLoginChange('/subpages/member/user-info')}
-                style={{ width: '72px', height: '72px' }}
               >
                 <SpImage
                   className='avatar-img'
                   src={(userInfo && userInfo.avatar) || 'user_icon.png'}
                   width={144}
                   height={144}
+                  mode='aspectFit'
+                  radius={72}
                 />
               </View>
 
@@ -490,7 +505,7 @@ function MemberIndex(props) {
                     </View>
                   </>
                 ) : (
-                  <Text className='login-text font-medium text-34'>点击登录</Text>
+                  <Text className='login-text font-medium text-34'>{$t('3009e832.a1f629')}</Text>
                 )}
               </View>
 
@@ -531,7 +546,7 @@ function MemberIndex(props) {
                 onClick={() => onLoginChange('/subpages/marketing/coupon')}
               >
                 <Text className='stat-value'>{isLogin ? state.couponCount || 0 : '···'}</Text>
-                <Text className='stat-label'>优惠券</Text>
+                <Text className='stat-label'>{$t('3009e832.2f3635')}</Text>
               </View>
 
               <View
@@ -539,7 +554,7 @@ function MemberIndex(props) {
                 onClick={() => onLoginChange('/subpages/member/point-detail')}
               >
                 <Text className='stat-value'>{isLogin ? state.point || 0 : '···'}</Text>
-                <Text className='stat-label'>积分</Text>
+                <Text className='stat-label'>{pointName}</Text>
               </View>
             </View>
           </SpLogin>
@@ -562,7 +577,9 @@ function MemberIndex(props) {
           isPromoter={userInfo ? userInfo.isPromoter : false}
           onLink={handleClickService}
         />
-      </View>
+        {/* If you remove or alter Shopex brand identifiers, you must obtain a branding removal license from Shopex.  Contact us at:  http://www.shopex.cn to purchase a branding removal license. */}
+        <SpPoweredBy />
+      </ScrollView>
     </SpPage>
   )
 }

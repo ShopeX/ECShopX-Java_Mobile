@@ -3,6 +3,7 @@
  * See LICENSE file for license details.
  */
 import React, { useEffect, useRef } from 'react'
+import { useTranslation, $t, ti } from '@/i18n'
 import { useSelector } from 'react-redux'
 import Taro, { useRouter, useShareAppMessage } from '@tarojs/taro'
 import { View, Text, Video, Swiper, SwiperItem } from '@tarojs/components'
@@ -20,11 +21,11 @@ import {
 import S from '@/spx'
 import { WgtFloorImg } from '@/pages/home/wgts'
 import { classNames, isWeb, isWeixin, showToast, pickBy, isNumber, buildSharePath } from '@/utils'
-
 import api from '@/api'
+import * as mdugcApi from '@/api/mdugc'
 import doc from '@/doc'
+import * as mdugcDoc from '@/doc/mdugc'
 import { useImmer } from 'use-immer'
-
 import './note-detail.scss'
 
 const initialState = {
@@ -32,7 +33,7 @@ const initialState = {
   commentList: [],
   commentTotal: 0,
   comment: '',
-  commentPlaceholder: '留言评论...',
+  commentPlaceholder: '',
   showCommentInput: false,
   parentCommentId: '',
   play: false,
@@ -40,6 +41,7 @@ const initialState = {
 }
 
 function UgcNoteDetail(props) {
+  const { i18n } = useTranslation()
   const [state, setState] = useImmer(initialState)
   const {
     info,
@@ -57,11 +59,15 @@ function UgcNoteDetail(props) {
   const pageRef = useRef()
   const listRef = useRef()
   const { windowWidth } = Taro.getSystemInfoSync()
-  const { post_id } = router.params
+  const { post_id } = router?.params
 
   useEffect(() => {
     getPostDetail()
   }, [])
+
+  useEffect(() => {
+    Taro.setNavigationBarTitle({ title: $t('72f0cb98.72eb43') })
+  }, [i18n.language])
 
   useEffect(() => {
     let video
@@ -88,7 +94,7 @@ function UgcNoteDetail(props) {
   // 获取详情
   const getPostDetail = async () => {
     Taro.showLoading()
-    const { post_info } = await api.mdugc.postdetail({
+    const { post_info } = await mdugcApi.postdetail({
       post_id
     })
     Taro.hideLoading()
@@ -99,7 +105,7 @@ function UgcNoteDetail(props) {
     if (post_info.status != 1) {
       Taro.hideShareMenu()
     }
-    const info = pickBy(post_info, doc.mdugc.UGC_DETAIL)
+    const info = pickBy(post_info, mdugcDoc.UGC_DETAIL)
     setState((draft) => {
       draft.info = info
     })
@@ -122,13 +128,11 @@ function UgcNoteDetail(props) {
         user_id: userInfo.user_id
       }
     }
-    const { list, total_count: total } = await api.mdugc.commentlist(params)
-    const _commentList = pickBy(list, doc.mdugc.COMMENT_INFO)
+    const { list, total_count: total } = await mdugcApi.commentlist(params)
+    const _commentList = pickBy(list, mdugcDoc.COMMENT_INFO)
     setState((draft) => {
-      draft.commentList = _commentList
-      draft.commentTotal = _commentList.reduce((previous, current) => {
-        return previous + current.child.length + 1
-      }, 0)
+      draft.commentList = pageIndex == 1 ? _commentList : [...draft.commentList, ..._commentList]
+      draft.commentTotal = total
     })
     return {
       total
@@ -137,7 +141,7 @@ function UgcNoteDetail(props) {
 
   useShareAppMessage(async (res) => {
     if (S.getAuthToken()) {
-      const shareInfo = await api.mdugc.postshare({
+      const shareInfo = await mdugcApi.postshare({
         post_id
       })
       setState((draft) => {
@@ -165,14 +169,14 @@ function UgcNoteDetail(props) {
 
   // 关注|取消关注
   const handleFollower = async () => {
-    const { action, followers } = await api.mdugc.followercreate({
+    const { action, followers } = await mdugcApi.followercreate({
       user_id: info.userId,
       follower_user_id: userInfo.user_id
     })
     if (action == 'unfollow') {
-      showToast('取消关注')
+      showToast($t('72f0cb98.92bdc8'))
     } else {
-      showToast('关注成功')
+      showToast($t('72f0cb98.60fa97'))
     }
 
     setState((draft) => {
@@ -182,14 +186,14 @@ function UgcNoteDetail(props) {
 
   // 点赞
   const likeNote = async () => {
-    const { action, likes } = await api.mdugc.postlike({
+    const { action, likes } = await mdugcApi.postlike({
       user_id: userInfo.user_id,
       post_id
     })
     if (action == 'unlike') {
-      showToast('取消点赞')
+      showToast($t('72f0cb98.967daf'))
     } else {
-      showToast('点赞成功')
+      showToast($t('72f0cb98.319b56'))
     }
     setState((draft) => {
       draft.info['likes'] = likes
@@ -199,13 +203,13 @@ function UgcNoteDetail(props) {
 
   // 收藏笔记
   const favoriteNote = async () => {
-    const { action, likes } = await api.mdugc.postfavorite({
+    const { action, likes } = await mdugcApi.postfavorite({
       post_id
     })
     if (action == 'unfavorite') {
-      showToast('取消收藏')
+      showToast($t('72f0cb98.f22cec'))
     } else {
-      showToast('收藏成功')
+      showToast($t('72f0cb98.f3a7e4'))
     }
     setState((draft) => {
       draft.info['favoriteNums'] = likes
@@ -218,13 +222,17 @@ function UgcNoteDetail(props) {
     setState((draft) => {
       draft.showCommentInput = true
       draft.parentCommentId = ''
-      draft.commentPlaceholder = '请输入评论'
+      draft.commentPlaceholder = $t('72f0cb98.246173')
     })
   }
 
-  // 点赞评论
+  // 点赞评论（入口已由 SpLogin 包裹，此处兜底防未登录）
   const handleCommentLike = async (comment_id, pindex, index) => {
-    const { action, likes } = await api.mdugc.commentlike({
+    if (!userInfo?.user_id) {
+      showToast($t('72f0cb98.8d2433'))
+      return
+    }
+    const { action, likes } = await mdugcApi.commentlike({
       user_id: userInfo.user_id,
       post_id,
       comment_id
@@ -245,23 +253,35 @@ function UgcNoteDetail(props) {
     })
   }
 
-  // 提交回复
+  // 提交回复（需已登录；未登录时应在输入前经 SpLogin）
   const onSubmitComment = async (e) => {
-    console.log('onSubmitComment:', e)
+    if (!S.getAuthToken() || !userInfo?.user_id) {
+      showToast($t('72f0cb98.8d2433'))
+      setState((draft) => {
+        draft.showCommentInput = false
+      })
+      return
+    }
+    const raw = e?.detail?.value ?? e?.detail ?? comment
+    const content = String(raw ?? '').trim()
+    if (!content) {
+      return
+    }
     let params = {
       user_id: userInfo.user_id,
       post_id,
-      content: e.detail.value
+      content
     }
     if (parentCommentId) {
       params.parent_comment_id = parentCommentId
     }
-    const res = await api.mdugc.commentcreate(params)
+    const res = await mdugcApi.commentcreate(params)
     showToast(res.message)
-    listRef.current.reset()
+    listRef.current?.reset()
     setState((draft) => {
       draft.comment = ''
       draft.showCommentInput = false
+      draft.commentPlaceholder = $t('72f0cb98.a94cd1')
     })
   }
 
@@ -275,14 +295,14 @@ function UgcNoteDetail(props) {
 
   const onDeleteNote = async () => {
     const { confirm } = await Taro.showModal({
-      title: '确定删除笔记？',
+      title: $t('72f0cb98.d07d0e'),
       content: ''
     })
     if (confirm) {
-      await api.mdugc.postdelete({
+      await mdugcApi.postdelete({
         post_id: [info.postId]
       })
-      showToast('删除成功')
+      showToast($t('72f0cb98.0007d1'))
       Taro.eventCenter.trigger('onEventRefreshFromNote')
       setTimeout(() => {
         Taro.navigateBack()
@@ -317,10 +337,12 @@ function UgcNoteDetail(props) {
       }
       renderFooter={
         <View className='action-container'>
-          <View className='comment-input' onClick={handleCommitReply}>
-            <Text className='iconfont icon-bianji1'></Text>
-            <Text className='placeholder'>留言评论...</Text>
-          </View>
+          <SpLogin onChange={handleCommitReply}>
+            <View className='comment-input'>
+              <Text className='iconfont icon-bianji1'></Text>
+              <Text className='placeholder'>{$t('72f0cb98.a94cd1')}</Text>
+            </View>
+          </SpLogin>
           <View className='btn-action-list'>
             <SpLogin className='action-item' onChange={likeNote}>
               <View className='btn-wrap'>
@@ -410,7 +432,7 @@ function UgcNoteDetail(props) {
                 }}
               >
                 {!play && <SpImage className='play-icon' src='play2.png' width={50} height={50} />}
-                {play ? '退出视频' : '播放视频'}
+                {play ? $t('72f0cb98.85f859') : $t('72f0cb98.c27cf5')}
               </View>
             )}
           </View>
@@ -426,7 +448,7 @@ function UgcNoteDetail(props) {
                 })}
                 onChange={handleFollower}
               >
-                {info.followStatus ? '已关注' : '+关注'}
+                {info.followStatus ? $t('72f0cb98.f4f380') : $t('72f0cb98.9b5b8a')}
               </SpLogin>
             )}
           </View>
@@ -467,7 +489,7 @@ function UgcNoteDetail(props) {
               info={{
                 name: 'floorImg',
                 base: {
-                  title: '推荐商品',
+                  title: $t('72f0cb98.479ddf'),
                   subtitle: '',
                   padded: true,
                   WordColor: '#222',
@@ -493,16 +515,16 @@ function UgcNoteDetail(props) {
               <View className='comment-empty'>
                 <Text className='iconfont icon-pinglun'></Text>
                 <View className='empty-text'>
-                  <Text className='t1'>还没有评论哦，</Text>
+                  <Text className='t1'>{$t('72f0cb98.594583')}</Text>
                   <SpLogin onChange={handleCommitReply}>
-                    <Text className='t2'>点击评论</Text>
+                    <Text className='t2'>{$t('72f0cb98.fdd3ac')}</Text>
                   </SpLogin>
                 </View>
               </View>
             }
           >
             <View className='comment-body'>
-              <View className='comment-num'>{`共${commentTotal}条评论`}</View>
+              <View className='comment-num'>{ti('72f0cb98.5dc6f9', [commentTotal])}</View>
               {commentList.map((item, index) => (
                 <View className='comment-item' key={`comment-item__${index}`}>
                   <View className='item-hd'>
@@ -512,28 +534,30 @@ function UgcNoteDetail(props) {
                     <View className='first-comment'>
                       <View className='comment-info'>
                         <View className='author'>{item.username}</View>
-                        <View
-                          className='comment-content'
-                          onClick={() => {
+                        <SpLogin
+                          onChange={() => {
                             setState((draft) => {
                               draft.showCommentInput = true
                               draft.parentCommentId = item.commentId
-                              draft.commentPlaceholder = `回复 @${item.username}`
+                              draft.commentPlaceholder = ti('72f0cb98.679ca1', [item.username])
                             })
                           }}
                         >
-                          {item.content}
-                          <Text className='create-time'>{item.created}</Text>
-                        </View>
+                          <View className='comment-content'>
+                            {item.content}
+                            <Text className='create-time'>{item.created}</Text>
+                          </View>
+                        </SpLogin>
                       </View>
                       <View className='comment-likes'>
-                        <Text
-                          className={classNames('iconfont', {
-                            'icon-dianzan': item.likeStatus == 0,
-                            'icon-dianzanFilled': item.likeStatus == 1
-                          })}
-                          onClick={handleCommentLike.bind(this, item.commentId, index)}
-                        ></Text>
+                        <SpLogin onChange={() => handleCommentLike(item.commentId, index)}>
+                          <Text
+                            className={classNames('iconfont', {
+                              'icon-dianzan': item.likeStatus == 0,
+                              'icon-dianzanFilled': item.likeStatus == 1
+                            })}
+                          ></Text>
+                        </SpLogin>
                         <Text className='like-num'>{item.likes}</Text>
                       </View>
                     </View>
@@ -552,18 +576,16 @@ function UgcNoteDetail(props) {
                               </View>
                             </View>
                             <View className='sitem-ft'>
-                              <Text
-                                className={classNames('iconfont', {
-                                  'icon-dianzan': citem.likeStatus == 0,
-                                  'icon-dianzanFilled': citem.likeStatus == 1
-                                })}
-                                onClick={handleCommentLike.bind(
-                                  this,
-                                  citem.commentId,
-                                  index,
-                                  cindex
-                                )}
-                              ></Text>
+                              <SpLogin
+                                onChange={() => handleCommentLike(citem.commentId, index, cindex)}
+                              >
+                                <Text
+                                  className={classNames('iconfont', {
+                                    'icon-dianzan': citem.likeStatus == 0,
+                                    'icon-dianzanFilled': citem.likeStatus == 1
+                                  })}
+                                ></Text>
+                              </SpLogin>
                               <Text className='like-num'>{citem.likes}</Text>
                             </View>
                           </View>

@@ -6,13 +6,14 @@ import React, { Component } from 'react'
 import Taro from '@tarojs/taro'
 import { View, Text, Image, ScrollView } from '@tarojs/components'
 import S from '@/spx'
-
-import { SpNote, BackToTop, FloatMenus, FloatMenuItem, SpTabbar } from '@/components'
+import { SpNote, BackToTop, SpTabbar } from '@/components'
+import { FloatMenus, FloatMenuItem } from '@/subpages/components'
 import { pickBy } from '@/utils'
 import { connect } from 'react-redux'
 import { withPager, withBackToTop } from '@/hocs'
-
 import api from '@/api'
+import * as mdugcApi from '@/api/mdugc'
+import { $t, i18n } from '@/i18n'
 
 import { SearchBar, TagsBarcheck, Scrollitem } from '../../components'
 import './index.scss'
@@ -44,15 +45,28 @@ export default class mdugcindex extends Component {
   }
 
   async componentDidMount() {
-    const res = await S.getMemberInfo()
+    const res = await S?.getMemberInfo()
     this.props.setMemberInfo(res)
     console.log(123, this.props)
     this.gettopicslist()
     this.nextPage()
+    Taro.setNavigationBarTitle({ title: $t('beebc9a2.888af1') })
+    this._onMdugcPagesIndexLang = () => {
+      Taro.setNavigationBarTitle({ title: $t('beebc9a2.888af1') })
+      this.forceUpdate()
+    }
+    i18n.on('languageChanged', this._onMdugcPagesIndexLang)
   }
   config = {
-    navigationBarTitleText: '社区'
+    navigationBarTitleText: ''
   }
+
+  componentWillUnmount() {
+    if (this._onMdugcPagesIndexLang) {
+      i18n.off('languageChanged', this._onMdugcPagesIndexLang)
+    }
+  }
+
   componentDidShow() {
     Taro.setNavigationBarColor({
       frontColor: '#000000',
@@ -128,7 +142,7 @@ export default class mdugcindex extends Component {
       page: 1,
       pageSize: 8
     }
-    let { list } = await api.mdugc.topiclist(data)
+    let { list } = await mdugcApi.topiclist(data)
     let nList = pickBy(list, {
       topic_id: 'topic_id',
       topic_name: 'topic_name'
@@ -225,7 +239,7 @@ export default class mdugcindex extends Component {
   // 列表
   async fetch(params) {
     Taro.showLoading({
-      title: '正在加载...'
+      title: $t('beebc9a2.bd0271')
     })
     let { curTagId, istag, val, refresherTriggered } = this.state
     const { page_no: page, page_size: pageSize } = params
@@ -236,7 +250,7 @@ export default class mdugcindex extends Component {
       sort: istag == 1 ? 'likes desc' : 'created desc',
       content: val
     }
-    const { list, total_count: total } = await api.mdugc.postlist(params)
+    const { list, total_count: total } = await mdugcApi.postlist(params)
     console.log('list, total', list, total)
     let nList = []
     if (list) {
@@ -283,11 +297,11 @@ export default class mdugcindex extends Component {
   }
   // 浮动按钮跳转
   topages = (url) => {
-    const isAuth = S.getAuthToken()
+    const isAuth = S?.getAuthToken()
     if (!isAuth) {
       Taro.showToast({
         icon: 'none',
-        title: '请先登录'
+        title: $t('beebc9a2.8d2433')
       })
       // setTimeout(() => {
       //   Taro.redirectTo({
@@ -343,7 +357,7 @@ export default class mdugcindex extends Component {
             onChange={this.shonChange.bind(this)}
             onClear={this.shonClear.bind(this)}
             onConfirm={this.shonConfirm.bind(this)}
-            _placeholder='搜索内容'
+            _placeholder={$t('beebc9a2.1c113a')}
             bgc
             keyword={val}
           ></SearchBar>
@@ -367,7 +381,7 @@ export default class mdugcindex extends Component {
                   : 'ugcindex_list__tag_i icon-shijian'
               }
             >
-              时间
+              {$t('beebc9a2.19fcb9')}
             </View>
             <View
               onClick={this.onistag.bind(this, 1)}
@@ -377,7 +391,7 @@ export default class mdugcindex extends Component {
                   : 'ugcindex_list__tag_i icon-shoucang'
               }
             >
-              热度
+              {$t('beebc9a2.bed501')}
             </View>
           </View>
           <ScrollView
@@ -421,7 +435,7 @@ export default class mdugcindex extends Component {
                 && (<View className='ugcindex_list__scroll_end'>—— ——人家是有底线的—— ——</View>)
               } */}
             {!page.isLoading && !page.hasNext && !list.length && (
-              <SpNote img='trades_empty.png'>列表页为空!</SpNote>
+              <SpNote img='trades_empty.png'>{$t('beebc9a2.1feb58')}</SpNote>
             )}
           </ScrollView>
         </View>

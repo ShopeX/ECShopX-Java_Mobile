@@ -24,12 +24,11 @@ import './index.scss'
 
 export default function WgtContentPartition(props) {
   const { info, id } = props
-  const { immersive, navBarHeight, setScrollIntoView } = useContext(WgtsContext) || {}
+  const { immersive, navBarHeight, setScrollIntoView } = useContext(WgtsContext)
   const { setStatusBarBgColorFromSticky, scrollTop } = usePageContext()
   const [currentIndex, setCurrentIndex] = useState(0)
   const [scrollView, setScrollView] = useState(``)
   const [children, setChildren] = useState([])
-  const [contentMinHeight, setContentMinHeight] = useState(0)
   const isFirstRender = useRef(true)
   const navBarObserveId = `content-partition-nav-observe-${id}`
   // 从 params 中获取配置和数据，兼容两种数据结构
@@ -37,7 +36,6 @@ export default function WgtContentPartition(props) {
   const base = params.base || {}
   const data = params.data || {}
   const navList = data?.data || []
-  const contentBoxId = `wgt-content-partition-content-${id}`
 
   // 初始化：找到第一个激活的导航项
   useEffect(() => {
@@ -77,7 +75,6 @@ export default function WgtContentPartition(props) {
   const statusBarSourceId = useMemo(() => `content-partition-${id}`, [id])
   const prevTabIndexRef = useRef(currentIndex)
   const handleScrollUpdate = useCallback(async () => {
-    if (!setStatusBarBgColorFromSticky) return
     const [triggerRect, sentinelRect] = await Promise.all([
       getElementRectBox(`#wgt-content-partition-sticky-trigger-${id}`).catch(() => null),
       getElementRectBox(`#wgt-content-partition-section-sentinel-${id}`).catch(() => null)
@@ -126,25 +123,20 @@ export default function WgtContentPartition(props) {
     handleScrollUpdate
   ])
 
-  // 导航栏样式：直接传 React/Taro style 对象（camelCase），保证 sticky 生效
-  // titleStyle=3 时 immersive 会被强制 false，top 用 0，贴在搜索栏下方
+  // 获取导航栏样式（与 location-module 一致）
   const navStyle = useMemo(() => {
-    const outer = getGlobalBaseStyle(base.outerMargin) || {}
     return {
-      padding: outer.padding,
-      backgroundColor: outer['background-color'] || outer.backgroundColor || '#ffffff',
+      ...getGlobalBaseStyle(base.outerMargin),
       position: base.navSticky ? 'sticky' : 'relative',
-      top: base.navSticky ? (immersive ? `${navBarHeight || 0}px` : 0) : 'auto',
-      zIndex: base.navSticky ? 100 : undefined
+      top: base.navSticky && immersive ? `${navBarHeight}px` : '0px'
     }
   }, [base.outerMargin, base.navSticky, navBarHeight, immersive])
 
   // 获取导航项区域样式（navitemarea）
   const navItemAreaStyle = useMemo(() => {
     const navitemarea = base.navitemarea || {}
-    const area = getGlobalBaseStyle(navitemarea) || {}
     return {
-      padding: area.padding,
+      ...getGlobalBaseStyle(navitemarea),
       borderRadius: base.navitemradius ? Taro.pxTransform(base.navitemradius) : 0
     }
   }, [base.navitemarea, base.navitemradius])
@@ -156,15 +148,15 @@ export default function WgtContentPartition(props) {
     return {
       height: Taro.pxTransform(base.navitemheight || 40),
       color: textColor,
-      backgroundColor: isActive
+      'background-color': isActive
         ? item.navitemactivebg || 'transparent'
         : item.navitembg || 'transparent',
-      paddingLeft: Taro.pxTransform(base.navitemmargin || 0),
-      paddingRight: Taro.pxTransform(base.navitemmargin || 0)
+      'padding-left': `${Taro.pxTransform(base.navitemmargin || 0)}`,
+      'padding-right': `${Taro.pxTransform(base.navitemmargin || 0)}`
     }
   }
 
-  // 处理导航项点击（对齐 master：nextTick 后设 scrollIntoView，id 随 index 变以触发滚动）
+  // 处理导航项点击
   const handleNavClick = (index) => {
     initContetn(index)
   }
@@ -188,32 +180,12 @@ export default function WgtContentPartition(props) {
   }
 
   const initContetn = (index) => {
-    const viewIndex = index > 0 ? index - 1 : 0
-    // H5：切换前锁住内容区高度，避免 ScrollView 因高度塌缩被顶回顶部
-    if (process.env.TARO_ENV === 'h5' && typeof document !== 'undefined') {
-      const el = document.getElementById(contentBoxId)
-      if (el?.offsetHeight) {
-        setContentMinHeight(el.offsetHeight)
-      }
-    }
+    let viewIndex = index > 0 ? index - 1 : 0
     setCurrentIndex(index)
     setChildren(navList[index]?.children || [])
     Taro.nextTick(() => {
       setScrollView(`nav-item-${viewIndex}-${id}`)
-      if (process.env.TARO_ENV === 'h5') {
-        // H5：走页面层手动测量滚动，锚点 id 随 index 变化即可触发
-        setScrollIntoView?.(`wgt-content-partition-section-${index}-${id}`)
-        setTimeout(() => {
-          setContentMinHeight(0)
-        }, 150)
-      } else {
-        // 小程序：0 高 absolute 锚点 scroll-into-view 经常无效；
-        // 改为滚到有实际高度的挂件根节点，并先清空再设置以强制触发
-        setScrollIntoView?.('')
-        setTimeout(() => {
-          setScrollIntoView?.(`wgt-content-partition-${id}`)
-        }, 50)
-      }
+      setScrollIntoView(`wgt-content-partition-section-${index}-${id}`)
     })
   }
 
@@ -227,7 +199,7 @@ export default function WgtContentPartition(props) {
         style={{ height: 0, overflow: 'hidden' }}
       />
       <View className='wgt-content-partition__container'>
-        {/* 导航栏（吸顶时不要外包一层 View，以免破坏 sticky） */}
+        {/* 导航栏（吸顶时传 observeId 供观察 top 判断吸顶状态，不包一层 View 以免破坏 sticky） */}
         <ContentPartitionNavBar
           navList={navList}
           currentIndex={currentIndex}
@@ -246,12 +218,8 @@ export default function WgtContentPartition(props) {
           handleClickRightImg={handleClickRightImg}
         />
 
-        {/* 内容区域：绝对定位锚点（与 master 一致），不占文档流，避免切 tab 高度抖动 */}
-        <View
-          id={contentBoxId}
-          className='wgt-content-partition__content'
-          style={contentMinHeight ? { minHeight: `${contentMinHeight}px` } : undefined}
-        >
+        {/* 内容区域 - 显示所有导航项的 children */}
+        <View className='wgt-content-partition__content'>
           <View
             id={`wgt-content-partition-section-${currentIndex}-${id}`}
             className='wgt-content-partition__section-line'

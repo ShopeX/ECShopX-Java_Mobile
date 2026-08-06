@@ -2,7 +2,7 @@
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
  */
-import React, { useEffect, useRef, useMemo } from 'react'
+import React, { useEffect, useMemo } from 'react'
 import { useSelector } from 'react-redux'
 import { useImmer } from 'use-immer'
 import Taro, { getCurrentInstance } from '@tarojs/taro'
@@ -22,9 +22,11 @@ import {
   SpHtml,
   SpInput as AtInput
 } from '@/components'
-import { View, Text, Picker, ScrollView } from '@tarojs/components'
+import { View, Text, Picker } from '@tarojs/components'
 import { AFTER_SALE_TYPE, REFUND_FEE_TYPE, AFTER_SALE_TYPE1 } from '@/consts'
 import { pickBy, showToast, classNames, VERSION_STANDARD, VERSION_PLATFORM } from '@/utils'
+import { useTranslation, $t, ti } from '@/i18n'
+import { useNavigation } from '@/hooks'
 import './after-sale.scss'
 
 const initialState = {
@@ -36,7 +38,7 @@ const initialState = {
   reasons: [],
   refundFee: 0,
   refundPoint: 0,
-  refundType: 'offline',
+  refundType: 'logistics',
   description: '',
   pic: '',
   // 用于云店后台交易设置-到店退货关闭时判断
@@ -48,7 +50,7 @@ const initialState = {
   offline_freight: '', //运费
   mobile: '', // 联系电话
   openRefundType: false,
-  selectRefundValue: 'offline',
+  selectRefundValue: 'logistics',
   afterSaleDesc: {
     intro: '',
     is_open: false
@@ -57,9 +59,10 @@ const initialState = {
 }
 
 function TradeAfterSale(props) {
-  const $instance = getCurrentInstance()
+  const { i18n } = useTranslation()
+  const { setNavigationBarTitle } = useNavigation()
+  const $instance = getCurrentInstance() || {}
   const [state, setState] = useImmer(initialState)
-  const pageRef = useRef()
   const {
     info,
     curTabIdx,
@@ -89,10 +92,40 @@ function TradeAfterSale(props) {
     return info && info.deliveryStatus != 'DONE'
   }, [info])
 
-  const isRefundGoods = useMemo(() => {
+  const currentAftersalesType = useMemo(() => {
     const list = OnlyRefundShow ? tabList : tabList1
-    return list[curTabIdx]?.type === 'REFUND_GOODS'
+    return list[curTabIdx]?.type
   }, [OnlyRefundShow, tabList, tabList1, curTabIdx])
+
+  const realRefundFee = useMemo(() => {
+    if (!info) return '0.00'
+    const rFee = info.items
+      .filter((item) => item.checked)
+      .reduce((sum, { price, num, refundNum }) => sum + (price / num) * refundNum, 0)
+    return rFee.toFixed(2)
+  }, [info])
+
+  const realRefundPoint = useMemo(() => {
+    if (!info) return 0
+    return info.items
+      .filter((item) => item.checked)
+      .reduce((sum, { point, num, refundNum, leftAftersalesNum }) => {
+        if (leftAftersalesNum == refundNum) {
+          return Math.ceil(sum + (point / num) * refundNum)
+        }
+        if (num > refundNum) {
+          return Math.floor(sum + (point / num) * refundNum)
+        }
+        return sum + (point / num) * refundNum
+      }, 0)
+  }, [info])
+
+  useEffect(() => {
+    const syncTitle = () => setNavigationBarTitle($t('b3d4a245.45eb0c'))
+    syncTitle()
+    i18n.on('languageChanged', syncTitle)
+    return () => i18n.off('languageChanged', syncTitle)
+  }, [setNavigationBarTitle, i18n])
 
   useEffect(() => {
     fetch()
@@ -108,20 +141,12 @@ function TradeAfterSale(props) {
     }
   }, [])
 
-  useEffect(() => {
-    if (openRefundType) {
-      pageRef.current.pageLock()
-    } else {
-      pageRef.current.pageUnLock()
-    }
-  }, [openRefundType])
-
   const onCancel = () => {
     Taro.navigateBack()
   }
 
   const fetch = async () => {
-    const { id } = $instance.router.params
+    const { id } = $instance?.router?.params
     const { orderInfo, offline_aftersales_is_open, distributor } = await api.trade.detail(id)
     const reasons = await api.aftersales.reasonList()
     const { intro, is_open } = await api.aftersales.remindDetail()
@@ -161,39 +186,6 @@ function TradeAfterSale(props) {
     })
   }
 
-  const getRealRefundFee = () => {
-    let rFee = 0
-    if (info) {
-      const { items } = info
-      rFee = items
-        .filter((item) => item.checked)
-        .reduce((sum, { price, num, refundNum }) => sum + (price / num) * refundNum, 0)
-    }
-    return rFee.toFixed(2)
-  }
-
-  const getRealRefundPoint = () => {
-    let rPoint = 0
-    if (info) {
-      const { items } = info
-      rPoint = items
-        .filter((item) => item.checked)
-        .reduce((sum, { point, num, refundNum, leftAftersalesNum }) => {
-          console.log(sum + (point / num) * refundNum, '---')
-          console.log(refundNum, leftAftersalesNum, '---')
-          if (leftAftersalesNum == refundNum) {
-            // 可申请数量=退货数量时，向上取整 积分47 总数2件 可申请为1件 申请1件 退24积分
-            return Math.ceil(sum + (point / num) * refundNum)
-          } else if (num > refundNum) {
-            // 总数大于退货数量时，向下取整 积分47 总数2件 可申请2件 申请1件 退23积分
-            return Math.floor(sum + (point / num) * refundNum)
-          }
-          return sum + (point / num) * refundNum
-        }, 0)
-    }
-    return rPoint
-  }
-
   const onChangeRefundType = ({ value }) => {
     setState((draft) => {
       draft.selectRefundValue = value
@@ -206,16 +198,16 @@ function TradeAfterSale(props) {
   }
 
   const onSubmit = async () => {
-    const { id } = $instance.router.params
+    const { id } = $instance?.router?.params
     const checkedItems = info?.items.filter((item) => !!item.checked)
     if (checkedItems.length == 0) {
-      return showToast('请选择需要售后的商品')
+      return showToast($t('44d65d28.d83f4b'))
     }
 
     if (!reasons?.[reasonIndex]) {
-      return showToast('请选择售后原因')
+      return showToast($t('44d65d28.d030d6'))
     }
-    const aftersales_type = OnlyRefundShow ? tabList[curTabIdx].type : tabList1[curTabIdx].type
+    const aftersales_type = currentAftersalesType
     const reason = reasons?.[reasonIndex]
     let params = {
       detail: checkedItems.map(({ id: _id, refundNum }) => {
@@ -240,21 +232,21 @@ function TradeAfterSale(props) {
         return_type: refundType
       }
       if (offline_freight > info?.freightFee && info?.freightType == 'cash') {
-        return showToast(`退款运费不能大于¥${info?.freightFee}`)
+        return showToast(ti('44d65d28.3ee197', [info?.freightFee]))
       }
       if (offline_freight > info?.freightFeePoint && info?.freightType == 'point') {
-        return showToast(`退款运费不能大于积分${info?.freightFeePoint}`)
+        return showToast(ti('44d65d28.a5b3a4', [info?.freightFeePoint]))
       }
       // 到店退货
       if (refundType == 'offline') {
         if (!refundStore) {
-          return showToast('请选择退货门店')
+          return showToast($t('44d65d28.504d95'))
         }
         if (!contact) {
-          return showToast('请输入联系人姓名')
+          return showToast($t('44d65d28.e30625'))
         }
         if (!mobile) {
-          return showToast('请输入联系人电话')
+          return showToast($t('44d65d28.0e606b'))
         }
         params = {
           ...params,
@@ -267,7 +259,7 @@ function TradeAfterSale(props) {
     }
     console.log(params)
     await api.aftersales.apply(params)
-    showToast('提交成功')
+    showToast($t('44d65d28.23b62e'))
     Taro.eventCenter.trigger('onEventOrderStatusChange')
     Taro.eventCenter.trigger('onEventAfterSalesApply')
     setTimeout(() => {
@@ -277,250 +269,249 @@ function TradeAfterSale(props) {
 
   return (
     <SpPage
-      ref={pageRef}
       className='page-trade-after-sale'
       renderFooter={
         <View className='btn-wrap'>
           <AtButton circle type='primary' onClick={onSubmit}>
-            提交
+            {$t('44d65d28.939d53')}
           </AtButton>
         </View>
       }
     >
-      <ScrollView scrollY className='scroll-view'>
-        <View className='scroll-view-body'>
-          <SpTabs
-            current={curTabIdx}
-            tablist={OnlyRefundShow ? tabList : tabList1}
-            onChange={(e) => {
-              setState((draft) => {
-                draft.curTabIdx = e
-              })
-            }}
-          />
+      <View className='page-content'>
+        <SpTabs
+          current={curTabIdx}
+          tablist={OnlyRefundShow ? tabList : tabList1}
+          onChange={(e) => {
+            setState((draft) => {
+              draft.curTabIdx = e
+            })
+          }}
+        />
 
-          <View className='refund-items'>
-            <View className='items-container'>
-              {info?.items.map((item, index) => (
-                <View className='item-wrap' key={`item-wrap__${index}`}>
-                  <View className='item-hd'>
-                    <SpCheckbox
-                      disabled={!item.leftAftersalesNum}
-                      checked={item.checked}
-                      onChange={onChangeItemCheck.bind(this, item, index)}
-                    />
-                  </View>
-                  <View className='item-bd'>
-                    <SpImage
-                      mode='aspectFit'
-                      src={item.pic}
-                      width={128}
-                      height={128}
-                      radius={8}
-                      circle={8}
-                    />
-                    <View className='goods-info'>
-                      <View className='goods-info-hd'>
-                        <Text className='goods-title'>
-                          {item?.isPrescription == 1 && (
-                            <Text className='prescription-drug'>处方药</Text>
-                          )}
-                          {item.itemName}
-                        </Text>
+        <View className='refund-items'>
+          <View className='items-container'>
+            {info?.items.map((item, index) => (
+              <View className='item-wrap' key={`item-wrap__${index}`}>
+                <View className='item-hd'>
+                  <SpCheckbox
+                    disabled={!item.leftAftersalesNum}
+                    checked={item.checked}
+                    onChange={onChangeItemCheck.bind(this, item, index)}
+                  />
+                </View>
+                <View className='item-bd'>
+                  <SpImage
+                    mode='aspectFit'
+                    src={item.pic}
+                    width={128}
+                    height={128}
+                    radius={8}
+                    circle={8}
+                  />
+                  <View className='goods-info'>
+                    <View className='goods-info-hd'>
+                      <Text className='goods-title'>
+                        {item?.isPrescription == 1 && (
+                          <Text className='prescription-drug'>{$t('44d65d28.e8b7e1')}</Text>
+                        )}
+                        {item.itemName}
+                      </Text>
+                    </View>
+                    <View className='goods-info-bd'>
+                      <View>
+                        {item.itemSpecDesc && (
+                          <Text className='sku-info'>{`${item.itemSpecDesc}`}</Text>
+                        )}
                       </View>
-                      <View className='goods-info-bd'>
-                        <View>
-                          {item.itemSpecDesc && (
-                            <Text className='sku-info'>{`${item.itemSpecDesc}`}</Text>
-                          )}
-                        </View>
-                        <View>
-                          <SpPrice size={28} value={item.price / item.num} /> x{' '}
-                          <Text className='num'>{item.num}</Text>
-                        </View>
+                      <View>
+                        <SpPrice size={28} value={item.price / item.num} /> x{' '}
+                        <Text className='num'>{item.num}</Text>
                       </View>
-                      <View className='goods-info-ft'>
-                        <Text>退款数量</Text>
-                        <SpInputNumber
-                          disabled={!item.leftAftersalesNum}
-                          value={item.refundNum}
-                          max={item.leftAftersalesNum}
-                          min={1}
-                          onChange={(e) => onChangeItemNum(e, index)}
-                        />
-                      </View>
+                    </View>
+                    <View className='goods-info-ft'>
+                      <Text>{$t('44d65d28.3a1664')}</Text>
+                      <SpInputNumber
+                        disabled={!item.leftAftersalesNum}
+                        value={item.refundNum}
+                        max={item.leftAftersalesNum}
+                        min={1}
+                        onChange={(e) => onChangeItemNum(e, index)}
+                      />
                     </View>
                   </View>
                 </View>
-              ))}
-            </View>
-          </View>
-
-          <View className='picker-reason'>
-            <Picker
-              mode='selector'
-              range={reasons}
-              onChange={(e) => {
-                setState((draft) => {
-                  draft.reasonIndex = e.detail.value
-                })
-              }}
-            >
-              <SpCell
-                title='退款原因'
-                isLink
-                value={<Text>{`${reasons?.[reasonIndex] || '请选择取消原因'}`}</Text>}
-              ></SpCell>
-            </Picker>
-          </View>
-
-          <View className='refund-detail'>
-            {/* 输入的运费不能大于可退款的运费 */}
-            {info?.freightFee != 0 && offline_freight_status && (
-              <View className='refund-amount'>
-                <SpCell
-                  border
-                  title={`退运费(${info?.freightType == 'cash' ? '¥' : '积分'})`}
-                  value={
-                    <AtInput
-                      name='offline_freight'
-                      value={offline_freight}
-                      placeholder='请填写运费金额'
-                      onChange={(e) => {
-                        setState((draft) => {
-                          draft.offline_freight = e
-                        })
-                      }}
-                    />
-                  }
-                ></SpCell>
               </View>
-            )}
-
-            <View className='refund-amount'>
-              <SpCell title='退款金额' value={getRealRefundFee()} />
-            </View>
-
-            <View className='refund-point'>
-              {/* <SpCell title='退积分' value={info?.point} /> */}
-              <SpCell title='退积分' value={getRealRefundPoint()} />
-            </View>
+            ))}
           </View>
+        </View>
 
-          {isRefundGoods && (
-            <View className='return-goods-type'>
+        <View className='picker-reason'>
+          <Picker
+            mode='selector'
+            range={reasons}
+            onChange={(e) => {
+              setState((draft) => {
+                draft.reasonIndex = e.detail.value
+              })
+            }}
+          >
+            <SpCell
+              title={$t('44d65d28.220bc2')}
+              isLink
+              value={<Text>{`${reasons?.[reasonIndex] || $t('44d65d28.cf234c')}`}</Text>}
+            ></SpCell>
+          </Picker>
+        </View>
+
+        <View className='refund-detail'>
+          {/* 输入的运费不能大于可退款的运费 */}
+          {info?.freightFee != 0 && offline_freight_status && (
+            <View className='refund-amount'>
               <SpCell
                 border
-                title='退货方式'
-                value={getRefundTypeName()}
-                isLink
-                onClick={() => {
-                  setState((draft) => {
-                    draft.openRefundType = true
-                    draft.selectRefundValue = refundType
-                  })
-                }}
+                title={info?.freightType == 'cash' ? $t('44d65d28.093620') : $t('44d65d28.e4f346')}
+                value={
+                  <AtInput
+                    name='offline_freight'
+                    value={offline_freight}
+                    placeholder={$t('44d65d28.5b78b0')}
+                    onChange={(e) => {
+                      setState((draft) => {
+                        draft.offline_freight = e
+                      })
+                    }}
+                  />
+                }
               ></SpCell>
-              {refundType == 'offline' &&
-                ((offlineAftersalesIsOpen && VERSION_STANDARD) ||
-                  (VERSION_PLATFORM && offlineAftersales)) && (
-                  <>
-                    <SpCell
-                      border
-                      title='退货门店'
-                      isLink
-                      value={
-                        <Text
-                          className={classNames({
-                            'placeholder': !refundStore
-                          })}
-                        >
-                          {refundStore ? refundStore.name : '请选择退货门店'}
-                        </Text>
-                      }
-                      onClick={() => {
-                        Taro.navigateTo({
-                          url: `/subpages/trade/store-picker?distributor_id=${info.distributorId}&refund_store=${refundStore?.address_id}`
-                        })
-                      }}
-                    />
-                    <SpCell
-                      border
-                      title='联系人'
-                      value={
-                        <AtInput
-                          name='contact'
-                          value={contact}
-                          placeholder='请填写联系人姓名'
-                          onChange={(e) => {
-                            setState((draft) => {
-                              draft.contact = e
-                            })
-                          }}
-                        />
-                      }
-                    ></SpCell>
-                    <SpCell
-                      title='联系电话'
-                      value={
-                        <AtInput
-                          name='mobile'
-                          value={mobile}
-                          placeholder='请填写联系人电话'
-                          onChange={(e) => {
-                            setState((draft) => {
-                              draft.mobile = e
-                            })
-                          }}
-                        />
-                      }
-                    ></SpCell>
-                  </>
-                )}
             </View>
           )}
 
-          <View className='desc-container'>
-            <View className='title'>补充描述</View>
-            <View className='desc-content'>
-              <Text className='iconfont icon-bianji1'></Text>
-              <AtTextarea
-                type='textarea'
-                name='description'
-                value={description}
-                placeholder='请输入您的补充描述（选填）'
-                maxLength={200}
-                onChange={(e) => {
-                  setState((draft) => {
-                    draft.description = e
-                  })
-                }}
-              />
-            </View>
-            <SpUpload
-              value={pic}
-              max={3}
-              onChange={(val) => {
+          <View className='refund-amount'>
+            <SpCell title={$t('44d65d28.a0cd4c')} value={realRefundFee} />
+          </View>
+
+          <View className='refund-point'>
+            {/* <SpCell title='退积分' value={info?.point} /> */}
+            <SpCell title={$t('44d65d28.401595')} value={realRefundPoint} />
+          </View>
+        </View>
+
+        {currentAftersalesType === 'REFUND_GOODS' && (
+          <View className='return-goods-type'>
+            <SpCell
+              border
+              title={$t('44d65d28.b85b43')}
+              value={getRefundTypeName()}
+              isLink
+              onClick={() => {
                 setState((draft) => {
-                  draft.pic = val
+                  draft.openRefundType = true
+                  draft.selectRefundValue = refundType
+                })
+              }}
+            ></SpCell>
+            {refundType == 'offline' &&
+              ((offlineAftersalesIsOpen && VERSION_STANDARD) ||
+                (VERSION_PLATFORM && offlineAftersales)) && (
+                <>
+                  <SpCell
+                    border
+                    title={$t('44d65d28.611301')}
+                    isLink
+                    value={
+                      <Text
+                        className={classNames({
+                          'placeholder': !refundStore
+                        })}
+                      >
+                        {refundStore ? refundStore.name : $t('44d65d28.504d95')}
+                      </Text>
+                    }
+                    onClick={() => {
+                      Taro.navigateTo({
+                        url: `/subpages/trade/store-picker?distributor_id=${info.distributorId}&refund_store=${refundStore?.address_id}`
+                      })
+                    }}
+                  />
+                  <SpCell
+                    border
+                    title={$t('44d65d28.52409d')}
+                    value={
+                      <AtInput
+                        name='contact'
+                        value={contact}
+                        placeholder={$t('44d65d28.12761a')}
+                        onChange={(e) => {
+                          setState((draft) => {
+                            draft.contact = e
+                          })
+                        }}
+                      />
+                    }
+                  ></SpCell>
+                  <SpCell
+                    title={$t('44d65d28.09a1f6')}
+                    value={
+                      <AtInput
+                        name='mobile'
+                        value={mobile}
+                        placeholder={$t('44d65d28.a5e898')}
+                        onChange={(e) => {
+                          setState((draft) => {
+                            draft.mobile = e
+                          })
+                        }}
+                      />
+                    }
+                  ></SpCell>
+                </>
+              )}
+          </View>
+        )}
+
+        <View className='desc-container'>
+          <View className='title'>{$t('44d65d28.f55683')}</View>
+          <View className='desc-content'>
+            <Text className='iconfont icon-bianji1'></Text>
+            <AtTextarea
+              type='textarea'
+              name='description'
+              value={description}
+              placeholder={$t('44d65d28.4ab433')}
+              maxLength={200}
+              placeholderStyle='padding-left: 10px;'
+              onChange={(e) => {
+                setState((draft) => {
+                  draft.description = e
                 })
               }}
             />
           </View>
-
-          {afterSaleDesc.is_open && (
-            <View className='after-sale-desc'>
-              <View className='desc-title'>
-                <Text className='iconfont icon-xinxi'></Text>售后提醒
-              </View>
-              <SpHtml content={afterSaleDesc.intro} />
-            </View>
-          )}
+          <SpUpload
+            value={pic}
+            max={3}
+            onChange={(val) => {
+              setState((draft) => {
+                draft.pic = val
+              })
+            }}
+          />
         </View>
-      </ScrollView>
+
+        {afterSaleDesc.is_open && (
+          <View className='after-sale-desc'>
+            <View className='desc-title'>
+              <Text className='iconfont icon-xinxi'></Text>
+              {$t('44d65d28.be1476')}
+            </View>
+            <SpHtml content={afterSaleDesc.intro} />
+          </View>
+        )}
+      </View>
 
       <SpFloatLayout
-        title='选择退货方式'
+        title={$t('44d65d28.5add21')}
         className='refund-type'
         open={openRefundType}
         onClose={() => {
@@ -539,7 +530,7 @@ function TradeAfterSale(props) {
               })
             }}
           >
-            确定
+            {$t('44d65d28.38cf16')}
           </AtButton>
         }
       >

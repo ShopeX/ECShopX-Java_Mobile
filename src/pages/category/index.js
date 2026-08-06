@@ -19,7 +19,7 @@ function StoreItemList(props) {
   const pageRef = useRef(null)
   const $router = useRouter()
   useEffect(() => {
-    const { idListStr, ruleId } = $router?.params
+    const { idListStr, ruleId } = $router?.params || {}
     if (idListStr) {
       const shopList = idListStr.split(',')
       Taro.setStorageSync('task_shop_list', shopList)
@@ -48,6 +48,7 @@ function StoreItemList(props) {
       renderFooter={<SpTabbar />}
       onReady={handlePageReady}
       showpoweredBy={false}
+      showNavitionLeft={false}
     >
       <View
         className='page-category__container'

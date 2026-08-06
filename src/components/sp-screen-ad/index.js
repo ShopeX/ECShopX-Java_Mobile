@@ -7,6 +7,7 @@ import { View, Image, Video } from '@tarojs/components'
 import api from '@/api'
 import { connect } from 'react-redux'
 import { linkPage } from '@/utils'
+import { ti } from '@/i18n'
 
 import './index.scss'
 
@@ -54,6 +55,12 @@ export default class ScreenAd extends Component {
     }
     const isHave = res.is_enable === 1 && (res.app === 'all' || res.app.indexOf(client[env]) !== -1)
     const { showAdv } = this.props
+    if (!isHave) {
+      if (!showAdv) {
+        this.props.onUpdateShowAdv(true)
+      }
+      return
+    }
     if (isHave && res.show_time === 'once' && showAdv) {
       this.props.onUpdateShowAdv(true)
       return
@@ -144,7 +151,7 @@ export default class ScreenAd extends Component {
       >
         {/* 倒计时 */}
         <View className={`countDown ${position}`} onClick={this.jumpAd.bind(this)}>
-          {isJump ? `跳过${downTime}s` : `${downTime}s`}
+          {isJump ? ti('ecf05285.d8cec0', [downTime]) : ti('ecf05285.41b9b5', [downTime])}
         </View>
         {!isVideo ? (
           <Image className='adImg' mode='widthFix' src={url} />

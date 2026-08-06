@@ -15,12 +15,14 @@ import doc from '@/doc'
 import S from '@/spx'
 import { pickBy, log, isWeixin, showToast, buildSharePath } from '@/utils'
 import { withPageWrapper } from '@/hocs'
-import { WgtFilm, WgtSlider, WgtWriting, WgtGoods, WgtHeading } from '../home/wgts'
+import { useTranslation, $t, ti } from '@/i18n'
+import { WgtFilm, WgtSlider, WgtWriting, WgtGoodsCard, WgtHeading } from '../home/wgts'
 import './detail.scss'
 
 const initialState = {
   itemId: '',
   title: '',
+  summary: '',
   articleFocusNum: 0,
   content: [],
   updated: '',
@@ -29,15 +31,20 @@ const initialState = {
   collectArticleStatus: false
 }
 function GuideRecommendDetail(props) {
-  const $instance = getCurrentInstance()
+  const { i18n } = useTranslation()
+  const $instance = getCurrentInstance() || {}
   const [state, setState] = useImmer(initialState)
-  const { img, shareImageUrl, itemId, title, content, articleFocusNum, updated } = state
+  const { img, shareImageUrl, itemId, title, summary, content, articleFocusNum, updated } = state
   const { userInfo } = useSelector((state) => state.guide)
   const router = useRouter()
 
   useEffect(() => {
     fetch()
   }, [])
+
+  useEffect(() => {
+    Taro.setNavigationBarTitle({ title: $t('a8e160ea.8d29da') })
+  }, [i18n.language])
 
   useDidShow(() => {
     Taro.hideShareMenu({
@@ -47,7 +54,7 @@ function GuideRecommendDetail(props) {
   })
 
   useShareAppMessage(async () => {
-    const { subtask_id } = router.params
+    const { subtask_id } = router?.params
     const query = {
       id: itemId,
       subtask_id
@@ -71,7 +78,7 @@ function GuideRecommendDetail(props) {
   })
 
   const fetch = async () => {
-    const { id } = router.params
+    const { id } = router?.params
     // 关注数加1
     const res = await api.article.detail(id)
     if (S.getAuthToken()) {
@@ -82,7 +89,7 @@ function GuideRecommendDetail(props) {
         })
       }
     }
-    const { itemId, title, articleFocusNum, content, updated, isPraise, articlePraiseNum } = pickBy(
+    const { itemId, title, summary, articleFocusNum, content, updated, isPraise, articlePraiseNum } = pickBy(
       res,
       doc.article.ARTICLE_ITEM
     )
@@ -90,6 +97,7 @@ function GuideRecommendDetail(props) {
     setState((draft) => {
       draft.itemId = itemId
       draft.title = title
+      draft.summary = summary
       draft.articleFocusNum = articleFocusNum
       draft.content = content
       draft.updated = updated
@@ -99,7 +107,7 @@ function GuideRecommendDetail(props) {
   }
 
   const handleLikeClick = async () => {
-    const { count, status } = await api.article.praise(router.params.id)
+    const { count, status } = await api.article.praise(router?.params.id)
     setState((draft) => {
       draft.isPraise = status
       draft.articlePraiseNum = count
@@ -107,24 +115,22 @@ function GuideRecommendDetail(props) {
   }
 
   const handleMarkClick = async () => {
-    const resCollectArticle = await api.article.collectArticle(router.params.id)
+    const resCollectArticle = await api.article.collectArticle(router?.params.id)
     if (resCollectArticle.fav_id && !state.collectArticleStatus) {
       setState((draft) => {
         draft.collectArticleStatus = true
       })
-      showToast('已加入心愿单')
+      showToast($t('a8e160ea.bee805'))
     } else {
       await api.article.delCollectArticle({
-        article_id: router.params.id
+        article_id: router?.params.id
       })
       setState((draft) => {
         draft.collectArticleStatus = false
       })
-      showToast('已移出心愿单')
+      showToast($t('a8e160ea.2cddac'))
     }
   }
-
-  const handleClickGoods = async () => {}
 
   return (
     <SpPage
@@ -134,7 +140,9 @@ function GuideRecommendDetail(props) {
           <View className='recommend-detail__bar-item' onClick={handleLikeClick}>
             <Text className={`iconfont icon-like ${state.isPraise ? 'active' : ''}`} />
             <Text className='bar-item-text'>
-              {`${state.isPraise ? '已赞' : '点赞'} ${state.articlePraiseNum}`}
+              {`${state.isPraise ? $t('a8e160ea.d10f66') : $t('a8e160ea.75f0fa')} ${
+                state.articlePraiseNum
+              }`}
             </Text>
           </View>
           <View className='recommend-detail__bar-item' onClick={handleMarkClick}>
@@ -142,13 +150,13 @@ function GuideRecommendDetail(props) {
               className={`iconfont icon-star_on ${state.collectArticleStatus ? 'active' : ''}`}
             />
             <Text className='bar-item-text'>
-              {state.collectArticleStatus ? '已加入' : '加入心愿'}
+              {state.collectArticleStatus ? $t('a8e160ea.711785') : $t('a8e160ea.56d0b8')}
             </Text>
           </View>
           {isWeixin && (
             <Button openType='share' className='recommend-detail__bar-item'>
               <Text className='iconfont icon-share1'> </Text>
-              <Text className='bar-item-text'>分享</Text>
+              <Text className='bar-item-text'>{$t('a8e160ea.c31f48')}</Text>
             </Button>
           )}
         </View>
@@ -156,23 +164,26 @@ function GuideRecommendDetail(props) {
     >
       <ScrollView className='scrollview-container' scrollY>
         <View className='article-hd'>
-          <View className='article-title'>{title}</View>
+          <View className='article-title-row'>
+            <View className='article-title'>{title}</View>
+            {summary ? <Text className='article-summary'>{summary}</Text> : null}
+          </View>
           <View className='article-info'>
             <Text className='update-time'>{updated}</Text>
-            <Text className='focus-num'>{`${articleFocusNum}关注`}</Text>
           </View>
         </View>
         <View className='article-bd'>
           <View className='wgts-wrap__cont'>
-            {content.map((item, idx) => (
-              <View className='wgt-wrap' key={`${item.name}${idx}`}>
-                {item.name === 'film' && <WgtFilm info={item} />}
-                {item.name === 'slider' && <WgtSlider info={item} />}
-                {item.name === 'writing' && <WgtWriting info={item} />}
-                {item.name === 'heading' && <WgtHeading info={item} />}
-                {item.name === 'goods' && <WgtGoods onClick={handleClickGoods} info={item} />}
-              </View>
-            ))}
+            {Array.isArray(content) &&
+              content.map((item, idx) => (
+                <View className='wgt-wrap' key={`${item.name}${idx}`}>
+                  {item.name === 'film' && <WgtFilm info={item} />}
+                  {item.name === 'slider' && <WgtSlider info={item} />}
+                  {item.name === 'writing' && <WgtWriting info={item} />}
+                  {item.name === 'heading' && <WgtHeading info={item} />}
+                  {item.name === 'goodsCard' && <WgtGoodsCard info={item} />}
+                </View>
+              ))}
           </View>
         </View>
       </ScrollView>

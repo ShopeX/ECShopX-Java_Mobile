@@ -20,6 +20,7 @@ import {
   VERSION_SHUYUN
 } from '@/utils'
 import S from '@/spx'
+import { $t } from '@/i18n'
 import { SG_POLICY } from '@/consts/localstorage'
 import { INVITE_ACTIVITY_ID, SG_CHECK_STORE_RULE } from '@/consts'
 
@@ -29,35 +30,33 @@ export default (props = {}) => {
   const dispatch = useDispatch()
   const { userInfo, isNewUser } = useSelector((state) => state.user)
   const { invite_code } = useSelector((state) => state.purchase)
-  const $instance = getCurrentInstance()
+  const $instance = getCurrentInstance() || {}
   // const policyTime = useRef(0)
 
   useEffect(() => {
-    const token = S.getAuthToken()
+    // 判断是否为企微环境
+    const isQywx = typeof wx !== 'undefined' && wx.qy
+    const token = S?.getAuthToken()
     if (!token) {
       autoLogin && !VERSION_SHUYUN && login()
     } else {
       setIsLogin(true)
-      getUserInfo()
+      // 企微环境不调用 getUserInfo
+      !isQywx && getUserInfo()
     }
   }, [])
 
   useEffect(() => {
-    const token = S.getAuthToken()
+    const token = S?.getAuthToken()
     if (userInfo && token) {
       setIsLogin(true)
     }
   }, [userInfo])
 
-  /**
-   * @param {string} [shuyunappid]
-   * @param {{ skipPolicyCheck?: boolean }} [options] 隐私弹窗「同意」后应跳过再次校验，避免 POLICY_NOT_AGREE 中断后续注册弹窗
-   */
-  const login = async (shuyunappid, options = {}) => {
-    const { skipPolicyCheck = false } = options
+  const login = async (shuyunappid) => {
     if (isWeixin || isAlipay) {
       // 隐私协议
-      const checkResult = skipPolicyCheck ? true : await checkPolicyChange()
+      const checkResult = await checkPolicyChange()
       if (checkResult) {
         Taro.showLoading({ title: '' })
         const { code } = await getCode()
@@ -74,11 +73,11 @@ export default (props = {}) => {
           setToken(token)
           loginSuccess()
         } catch (e) {
-          // code 登录失败（新用户或接口异常）：置新用户并抛出，由 SpLogin 打开注册弹窗
+          // code 登录失败（新用户或接口异常）：置新用户并抛出，由 SpLogin handleConfirmModal.catch 弹窗
           dispatch(updateIsNewUser(true))
           Taro.hideLoading()
           console.error('[hooks useLogin] auto login is failed: ', e)
-          throw e instanceof Error ? e : new Error(e)
+          throw new Error(e)
         }
       } else {
         throw new Error('POLICY_NOT_AGREE')
@@ -107,16 +106,16 @@ export default (props = {}) => {
   }
 
   const logout = () => {
-    S.clearAuthToken()
+    S?.clearAuthToken()
     dispatch(clearUserInfo())
     dispatch(clearCart())
     dispatch(purchaseClearCart())
   }
 
   const setToken = async (token) => {
-    const { redirect_url } = $instance.router.params
+    const { redirect_url } = $instance?.router?.params
     console.log('redirect_url', redirect_url)
-    S.setAuthToken(token)
+    S?.setAuthToken(token)
     setIsLogin(true)
     await getUserInfo()
     // 使用setTimeout确保token已经完全设置到存储中
@@ -143,21 +142,21 @@ export default (props = {}) => {
   const getUserInfo = async (refresh) => {
     if (!userInfo || refresh) {
       let params = {}
-      const activity_id = S.get(INVITE_ACTIVITY_ID, true)
+      const activity_id = S?.get(INVITE_ACTIVITY_ID, true)
       if (activity_id) {
         params = { activity_id }
       }
       const _userInfo = await api.member.memberInfo(params)
-      // 兼容老版本 后续优化；memberInfo 可能为空，需兜底
-      const { username, avatar, user_id, mobile, open_id } = _userInfo?.memberInfo || {}
+      // 兼容老版本 后续优化
+      const { username, avatar, user_id, mobile, open_id } = _userInfo.memberInfo
       Taro.setStorageSync('userinfo', {
         username: username,
         avatar: avatar,
         userId: user_id,
-        isPromoter: _userInfo?.is_promoter,
+        isPromoter: _userInfo.is_promoter,
         mobile: mobile,
         openid: open_id,
-        vip: _userInfo?.vipgrade ? _userInfo.vipgrade.vip_type : ''
+        vip: _userInfo.vipgrade ? _userInfo.vipgrade.vip_type : ''
       })
       dispatch(updateUserInfo(_userInfo))
     }
@@ -216,19 +215,19 @@ export default (props = {}) => {
   const getUserInfoAuth = (validate = true) => {
     return new Promise((resolve, reject) => {
       console.log('getUserInfoAuth:获取用户信息授权（小程序）')
-      const token = S.getAuthToken()
+      const token = S?.getAuthToken()
       if (!token && validate) {
-        showToast('请先登录')
+        showToast($t('10293ac1.8d2433'))
         return
         // reject()
       }
       if (isWeixin) {
-        const { avatar, username } = userInfo || {}
+        const { avatar, username } = userInfo
         if (avatar && username) {
           resolve()
         } else {
           wx.getUserProfile({
-            desc: '用于完善会员资料',
+            desc: $t('492c3f87.506a1b'),
             success: async (data) => {
               const { userInfo } = data
               await api.member.updateMemberInfo({

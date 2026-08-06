@@ -6,6 +6,8 @@ import api from '@/api'
 import SpPage from '@/components/sp-page'
 import { pickBy } from '@/utils'
 import doc from '@/doc'
+import * as caseDoc from '@/doc/case'
+import { useTranslation, $t } from '@/i18n'
 import './detail.scss'
 
 const initialState = {
@@ -13,10 +15,11 @@ const initialState = {
 }
 
 function CaseDetail() {
+  const { i18n } = useTranslation()
   const [state, setState] = useImmer(initialState)
   const { detail } = state
-  const $instance = getCurrentInstance()
-  const { design_id, plan_id } = $instance.router.params || {}
+  const $instance = getCurrentInstance() || {}
+  const { design_id, plan_id } = $instance?.router?.params || {}
   const { levelinfo } = detail || {}
 
   const handleTo3DPage = () => {
@@ -29,7 +32,7 @@ function CaseDetail() {
 
   const getDetailInfo = () => {
     api.design.getDesignDetail({ design_id, plan_id }).then((data) => {
-      const detailData = pickBy(data, doc.case.CASE_DETAIL)
+      const detailData = pickBy(data, caseDoc.CASE_DETAIL)
 
       detailData.tagList =
         detailData.taginfo && detailData.taginfo.length > 0
@@ -69,6 +72,10 @@ function CaseDetail() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  useEffect(() => {
+    Taro.setNavigationBarTitle({ title: $t('4ede271e.6a93e0') })
+  }, [i18n.language])
+
   return (
     <View className='case-detail'>
       <SpPage>
@@ -82,7 +89,7 @@ function CaseDetail() {
               {detail?.design_pano_url && (
                 <View className='case-detail-design-3d' onClick={handleTo3DPage}>
                   <Text className='iconfont icon-3Dzhanshi'></Text>
-                  <Text className='sp-size--sm'>3D方案</Text>
+                  <Text className='sp-size--sm'>{$t('acf9d08f.57bca6')}</Text>
                 </View>
               )}
             </View>

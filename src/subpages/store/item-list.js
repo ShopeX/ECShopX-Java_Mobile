@@ -2,24 +2,18 @@
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
  */
-import React, { useRef, useEffect, useState } from 'react'
+import React, { useRef, useEffect, useState, useMemo } from 'react'
 import { View } from '@tarojs/components'
 import Taro, { getCurrentInstance } from '@tarojs/taro'
 import { useImmer } from 'use-immer'
-import {
-  SpFilterBar,
-  SpTagBar,
-  SpGoodsItem,
-  SpSearchBar,
-  SpPage,
-  SpScrollView,
-  SpSkuSelect
-} from '@/components'
+import { SpGoodsItem, SpSearchBar, SpPage, SpScrollView, SpSkuSelect } from '@/components'
+import { SpFilterBar, SpTagBar } from '@/subpages/components'
 import doc from '@/doc'
 import api from '@/api'
 import { pickBy, classNames, showToast } from '@/utils'
+import { useTranslation, $t, i18n } from '@/i18n'
+import { useNavigation } from '@/hooks'
 import { Tracker } from '@/service'
-
 import './item-list.scss'
 
 const MSpSkuSelect = React.memo(SpSkuSelect)
@@ -28,12 +22,6 @@ const initialState = {
   leftList: [],
   rightList: [],
   brandSelect: [],
-  filterList: [
-    { title: '综合' },
-    { title: '销量' },
-    { title: '价格', icon: 'icon-shengxu-01' },
-    { title: '价格', icon: 'icon-jiangxu-01' }
-  ],
   curFilterIdx: 0,
   tagList: [],
   curTagIdx: 0,
@@ -44,7 +32,9 @@ const initialState = {
 }
 
 function StoreItemList() {
-  const $instance = getCurrentInstance()
+  useTranslation()
+  const { setNavigationBarTitle } = useNavigation()
+  const $instance = getCurrentInstance() || {}
   const [state, setState] = useImmer(initialState)
   const {
     keywords,
@@ -52,7 +42,6 @@ function StoreItemList() {
     rightList,
     brandSelect,
     curFilterIdx,
-    filterList,
     tagList,
     curTagIdx,
     info,
@@ -60,11 +49,26 @@ function StoreItemList() {
     selectType
   } = state
   const [isShowSearch, setIsShowSearch] = useState(false)
-  const { tabbar = 1 } = $instance.router.params
+  const { tabbar = 1 } = $instance?.router?.params
   const goodsRef = useRef()
   const pageRef = useRef()
 
-  useEffect(() => {}, [])
+  const filterList = useMemo(
+    () => [
+      { title: $t('eb75c5c2.88e7de') },
+      { title: $t('eb75c5c2.44e7eb') },
+      { title: $t('eb75c5c2.0e9fd9'), icon: 'icon-shengxu-01' },
+      { title: $t('eb75c5c2.0e9fd9'), icon: 'icon-jiangxu-01' }
+    ],
+    [i18n.language]
+  )
+
+  useEffect(() => {
+    const syncTitle = () => setNavigationBarTitle($t('0f57957b.437974'))
+    syncTitle()
+    i18n.on('languageChanged', syncTitle)
+    return () => i18n.off('languageChanged', syncTitle)
+  }, [setNavigationBarTitle])
 
   // useEffect(() => {
   //   if (skuPanelOpen) {
@@ -75,7 +79,7 @@ function StoreItemList() {
   // }, [skuPanelOpen])
 
   const fetch = async ({ pageIndex, pageSize }) => {
-    const { cat_id, main_cat_id, dtid } = $instance.router.params
+    const { cat_id, main_cat_id, dtid } = $instance?.router?.params
     let params = {
       page: pageIndex,
       pageSize,
@@ -132,7 +136,7 @@ function StoreItemList() {
       if (select_tags_list.length > 0) {
         v.tagList = [
           {
-            tag_name: '全部',
+            tag_name: $t('eb75c5c2.a8b0c2'),
             tag_id: 0
           }
         ].concat(select_tags_list)
@@ -238,7 +242,7 @@ function StoreItemList() {
       <View className='search-wrap'>
         <SpSearchBar
           keyword={keywords}
-          placeholder='搜索'
+          placeholder={$t('eb75c5c2.e5f71f')}
           onFocus={handleOnFocus}
           onChange={handleOnChange}
           onClear={handleOnClear}

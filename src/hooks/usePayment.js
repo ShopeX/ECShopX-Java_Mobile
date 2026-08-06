@@ -12,6 +12,7 @@ import { updateUserInfo } from '@/store/slices/user'
 import configStore from '@/store'
 import { isWeixin, isWeb, isWxWeb, requestAlipayminiPayment, isAPP, showToast } from '@/utils'
 import api from '@/api'
+import { $t } from '@/i18n'
 
 const { store } = configStore()
 
@@ -24,7 +25,7 @@ export default (props = {}) => {
   // const [state, setState] = useImmer(initialState)
   // const { params, orderInfo } = state
   const cashierResultUrl = `/pages/cart/cashier-result`
-  const $instance = getCurrentInstance()
+  const $instance = getCurrentInstance() || {}
   const currentPath = $instance?.router?.path
   const router = useRouter()
   const callbackRef = useRef()
@@ -71,6 +72,9 @@ export default (props = {}) => {
       case 'alipayh5':
         alipayh5Pay(params, orderInfo)
         break
+      case 'doumen_intl':
+        doumenIntlPay(params, orderInfo)
+        break
       case 'wxpayjs':
         wxpayjsPay(params, orderInfo)
         break
@@ -91,12 +95,12 @@ export default (props = {}) => {
 
   // 当前路由是订单详情页
   const isTradeDetaiPage = () => {
-    return router.path?.split('?')[0] == '/subpages/trade/detail'
+    return router?.path?.split('?')[0] == '/subpages/trade/detail'
   }
 
   // 当前路由是内购
   const isPurchasePage = () => {
-    return router.path?.split('?')[0] == '/subpages/purchase/espier-checkout'
+    return router?.path?.split('?')[0] == '/subpages/purchase/espier-checkout'
   }
 
   const paySuccess = async (params, orderInfo) => {
@@ -127,7 +131,7 @@ export default (props = {}) => {
     //   return
     // }
     // 社区拼团订单
-    if (!isTradeDetaiPage() && router.path != '/subpages/community/order') {
+    if (!isTradeDetaiPage() && router?.path != '/subpages/community/order') {
       if (trade_source_type == 'normal_community') {
         Taro.redirectTo({ url: `/subpages/community/order` })
       } else {
@@ -188,23 +192,30 @@ export default (props = {}) => {
 
   // 微信H5 JSDK
   const wxpayjsPay = async (params, orderInfo) => {
-    // const $instance = getCurrentInstance()
-    const { order_id, code } = router.params
+    const route = router?.params || {}
+    const oid = route.order_id || orderInfo?.order_id || route.id
+    const { code, source: routeSource } = route
+
     if (!code) {
-      // 微信客户端code授权
+      // 微信客户端 code 授权（订单详情页等场景 URL 仅有 order_id，无 code）
       const loc = window.location
-      // const url = `${loc.protocol}//${loc.host}/pages/cart/cashier-result?order_id=${orderId}`
-      const url = `${loc.protocol}//${loc.host}/pages/cart/cashier-weapp?order_id=${orderId}&source=${source}`
-      let { redirect_url } = await api.wx.getredirecturl({ url })
+      const sourceQuery =
+        routeSource != null && String(routeSource) !== ''
+          ? `&source=${encodeURIComponent(String(routeSource))}`
+          : ''
+      const url = `${loc.protocol}//${loc.host}/pages/cart/cashier-weapp?order_id=${oid}${sourceQuery}`
+      const { redirect_url } = await api.wx.getredirecturl({ url })
       window.location.href = redirect_url
+      return
     }
+
     const { open_id } = await api.wx.getOpenid({ code })
     const { pay_channel } = params
     const { pay_type, order_type = 'normal' } = orderInfo
     let query = {
       pay_type,
       pay_channel,
-      order_id,
+      order_id: oid,
       order_type,
       open_id
     }
@@ -226,7 +237,7 @@ export default (props = {}) => {
       function (res) {
         console.log(res)
         const loc = window.location
-        window.location.href = `${loc.protocol}//${loc.host}${cashierResultUrl}?order_id=${order_id}`
+        window.location.href = `${loc.protocol}//${loc.host}${cashierResultUrl}?order_id=${oid}`
       }
     )
   }
@@ -321,13 +332,30 @@ export default (props = {}) => {
       env_version: 'release'
     })
     if (!openlink) {
-      return showToast('小程序URL Scheme生成失败')
+      return showToast($t('3fa1eb08.83284a'))
     }
     console.log('url_link:', openlink)
     Taro.redirectTo({ url: `${cashierResultUrl}?order_id=${order_id}` })
     setTimeout(() => {
       window.location.href = openlink
     }, 1000)
+  }
+
+  // 斗门国际支付：跳转外部收银台（仅 H5）
+  const doumenIntlPay = async (params, orderInfo) => {
+    const { pay_type, pay_channel } = params
+    const { order_id, order_type = 'normal' } = orderInfo
+    const { protocol, host } = window.location
+    const res = await api.cashier.getPayment({
+      pay_type,
+      pay_channel,
+      order_id,
+      order_type,
+      return_url: `${protocol}//${host}${cashierResultUrl}?order_id=${order_id}`
+    })
+    if (!res || !res.pay_url) return payError(orderInfo)
+    Taro.redirectTo({ url: `${cashierResultUrl}?order_id=${order_id}` })
+    window.location.href = res.pay_url
   }
 
   // 汇付斗拱，支付宝H5

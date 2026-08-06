@@ -6,11 +6,11 @@ import React, { Component } from 'react'
 import { getCurrentInstance } from '@tarojs/taro'
 import { View } from '@tarojs/components'
 import api from '@/api'
-
+import { $t } from '@/i18n'
 import './we.scss'
 
 export default class WeappBtn extends Component {
-  $instance = getCurrentInstance()
+  $instance = getCurrentInstance() || {}
   static options = {
     addGlobalClass: true
   }
@@ -32,7 +32,7 @@ export default class WeappBtn extends Component {
   }
 
   handleClickPay = async () => {
-    const { order_id } = this.$instance.router.params
+    const { order_id } = this.$instance?.router?.params
     const { orderType = 'normal' } = this.props
 
     const params = {
@@ -66,7 +66,7 @@ export default class WeappBtn extends Component {
   render() {
     return (
       <View className='weapp-btn' onClick={this.handleClickPay.bind(this)}>
-        微信支付
+        {$t('36c99ee5.bffe28')}
       </View>
     )
   }

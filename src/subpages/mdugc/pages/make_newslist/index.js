@@ -4,9 +4,9 @@
  */
 import React, { Component } from 'react'
 import Taro from '@tarojs/taro'
-import { View, Text, Image, ScrollView } from '@tarojs/components'
-
-import api from '@/api'
+import { View } from '@tarojs/components'
+import * as mdugcApi from '@/api/mdugc'
+import { $t, i18n } from '@/i18n'
 
 //import '../../font/iconfont.scss'
 import './index.scss'
@@ -18,6 +18,22 @@ export default class make_newslist extends Component {
       list: []
     }
   }
+
+  componentDidMount() {
+    Taro.setNavigationBarTitle({ title: $t('87667586.d1d4c3') })
+    this._onNewslistLang = () => {
+      Taro.setNavigationBarTitle({ title: $t('87667586.d1d4c3') })
+      this.forceUpdate()
+    }
+    i18n.on('languageChanged', this._onNewslistLang)
+  }
+
+  componentWillUnmount() {
+    if (this._onNewslistLang) {
+      i18n.off('languageChanged', this._onNewslistLang)
+    }
+  }
+
   isicon = (type) => {
     let icon = ''
     if (type == 'system') {
@@ -56,7 +72,7 @@ export default class make_newslist extends Component {
   }
   // 刷新当前未读消息数
   async componentDidShow() {
-    let { message_info } = await api.mdugc.messagedashboard()
+    let { message_info } = await mdugcApi.messagedashboard()
     if (message_info) {
       this.setState({
         list: message_info
@@ -65,7 +81,7 @@ export default class make_newslist extends Component {
     console.log('这是消息', message_info)
   }
   config = {
-    navigationBarTitleText: '消息通知',
+    navigationBarTitleText: '',
     enablePullDownRefresh: true,
     'backgroundTextStyle': 'dark'
   }
@@ -73,7 +89,7 @@ export default class make_newslist extends Component {
   async onPullDownRefresh() {
     console.log('下拉')
     Taro.startPullDownRefresh()
-    let { message_info } = await api.mdugc.messagedashboard()
+    let { message_info } = await mdugcApi.messagedashboard()
     if (message_info) {
       this.setState(
         {
@@ -103,7 +119,9 @@ export default class make_newslist extends Component {
               </View>
               <View className='newslist_i_cen'>
                 <View className='newslist_i_cen_title'>
-                  {item.type == 'system' ? '系统通知' : item.recent_message.list[0].from_nickname}
+                  {item.type == 'system'
+                    ? $t('87667586.891584')
+                    : item.recent_message.list[0].from_nickname}
                 </View>
                 <View className='newslist_i_cen_text'>
                   {item.recent_message.list.length > 0

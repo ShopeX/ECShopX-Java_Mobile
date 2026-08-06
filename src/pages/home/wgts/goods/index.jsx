@@ -5,19 +5,28 @@
 import React, { useState, useEffect, useMemo, useContext, useCallback } from 'react'
 import Taro, { useDidShow } from '@tarojs/taro'
 import { View, Text } from '@tarojs/components'
-import { SpImage, SpPoint } from '@/components'
-import { classNames, styleNames, linkPage, pickBy, getDistributorId } from '@/utils'
+import { SpImage, SpPoint, SpPrice } from '@/components'
+import {
+  classNames,
+  styleNames,
+  linkPage,
+  pickBy,
+  getDistributorId,
+  getCurrencySymbol
+} from '@/utils'
 import { getBrowseHistoryList } from '@/utils/browseHistory'
 import doc from '@/doc'
 import api from '@/api'
 import { AtIcon } from 'taro-ui'
+import { useTranslation, $t } from '@/i18n'
 import GoodsLayout from '../goods-layout'
 import { getGlobalBaseStyle } from '../helper'
 import { WgtsContext } from '../wgts-context'
 import './index.scss'
 
 export default function WgtGoods(props) {
-  const { info, id, dtid } = props
+  useTranslation()
+  const { info, id } = props
   const [goodsList, setGoodsList] = useState([])
   const [goodsLeftList, setGoodsLeftList] = useState([])
   const [goodsRightList, setGoodsRightList] = useState([])
@@ -27,14 +36,9 @@ export default function WgtGoods(props) {
   const params = info?.params || info || {}
   const base = params.base || {}
   const data = params.data || {}
-  const isPointsmallItems = base.dataType === 'pointsmall_items'
+  const { eActivityId } = useContext(WgtsContext) || {}
 
-  const { onAddToCart } = useContext(WgtsContext)
-  // 店铺页优先使用页面传入的 dtid，避免落到全局店铺 ID
-  const resolveDistributorId = useCallback(
-    (itemDistributorId) => itemDistributorId || dtid || getDistributorId() || '',
-    [dtid]
-  )
+  const isPointsmallItems = base.dataType === 'pointsmall_items'
 
   // 获取外层样式（包含 outerMargin 和背景配置）
   const outerStyle = useMemo(() => {
@@ -49,7 +53,7 @@ export default function WgtGoods(props) {
   // 从本地存储刷新浏览记录（供 useDidShow 和 useEffect 复用）
   const refreshHistoryGoods = useCallback(() => {
     if (base.dataType !== 'history') return
-    const count = Math.min(base.dataCount || 10, 10)
+    const count = base.dataCount || 10
     const list = getBrowseHistoryList(count)
     const goods = list.map((item) => pickBy(item, doc.goods.WGT_SPEEDKILL_GOODS))
     setGoodsList(goods)
@@ -70,7 +74,7 @@ export default function WgtGoods(props) {
       setLoading(true)
       try {
         const dataType = base.dataType
-        const count = Math.min(base.dataCount || 10, 10) // 本地浏览记录最多 10 条
+        const count = base.dataCount || 10 // 本地浏览记录最多 10 条
 
         // 浏览记录：从本地存储读取（进入商品详情页时写入，最多 10 条）
         if (dataType === 'history') {
@@ -80,17 +84,21 @@ export default function WgtGoods(props) {
         }
 
         // 其他类型：走挂件商品接口
-        const distributorId = resolveDistributorId()
+        const distributorId = getDistributorId()
         let dataValue = data?.id || ''
         if (['items', 'price'].includes(dataType)) {
           dataValue = data?.id?.split(',') || ''
         }
-        const _data = await api.seckill.getWidgetItems({
+        const requestParams = {
           data_type: dataType,
           data_value: dataValue,
-          data_count: count,
-          distributor_id: distributorId
-        })
+          num: count,
+          distributor_id: distributorId || ''
+        }
+        if (eActivityId) {
+          requestParams.e_activity_id = eActivityId
+        }
+        const _data = await api.seckill.getWidgetItems(requestParams)
         if (_data && Array.isArray(_data) && _data.length > 0) {
           const goods = pickBy(_data, doc.goods.WGT_SPEEDKILL_GOODS)
           let _goods = goods.slice(0, count)
@@ -110,23 +118,15 @@ export default function WgtGoods(props) {
     }
 
     fetchGoods()
-  }, [data.id, base.dataCount, base.dataType, resolveDistributorId, refreshHistoryGoods])
+  }, [data.id, base.dataCount, base.dataType, eActivityId])
 
   // 处理更多按钮点击
   const handleClickMore = () => {
-    if (base.moreLink && base.moreLink.length > 0) {
-      const moreLink = base.moreLink[0] || {}
-      linkPage({
-        ...moreLink,
-        distributor_id: moreLink.distributor_id || resolveDistributorId()
-      })
+    if (base.moreLink) {
+      linkPage(base.moreLink)
     } else if (base.dataType === 'history') {
       Taro.navigateTo({
         url: '/marketing/pages/member/item-history'
-      })
-    } else if (dtid) {
-      Taro.navigateTo({
-        url: `/subpages/store/item-list?dtid=${dtid}`
       })
     } else {
       Taro.navigateTo({
@@ -146,8 +146,7 @@ export default function WgtGoods(props) {
     }
     linkPage({
       linkPage: 'goods',
-      id: item.goodsId || item.item_id || item.itemId,
-      distributor_id: resolveDistributorId(item.distributorId || item.distributor_id)
+      id: item.goodsId || item.item_id || item.itemId
     })
   }
 
@@ -187,7 +186,7 @@ export default function WgtGoods(props) {
                 onClick={handleClickMore}
                 style={styleNames({ color: base.moreBtn?.color })}
               >
-                <Text>查看更多</Text>
+                <Text>{$t('8a5d1351.90ef7c')}</Text>
                 <AtIcon value='chevron-right' size={14} color={base.moreBtn?.color} />
               </View>
             )}
@@ -212,7 +211,7 @@ export default function WgtGoods(props) {
                   {item.store <= 0 && (
                     <View className='soldout-mask'>
                       <View className='soldout-mask-text'>
-                        <Text>已售罄</Text>
+                        <Text>{$t('8a5d1351.b12876')}</Text>
                       </View>
                     </View>
                   )}
@@ -229,13 +228,16 @@ export default function WgtGoods(props) {
                           className='wgt-goods__activity-item-price__unit'
                           style={{ marginLeft: '4px' }}
                         >
-                          +￥{(item.price || 0).toFixed(2)}
+                          +{getCurrencySymbol()}
+                          {(item.price || 0).toFixed(2)}
                         </Text>
                       )}
                     </View>
                   ) : (
                     <View className='wgt-goods__activity-item-price'>
-                      <Text className='wgt-goods__activity-item-price__unit'>￥</Text>
+                      <Text className='wgt-goods__activity-item-price__unit'>
+                        {getCurrencySymbol()}
+                      </Text>
                       <Text className='wgt-goods__activity-item-price__text'>
                         {item.mainPrice ||
                           (item.activityPrice

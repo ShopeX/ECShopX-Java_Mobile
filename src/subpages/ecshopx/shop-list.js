@@ -3,49 +3,27 @@
  * See LICENSE file for license details.
  */
 import Taro from '@tarojs/taro'
-import { View, ScrollView, Text } from '@tarojs/components'
-import { AtDrawer, AtSearchBar } from 'taro-ui'
-import { useEffect, useState, useCallback, useRef } from 'react'
-import { useSelector, useDispatch } from 'react-redux'
+import { View, Text } from '@tarojs/components'
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react'
+import { useSelector } from 'react-redux'
 import { useImmer } from 'use-immer'
-import {
-  SpNewInput,
-  SpSearch,
-  SpFilterBar,
-  SpShopItem,
-  SpNewFilterDrawer,
-  SpSearchBar,
-  SpPage,
-  SpScrollView,
-  SpButton,
-  SpTagBar,
-  SpDrawer,
-  SpSelect,
-  SearchBar
-} from '@/components'
+import { SpSearchBar, SpPage, SpScrollView, SpSelect } from '@/components'
+
+import { SpShopItem, SpTagBar, SpDrawer } from '@/subpages/components'
 import doc from '@/doc'
-import { classNames, pickBy } from '@/utils'
+import * as shopDoc from '@/doc/shop'
+import { pickBy } from '@/utils'
 import api from '@/api'
 import { Tracker } from '@/service'
+import { useTranslation, $t } from '@/i18n'
+import {
+  buildFilterData,
+  buildBusinessListServices,
+  DEFAULT_SORT_VALUE,
+  DISTANCE_PLUS_SORT,
+  DISTANCE_MINUS_SORT
+} from './consts/index'
 import './shop-list.scss'
-//plusValue 代表正序 minusValue代表倒序
-const TIME_SORT = 0
-const SALE_PLUS_SORT = 4
-const SALE_MINUS_SORT = 3
-const DISTANCE_PLUS_SORT = 1
-const DISTANCE_MINUS_SORT = 2
-const DEFAULT_SORT_VALUE = DISTANCE_PLUS_SORT
-
-const FILTER_DATA = [
-  { value: TIME_SORT, tag_name: '综合排序' },
-  { tag_name: '销量', plusValue: SALE_PLUS_SORT, minusValue: SALE_MINUS_SORT },
-  { tag_name: '距离', plusValue: DISTANCE_PLUS_SORT, minusValue: DISTANCE_MINUS_SORT }
-]
-const BUSINESS_LIST_SERVICES = [
-  { id: 'ziti', name: '自提' },
-  { id: 'delivery', name: '快递' },
-  { id: 'dada', name: '同城配' }
-]
 
 const initialState = {
   curFilterIdx: DEFAULT_SORT_VALUE,
@@ -58,6 +36,7 @@ const initialState = {
 }
 
 function shopList(props) {
+  const { i18n } = useTranslation()
   const [state, setState] = useImmer(initialState)
   const { brandSelect, businessServices, name, curFilterIdx, plus } = state
   const goodsRef = useRef()
@@ -65,6 +44,14 @@ function shopList(props) {
   const [drawer, setDrawer] = useState(false)
   const [isShowSearch, setIsShowSearch] = useState(false)
   const { location } = useSelector((state) => state.user)
+
+  const filterData = useMemo(() => buildFilterData($t), [i18n.language])
+  const businessListServices = useMemo(() => buildBusinessListServices($t), [i18n.language])
+
+  useEffect(() => {
+    Taro.setNavigationBarTitle({ title: $t('e24b8d0f.f4d5b6') })
+  }, [i18n.language])
+
   const fetch = async (params) => {
     const { pageIndex: page, pageSize } = params
     const query = {
@@ -89,7 +76,7 @@ function shopList(props) {
       name
     }
     const { list, total_count, tagList } = await api.shop.list(query)
-    const _list = pickBy(list, doc.shop.SHOP_ITEM)
+    const _list = pickBy(list, shopDoc.SHOP_ITEM)
     const _tagList = pickBy(tagList, doc.goods.BUSINESS_LIST_TAG)
     console.log('_list', _list)
     await setState((v) => {
@@ -100,9 +87,6 @@ function shopList(props) {
     return {
       total: total_count
     }
-    // setDataList([...dataList, ...list]);
-    // setTotal(total_count);
-    // fillFilterTag(tagList);
   }
 
   const isChecked = (item) => {
@@ -236,7 +220,7 @@ function shopList(props) {
       <View className='search-block'>
         <SpSearchBar
           keyword={name}
-          placeholder='请输入商家、商品'
+          placeholder={$t('6a820a3d.e5dd3b')}
           onFocus={handleOnFocus}
           onChange={handleOnChange}
           onClear={handleOnClear}
@@ -247,7 +231,7 @@ function shopList(props) {
       <View className='filter-block'>
         <SpTagBar
           className='tag-list'
-          list={FILTER_DATA}
+          list={filterData}
           value={curFilterIdx}
           onChange={handleFilterChange}
         >
@@ -257,7 +241,8 @@ function shopList(props) {
               setDrawer(true)
             }}
           >
-            筛选<Text className='iconfont icon-filter'></Text>
+            {$t('672a4676.c2fe62')}
+            <Text className='iconfont icon-filter'></Text>
           </View>
         </SpTagBar>
       </View>
@@ -282,12 +267,12 @@ function shopList(props) {
         onConfirm={onConfirmBrand}
         onReset={onResetBrand}
       >
-        <View className='brand-title'>商家类型</View>
+        <View className='brand-title'>{$t('20466c3f.f223b6')}</View>
         <SpSelect multiple info={tagList} value={brandSelect} onChange={onChangeBrand} />
-        <View className='brand-title'>商家服务</View>
+        <View className='brand-title'>{$t('20466c3f.2b8cb8')}</View>
         <SpSelect
           multiple
-          info={BUSINESS_LIST_SERVICES}
+          info={businessListServices}
           value={businessServices}
           onChange={onChangeBusinessServices}
         />

@@ -4,10 +4,12 @@ import { SpImage, SpPrice, SpPoint } from '@/components'
 import SpTag from '@/components/sp-tag/index'
 import Taro from '@tarojs/taro'
 import qs from 'qs'
+import { $t, useTranslation } from '@/i18n'
 import { classNames } from '@/utils'
 import './hero-card.scss'
 
 function SpGoodsHeroCard(props) {
+  useTranslation()
   const { info = null, onClick, mode = 'aspectFill', showPrice = true } = props
 
   const handleClick = async () => {
@@ -47,7 +49,7 @@ function SpGoodsHeroCard(props) {
         {info.store <= 0 && (
           <View className='soldout-mask'>
             <View className='soldout-mask-text'>
-              <Text>已售罄</Text>
+              <Text>{$t('8a5d1351.b12876')}</Text>
             </View>
           </View>
         )}
@@ -77,13 +79,17 @@ function SpGoodsHeroCard(props) {
             {info.promotion?.map((tag, index) => (
               <SpTag
                 className='tag-wrapper__tag'
-                key={index}
+                key={`promotion-${tag.type || 't'}-${tag.tag_name || index}`}
                 label={tag.tag_name}
                 type={tag.type}
               />
             ))}
             {info.couponList?.map((tag, index) => (
-              <SpTag key={index} label={tag.discount_rule} type='warning'></SpTag>
+              <SpTag
+                key={`coupon-${tag.coupon_id || tag.discount_rule || index}`}
+                label={tag.discount_rule}
+                type='warning'
+              ></SpTag>
             ))}
           </View>
         )}
@@ -111,7 +117,7 @@ function SpGoodsHeroCard(props) {
                 {info.discountRate && (
                   <View className='discount-tag'>
                     <Text className='discount-tag__value'>{info.discountRate}</Text>
-                    <Text className='discount-tag__unit'>折</Text>
+                    <Text className='discount-tag__unit'>{$t('d9bcdef5.96c015')}</Text>
                   </View>
                 )}
               </>

@@ -2,43 +2,48 @@
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
  */
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useMemo } from 'react'
 import Taro from '@tarojs/taro'
 import { View, Text } from '@tarojs/components'
-import {
-  SpLogin,
-  SpSearchBar,
-  SpScrollView,
-  SpTabbar,
-  SpPage,
-  SpFloatMenuItem,
-  SpTagBar
-} from '@/components'
-import api from '@/api'
+import { SpLogin, SpSearchBar, SpScrollView, SpTabbar, SpPage, SpFloatMenuItem } from '@/components'
+import { SpTagBar } from '@/subpages/components'
+import * as mdugcApi from '@/api/mdugc'
 import { useImmer } from 'use-immer'
 import { pickBy } from '@/utils'
-import doc from '@/doc'
+import * as mdugcDoc from '@/doc/mdugc'
+import { useTranslation, $t } from '@/i18n'
 import CompNoteItem from './comps/comp-noteitem'
-
 import './index.scss'
 
 function UgcIndex() {
+  const { i18n } = useTranslation()
+  const filterList = useMemo(
+    () => [
+      { tag_id: 1, tag_name: $t('d668d0e3.4d2d97') },
+      { tag_id: 2, tag_name: $t('d668d0e3.8818d4') }
+    ],
+    [i18n.language]
+  )
   const initialState = {
     keyword: '',
+    searchKeyword: '',
     tagsList: [],
     curTagIndex: 0,
-    filterList: [
-      { tag_id: 1, tag_name: '最热' },
-      { tag_id: 2, tag_name: '最新' }
-    ],
     curFilterIndex: 0,
     leftList: [],
     rightList: [],
     footerHeight: 0
   }
   const [state, setState] = useImmer(initialState)
-  const { keyword, tagsList, curTagIndex, filterList, curFilterIndex, leftList, rightList } = state
+  const { keyword, searchKeyword, tagsList, curTagIndex, curFilterIndex, leftList, rightList } =
+    state
   const listRef = useRef()
+  const searchKeywordRef = useRef('')
+  searchKeywordRef.current = searchKeyword
+
+  useEffect(() => {
+    Taro.setNavigationBarTitle({ title: $t('d668d0e3.888af1') })
+  }, [i18n.language])
 
   useEffect(() => {
     getTopicslist()
@@ -56,9 +61,9 @@ function UgcIndex() {
 
   useEffect(() => {
     if (tagsList.length > 0) {
-      listRef.current.reset()
+      listRef.current?.reset()
     }
-  }, [curTagIndex, keyword, curFilterIndex, tagsList])
+  }, [curTagIndex, curFilterIndex, tagsList, searchKeyword])
 
   // useEffect(() => {
   //   getUgcList()
@@ -78,75 +83,79 @@ function UgcIndex() {
       page: 1,
       pageSize: 8
     }
-    const { list } = await api.mdugc.topiclist(data)
+    const { list } = await mdugcApi.topiclist(data)
     setState((draft) => {
-      draft.tagsList = pickBy(list, doc.mdugc.MDUGC_TOPICLIST)
+      draft.tagsList = pickBy(list, mdugcDoc.MDUGC_TOPICLIST)
     })
   }
 
   // 列表
   const fetch = async ({ pageIndex, pageSize }) => {
     Taro.showLoading()
-    let params = {
-      page: pageIndex,
-      pageSize,
-      sort: curFilterIndex == 0 ? 'likes desc' : 'created desc',
-      content: keyword
+    try {
+      let params = {
+        page: pageIndex,
+        pageSize,
+        sort: curFilterIndex == 0 ? 'likes desc' : 'created desc'
+      }
+      const keyword = (searchKeywordRef.current || '').trim()
+      if (keyword) {
+        params.content = keyword
+      }
+
+      if (tagsList.length > 0 && tagsList[curTagIndex]) {
+        params = {
+          ...params,
+          topics: [tagsList[curTagIndex].tag_id]
+        }
+      }
+
+      const res = (await mdugcApi.postlist(params)) || {}
+      const list = Array.isArray(res.list) ? res.list : []
+      const total = res.total_count
+
+      let nList = pickBy(list, mdugcDoc.UGC_LIST)
+
+      const resLeftList = nList.filter((item, index) => index % 2 == 0)
+      const resRightList = nList.filter((item, index) => index % 2 == 1)
+
+      setState((draft) => {
+        if (pageIndex === 1) {
+          draft.leftList = [resLeftList]
+          draft.rightList = [resRightList]
+        } else {
+          draft.leftList[pageIndex - 1] = resLeftList
+          draft.rightList[pageIndex - 1] = resRightList
+        }
+      })
+
+      return { total: total || 0 }
+    } finally {
+      Taro.hideLoading()
     }
-
-    if (tagsList.length > 0) {
-      params = {
-        ...params,
-        topics: [tagsList[curTagIndex].tag_id]
-      }
-    }
-
-    const { list, total_count: total } = await api.mdugc.postlist(params)
-
-    let nList = pickBy(list, doc.mdugc.UGC_LIST)
-
-    const resLeftList = nList.filter((item, index) => {
-      if (index % 2 == 0) {
-        return item
-      }
-    })
-    const resRightList = nList.filter((item, index) => {
-      if (index % 2 == 1) {
-        return item
-      }
-    })
-
-    setState((draft) => {
-      draft.leftList[pageIndex - 1] = resLeftList
-      draft.rightList[pageIndex - 1] = resRightList
-    })
-    Taro.hideLoading()
-
-    return { total: total || 0 }
   }
 
-  const handleOnClear = async () => {
-    await setState((draft) => {
-      draft.keyword = ''
+  const refreshBySearch = (val = '') => {
+    const nextKeyword = typeof val === 'string' ? val : ''
+    searchKeywordRef.current = nextKeyword
+    setState((draft) => {
+      draft.keyword = nextKeyword
+      draft.searchKeyword = nextKeyword
       draft.leftList = []
       draft.rightList = []
     })
+  }
+
+  const handleOnClear = () => {
+    refreshBySearch('')
   }
 
   const handleSearchCancel = () => {
-    setState((draft) => {
-      draft.keyword = ''
-      draft.leftList = []
-      draft.rightList = []
-    })
+    refreshBySearch('')
   }
 
-  const handleConfirm = async (val) => {
-    setState((draft) => {
-      draft.keyword = val
-      draft.leftList = []
-      draft.rightList = []
-    })
+  const handleConfirm = (val) => {
+    refreshBySearch(val)
   }
 
   const onChangeTag = (index, item) => {
@@ -167,7 +176,7 @@ function UgcIndex() {
 
   // 浮动按钮跳转
   const onHandleMenuItem = (url) => {
-    // const isAuth = S.getAuthToken()
+    // const isAuth = S?.getAuthToken()
     // if (!isAuth) {
     //   showToast('请先登录')
     //   return
@@ -202,7 +211,7 @@ function UgcIndex() {
     >
       <SpSearchBar
         keyword={keyword}
-        placeholder='搜索'
+        placeholder={$t('d668d0e3.e5f71f')}
         showDailog={false}
         onFocus={() => {}}
         onChange={(e) => {

@@ -1,6 +1,9 @@
 /**
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
+ *
+ * 构建期在 Node 执行：勿 import `@/i18n`（会间接加载 Taro → window is not defined）。
+ * 与 zh-CN 键 95285d68.* 一致；页面内可用 Taro.setNavigationBarTitle + $t 覆盖。
  */
 const config = {
   pages: [
@@ -17,9 +20,6 @@ const config = {
     'pages/home/landing', // 跳转等待页面
     'pages/floorguide/index', // 楼层引导页面
 
-    // 旧路径兼容：真实详情在 subpages/item/espier-detail，此页仅做 redirect
-    'pages/item/espier-detail',
-
     'pages/article/index', // 文章页面
     'pages/recommend/list', // 种草列表
     'pages/recommend/detail', // 种草详情
@@ -31,7 +31,8 @@ const config = {
     'pages/purchase/auth',
     'pages/cart/prescription-information', //补充处方信息
     'pages/cart/add-personnel', // 添加用药人员
-    'pages/share-land' //太阳码统一落地页
+    'pages/share-land', //太阳码统一落地页
+    'pages/reset-password' // 邮箱重置密码（邮件内链接 /reset-password）
   ],
   subPackages: [
     // 内购
@@ -46,11 +47,13 @@ const config = {
         'select-company-account',
         'select-company-email',
         'select-company-phone',
+        'select-company-passcode',
         'select-identity',
         'neigou-order',
         'category',
         'espier-index',
         'index',
+        'activity-list',
         'list', //商品列表
         'limit-list'
       ]
@@ -81,7 +84,8 @@ const config = {
         'category', // 店铺商品分类
         'list', // 选择店铺列表
         'ziti-list', // 自提列表
-        'ziti-picker' // 自提点选择
+        'ziti-picker', // 自提点选择
+        'nearby-list' // 门店列表
       ]
     },
     {
@@ -457,7 +461,10 @@ const config = {
         'edit-password', //修改密码页面
         'bindPhone', //绑定手机页面
         'auth-loading', //授权加载页
+        'auth-social-loading', //第三方 OAuth 回调页
         'forgotpwd', //找回密码页面
+        'forgotpwd-email', //邮箱找回密码（发送重置邮件）
+        'email-activate', //邮箱注册激活落地页
         'edit-phone' //修改密码页面
       ]
     },
@@ -469,6 +476,7 @@ const config = {
         'prescription-information' //补充处方信息
       ]
     },
+    // i18n 非默认语言资源分包
     {
       root: 'subpages/i18n',
       pages: ['index']
@@ -482,7 +490,7 @@ const config = {
   // usingComponents: {
   //   'mp-html': './components/sp-html/mp-weixin/index'
   // },
-  window: {
+  'window': {
     'backgroundTextStyle': 'light',
     'navigationBarBackgroundColor': '#fff',
     'navigationBarTitleText': '小程序',
@@ -507,6 +515,15 @@ if (process.env.TARO_ENV == 'weapp') {
   })
 }
 
+if (process.env.APP_CONTACT_PLUGIN == 'true') {
+  Object.assign(config.plugins, {
+    'contactPlugin': {
+      'usingComponents': true,
+      'version': '1.4.8',
+      'provider': 'wx104a1a20c3f81ec2'
+    }
+  })
+}
 if (process.env.APP_LIVE == 'true') {
   Object.assign(config.plugins, {
     'live-player-plugin': {
@@ -517,9 +534,9 @@ if (process.env.APP_LIVE == 'true') {
 }
 
 if (process.env.APP_PLATFORM == 'in_purchase') {
-  config?.pages?.splice(config?.pages[0], 1, 'pages/purchase/index')
+  config.pages.splice(0, 1, 'pages/purchase/index')
 } else {
-  config?.pages?.push('pages/purchase/index')
+  config.pages.push('pages/purchase/index')
 }
 
 if (process.env.APP_ADAPAY == 'true') {
@@ -529,6 +546,24 @@ if (process.env.APP_ADAPAY == 'true') {
       'provider': 'wx308088053f4ecc3a' // 必须填该直播组件appid，该示例值即为直播组件appid（复制时请去掉注释）
     }
   })
+}
+
+// 微信小程序：进入首页等主入口时预下载 i18n 语言包分包，减轻首屏 $t 显示 hash key
+if (process.env.TARO_ENV === 'weapp') {
+  const I18N_SUBPACKAGE_ROOT = 'subpages/i18n'
+  const i18nPreloadRule = {
+    network: 'all',
+    packages: [I18N_SUBPACKAGE_ROOT]
+  }
+  const preloadRule = {
+    'pages/index': i18nPreloadRule,
+    'pages/purchase/index': i18nPreloadRule
+  }
+  const entryPage = config.pages[0]
+  if (entryPage && !preloadRule[entryPage]) {
+    preloadRule[entryPage] = i18nPreloadRule
+  }
+  config.preloadRule = preloadRule
 }
 
 export default config

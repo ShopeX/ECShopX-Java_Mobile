@@ -3,7 +3,15 @@
  * See LICENSE file for license details.
  */
 import Taro from '@tarojs/taro'
+import { isWeb } from '@/utils'
 // import { WGTS_NAV_MAP } from '@/consts'
+
+/** 配置里可能是数字或字符串，保证 pxTransform 入参为数字 */
+function toDesignPx(val) {
+  if (val === undefined || val === null || val === '') return null
+  const n = Number(val)
+  return Number.isFinite(n) ? n : null
+}
 
 export function linkPage(type, data) {
   const { id, title, distributor_id } = data
@@ -28,6 +36,8 @@ export function linkPage(type, data) {
     case 'marketing':
       if (id == 'coupon_list') {
         url = '/subpages/marketing/coupon-center'
+      } else if (id == 'my_coupon') {
+        url = '/subpages/marketing/coupon'
       } else if (id == 'groups_list') {
         url = '/marketing/pages/item/group-list'
       }
@@ -118,26 +128,37 @@ export function getGlobalBaseStyle(baseStyle) {
     return {}
   }
 
-  // styleNames 拼的是 CSS 字符串：属性名需为 kebab-case / 合法 CSS 名，值必须是 string
-  const style = {}
-  style.padding = `${Taro.pxTransform(baseStyle.paddedt || 0)} ${Taro.pxTransform(
-    baseStyle.paddedr || 0
-  )} ${Taro.pxTransform(baseStyle.paddedb || 0)} ${Taro.pxTransform(baseStyle.paddedl || 0)}`
-
   const bgType = baseStyle.bgType
+  const style = {}
+  style.padding = `${Taro.pxTransform(baseStyle.paddedt || 0)} ${Taro.pxTransform(baseStyle.paddedr || 0)} ${Taro.pxTransform(baseStyle.paddedb || 0)} ${Taro.pxTransform(baseStyle.paddedl || 0)}`
   if (bgType === 'color' && baseStyle.bgColor) {
-    style['background-color'] = baseStyle.bgColor
+    if(isWeb){
+      style['background-color'] = baseStyle.bgColor
+    } else {
+      style.backgroundColor = baseStyle.bgColor
+    }
   } else if (bgType === 'pic' && baseStyle.bgPic) {
-    style['background-image'] = `url('${baseStyle.bgPic}')`
-    style['background-size'] = '100% 100%'
-    style['background-position'] = 'center'
-    style['background-repeat'] = 'no-repeat'
+    if(isWeb){
+      style['background-image'] = `url('${baseStyle.bgPic}')`
+      style['background-size'] = '100% 100%'
+      style['background-position'] = 'center'
+      style['background-repeat'] = 'no-repeat'
+    } else {
+    style.backgroundImage = `url('${baseStyle.bgPic}')`
+    style.backgroundSize = '100% 100%'
+    style.backgroundPosition = 'center'
+    style.backgroundRepeat = 'no-repeat'
+    }
   } else if (bgType === 'gradient' && baseStyle.startColor) {
     const endColor = baseStyle.endColor || baseStyle.startColor
-    style['background-image'] = `linear-gradient(${baseStyle.startColor}, ${endColor})`
-    style['background-size'] = 'cover'
+    if(isWeb){
+      style['background-image'] = `linear-gradient(${baseStyle.startColor}, ${endColor})`
+      style['background-size'] = 'cover'
+    } else {
+      style.backgroundImage = `linear-gradient(${baseStyle.startColor}, ${endColor})`
+      style.backgroundSize = 'cover'
+    }
   }
-
   return style
 }
 

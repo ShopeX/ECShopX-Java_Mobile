@@ -4,7 +4,7 @@
  */
 import Taro, { getCurrentInstance } from '@tarojs/taro'
 import qs from 'qs'
-import S from '@/spx'
+import spxInstance from '@/spx'
 import {
   isAlipay,
   isWeixin,
@@ -15,7 +15,18 @@ import {
   VERSION_IN_PURCHASE
 } from '@/utils'
 import log from '@/utils/log'
+import { $t, normalizeStorageLang } from '@/i18n'
+import { SG_TOKEN } from '@/consts/localstorage'
 import { HTTP_STATUS } from './consts'
+
+// 惰性获取 spx：req 与 spx 存在循环依赖（spx→api→req→spx），加载时 spxInstance 可能尚未就绪
+function getS() {
+  return (
+    (typeof global !== 'undefined' && global.__SPX__) ||
+    (typeof globalThis !== 'undefined' && globalThis.__SPX__) ||
+    spxInstance
+  )
+}
 
 function addQuery(url, query) {
   return url + (url.indexOf('?') >= 0 ? '&' : '?') + query
@@ -125,7 +136,7 @@ class API {
 
     // 从域名获取 company_id，例如 m38.shopex123.com -> 38
     let company_id = process.env.APP_COMPANY_ID
-    if (isWeb && typeof global !== 'undefined' && global.location) {
+    if (Taro.getEnv() == Taro.ENV_TYPE.WEB && typeof global !== 'undefined' && global.location) {
       const hostname = global.location.hostname
       const match = hostname.match(/^m(\d+)\./)
       if (match && match[1]) {
@@ -147,7 +158,7 @@ class API {
   }
 
   errorToast(data) {
-    let errMsg = data.message || (data.data && data.data.message) || '操作失败，请稍后重试'
+    let errMsg = data.message || (data.data && data.data.message) || $t('4d9ffcb1.fb5ded')
 
     if (errMsg.length > 11) {
       errMsg = errMsg.substring(0, 11) + '\n' + errMsg.substring(11)
@@ -169,10 +180,10 @@ class API {
     this.requestQueue.destroy()
     this.isRefreshingToken = false
     this.refreshTokenPromise = null
-    S.logout()
+    getS().logout()
     setTimeout(() => {
-      console.log(getCurrentInstance().router)
-      const { path, params } = getCurrentInstance().router
+      console.log(getCurrentInstance()?.router)
+      const { path, params } = getCurrentInstance()?.router
       delete params.$taroTimestamp
       const fullPath = Object.keys(params).length > 0 ? `${path}?${qs.stringify(params)}` : path
       let url
@@ -193,7 +204,7 @@ class API {
   }
 
   intereptorReq(params) {
-    const { url, data, header = {}, method = 'GET' } = params
+    const { url, data, header = {}, method = 'GET', useMallToken } = params
     const { company_id, appid } = this.options
     const methodIsGet = method.toLowerCase() === 'get'
 
@@ -202,7 +213,9 @@ class API {
     if (company_id) {
       query['company_id'] = company_id
     }
-    const lang = Taro.getStorageSync('lang') || process.env.APP_DEFAULT_LANGUAGE
+    const lang = normalizeStorageLang(
+      Taro.getStorageSync('lang') || process.env.APP_DEFAULT_LANGUAGE
+    )
     if (lang) {
       const langMap = {
         zhcn: 'zh-CN',
@@ -210,13 +223,16 @@ class API {
         zhtw: 'zh-TW',
         ar: 'ar-SA'
       }
-      query['country_code'] = langMap[lang]
+      query['country_code'] = langMap[lang || process.env.APP_COUNTRY_CODE]
     }
     if (!methodIsGet) {
       header['content-type'] = header['content-type'] || 'application/x-www-form-urlencoded'
     }
 
-    const token = S.getAuthToken()
+    // 商户子包内默认走 MERCHANT_TOKEN；useMallToken 时改用商城会员 SG_TOKEN（如入驻页证照走会员上传）
+    const token = useMallToken
+      ? Taro.getStorageSync(SG_TOKEN) || getS().get(SG_TOKEN, true)
+      : getS().getAuthToken()
     if (token) {
       header['Authorization'] = `Bearer ${token}`
     }
@@ -239,6 +255,7 @@ class API {
       method: method.toUpperCase(),
       header: header
     }
+    delete config.useMallToken
 
     // 清理请求参数
     if (methodIsGet) {
@@ -275,7 +292,7 @@ class API {
         if (showError) {
           this.errorToast(data)
         }
-        return Promise.reject(this.reqError(res, '帐号已被禁用'))
+        return Promise.reject(this.reqError(res, $t('4d9ffcb1.e1c4be')))
       }
 
       this.handleLogout()
@@ -283,11 +300,11 @@ class API {
     }
 
     if (statusCode === HTTP_STATUS.NOT_FOUND) {
-      return Promise.reject(this.reqError(res, '请求资源不存在'))
+      return Promise.reject(this.reqError(res, $t('4d9ffcb1.31e795')))
     }
 
     if (statusCode === HTTP_STATUS.BAD_GATEWAY) {
-      return Promise.reject(this.reqError(res, '服务端出现了问题'))
+      return Promise.reject(this.reqError(res, $t('4d9ffcb1.7481a1')))
     }
 
     return Promise.reject(this.reqError(res, `API error: ${statusCode}`))
@@ -300,7 +317,7 @@ class API {
 
     this.isRefreshingToken = true
     this.refreshTokenPromise = (async () => {
-      const token = S.getAuthToken()
+      const token = getS().getAuthToken()
       console.log('refreshToken', 66)
       let refreshed = false
       try {
@@ -328,7 +345,7 @@ class API {
               log.debug('[refreshToken] missing token in response headers/body', res)
               return
             }
-            S.setAuthToken(newToken)
+            getS().setAuthToken(newToken)
             refreshed = true
           }
         )
@@ -375,7 +392,7 @@ class API {
         !config.noPending &&
         res.statusCode === HTTP_STATUS.UNAUTHORIZED &&
         (res.data.data && res.data.data.code) === HTTP_STATUS.TOKEN_NEEDS_REFRESH &&
-        S.getAuthToken()
+        getS().getAuthToken()
       ) {
         // token失效时重造请求，并刷新token
         const refreshed = await this.refreshToken()

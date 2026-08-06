@@ -25,7 +25,6 @@ import {
   pickBy,
   authSetting,
   showToast,
-  isWeb,
   isAPP,
   isWxWeb,
   log,
@@ -39,17 +38,16 @@ import api from '@/api'
 import doc from '@/doc'
 import qs from 'qs'
 import S from '@/spx'
-
+import { useTranslation, $t, ti } from '@/i18n'
 import { initialState } from './const'
-
 import CompDeliver from './comps/comp-deliver'
-
 import './espier-checkout.scss'
 
 function PointShopEspierCheckout() {
-  const $instance = getCurrentInstance()
+  const { i18n } = useTranslation()
+  const $instance = getCurrentInstance() || {}
   const { updateAddress } = useLocation()
-  const { isLogin, getUserInfoAuth } = useLogin({
+  const { isLogin } = useLogin({
     autoLogin: true,
     loginSuccess: () => {
       updateAddress()
@@ -105,8 +103,13 @@ function PointShopEspierCheckout() {
     scene, // 情景值
     goodType,
     ticket = null
-  } = $instance.router?.params || {}
-  console.log('$instance.router?.params:', $instance)
+  } = $instance?.router?.params || {}
+  console.log('$instance?.router?.params:', $instance)
+
+  useEffect(() => {
+    Taro.setNavigationBarTitle({ title: $t('edc703ce.337fd5') })
+  }, [i18n.language])
+
   useEffect(() => {
     if (isLogin) {
       getTradeSetting()
@@ -121,7 +124,7 @@ function PointShopEspierCheckout() {
   }, [isLogin])
 
   useEffect(() => {
-    const token = S.getAuthToken()
+    const token = S?.getAuthToken()
     if (!token) {
       Taro.redirectTo({
         url: `/subpages/member/index`
@@ -156,9 +159,9 @@ function PointShopEspierCheckout() {
       }
       let invoice_title = ''
       if (params.company_title) {
-        invoice_title = `${params.invoice_type_code == '02' ? '普票' : '专票'}(${
-          params.company_title
-        })`
+        invoice_title = `${
+          params.invoice_type_code == '02' ? $t('71426282.56b771') : $t('71426282.96d7f2')
+        }(${params.company_title})`
       }
       setState((draft) => {
         draft.invoiceTitle = invoice_title
@@ -185,14 +188,14 @@ function PointShopEspierCheckout() {
       if (zitiAddress) {
         await deliverRef.current.validateZitiInfo()
       } else {
-        showToast('请选择自提地址')
+        showToast($t('edc703ce.cb8251'))
       }
     }
 
     // 判断当前店铺关联商户是否被禁用 isVaild：true有效
     const { status: isValid } = await api.distribution.merchantIsvaild({ distributor_id: dtid })
     if (!isValid) {
-      showToast('该商品已下架')
+      showToast($t('edc703ce.f0010a'))
       return
     }
 
@@ -224,10 +227,10 @@ function PointShopEspierCheckout() {
       // 验证余额额度是否可用
       if (userInfo.deposit < totalInfo.total_fee / 100) {
         const { confirm } = await Taro.showModal({
-          content: '余额额度不足，请充值',
-          cancelText: '取消',
+          content: $t('edc703ce.de4d2f'),
+          cancelText: $t('61e2d21a.625fb2'),
           confirmColor: colorPrimary,
-          confirmText: '去充值'
+          confirmText: $t('edc703ce.e4ff95')
         })
         if (confirm) {
           Taro.navigateTo({
@@ -241,11 +244,11 @@ function PointShopEspierCheckout() {
       }
 
       const { confirm } = await Taro.showModal({
-        title: '余额支付',
-        content: `确认使用余额支付吗？`,
-        cancelText: '取消',
+        title: $t('edc703ce.89ac23'),
+        content: $t('edc703ce.d9e16c'),
+        cancelText: $t('61e2d21a.625fb2'),
         confirmColor: colorPrimary,
-        confirmText: '确认'
+        confirmText: $t('61e2d21a.e83a25')
       })
       if (!confirm) {
         setState((draft) => {
@@ -256,7 +259,7 @@ function PointShopEspierCheckout() {
     }
 
     Taro.showLoading({
-      title: '正在提交',
+      title: $t('edc703ce.415038'),
       mask: true
     })
 
@@ -361,7 +364,7 @@ function PointShopEspierCheckout() {
       Taro.hideLoading()
       const { confirm } = await Taro.showModal({
         content: e.message,
-        confirmText: '返回',
+        confirmText: $t('596fa34a.5f4112'),
         showCancel: false
       })
       if (confirm) {
@@ -462,7 +465,7 @@ function PointShopEspierCheckout() {
     }
 
     if (real_use_point && real_use_point < point_use) {
-      showToast(`${pointName}有调整`)
+      showToast(ti('edc703ce.ee9ca4', [pointName]))
     }
 
     Taro.hideLoading()
@@ -479,7 +482,7 @@ function PointShopEspierCheckout() {
     if (extraTips) {
       Taro.showModal({
         content: extraTips,
-        confirmText: '知道了',
+        confirmText: $t('edc703ce.ce2695'),
         showCancel: false
       })
     }
@@ -574,14 +577,14 @@ function PointShopEspierCheckout() {
     return (
       <View className='checkout-toolbar'>
         <View className='checkout-toolbar__total'>
-          {`共${totalInfo.items_count}件商品 `}
+          {ti('596fa34a.65bff2', [totalInfo.items_count])}
           <View className='checkout-total'>
             <View>
-              {`积分: `}
+              {$t('596fa34a.b8fdb3')}
               <SpPoint value={totalInfo.point} />
             </View>
             <View>
-              {`支付金额: `}
+              {$t('596fa34a.9bee27')}
               <SpPrice value={totalInfo.total_fee / 100} />
             </View>
           </View>
@@ -593,7 +596,7 @@ function PointShopEspierCheckout() {
           disabled={receiptType !== 'ziti' && !isObjectsValue(address)}
           onClick={onSubmitPayChange}
         >
-          提交订单
+          {$t('edc703ce.c3898c')}
         </AtButton>
       </View>
     )
@@ -605,7 +608,10 @@ function PointShopEspierCheckout() {
         <View className='cart-checkout__group'>
           <View className='cart-group__cont'>
             <View className='sp-order-item__idx'>
-              商品清单 <Text style={{ color: '#222' }}>（{totalInfo.items_count}）</Text>
+              {$t('edc703ce.08ea4e')}{' '}
+              <Text style={{ color: '#222' }}>
+                {ti('edc703ce.a20466', [totalInfo.items_count])}
+              </Text>
             </View>
             <View className='goods-list'>
               {detailInfo.map((item, idx) => (
@@ -619,7 +625,7 @@ function PointShopEspierCheckout() {
             <SpCell className='trade-remark' border={false}>
               <AtInput
                 className='trade-remark__input'
-                placeholder='给商家留言：选填（50字以内）'
+                placeholder={$t('edc703ce.0e9ca2')}
                 onChange={handleRemarkChange}
                 value={remark}
                 maxLength={50}
@@ -632,7 +638,12 @@ function PointShopEspierCheckout() {
   }
 
   return (
-    <SpPage ref={pageRef} className='page-pointshop-espiercheckout' renderFooter={renderFooter()}>
+    <SpPage
+      ref={pageRef}
+      className='page-pointshop-espiercheckout'
+      footerHeight={140}
+      renderFooter={renderFooter()}
+    >
       <View className='cart-checkout__address'>
         <CompDeliver
           ref={deliverRef}
@@ -650,24 +661,25 @@ function PointShopEspierCheckout() {
           <SpCell
             isLink
             className='cart-checkout__pay'
-            title='支付方式'
+            title={$t('250b375e.0c9d2b')}
             onClick={handlePaymentShow}
           >
             {totalInfo.deduction && (
               <Text>
                 {totalInfo.remainpt}
-                {`${pointName}可用`}
+                {ti('edc703ce.dfb3e1', [pointName])}
               </Text>
             )}
             <Text className='invoice-title'>
-              {payChannel ? PAYMENT_TYPE()[payChannel] : '请选择'}
+              {payChannel ? PAYMENT_TYPE()[payChannel] : $t('edc703ce.708c9d')}
             </Text>
           </SpCell>
           {totalInfo.deduction && (
             <View>
-              可用{totalInfo.point}
-              {pointName}，抵扣 <SpPrice unit='cent' value={totalInfo.deduction} />
-              包含运费 <SpPrice unit='cent' value={totalInfo.freight_fee} />
+              {ti('9c730348.c72db2', [totalInfo.point, pointName])}
+              <SpPrice unit='cent' value={totalInfo.deduction} />
+              {$t('9c730348.5e162f')}
+              <SpPrice unit='cent' value={totalInfo.freight_fee} />
             </View>
           )}
         </View>
@@ -676,7 +688,7 @@ function PointShopEspierCheckout() {
       {totalInfo.invoice_status ? (
         <SpCell
           isLink
-          title='开发票'
+          title={$t('edc703ce.63dd82')}
           className='cart-checkout__invoice'
           onClick={handleInvoiceClick}
           value={
@@ -687,20 +699,20 @@ function PointShopEspierCheckout() {
                   className='iconfont icon-close invoice-close'
                 />
               )}
-              {invoiceTitle || '否'}
+              {invoiceTitle || $t('edc703ce.c9744f')}
             </View>
           }
         />
       ) : null}
 
       <View className='cart-checkout__total'>
-        <SpCell className='trade-sub__item' title='积分：'>
+        <SpCell className='trade-sub__item' title={$t('596fa34a.3c4670')}>
           <SpPoint value={totalInfo.item_point} />
         </SpCell>
-        <SpCell className='trade-sub__item' title='商品金额：'>
+        <SpCell className='trade-sub__item' title={$t('596fa34a.080942')}>
           <SpPrice value={totalInfo.item_fee / 100} />
         </SpCell>
-        <SpCell className='trade-sub__item' title='运费：'>
+        <SpCell className='trade-sub__item' title={$t('edc703ce.94a6a5')}>
           {totalInfo.freight_type == 'point' && <SpPoint value={totalInfo.freight_fee} />}
           {totalInfo.freight_type == 'cash' && <SpPrice value={totalInfo.freight_fee / 100} />}
         </SpCell>

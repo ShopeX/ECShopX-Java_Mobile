@@ -9,9 +9,7 @@ import { useSelector, useDispatch } from 'react-redux'
 import { useImmer } from 'use-immer'
 import { AtDrawer, AtTabs, AtSearchBar } from 'taro-ui'
 import {
-  SpFilterBar,
   GoodsItem,
-  SpTagBar,
   SpGoodsItem,
   SpSearchBar,
   SpNavBar,
@@ -19,12 +17,14 @@ import {
   TabBar,
   SpPage,
   SpScrollView,
-  SpDrawer,
   SpSelect,
   SpPoint,
   SpImage,
-  SpInput as AtInput
+  SpInput as AtInput,
+  SpPoweredBy,
+  SpNote
 } from '@/components'
+import { SpFilterBar, SpTagBar, SpDrawer } from '@/subpages/components'
 import doc from '@/doc'
 import api from '@/api'
 import {
@@ -35,7 +35,7 @@ import {
   styleNames,
   VERSION_STANDARD
 } from '@/utils'
-
+import { useTranslation, $t } from '@/i18n'
 import './list.scss'
 
 const initialState = {
@@ -59,7 +59,8 @@ const initialState = {
 }
 
 function PointShopList() {
-  const $instance = getCurrentInstance()
+  const { i18n } = useTranslation()
+  const $instance = getCurrentInstance() || {}
   const [state, setState] = useImmer(initialState)
   const {
     leftList,
@@ -85,14 +86,18 @@ function PointShopList() {
   const goodsRef = useRef()
 
   useEffect(() => {
+    Taro.setNavigationBarTitle({ title: $t('cc8689c4.a13364') })
+  }, [i18n.language])
+
+  useEffect(() => {
     setState((draft) => {
       draft.filterList = [
-        { title: '全部' },
-        { title: '销量' },
-        { title: '积分', icon: ['icon-shengxu-01', 'icon-jiangxu-01'], sort: 1 }
+        { title: $t('672a4676.a8b0c2') },
+        { title: $t('672a4676.44e7eb') },
+        { title: $t('672a4676.9f68a8'), icon: ['icon-shengxu-01', 'icon-jiangxu-01'], sort: 1 }
       ]
     })
-  }, [])
+  }, [i18n.language])
 
   useEffect(() => {
     if (leftList.length == 0) {
@@ -101,26 +106,36 @@ function PointShopList() {
   }, [leftList])
 
   const getInitConfig = async () => {
-    const [{ point: _point }, { screen }] = await Promise.all([
-      api.pointitem.getMypoint(),
-      api.pointitem.getPointitemSetting()
-    ])
-    const { point_openstatus, point_section } = screen
-    setState((draft) => {
-      draft.point = _point
-      draft.pointFilter = point_openstatus
-      draft.pointScoreList = point_section.map((item, index) => {
-        return {
-          id: index,
-          name: `${item[0]}~${item[1]}`,
-          value: item
-        }
+    try {
+      const [{ point: _point }, { screen } = {}] = await Promise.all([
+        api.pointitem.getMypoint(),
+        api.pointitem.getPointitemSetting()
+      ])
+      const { point_openstatus, point_section = [] } = screen || {}
+      setState((draft) => {
+        draft.point = _point ?? 0
+        draft.pointFilter = point_openstatus
+        draft.pointScoreList = (point_section || []).map((item, index) => {
+          return {
+            id: index,
+            name: `${item[0]}~${item[1]}`,
+            value: item
+          }
+        })
       })
-    })
+    } catch (e) {
+      setState((draft) => {
+        draft.point = 0
+      })
+    }
   }
 
+  useDidShow(() => {
+    getInitConfig()
+  })
+
   const fetch = async ({ pageIndex, pageSize }) => {
-    const { dis_id, cat_id, main_cat_id } = $instance.router.params
+    const { dis_id, cat_id, main_cat_id } = $instance?.router?.params
     let params = {
       page: pageIndex,
       pageSize,
@@ -248,7 +263,7 @@ function PointShopList() {
     })
   }
   return (
-    <SpPage scrollToTopBtn className={classNames('page-pointshop-list')}>
+    <SpPage scrollToTopBtn showpoweredBy={false} className={classNames('page-pointshop-list')}>
       <View className='page-hd'>
         <View className='pointshop-hd'>
           <View className='point-info'>
@@ -276,7 +291,7 @@ function PointShopList() {
             list={filterList}
             onChange={handleFilterChange}
           >
-            {/* <View
+            <View
               className='filter-btn'
               onClick={() => {
                 setState((v) => {
@@ -284,15 +299,16 @@ function PointShopList() {
                 })
               }}
             >
-              筛选<Text className='iconfont icon-filter'></Text>
-            </View> */}
+              {$t('672a4676.c2fe62')}
+              <Text className='iconfont icon-filter'></Text>
+            </View>
 
             <View className='search'>
               <View className='iconfont icon-sousuo-01'></View>
               <AtInput
                 value={keywords}
                 name='keywords'
-                placeholder='搜索'
+                placeholder={$t('672a4676.e5f71f')}
                 onFocus={() => {
                   setState((draft) => {
                     draft.isFocus = true
@@ -310,7 +326,18 @@ function PointShopList() {
           </SpFilterBar>
         </View>
       </View>
-      <SpScrollView className='item-list-scroll' auto={false} ref={goodsRef} fetch={fetch}>
+      <SpScrollView
+        className='item-list-scroll'
+        auto={false}
+        ref={goodsRef}
+        fetch={fetch}
+        renderMore={() => (
+          <View className='pointshop-list-footer'>
+            <SpNote className='no-more' title={$t('eb9a3a24.a25652')} />
+            <SpPoweredBy />
+          </View>
+        )}
+      >
         <View className='goods-list'>
           <View className='left-container'>
             {leftList.map((list, idx) => {
@@ -343,14 +370,14 @@ function PointShopList() {
         onConfirm={onConfirmFilter}
         onReset={onResetFilter}
       >
-        <View className='fitler-title'>积分区间</View>
+        <View className='fitler-title'>{$t('672a4676.5953c2')}</View>
         <View className='custom-point-input'>
           <AtInput
             clear
             focus
             name='start_price'
             value={start_price}
-            placeholder='最低积分'
+            placeholder={$t('672a4676.0931d4')}
             onChange={(e) => {
               setState((draft) => {
                 draft.start_price = e
@@ -363,7 +390,7 @@ function PointShopList() {
             focus
             name='end_price'
             value={end_price}
-            placeholder='最高积分'
+            placeholder={$t('672a4676.2814e2')}
             onChange={(e) => {
               setState((draft) => {
                 draft.end_price = e

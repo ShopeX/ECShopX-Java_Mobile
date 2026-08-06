@@ -3,34 +3,30 @@
  * See LICENSE file for license details.
  */
 import Taro from '@tarojs/taro'
-import { useState, useRef, useEffect } from 'react'
-import { pickBy, showToast } from '@/utils'
-import { useImmer } from 'use-immer'
-import api from '@/api'
-
-const initialConfigState = {
-  list: []
-}
+import { showToast } from '@/utils'
+import { useTranslation, $t, ti } from '@/i18n'
+import * as deliveryApi from '@/api/delivery'
 
 export default (props) => {
-  const [state, setState] = useImmer(initialConfigState)
+  useTranslation()
 
   const popUpStatus = (item, val) => {
     return new Promise((resolve, reject) => {
       Taro.showModal({
-        title: '提示',
-        content: `你确认要${val == 'pack' ? '打包' : '取消配送'}订单编号为${
-          item.orderId
-        }的订单吗？`,
+        title: $t('297bf473.02d981'),
+        content:
+          val == 'pack'
+            ? ti('297bf473.618479', [item.orderId])
+            : ti('297bf473.b581e0', [item.orderId]),
         async success(res) {
           if (res.confirm) {
             if (val == 'pack') {
-              await api.delivery.deliverypackagConfirm({ order_id: item.orderId })
-              showToast('打包成功')
+              await deliveryApi.deliverypackagConfirm({ order_id: item.orderId })
+              showToast($t('297bf473.9a94fc'))
               resolve(true)
             } else {
-              await api.delivery.cancelDeliverystaff({ order_id: item.orderId })
-              showToast('取消配送成功')
+              await deliveryApi.cancelDeliverystaff({ order_id: item.orderId })
+              showToast($t('297bf473.b21de1'))
               resolve(true)
             }
           } else if (res.cancel) {
@@ -44,19 +40,19 @@ export default (props) => {
 
   const orderState = (delivery) => {
     if (delivery.orderStatus == 'PAYED' && delivery.selfDeliveryStatus == 'RECEIVEORDER') {
-      return '已接单待打包'
+      return $t('297bf473.9c684b')
     } else if (delivery.orderStatus == 'PAYED' && delivery.selfDeliveryStatus == 'PACKAGED') {
-      return '已接单待发货'
+      return $t('297bf473.8710a7')
     } else if (
       delivery.orderStatus == 'WAIT_BUYER_CONFIRM' &&
       delivery.selfDeliveryStatus == 'DELIVERING'
     ) {
-      return '已发货配送中'
+      return $t('297bf473.b9cc03')
     } else if (
       delivery.orderStatus == 'WAIT_BUYER_CONFIRM' &&
       delivery.selfDeliveryStatus == 'DONE'
     ) {
-      return '已送达'
+      return $t('297bf473.f87f48')
     }
   }
 
@@ -85,8 +81,8 @@ export default (props) => {
     return new Promise(async (resolve, reject) => {
       try {
         const params = buildParams(information, list)
-        await api.delivery.orderUpdateDelivery(information.ordersDeliveryId, params)
-        showToast('更新配送状态成功')
+        await deliveryApi.orderUpdateDelivery(information.ordersDeliveryId, params)
+        showToast($t('297bf473.8589f2'))
         resolve(true)
       } catch (error) {
         reject(error)

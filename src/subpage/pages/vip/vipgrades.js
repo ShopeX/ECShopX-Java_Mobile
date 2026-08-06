@@ -5,7 +5,8 @@
 import React, { Component } from 'react'
 import Taro, { getCurrentInstance } from '@tarojs/taro'
 import { View, Image, Text, ScrollView } from '@tarojs/components'
-import { Price, SpNavBar, SpCell, CouponModal, SpPage, SpCouponPackage } from '@/components'
+import { SpPrice, SpNavBar, SpCell, SpPage, SpCouponPackage } from '@/components'
+import { CouponModal } from '@/subpages/components'
 import { connect } from 'react-redux'
 import { AtTabs, AtTabsPane } from 'taro-ui'
 import api from '@/api'
@@ -20,9 +21,9 @@ import {
   requestAlipayminiPayment
 } from '@/utils'
 import CompPaymentPicker from '@/pages/cart/comps/comp-paymentpicker'
+import { $t, ti, i18n } from '@/i18n'
 import userIcon from '@/assets/imgs/user-icon.png'
 // import { useDispatch } from 'react-redux'
-
 import './vipgrades.scss'
 // import { updateUserInfo } from '@/store/slices/user'
 // const dispatch = useDispatch()
@@ -37,7 +38,7 @@ import './vipgrades.scss'
   })
 )
 export default class VipIndex extends Component {
-  $instance = getCurrentInstance()
+  $instance = getCurrentInstance() || {}
   constructor(props) {
     super(props)
 
@@ -59,7 +60,13 @@ export default class VipIndex extends Component {
     }
   }
 
+  syncVipNavTitle = () => {
+    Taro.setNavigationBarTitle({ title: $t('39e52289.9f0635') })
+  }
+
   componentDidMount() {
+    this.syncVipNavTitle()
+    i18n.on('languageChanged', this.syncVipNavTitle)
     console.log(S.getAuthToken())
     const { colors } = this.props
     Taro.setNavigationBarColor({
@@ -78,9 +85,13 @@ export default class VipIndex extends Component {
     )
   }
 
+  componentWillUnmount() {
+    i18n.off('languageChanged', this.syncVipNavTitle)
+  }
+
   async fetchInfo() {
     const { cur, list } = await api.vip.getList()
-    const { grade_name: name } = this.$instance.router.params
+    const { grade_name: name } = this.$instance?.router?.params
 
     const tabList = pickBy(list, {
       title: ({ grade_name }) => grade_name,
@@ -160,12 +171,12 @@ export default class VipIndex extends Component {
   handleCharge = async () => {
     if (!S.getAuthToken()) {
       Taro.showToast({
-        title: '请先登录再购买',
+        title: $t('20d574cd.d9b8b5'),
         icon: 'none'
       })
 
       setTimeout(() => {
-        S.login(this)
+        S?.login(this)
       }, 2000)
 
       return
@@ -213,11 +224,11 @@ export default class VipIndex extends Component {
             icon: 'none'
           })
         }
-        S.getMemberInfo()
+        S?.getMemberInfo()
         this.setState({ visible: true })
       } catch (e) {
         Taro.showToast({
-          title: '支付失败',
+          title: $t('16726e8e.4548cc'),
           icon: 'none'
         })
         console.log('error==>', e)
@@ -235,20 +246,20 @@ export default class VipIndex extends Component {
       paySign: config.paySign,
       success: function (res) {
         wx.showModal({
-          content: '支付成功',
+          content: $t('16726e8e.eb5dc9'),
           showCancel: false,
           success: function (res) {
             console.log('success')
-            S.getMemberInfo()
+            S?.getMemberInfo()
             // that.fetchCouponCardList()
-            this.setState({ visible: true })
+            that.setState({ visible: true })
             // Taro.navigateBack()
           }
         })
       },
       fail: function (res) {
         wx.showModal({
-          content: '支付失败',
+          content: $t('16726e8e.4548cc'),
           showCancel: false
         })
       }
@@ -294,7 +305,7 @@ export default class VipIndex extends Component {
 
   handleCouponBox = () => {
     Taro.showToast({
-      title: '开通会员，立享优惠',
+      title: $t('a1dacd5f.528424'),
       icon: 'none'
     })
   }
@@ -317,13 +328,13 @@ export default class VipIndex extends Component {
       total_count
     } = this.state
     const payTypeText = {
-      point: `${this.props.pointName}支付`,
-      wxpay: process.env.TARO_ENV === 'weapp' ? '微信支付' : '现金支付',
-      deposit: '余额支付',
-      delivery: '货到付款',
-      hfpay: '微信支付',
-      adapay: '微信支付',
-      alipaymini: '支付宝支付'
+      point: ti('349e8d9f.717604', [this.props.pointName]),
+      wxpay: process.env.TARO_ENV === 'weapp' ? $t('175b20c3.bffe28') : $t('36c99ee5.330ef6'),
+      deposit: $t('349e8d9f.89ac23'),
+      delivery: $t('349e8d9f.2d2ccd'),
+      hfpay: $t('175b20c3.bffe28'),
+      adapay: $t('175b20c3.bffe28'),
+      alipaymini: $t('36c99ee5.e3b206')
     }
     return (
       <SpPage>
@@ -332,7 +343,7 @@ export default class VipIndex extends Component {
             'has-navbar': isNavbar()
           })}
         >
-          <SpNavBar title='会员购买' leftIconType='chevron-left' fixed='true' />
+          <SpNavBar title={$t('39e52289.9f0635')} leftIconType='chevron-left' fixed='true' />
           <View className='header' style={'background: ' + colors.data[0].marketing}>
             <View className='header-isauth'>
               <Image
@@ -344,8 +355,8 @@ export default class VipIndex extends Component {
                 <View className='nickname'>{userInfo.username}</View>
                 <View className='mcode'>
                   {userVipInfo.grade_name
-                    ? userVipInfo.grade_name + ' : 有效期至' + (userVipInfo.end_time || '')
-                    : '暂未开通'}
+                    ? ti('a1dacd5f.90bf57', [userVipInfo.grade_name, userVipInfo.end_time || ''])
+                    : $t('a1dacd5f.3e8bdd')}
                 </View>
               </View>
             </View>
@@ -363,7 +374,7 @@ export default class VipIndex extends Component {
           <View className='pay-box'>
             {cur && cur.rate && cur.rate != 1 && (
               <View className='text-muted'>
-                <text className='icon-info'></text> 货币汇率：1{cur.title} = {cur.rate}RMB
+                <text className='icon-info'></text> {ti('a1dacd5f.6d6eee', [cur.title, cur.rate])}
               </View>
             )}
             <ScrollView scrollX className='grade-list'>
@@ -379,13 +390,17 @@ export default class VipIndex extends Component {
                       >
                         <View className='item-content'>
                           <View className='desc weight'>
-                            {(item.name === 'monthly' && '连续包月') ||
-                              (item.name === 'quarter' && '连续包季') ||
-                              (item.name === 'year' && '连续包年')}
+                            {item.name === 'monthly'
+                              ? $t('a1dacd5f.fcafce')
+                              : item.name === 'quarter'
+                              ? $t('a1dacd5f.dcace5')
+                              : item.name === 'year'
+                              ? $t('a1dacd5f.1858b5')
+                              : ''}
                           </View>
                           <View className='desc'>{item.desc}</View>
                           <View className='amount'>
-                            <Price primary value={Number(item.price)} />
+                            <SpPrice primary value={Number(item.price)} />
                           </View>
                         </View>
                       </View>
@@ -397,7 +412,7 @@ export default class VipIndex extends Component {
             <CompPaymentPicker
               isOpened={isPaymentOpend}
               type={payType}
-              title='支付方式'
+              title={$t('250b375e.0c9d2b')}
               isPointitemGood={false}
               isShowBalance={false}
               isShowDelivery={false}
@@ -410,7 +425,7 @@ export default class VipIndex extends Component {
             <SpCell
               isLink
               border={false}
-              title='支付方式'
+              title={$t('250b375e.0c9d2b')}
               onClick={this.handlePaymentShow}
               className='cus-sp-cell'
             >
@@ -418,13 +433,13 @@ export default class VipIndex extends Component {
             </SpCell>
 
             <View className='pay-btn' onClick={this.handleCharge}>
-              立即支付
+              {$t('16726e8e.747349')}
             </View>
           </View>
           {couponList && couponList.length > 0 && (
             <View className='coupon-box' style={{ boxShadow: '0rpx 2rpx 16rpx 0rpx #DDDDDD' }}>
-              <Text className='content-v-padded'>会员专享券包</Text>
-              <Text className='content-v-subtitle'>优惠券共计{total_count}张</Text>
+              <Text className='content-v-padded'>{$t('a1dacd5f.0bf734')}</Text>
+              <Text className='content-v-subtitle'>{ti('a1dacd5f.efa668', [total_count])}</Text>
               <ScrollView scrollX className='scroll-box'>
                 {couponList.map((items) => (
                   <View
@@ -436,13 +451,14 @@ export default class VipIndex extends Component {
                     {items.card_type === 'cash' && (
                       <View>
                         <View className='coupon-price'>
-                          <Price primary value={items.reduce_cost / 100} noDecimal />
+                          <SpPrice primary value={items.reduce_cost / 100} noDecimal />
                         </View>
                         <View className='coupon-desc'>
-                          满{items.least_cost > 0 ? items.least_cost / 100 : 0.01}
-                          可用
+                          {ti('d9bcdef5.47e317', [
+                            items.least_cost > 0 ? items.least_cost / 100 : 0.01
+                          ])}
                         </View>
-                        <View className='coupon-quan'>代金券</View>
+                        <View className='coupon-quan'>{$t('a1dacd5f.607c87')}</View>
                         <View className='coupon-mark'>
                           {items.give_num > 0 ? `x${items.give_num}` : null}
                         </View>
@@ -451,10 +467,10 @@ export default class VipIndex extends Component {
                     {(items.card_type === 'gift' || items.card_type === 'new_gift') && (
                       <View>
                         <View className='coupon-price'>
-                          <View className='coupon-font'>兑换券</View>
+                          <View className='coupon-font'>{$t('d9bcdef5.8bc752')}</View>
                         </View>
                         <View className='coupon-desc'>{items.description}</View>
-                        <View className='coupon-quan'>兑换券</View>
+                        <View className='coupon-quan'>{$t('d9bcdef5.8bc752')}</View>
                         <View className='coupon-mark'>
                           {items.give_num > 0 ? `x${items.give_num}` : null}
                         </View>
@@ -464,13 +480,14 @@ export default class VipIndex extends Component {
                       <View>
                         <View className='coupon-price'>
                           <Text className='coupon-font'>{(100 - items.discount) / 10}</Text>
-                          <Text className='coupon-size'>折</Text>
+                          <Text className='coupon-size'>{$t('d9bcdef5.96c015')}</Text>
                         </View>
                         <View className='coupon-desc'>
-                          满{items.least_cost > 0 ? items.least_cost / 100 : 0.01}
-                          使用
+                          {ti('a1dacd5f.1b4266', [
+                            items.least_cost > 0 ? items.least_cost / 100 : 0.01
+                          ])}
                         </View>
-                        <View className='coupon-quan'>折扣券</View>
+                        <View className='coupon-quan'>{$t('d9bcdef5.9268f9')}</View>
                         <View className='coupon-mark'>
                           {items.give_num > 0 ? `x${items.give_num}` : null}
                         </View>
@@ -483,7 +500,7 @@ export default class VipIndex extends Component {
           )}
           <View className='section' style={{ boxShadow: '0rpx 2rpx 16rpx 0rpx #DDDDDD' }}>
             <View className='section-body'>
-              <View className='content-v-padded'>会员权益</View>
+              <View className='content-v-padded'>{$t('2d951fb0.de4753')}</View>
               <View className='text-muted'>
                 {list[curTabIdx] &&
                   list[curTabIdx].description &&

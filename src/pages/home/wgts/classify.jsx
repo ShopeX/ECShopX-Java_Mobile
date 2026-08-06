@@ -32,32 +32,32 @@ function WgtClassify(props) {
     } else {
       //销售分类
       Taro.navigateTo({
-        url: `/subpages/item/list?category_id=${category_id}&store_ids=${store_ids}&hide_search=1`
+        url: `/subpages/item/list?cat_id=${category_id}&store_ids=${store_ids}&hide_search=1`
       })
     }
   }
   const outStyle = useMemo(() => {
     const { outerMargin, outerBackground } = base
     return {
-      paddingTop: Taro.pxTransform(outerMargin.paddedt),
-      paddingBottom: Taro.pxTransform(outerMargin.paddedb),
-      backgroundColor: outerBackground.color,
-      backgroundImage: outerBackground.image ? `url(${outerBackground.image})` : 'none',
-      backgroundSize: 'cover',
-      backgroundPosition: 'center',
-      backgroundRepeat: 'no-repeat'
+      'padding-top': Taro.pxTransform(outerMargin.paddedt),
+      'padding-bottom': Taro.pxTransform(outerMargin.paddedb),
+      'background-color': outerBackground.color,
+      'background-image': outerBackground.image ? `url(${outerBackground.image})` : 'none',
+      'background-size': 'cover',
+      'background-position': 'center',
+      'background-repeat': 'no-repeat'
     }
   }, [base])
 
   const innerStyle = useMemo(() => {
     const { innerPadding, innerBackground } = base
     return {
-      paddingLeft: Taro.pxTransform(innerPadding.paddedl),
-      paddingRight: Taro.pxTransform(innerPadding.paddedr),
-      paddingTop: Taro.pxTransform(innerPadding.paddedt),
-      paddingBottom: Taro.pxTransform(innerPadding.paddedb),
-      backgroundColor: innerBackground?.type == 'solid' ? innerBackground.color : 'none',
-      backgroundImage:
+      'padding-left': Taro.pxTransform(innerPadding.paddedl),
+      'padding-right': Taro.pxTransform(innerPadding.paddedr),
+      'padding-top': Taro.pxTransform(innerPadding.paddedt),
+      'padding-bottom': Taro.pxTransform(innerPadding.paddedb),
+      'background-color': innerBackground?.type == 'solid' ? innerBackground.color : 'none',
+      'background-image':
         innerBackground?.type == 'gradient'
           ? `linear-gradient(${innerBackground.startColor}, ${innerBackground.endColor})`
           : 'none'

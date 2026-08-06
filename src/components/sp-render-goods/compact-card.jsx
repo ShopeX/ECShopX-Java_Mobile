@@ -4,11 +4,13 @@ import { SpImage, SpPrice, SpPoint } from '@/components'
 import SpTag from '@/components/sp-tag/index'
 import Taro from '@tarojs/taro'
 import qs from 'qs'
+import { $t, useTranslation } from '@/i18n'
 import { classNames, styleNames } from '@/utils'
 
 import './compact-card.scss'
 
 function SpGoodsCompactCard(props) {
+  useTranslation()
   const {
     info = null,
     onClick,
@@ -73,7 +75,7 @@ function SpGoodsCompactCard(props) {
         {info.store <= 0 && (
           <View className='soldout-mask'>
             <View className='soldout-mask-text'>
-              <Text>已售罄</Text>
+              <Text>{$t('8a5d1351.b12876')}</Text>
             </View>
           </View>
         )}
@@ -125,7 +127,6 @@ function SpGoodsCompactCard(props) {
                   style={{ marginRight: '6px' }}
                   weight={600}
                 />
-
                 {Number(info.marketPrice || 0) > 0 &&
                   Number(finalPrice || 0) < Number(info.marketPrice || 0) && (
                     <SpPrice
@@ -159,7 +160,7 @@ function SpGoodsCompactCard(props) {
           {showPrice && !info.point && info.discountRate && (
             <View className='discount-tag'>
               <Text className='discount-tag__value'>{info.discountRate}</Text>
-              <Text className='discount-tag__unit'>折</Text>
+              <Text className='discount-tag__unit'>{$t('d9bcdef5.96c015')}</Text>
             </View>
           )}
         </View>

@@ -6,6 +6,7 @@ import SpTag from '@/components/sp-tag/index'
 import { SpImage, SpLogin, SpPrice } from '@/components'
 import api from '@/api'
 import { pickBy, showToast, navigateToStoreByDistributorId, classNames } from '@/utils'
+import { useTranslation, $t, ti } from '@/i18n'
 import S from '@/spx'
 import doc from '@/doc'
 import './index.scss'
@@ -16,6 +17,7 @@ const initialState = {
   loading: true
 }
 function SpShop(props) {
+  useTranslation()
   const { info, style, isActive, id = 0 } = props
   const [state, setState] = useImmer(initialState)
   const { isFav, items, loading } = state
@@ -74,7 +76,7 @@ function SpShop(props) {
         draft.isFav = is_fav
       })
     } else {
-      showToast('店铺已注销，去别的店铺看看吧')
+      showToast($t('a1e2493f.542f83'))
     }
   }
 
@@ -84,7 +86,7 @@ function SpShop(props) {
     if (status) {
       await navigateToStoreByDistributorId(distributor_id)
     } else {
-      showToast('店铺已注销，去别的店铺看看吧')
+      showToast($t('a1e2493f.542f83'))
     }
   }
   const handleClickItem = (item) => {
@@ -124,7 +126,7 @@ function SpShop(props) {
                 </View>
               </SpLogin>
               <View className='sp-shop__link' onClick={() => handleToStore()}>
-                <Text>进店逛逛</Text>
+                <Text>{$t('a1e2493f.0f2d3a')}</Text>
               </View>
             </View>
           </View>
@@ -154,18 +156,14 @@ function SpShop(props) {
         )}
         {items.length > 0 && !loading && (
           <ScrollView scrollX className='sp-shop__goods-list' enableFlex>
-            {items.map((item, index) => (
-              <View
-                className='sp-shop__goods-item'
-                key={item.itemId || `goods-item-${index}`}
-                onClick={() => handleClickItem(item)}
-              >
+            {items.map((item) => (
+              <View className='sp-shop__goods-item' onClick={() => handleClickItem(item)}>
                 <View className='sp-shop__goods-item-image'>
                   <SpImage src={item.pic} placeholderColor='#f2f3f5' mode='aspectFill' />
                   {item.store === 0 && (
                     <View className='sp-shop__goods-item-sold-out'>
                       <View className='sp-shop__goods-item-sold-out-text'>
-                        <Text>已售罄</Text>
+                        <Text>{$t('8a5d1351.b12876')}</Text>
                       </View>
                     </View>
                   )}
@@ -216,19 +214,22 @@ function SpShop(props) {
                     item.discount_rate) && (
                     <View className='sp-shop__goods-item-tags'>
                       {item.discount_rate && (
-                        <SpTag label={`${item.discount_rate}折`} type='secondary' />
-                      )}
-                      {item.tags.slice(0, 3)?.map((tag, tagIndex) => (
                         <SpTag
-                          key={tagIndex}
+                          label={ti('bfc5ccea.2fb189', [item.discount_rate])}
+                          type='secondary'
+                        />
+                      )}
+                      {item.tags.slice(0, 3)?.map((tag, index) => (
+                        <SpTag
+                          key={index}
                           label={tag.tag_name}
                           type={tag.type || 'primary'}
                           className='item-three__tag'
                         />
                       ))}
-                      {item.couponList?.map((coupon, couponIndex) => (
+                      {item.couponList?.map((coupon, index) => (
                         <SpTag
-                          key={couponIndex}
+                          key={index}
                           label={coupon.discount_rule}
                           type='warning'
                           className='sp-shop__goods-item-tag'

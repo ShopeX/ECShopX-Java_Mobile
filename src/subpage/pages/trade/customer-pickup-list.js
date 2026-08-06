@@ -10,9 +10,9 @@ import api from '@/api'
 import { connect } from 'react-redux'
 import { withPager, withLogin } from '@/hocs'
 import { log, pickBy, resolveOrderStatus, getCurrentRoute, classNames, isNavbar } from '@/utils'
-// import { Tracker } from '@/service'
+import { Tracker } from '@/service'
+import { $t } from '@/i18n'
 import TradeItem from './comps/item'
-
 import './list.scss'
 
 @connect(({ colors }) => ({
@@ -20,7 +20,7 @@ import './list.scss'
 }))
 @withPager
 export default class TradePickList extends Component {
-  $instance = getCurrentInstance()
+  $instance = getCurrentInstance() || {}
 
   constructor(props) {
     super(props)
@@ -51,7 +51,7 @@ export default class TradePickList extends Component {
     Tracker.dispatch('PAGE_PULL_DOWN_REFRESH')
 
     Taro.showLoading({
-      title: '加载中',
+      title: $t('10293ac1.f013ea'),
       icon: 'none'
     })
     this.resetPage(() => {
@@ -124,7 +124,7 @@ export default class TradePickList extends Component {
     const { tid } = trade
     if (type === 'confirm') {
       await api.trade.confirm(tid)
-      const { fullPath } = getCurrentRoute(this.$instance.router)
+      const { fullPath } = getCurrentRoute(this.$instance?.router)
       Taro.redirectTo({
         url: fullPath
       })
@@ -171,7 +171,7 @@ export default class TradePickList extends Component {
           'has-navbar': isNavbar()
         })}
       >
-        <SpNavBar title='自提订单' leftIconType='chevron-left' fixed='true' />
+        <SpNavBar title={$t('d5036137.9c9137')} leftIconType='chevron-left' fixed='true' />
 
         <ScrollView
           scrollY
@@ -193,9 +193,9 @@ export default class TradePickList extends Component {
               />
             )
           })}
-          {page.isLoading && <Loading>正在加载...</Loading>}
+          {page.isLoading && <Loading>{$t('10293ac1.bd0271')}</Loading>}
           {!page.isLoading && !page.hasNext && !list.length && (
-            <SpNote img='trades_empty.png'>赶快去添加吧~</SpNote>
+            <SpNote img='trades_empty.png'>{$t('708ca93b.8a4368')}</SpNote>
           )}
           {!!curItemActionsId && <View className='layer' onClick={this.hideLayer} />}
         </ScrollView>

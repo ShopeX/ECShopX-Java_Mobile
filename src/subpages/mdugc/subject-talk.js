@@ -7,12 +7,12 @@ import Taro, { useRouter, useDidShow } from '@tarojs/taro'
 import { useSelector } from 'react-redux'
 import { pickBy, showToast } from '@/utils'
 import { useImmer } from 'use-immer'
-import api from '@/api'
+import * as mdugcApi from '@/api/mdugc'
+import { useTranslation } from '@/i18n'
 import imgUploader from '@/utils/upload'
 import { AtTextarea, AtActionSheet, AtActionSheetItem, AtButton } from 'taro-ui'
 import { View, Text, Block } from '@tarojs/components'
 import { SpPage, SpSearchBar, SpScrollView, SpCell, SpNote } from '@/components'
-
 import './subject-talk.scss'
 
 const initialState = {
@@ -21,6 +21,7 @@ const initialState = {
 }
 
 function UgcSubjectTalk(props) {
+  const { t } = useTranslation()
   const [state, setState] = useImmer(initialState)
   const [selected, setSelected] = useState(new Map())
   const { keyword, topicList } = state
@@ -29,18 +30,22 @@ function UgcSubjectTalk(props) {
   const listRef = useRef()
 
   useEffect(() => {
+    Taro.setNavigationBarTitle({ title: t('c575112f.81a65b') })
+  }, [t])
+
+  useEffect(() => {
     listRef.current.reset()
   }, [keyword])
 
   const fetch = async ({ pageIndex, pageSize }) => {
-    const { topic_ids } = router.params
+    const { topic_ids } = router?.params
     const topicIds = decodeURIComponent(topic_ids).split(',')
     const params = {
       page: pageIndex,
       pageSize,
       topic_name: keyword
     }
-    const { list = [], total_count: total } = await api.mdugc.topiclist(params)
+    const { list = [], total_count: total } = await mdugcApi.topiclist(params)
     const _topicList = pickBy(list, {
       topicId: 'topic_id',
       topicName: 'topic_name'
@@ -59,19 +64,19 @@ function UgcSubjectTalk(props) {
   }
 
   const handleAddSubjectTalk = async () => {
-    const { topic_name, topic_id, message, status } = await api.mdugc.topiccreate({
+    const { topic_name, topic_id, message, status } = await mdugcApi.topiccreate({
       user_id: userInfo.user_id,
       topic_name: keyword
     })
     // if (status == 1) {
     //   this.topages({ topic_name, topic_id })
     // }
-    showToast('添加成功')
+    showToast(t('c575112f.3fdaea'))
     listRef.current.reset()
   }
 
   const handleClickItem = ({ topicId, topicName }) => {
-    const { event } = router.params
+    const { event } = router?.params
     let tempSelected
     if (selected.has(topicId)) {
       selected.delete(topicId)
@@ -112,7 +117,7 @@ function UgcSubjectTalk(props) {
     <SpPage className='page-ugc-subject-talk'>
       <SpSearchBar
         keyword={keyword}
-        placeholder='搜索话题'
+        placeholder={t('c575112f.eb54d2')}
         localStorageKey='ugcSubjectTalkHistory'
         onFocus={() => {}}
         onChange={() => {}}
@@ -127,10 +132,10 @@ function UgcSubjectTalk(props) {
         fetch={fetch}
         renderEmpty={
           <View className='action-container'>
-            <SpNote icon title='没有查询到数据' />
+            <SpNote icon title={t('c575112f.f1f45e')} />
             {keyword && (
               <AtButton circle onClick={handleAddSubjectTalk}>
-                添加自定义话题
+                {t('c575112f.200dbd')}
               </AtButton>
             )}
           </View>

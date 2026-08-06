@@ -3,11 +3,13 @@
  * See LICENSE file for license details.
  */
 import React, { useEffect } from 'react'
+import { useTranslation, $t } from '@/i18n'
 import { useSelector } from 'react-redux'
 import { useImmer } from 'use-immer'
 import Taro from '@tarojs/taro'
 import api from '@/api'
 import doc from '@/doc'
+import * as memberDoc from '@/doc/member'
 import { View, Swiper, SwiperItem, Text } from '@tarojs/components'
 import { SpPage, SpImage, SpHtml } from '@/components'
 import { pickBy } from '@/utils'
@@ -19,12 +21,17 @@ const initialState = {
   total_consumption: 0
 }
 function MemberLevel(props) {
+  const { i18n } = useTranslation()
   const { userInfo = {}, vipInfo = {} } = useSelector((state) => state.user)
   const [state, setState] = useImmer(initialState)
   const { list, activeIndex, total_consumption } = state
   useEffect(() => {
     fetch()
   }, [userInfo?.grade_id, vipInfo?.isVip])
+
+  useEffect(() => {
+    Taro.setNavigationBarTitle({ title: $t('2d951fb0.de4753') })
+  }, [i18n.language])
 
   const fetch = async () => {
     const { grade_id } = userInfo
@@ -33,9 +40,9 @@ function MemberLevel(props) {
     let list = []
     // 付费会员
     if (vipInfo?.isVip) {
-      list = pickBy(vip_grade_list, doc.member.VIP_GRADE_ITEM)
+      list = pickBy(vip_grade_list, memberDoc.VIP_GRADE_ITEM)
     } else {
-      list = pickBy(member_card_list, doc.member.MEMBER_CARD_ITEM)
+      list = pickBy(member_card_list, memberDoc.MEMBER_CARD_ITEM)
     }
     const grade_index = list.findIndex((item) => item.grade_id == grade_id)
     setState((draft) => {
@@ -63,10 +70,10 @@ function MemberLevel(props) {
       return {}
     }
     return {
-      backgroundImage: `url(${item.grade_background})`,
-      backgroundSize: 'cover',
-      backgroundPosition: 'center',
-      backgroundRepeat: 'no-repeat'
+      'background-image': `url(${item.grade_background})`,
+      'background-size': 'cover',
+      'background-position': 'center',
+      'background-repeat': 'no-repeat'
     }
   }
 
@@ -87,9 +94,9 @@ function MemberLevel(props) {
                 <View className='grade-name'>{item.grade_name}</View>
                 {/* <View className='grade-discount'>{`已消费${total_consumption / 100}元`}</View> */}
                 <View className='level-info'>
-                  {item.type === 'active' && <Text>当前等级</Text>}
-                  {item.type === 'prev' && <Text>已获得</Text>}
-                  {item.type === 'next' && <Text>待升级</Text>}
+                  {item.type === 'active' && <Text>{$t('91ae3916.5cd8cb')}</Text>}
+                  {item.type === 'prev' && <Text>{$t('91ae3916.42280b')}</Text>}
+                  {item.type === 'next' && <Text>{$t('91ae3916.7357b5')}</Text>}
                 </View>
               </View>
             </SwiperItem>
@@ -98,7 +105,7 @@ function MemberLevel(props) {
       </View>
       <View className='level-bd'>
         <View className='content-hd'>
-          <View className='title'>等级权益</View>
+          <View className='title'>{$t('91ae3916.1d3970')}</View>
         </View>
         <View className='content-bd'>
           <SpHtml content={list?.[activeIndex]?.description || ''}></SpHtml>

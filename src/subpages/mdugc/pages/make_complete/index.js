@@ -6,13 +6,13 @@ import React, { Component } from 'react'
 import Taro from '@tarojs/taro'
 import { View, Text, Image, ScrollView } from '@tarojs/components'
 import S from '@/spx'
-
 import { SpNote, BackToTop, GoodsItem, Loading } from '@/components'
 import { pickBy } from '@/utils'
 import { withPager, withBackToTop } from '@/hocs'
 import entry from '@/utils/entry'
-
 import api from '@/api'
+import * as mdugcApi from '@/api/mdugc'
+import { $t, i18n } from '@/i18n'
 
 import { SearchBar } from '../../components'
 import './index.scss'
@@ -55,9 +55,22 @@ export default class make_complete extends Component {
         this.nextPage()
       }
     )
+    Taro.setNavigationBarTitle({ title: $t('9572dba4.fa3aee') })
+    this._onMakeCompleteLang = () => {
+      Taro.setNavigationBarTitle({ title: $t('9572dba4.fa3aee') })
+      this.forceUpdate()
+    }
+    i18n.on('languageChanged', this._onMakeCompleteLang)
   }
+
+  componentWillUnmount() {
+    if (this._onMakeCompleteLang) {
+      i18n.off('languageChanged', this._onMakeCompleteLang)
+    }
+  }
+
   config = {
-    navigationBarTitleText: '添加商品'
+    navigationBarTitleText: ''
   }
   componentDidShow() {
     Taro.setNavigationBarColor({
@@ -120,7 +133,7 @@ export default class make_complete extends Component {
       query.distributor_id = isOpenStore ? store_id : distributor_id
     }
 
-    // const { list, total_count: total } = await api.mdugc.yuyueActivityList(params)
+    // const { list, total_count: total } = await mdugcApi.yuyueActivityList(params)
     const { list, total_count: total } = await api.item.search(query)
     console.log('list, total', list, total)
 
@@ -182,7 +195,7 @@ export default class make_complete extends Component {
             onChange={this.shonChange.bind(this)}
             onClear={this.shonClear.bind(this)}
             onConfirm={this.shonConfirm.bind(this)}
-            _placeholder='请输入'
+            _placeholder={$t('9572dba4.02cc4f')}
             keyword={query.keywords}
           ></SearchBar>
         </View>
@@ -212,9 +225,9 @@ export default class make_complete extends Component {
                 })}
               </View>
             </View>
-            {page.isLoading && <Loading>正在加载...</Loading>}
+            {page.isLoading && <Loading>{$t('9572dba4.bd0271')}</Loading>}
             {!page.isLoading && !page.hasNext && !list.length && (
-              <SpNote img='trades_empty.png'>列表页为空!</SpNote>
+              <SpNote img='trades_empty.png'>{$t('9572dba4.1feb58')}</SpNote>
             )}
           </ScrollView>
         </View>

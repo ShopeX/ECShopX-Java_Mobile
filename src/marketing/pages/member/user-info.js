@@ -6,32 +6,21 @@ import React, { Component } from 'react'
 import Taro, { getCurrentInstance } from '@tarojs/taro'
 import { View, Text, Picker, Image } from '@tarojs/components'
 import { connect } from 'react-redux'
+import { withTranslation } from 'react-i18next'
+import { $t, ti } from '@/i18n'
 import { AtForm, AtButton } from 'taro-ui'
-import {
-  SpToast,
-  SpTimer,
-  SpNavBar,
-  FormIdCollector,
-  SpCheckbox,
-  SpInput as AtInput
-} from '@/components'
+import { SpToast, SpNavBar, FormIdCollector, SpCheckbox, SpInput as AtInput } from '@/components'
+import { SpTimer } from '@/subpages/components'
 import { classNames, isString, isArray } from '@/utils'
-// import { Tracker } from '@/service'
+import { Tracker } from '@/service'
 import S from '@/spx'
 import api from '@/api'
-
 import './user-info.scss'
 
 const isWeapp = Taro.getEnv() === Taro.ENV_TYPE.WEAPP
 
-@connect(
-  ({ user }) => ({
-    land_params: user.land_params
-  }),
-  () => ({})
-)
-export default class Reg extends Component {
-  $instance = getCurrentInstance()
+class Reg extends Component {
+  $instance = getCurrentInstance() || {}
   constructor(props) {
     super(props)
 
@@ -50,6 +39,7 @@ export default class Reg extends Component {
   }
 
   componentDidMount() {
+    this.syncNavTitle()
     // console.log(Taro.getEnv(),this.props.land_params)
     if (process.env.TARO_ENV === 'weapp') {
       this.setState({
@@ -66,6 +56,30 @@ export default class Reg extends Component {
       })
     }
     this.fetch()
+  }
+
+  componentDidUpdate(prevProps) {
+    if (prevProps.i18n?.language !== this.props.i18n?.language) {
+      this.syncNavTitle()
+      this.patchSexLabels()
+    }
+  }
+
+  syncNavTitle = () => {
+    Taro.setNavigationBarTitle({ title: $t('461de497.fe0e8b') })
+  }
+
+  patchSexLabels = () => {
+    this.setState((state) => ({
+      list: state.list.map((item) =>
+        item.key === 'sex'
+          ? {
+              ...item,
+              items: [$t('794b92c4.1622dc'), $t('1c487437.36a490'), $t('1c487437.87c835')]
+            }
+          : item
+      )
+    }))
   }
 
   handleClickImgcode = async () => {
@@ -94,7 +108,7 @@ export default class Reg extends Component {
       Object.keys(res).forEach((key) => {
         if (res[key].is_open) {
           if (key === 'sex') {
-            res[key].items = ['未知', '男', '女']
+            res[key].items = [$t('794b92c4.1622dc'), $t('1c487437.36a490'), $t('1c487437.87c835')]
           }
           if (key === 'birthday') {
             res[key].items = []
@@ -128,28 +142,28 @@ export default class Reg extends Component {
     }
 
     if (!data.mobile || !/1\d{10}/.test(data.mobile)) {
-      return S.toast('请输入正确的手机号')
+      return S?.toast($t('4e9d53b5.a32ab5'))
     }
 
     if (!isWeapp && !data.vcode) {
-      return S.toast('请输入验证码')
+      return S?.toast($t('4e9d53b5.d0c06a'))
     }
 
     /*if (!data.password) {
-      return S.toast('请输入密码')
+      return S?.toast('请输入密码')
     }*/
     this.state.list.map((item) => {
       return item.is_required
         ? item.is_required && data[item.key]
           ? true
-          : S.toast(`请输入${item.name}`)
+          : S?.toast(ti('b1a8838b.72ba91', [item.name]))
         : null
     })
 
     try {
       if (isWeapp) {
         const uid = Taro.getStorageSync('distribution_shop_id')
-        const { union_id, open_id } = this.$instance.router.params
+        const { union_id, open_id } = this.$instance?.router?.params
         const trackParams = Taro.getStorageSync('trackParams')
         let params = {
           ...data,
@@ -173,13 +187,13 @@ export default class Reg extends Component {
 
         const { code } = await Taro.login()
         const { token } = await api.wx.login({ code })
-        S.setAuthToken(token)
+        S?.setAuthToken(token)
       } else {
         const res = await api.user.reg(data)
-        S.setAuthToken(res.token)
+        S?.setAuthToken(res.token)
       }
 
-      S.toast('注册成功')
+      S?.toast($t('4e9d53b5.6506a9'))
       setTimeout(() => {
         Taro.redirectTo({
           url: '/subpages/member/index'
@@ -223,7 +237,7 @@ export default class Reg extends Component {
             new_option_list.push(option_item.name)
           }
         })
-        item.key === name ? (item.value = new_option_list.join('，')) : null
+        item.key === name ? (item.value = new_option_list.join($t('5e103177.d3b98f'))) : null
       })
     } else {
       list.map((item) => {
@@ -241,7 +255,7 @@ export default class Reg extends Component {
   }
 
   handleErrorToastClose = () => {
-    S.closeToast()
+    S?.closeToast()
   }
 
   handleTimerStart = async (resolve) => {
@@ -249,10 +263,10 @@ export default class Reg extends Component {
     const { mobile, yzm } = this.state.info
     const { imgInfo } = this.state
     if (!/1\d{10}/.test(mobile)) {
-      return S.toast('请输入正确的手机号')
+      return S?.toast($t('4e9d53b5.a32ab5'))
     }
     if (!(mobile.length === 11 && yzm)) {
-      return S.toast('请输入手机号和图形验证码')
+      return S?.toast($t('5e103177.07bb27'))
     }
 
     const query = {
@@ -263,7 +277,7 @@ export default class Reg extends Component {
     }
     try {
       await api.user.regSmsCode(query)
-      S.toast('发送成功')
+      S?.toast($t('1d9cdff5.9db9a7'))
     } catch (error) {
       return false
     }
@@ -286,7 +300,7 @@ export default class Reg extends Component {
   }
 
   handleGetPhoneNumber = async (e) => {
-    // let { code } = getCurrentInstance().params
+    // let { code } = getCurrentInstance()?.params
     // try {
     //   await Taro.checkSession()
     // } catch (e) {
@@ -307,12 +321,6 @@ export default class Reg extends Component {
     this.handleChange('mobile', phoneNumber)
     this.setState({
       isHasValue: true
-    })
-  }
-
-  handleBackHome = () => {
-    Taro.redirectTo({
-      url: '/pages/index'
     })
   }
 
@@ -368,20 +376,20 @@ export default class Reg extends Component {
 
     return (
       <View className='auth-reg'>
-        <SpNavBar title='注册' leftIconType='chevron-left' />
+        <SpNavBar title={$t('461de497.fe0e8b')} leftIconType='chevron-left' />
         <AtForm onSubmit={this.handleSubmit}>
           <View className='sec auth-reg__form'>
             {process.env.TARO_ENV === 'weapp' && (
               <View className='at-input'>
                 <View className='at-input__container'>
-                  <View className='at-input__title'>手机号码</View>
+                  <View className='at-input__title'>{$t('692ba07e.92448a')}</View>
                   <View className='at-input__input'>{info.mobile}</View>
                   <View className='at-input__children'>
                     <AtButton
                       openType='getPhoneNumber'
                       onGetPhoneNumber={this.handleGetPhoneNumber}
                     >
-                      获取手机号码
+                      {$t('5e103177.e24bc7')}
                     </AtButton>
                   </View>
                 </View>
@@ -408,21 +416,21 @@ export default class Reg extends Component {
             {Taro.getEnv() !== Taro.ENV_TYPE.WEAPP && (
               <View>
                 <AtInput
-                  title='手机号码'
+                  title={$t('692ba07e.92448a')}
                   name='mobile'
                   type='number'
                   maxLength={11}
                   value={info.mobile}
-                  placeholder='请输入手机号码'
+                  placeholder={$t('3c94bb91.ff95a4')}
                   onFocus={this.handleErrorToastClose}
                   onChange={this.handleChange.bind(this, 'mobile')}
                 />
                 {imgVisible ? (
                   <AtInput
-                    title='图片验证码'
+                    title={$t('5e103177.fcbe6f')}
                     name='yzm'
                     value={info.yzm}
-                    placeholder='请输入图片验证码'
+                    placeholder={$t('5e103177.42ae8e')}
                     onFocus={this.handleErrorToastClose}
                     onChange={this.handleChange.bind(this, 'yzm')}
                   >
@@ -430,10 +438,10 @@ export default class Reg extends Component {
                   </AtInput>
                 ) : null}
                 <AtInput
-                  title='验证码'
+                  title={$t('1c525225.983f59')}
                   name='vcode'
                   value={info.vcode}
-                  placeholder='请输入验证码'
+                  placeholder={$t('4e9d53b5.d0c06a')}
                   onFocus={this.handleErrorToastClose}
                   onChange={this.handleChange.bind(this, 'vcode')}
                 >
@@ -467,7 +475,7 @@ export default class Reg extends Component {
                           key={`${index}1`}
                           title={item.name}
                           name={`${item.key}`}
-                          placeholder={`请输入${item.name}`}
+                          placeholder={ti('b1a8838b.72ba91', [item.name])}
                           value={item.value}
                           onFocus={this.handleErrorToastClose}
                           onChange={this.handleChange.bind(this, `${item.key}`)}
@@ -492,7 +500,7 @@ export default class Reg extends Component {
                                     item.value ? 'pick-value' : 'pick-value-null'
                                   )}
                                 >
-                                  {item.value ? item.value : `请选择${item.name}`}
+                                  {item.value ? item.value : ti('cb825098.a5db4e', [item.name])}
                                 </Text>
                               </View>
                             </Picker>
@@ -511,7 +519,7 @@ export default class Reg extends Component {
                                     item.value ? 'pick-value' : 'pick-value-null'
                                   )}
                                 >
-                                  {item.value ? item.value : `请选择${item.name}`}
+                                  {item.value ? item.value : ti('cb825098.a5db4e', [item.name])}
                                 </Text>
                               </View>
                             </Picker>
@@ -525,7 +533,7 @@ export default class Reg extends Component {
                           key={`${index}1`}
                           title={item.name}
                           name={`${item.key}`}
-                          placeholder={`请选择${item.name}`}
+                          placeholder={ti('cb825098.a5db4e', [item.name])}
                           value={item.value}
                           onFocus={this.showCheckboxPanel.bind(this, item.items, item.key)}
                         />
@@ -539,24 +547,24 @@ export default class Reg extends Component {
             {process.env.TARO_ENV === 'weapp' ? (
               <FormIdCollector sync>
                 <AtButton className='submit-btn' type='primary' formType='submit'>
-                  同意协议并注册
+                  {$t('4e9d53b5.3179ba')}
                 </AtButton>
                 <AtButton type='default' onClick={this.handleBackHome.bind(this)}>
-                  暂不注册，随便逛逛
+                  {$t('5e103177.f01026')}
                 </AtButton>
               </FormIdCollector>
             ) : (
               <AtButton type='primary' onClick={this.handleSubmit} formType='submit'>
-                同意协议并注册
+                {$t('4e9d53b5.3179ba')}
               </AtButton>
             )}
             <View className='accountAgreement'>
-              已阅读并同意
+              {$t('4e9d53b5.b840cb')}
               <Text
                 className='accountAgreement__text'
                 onClick={this.handleClickAgreement.bind(this)}
               >
-                《用户协议》
+                {$t('5e103177.b4a788')}
               </Text>
             </View>
           </View>
@@ -579,10 +587,10 @@ export default class Reg extends Component {
             </View>
             <View className='panel-btns'>
               <View className='panel-btn cancel-btn' onClick={this.btnClick.bind(this, 'cancel')}>
-                取消
+                {$t('61e2d21a.625fb2')}
               </View>
               <View className='panel-btn require-btn' onClick={this.btnClick.bind(this, 'require')}>
-                确定
+                {$t('b232790d.38cf16')}
               </View>
             </View>
           </View>
@@ -592,3 +600,10 @@ export default class Reg extends Component {
     )
   }
 }
+
+export default connect(
+  ({ user }) => ({
+    land_params: user.land_params
+  }),
+  () => ({})
+)(withTranslation()(Reg))

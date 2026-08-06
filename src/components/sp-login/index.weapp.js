@@ -16,13 +16,14 @@ import { AtButton, AtCurtain } from 'taro-ui'
 import { useImmer } from 'use-immer'
 import S from '@/spx'
 import api from '@/api'
-import { isWeixin, isAlipay, classNames, showToast, entryLaunch } from '@/utils'
+import { isWeixin, isAlipay, classNames, showToast, entryLaunch, getDistributorId } from '@/utils'
 import { SG_SHARER_UID, SG_TRACK_PARAMS, SG_ROUTER_PARAMS, SG_GUIDE_PARAMS } from '@/consts'
 import { Tracker } from '@/service'
 import { SpPrivacyModal, SpImage, SpCheckbox } from '@/components'
 import { useSelector, useDispatch } from 'react-redux'
-import { updateIsNewUser } from '@/store/slices/user'
+import { updateIsNewUser } from '@/store/slices/user' // 同意隐私后 code 登录失败时置为新用户，弹窗展示手机号授权
 import { useLogin, useLocation } from '@/hooks'
+import { useTranslation, $t } from '@/i18n'
 import './index.scss'
 
 const initialState = {
@@ -33,11 +34,13 @@ const initialState = {
 }
 
 const SpLogin = forwardRef((props, ref) => {
+  useTranslation()
   const { children, className, visible, onPolicyClose, onChange, onClose } = props
   const dispatch = useDispatch()
   const { updateAddress } = useLocation()
   const { shopInfo } = useSelector((state) => state.shop)
   const { isNewUser } = useSelector((state) => state.user)
+
   const { isLogin, login, setToken, checkPolicyChange } = useLogin({
     policyUpdateHook: (isUpdate) => {
       isUpdate && setPolicyModal(true)
@@ -53,65 +56,15 @@ const SpLogin = forwardRef((props, ref) => {
   const { logo, registerName, privacyName, agreeMentChecked } = state
   const codeRef = useRef()
 
-  /** 打开注册弹窗前清空旧 code，弹窗内重新 Taro.login，避免复用探测时已消耗的 code */
-  const openRegisterModal = useCallback(() => {
-    codeRef.current = null
-    dispatch(updateIsNewUser(true))
-    setTimeout(() => setLoginModal(true), 0)
-  }, [dispatch])
-
-  /**
-   * 已注册会员 code 登录。
-   * 新用户时 useLogin.login() 会抛错，此处 catch 后必须再抛出，
-   * 否则外层 .catch() 不会打开注册弹窗。
-   * @param {{ skipPolicyCheck?: boolean }} [options]
-   */
-  const handleUserLogin = async (options = {}) => {
-    try {
-      await login(undefined, options)
-      setLoginModal(false)
-      onChange && onChange()
-    } catch (e) {
-      console.log('[sp-login] handleUserLogin error:', e)
-      throw e
-    }
-  }
-
-  /**
-   * 先静默 code 登录；失败则走注册弹窗（手机号授权）。
-   * 已标记新用户时跳过探测，少打一次必失败的 /login，也少耗一次 code。
-   * 若仍是未同意隐私，回到隐私弹窗，不要误开注册弹窗。
-   */
-  const trySilentLoginOrShowRegister = useCallback(() => {
-    if (isNewUser) {
-      codeRef.current = null
-      setLoginModal(true)
-      return
-    }
-    handleUserLogin()
-      .then(() => {})
-      .catch((e) => {
-        if (e && String(e.message).includes('POLICY_NOT_AGREE')) {
-          setPolicyModal(true)
-          return
-        }
-        openRegisterModal()
-      })
-  }, [isNewUser, openRegisterModal])
-
   useEffect(() => {
     if (visible) {
-      trySilentLoginOrShowRegister()
+      setLoginModal(true)
     }
-    // 仅跟随 visible 打开；避免 isNewUser 变化后重复探测
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible])
 
   useEffect(() => {
     if (loginModal) {
       fetchPrivacyData()
-      // 注册用 code：每次打开弹窗重新获取，不复用静默登录探测过的 code
-      codeRef.current = null
       Taro.login({
         success: ({ code }) => {
           codeRef.current = code
@@ -136,20 +89,7 @@ const SpLogin = forwardRef((props, ref) => {
   const handleBindPhone = async (e) => {
     const { encryptedData, iv, cloudID } = e.detail
     if (encryptedData && iv) {
-      Taro.showLoading({ title: '' })
-      // 手机号注册前再取一次 code，确保不复用探测 / 弹窗缓存的过期 code
-      let code = codeRef.current
-      try {
-        const loginRes = await Taro.login()
-        code = loginRes.code
-        codeRef.current = code
-      } catch (err) {
-        Taro.hideLoading()
-        console.error('[sp-login] refresh code before newlogin fail:', err)
-        showToast('登录凭证获取失败，请重试')
-        return
-      }
-
+      const code = codeRef.current
       let params = {
         code,
         encryptedData,
@@ -158,6 +98,7 @@ const SpLogin = forwardRef((props, ref) => {
         user_type: 'wechat',
         auth_type: 'wxapp'
       }
+      Taro.showLoading({ title: '' })
 
       // const { uid } = entryLaunch.getLaunchParams()
       const { uid, dtid } = Taro.getStorageSync(SG_ROUTER_PARAMS)
@@ -169,9 +110,6 @@ const SpLogin = forwardRef((props, ref) => {
         params['uid'] = uid
       }
 
-      if (shopInfo.distributor_id) {
-        params['distributor_id'] = shopInfo.distributor_id
-      }
       if (dtid && dtid !== 'undefined') {
         params['distributor_id'] = dtid
       }
@@ -186,6 +124,13 @@ const SpLogin = forwardRef((props, ref) => {
       if (work_userid) {
         params['channel'] = 1
         params['work_userid'] = work_userid
+      }
+      // 若前面未带上店铺 id，用当前 Redux 中的店铺兜底，避免注册请求缺 distributor_id
+      if (params['distributor_id'] == null || params['distributor_id'] === '') {
+        const fallbackId = shopInfo?.distributor_id ?? getDistributorId()
+        if (fallbackId != null && fallbackId !== '') {
+          params['distributor_id'] = fallbackId
+        }
       }
 
       if (source_id) {
@@ -207,10 +152,10 @@ const SpLogin = forwardRef((props, ref) => {
           setToken(token)
           Taro.hideLoading()
           setLoginModal(false)
-          showToast('恭喜您，注册成功')
+          showToast($t('66f0344f.53f077'))
           onChange && onChange()
         } else {
-          showToast('注册失败')
+          showToast($t('66f0344f.1c56d8'))
         }
       } catch (error) {
         Taro.hideLoading()
@@ -224,22 +169,36 @@ const SpLogin = forwardRef((props, ref) => {
   }, [])
 
   /**
+   * 已注册会员 code 登录。
+   * 新用户时 useLogin.login() 会抛错，此处 catch 后必须 throw e 再抛出，
+   * 否则 handleConfirmModal 的 .catch() 不会执行，注册弹窗不会弹起。
+   */
+  const handleUserLogin = async () => {
+    try {
+      await login()
+      setLoginModal(false)
+      onChange && onChange()
+    } catch (e) {
+      console.log('[sp-login] handleUserLogin error:', e)
+      throw e
+    }
+  }
+
+  /**
    * 用户点击「同意」隐私协议后：
    * 1. 先关闭隐私弹窗，不先打开登录弹窗（避免弹窗先出再闪变）
-   * 2. skipPolicyCheck 静默登录：老用户成功则直接登进；新用户失败后打开注册弹窗
-   *    （同意后若再 checkPolicyChange，可能再次 POLICY_NOT_AGREE / 弹回隐私，导致注册弹窗出不来）
+   * 2. 尝试 handleUserLogin()（code 登录）：老用户成功则直接登进；新用户失败会 throw
+   * 3. 失败时在 .catch 中：置 isNewUser=true，再打开登录弹窗，此时弹窗内直接是「手机号授权」走注册
    */
-  const handleConfirmModal = () => {
+  const handleConfirmModal = useCallback(() => {
     setPolicyModal(false)
-    login(undefined, { skipPolicyCheck: true })
-      .then(() => {
-        setLoginModal(false)
-        onChange && onChange()
-      })
+    handleUserLogin()
+      .then(() => {})
       .catch(() => {
-        openRegisterModal()
+        dispatch(updateIsNewUser(true))
+        setTimeout(() => setLoginModal(true), 0)
       })
-  }
+  }, [dispatch])
 
   // 登录
   const handleClickLogin = async (e) => {
@@ -247,7 +206,7 @@ const SpLogin = forwardRef((props, ref) => {
     const { scene } = Taro.getLaunchOptionsSync()
     // 微信朋友圈打开场景
     if (scene == 1154) {
-      return showToast('请前往小程序使用完整服务')
+      return showToast($t('66f0344f.303e6e'))
     }
     const checkRes = await checkPolicyChange()
     if (!checkRes) {
@@ -257,7 +216,7 @@ const SpLogin = forwardRef((props, ref) => {
     if (isLogin) {
       onChange && onChange()
     } else {
-      trySilentLoginOrShowRegister()
+      setLoginModal(true)
     }
   }
 
@@ -266,7 +225,7 @@ const SpLogin = forwardRef((props, ref) => {
       setPolicyModal(true)
     },
     handleToLogin: () => {
-      trySilentLoginOrShowRegister()
+      setLoginModal(true)
     }
   }))
 
@@ -285,6 +244,18 @@ const SpLogin = forwardRef((props, ref) => {
   // eslint-disable-next-line no-undef
   const { icon, nickname } = __wxConfig.accountInfo
 
+  const handleClick = async () => {
+    if (isLogin) {
+      onChange && onChange()
+    } else {
+      Taro.showLoading()
+      await handleUserLogin()
+      Taro.hideLoading()
+      // 自动
+      setLoginModal(true)
+    }
+  }
+
   return (
     <View className={classNames('sp-login', className)}>
       <View onClick={handleClickLogin}>{children}</View>
@@ -296,7 +267,7 @@ const SpLogin = forwardRef((props, ref) => {
         onConfirm={handleConfirmModal}
       />
 
-      {/* 授权登录 / 新用户注册 */}
+      {/* 授权登录 */}
       <AtCurtain
         isOpened={loginModal}
         onClose={() => {
@@ -309,7 +280,7 @@ const SpLogin = forwardRef((props, ref) => {
             <SpImage circle src={icon.replace(/^http:/, 'https:')} width={120} height={120} />
             <View className='nick-name'>{nickname}</View>
           </View>
-          <View className='login-modal__bd'>登录手机号，查看全部订单和优惠券</View>
+          <View className='login-modal__bd'>{$t('66f0344f.c4c389')}</View>
           <View className='agreement-content'>
             <SpCheckbox checked={agreeMentChecked} onChange={onChangePayment} />
             <View className='agreement-list'>
@@ -319,7 +290,7 @@ const SpLogin = forwardRef((props, ref) => {
               >
                 《{registerName}》
               </Text>
-              和
+              <Text>{$t('66f0344f.ab20cc')}</Text>
               <Text className='agreement-name' onClick={handleClickPrivacy.bind(this, 'privacy')}>
                 《{privacyName}》
               </Text>
@@ -333,27 +304,12 @@ const SpLogin = forwardRef((props, ref) => {
                 openType='getPhoneNumber'
                 onGetPhoneNumber={handleBindPhone}
               >
-                登录
+                {$t('66f0344f.402d19')}
               </AtButton>
             )}
             {!isNewUser && (
-              <AtButton
-                type='primary'
-                disabled={!agreeMentChecked}
-                onClick={() => {
-                  handleUserLogin().catch(() => {
-                    // 弹窗已打开时仅切换为注册态，并重新取 code
-                    codeRef.current = null
-                    dispatch(updateIsNewUser(true))
-                    Taro.login({
-                      success: ({ code }) => {
-                        codeRef.current = code
-                      }
-                    })
-                  })
-                }}
-              >
-                登录
+              <AtButton type='primary' disabled={!agreeMentChecked} onClick={handleUserLogin}>
+                {$t('66f0344f.402d19')}
               </AtButton>
             )}
           </View>

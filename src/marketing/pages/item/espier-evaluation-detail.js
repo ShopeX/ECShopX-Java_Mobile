@@ -5,12 +5,14 @@
 import React, { Component } from 'react'
 import Taro, { getCurrentInstance } from '@tarojs/taro'
 import { View } from '@tarojs/components'
-import { Loading, GoodsEvaluation, GoodsComment, SpToast, SpNavBar } from '@/components'
+import { withTranslation } from 'react-i18next'
+import { Loading, SpToast, SpNavBar } from '@/components'
+import { GoodsEvaluation, GoodsComment } from '@/subpages/components'
+import { $t } from '@/i18n'
 import api from '@/api'
 import { connect } from 'react-redux'
 import { withPager } from '@/hocs'
 import S from '@/spx'
-
 import './espier-evaluation.scss'
 
 @connect(
@@ -22,8 +24,8 @@ import './espier-evaluation.scss'
   })
 )
 @withPager
-export default class EvaluationDetail extends Component {
-  $instance = getCurrentInstance()
+class EvaluationDetail extends Component {
+  $instance = getCurrentInstance() || {}
   static options = {
     addGlobalClass: true
   }
@@ -50,8 +52,8 @@ export default class EvaluationDetail extends Component {
   }
 
   getEvaluationDetail = async () => {
-    let company_id = this.$instance.router.params.company_id
-    let rate_id = this.$instance.router.params.rate_id
+    let company_id = this.$instance?.router?.params.company_id
+    let rate_id = this.$instance?.router?.params.rate_id
     let params = {
       company_id
     }
@@ -86,9 +88,9 @@ export default class EvaluationDetail extends Component {
   }*/
   // 获取评论列表
   getreplyRateList = async (info) => {
-    let company_id = this.$instance.router.params.company_id
-    let rate_id = this.$instance.router.params.rate_id
-    let item_id = this.$instance.router.params.item_id
+    let company_id = this.$instance?.router?.params.company_id
+    let rate_id = this.$instance?.router?.params.rate_id
+    let item_id = this.$instance?.router?.params.item_id
     let params = {
       item_id,
       company_id,
@@ -156,9 +158,9 @@ export default class EvaluationDetail extends Component {
     if (S.getAuthToken()) {
       this.setState({ showCommentPanel: true })
     } else {
-      S.toast('请登录后再评论')
+      S?.toast($t('5de2fd4b.73c2dd'))
       setTimeout(() => {
-        S.login(this)
+        S?.login(this)
       }, 2000)
     }
   }
@@ -172,7 +174,7 @@ export default class EvaluationDetail extends Component {
 
     return (
       <View className='page-goods-evaluation'>
-        <SpNavBar title='评论' leftIconType='chevron-left' />
+        <SpNavBar title={$t('3adadac0.55374d')} leftIconType='chevron-left' />
         <View className='goods-evaluation-wrap'>
           <View className='evaluation-list'>
             <GoodsEvaluation
@@ -193,3 +195,5 @@ export default class EvaluationDetail extends Component {
     )
   }
 }
+
+export default withTranslation()(EvaluationDetail)

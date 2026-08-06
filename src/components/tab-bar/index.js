@@ -7,6 +7,7 @@ import Taro, { getCurrentInstance } from '@tarojs/taro'
 import { AtTabBar } from 'taro-ui'
 import { getCurrentRoute } from '@/utils'
 import S from '@/spx'
+import { $t } from '@/i18n'
 
 const defaultTabList = []
 
@@ -15,7 +16,7 @@ const defaultTabList = []
 //   cartCount: cart.cartCount
 // }))
 export default class TabBar extends Component {
-  $instance = getCurrentInstance()
+  $instance = getCurrentInstance() || {}
   constructor(props) {
     super(props)
 
@@ -79,21 +80,21 @@ export default class TabBar extends Component {
     } else {
       list = [
         {
-          title: '首页',
+          title: $t('e4bfc1bd.db1c89'),
           iconType: 'home',
           iconPrefixClass: 'iconfont icon',
           url: '/pages/index',
           urlRedirect: true
         },
         {
-          title: '分类',
+          title: $t('e4bfc1bd.d0771a'),
           iconType: 'category',
           iconPrefixClass: 'iconfont icon',
           url: '/pages/category/index',
           urlRedirect: true
         },
         {
-          title: '购物车',
+          title: $t('a2d3a891.c017be'),
           iconType: 'cart',
           iconPrefixClass: 'iconfont icon',
           url: '/pages/cart/espier-index',
@@ -102,7 +103,7 @@ export default class TabBar extends Component {
           urlRedirect: true
         },
         {
-          title: '我的',
+          title: $t('e4bfc1bd.07b181'),
           iconType: 'member',
           iconPrefixClass: 'iconfont icon',
           url: '/subpages/member/index',
@@ -137,7 +138,7 @@ export default class TabBar extends Component {
   updateCurTab() {
     this.fetchCart()
     const { tabList, localCurrent } = this.state
-    const fullPath = getCurrentRoute(this.$instance.router).fullPath.split('?')[0]
+    const fullPath = getCurrentRoute(this.$instance?.router).fullPath.split('?')[0]
 
     console.log('--updateCurTab--', localCurrent, fullPath, tabList)
 
@@ -164,7 +165,7 @@ export default class TabBar extends Component {
       })
     }
 
-    const { path } = getCurrentRoute(this.$instance.router)
+    const { path } = getCurrentRoute(this.$instance?.router)
     if (this.state.tabList[cartTabIdx] && path === this.state.tabList[cartTabIdx].url) {
       updateCartCount('')
       return
@@ -181,7 +182,7 @@ export default class TabBar extends Component {
     if (cur !== current) {
       const curTab = this.state.tabList[current]
       const { url, withLogin } = curTab
-      const fullPath = getCurrentRoute(this.$instance.router).fullPath.split('?')[0]
+      const fullPath = getCurrentRoute(this.$instance?.router).fullPath.split('?')[0]
 
       if (withLogin && !S.getAuthToken()) {
         return Taro.navigateTo({

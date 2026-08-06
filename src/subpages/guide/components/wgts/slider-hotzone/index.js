@@ -9,11 +9,11 @@ import { classNames, styleNames } from '@/utils'
 import { connect } from 'react-redux'
 import api from '@/api'
 import S from '@/spx'
+import { $t, i18n } from '@/i18n'
 import { linkPage } from '../helper'
 import SliderTypeOne from './slider-typeone'
 import SliderTypeTwo from './slider-typetwo'
 import SliderTypeThree from './slider-typethree'
-
 import '../slider.scss'
 
 @connect(
@@ -42,6 +42,17 @@ export default class WgtSliderHotzone extends Component {
     }
   }
 
+  componentDidMount() {
+    this._onLanguageChanged = () => this.forceUpdate()
+    i18n.on('languageChanged', this._onLanguageChanged)
+  }
+
+  componentWillUnmount() {
+    if (this._onLanguageChanged) {
+      i18n.off('languageChanged', this._onLanguageChanged)
+    }
+  }
+
   handleClickItem = async (item, index) => {
     if (item.linkPage == 'addCart') {
       this.onClickAddCart(item.id)
@@ -49,12 +60,12 @@ export default class WgtSliderHotzone extends Component {
     }
 
     if (item.linkPage === 'cashcoupon') {
-      const toke = S.getAuthToken()
+      const toke = S?.getAuthToken()
       if (!toke) {
-        S.login(this)
+        S?.login(this)
       } else {
         api.member.sendCashCoupon({ stock_id: item.id }).then((res) => {
-          S.toast(res.msg)
+          S?.toast(res.msg)
         })
       }
       return
@@ -65,12 +76,12 @@ export default class WgtSliderHotzone extends Component {
   onClickAddCart = async (id) => {
     if (!S.getAuthToken()) {
       Taro.showToast({
-        title: '请先登录再购买',
+        title: $t('20d574cd.d9b8b5'),
         icon: 'none'
       })
 
       setTimeout(() => {
-        S.login(this)
+        S?.login(this)
       }, 50)
 
       return
@@ -160,7 +171,7 @@ export default class WgtSliderHotzone extends Component {
                     data.map((item, index) => {
                       return (
                         <View
-                          key='index'
+                          key={`slider-hotzone-tab-${index}`}
                           className='slider-title__text'
                           style={styleNames({
                             'background-color': curIdx == index ? config.contentBgColor : '#F9F9F8',
@@ -168,7 +179,7 @@ export default class WgtSliderHotzone extends Component {
                           })}
                           onClick={() => this.changeCurrentIndex(index)}
                         >
-                          {item.content || '未定义标题'}
+                          {item.content || $t('20d574cd.e8f5a9')}
                         </View>
                       )
                     })}

@@ -5,7 +5,7 @@
 import React, { useEffect, useRef, useMemo } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import Taro, { getCurrentInstance, useShareAppMessage, useShareTimeline } from '@tarojs/taro'
-import { View, Text, Swiper, SwiperItem, Video, ScrollView } from '@tarojs/components'
+import { View, Text, Swiper, SwiperItem, Video, ScrollView, Image } from '@tarojs/components'
 import { useImmer } from 'use-immer'
 import { AtFloatLayout, AtButton } from 'taro-ui'
 import {
@@ -44,7 +44,9 @@ import {
   showToast,
   getDistributorId,
   VERSION_STANDARD,
-  buildSharePath
+  buildSharePath,
+  enrichGoodsDetailActivity,
+  getLimitedBuyDetailLines
 } from '@/utils'
 import { saveBrowseItem } from '@/utils/browseHistory'
 import { fetchUserFavs } from '@/store/slices/user'
@@ -56,8 +58,10 @@ import S from '@/spx'
 import { Tracker } from '@/service'
 import { useNavigation, useLogin, useLocation } from '@/hooks'
 import withPageWrapper from '@/hocs/withPageWrapper'
+import { useTranslation, $t, ti } from '@/i18n'
 import { ACTIVITY_LIST } from '@/consts'
 import { SG_ROUTER_PARAMS, SG_GUIDE_PARAMS } from '@/consts/localstorage'
+import FloatSalesperson from '@/subpages/store/comps/float-salesperson'
 import {
   WgtFilm,
   WgtSlider,
@@ -111,14 +115,14 @@ const initialState = {
   imgHeightList: [], // 用于存储banner高度
   navigateMantle: false,
   defaultImageHeight: 520, // 默认图片高度，避免空白
-  backTopScrollTop: 0,
-  teamId: null,
-  groupPriceFrom: false
+  backTopScrollTop: 0
 }
 
 function EspierDetail(props) {
-  const $instance = getCurrentInstance()
+  useTranslation()
+  const $instance = getCurrentInstance() || {}
   const pageRef = useRef()
+  const scrollTopRef = useRef(0)
 
   const { userInfo } = useSelector((state) => state.user)
   const { colorPrimary, openRecommend } = useSelector((state) => state.sys)
@@ -153,10 +157,11 @@ function EspierDetail(props) {
     imgHeightList,
     navigateMantle,
     defaultImageHeight,
-    backTopScrollTop,
-    teamId,
-    groupPriceFrom
+    backTopScrollTop
   } = state
+
+  // 路由里 dtid=undefined 会变成字符串 "undefined"，需视为无效
+  const isEmptyDtid = (v) => v == null || v === '' || v === 'undefined' || v === 'null'
 
   useEffect(() => {
     init()
@@ -180,7 +185,7 @@ function EspierDetail(props) {
   }, [packageOpen, skuPanelOpen, sharePanelOpen, posterModalOpen, promotionOpen, isParameter])
 
   useEffect(() => {
-    const { path } = $instance.router
+    const { path } = $instance?.router
     if (id && path === '/subpages/item/espier-detail') {
       fetch()
     }
@@ -223,7 +228,8 @@ function EspierDetail(props) {
   }, [play])
 
   useEffect(() => {
-    if (dtid) {
+    // 路由 dtid=undefined 会变成字符串 "undefined"，isEmptyDtid 会判为无效
+    if (!isEmptyDtid(dtid)) {
       init(dtid)
       fetch()
     }
@@ -238,7 +244,7 @@ function EspierDetail(props) {
   })
 
   const salesmanShare = async () => {
-    let params = $instance.router.params
+    let params = $instance?.router?.params
     if (params?.qr == 'Y') {
       let param = {
         promoter_user_id: params?.uid,
@@ -255,7 +261,7 @@ function EspierDetail(props) {
     const { itemName, imgs } = info
     const query = {
       id,
-      dtid
+      dtid: isEmptyDtid(dtid) ? getDistributorId() : dtid || ''
     }
     if (userInfo) {
       query['uid'] = userInfo.user_id
@@ -271,15 +277,15 @@ function EspierDetail(props) {
 
   const init = async (newDtid) => {
     const routerParams = await entryLaunch.getRouteParams()
-    const { type, id, dtid: routerDtid, team_id } = routerParams
-    const dtid = newDtid || routerDtid
+    const { type, id, dtid: routerDtid } = routerParams
+    const rawDtid = newDtid ?? routerDtid
+    const dtid = isEmptyDtid(rawDtid) ? null : rawDtid
     setState((draft) => {
       draft.id = id
       draft.type = type
       draft.dtid = dtid
-      draft.teamId = team_id || null
     })
-    if (S.getAuthToken()) {
+    if (S.getAuthToken() && !isEmptyDtid(dtid)) {
       await dispatch(fetchUserFavs({ distributor_id: dtid }))
     }
   }
@@ -294,7 +300,10 @@ function EspierDetail(props) {
           distributor_id: getDistributorId()
         })
         console.log('🚀🚀🚀 ~ fetch ~ itemDetail:', itemDetail)
-        data = pickBy(itemDetail, doc.goods.ESPIER_DETAIL_GOODS_INFO)
+        data = enrichGoodsDetailActivity(
+          pickBy(itemDetail, doc.goods.ESPIER_DETAIL_GOODS_INFO),
+          itemDetail
+        )
 
         // if (data.approveStatus == 'instock') {
         //   setState((draft) => {
@@ -319,19 +328,6 @@ function EspierDetail(props) {
     // setNavigationBarTitle(data.itemName)
 
     console.log(ACTIVITY_LIST()[data.activityType], data)
-    if (data?.activityType === 'group' && data?.activityInfo?.items?.length) {
-      const items = data.activityInfo.items
-      const list = {}
-      items.forEach((item) => {
-        list[String(item.item_id)] = {
-          item_id: item.item_id,
-          activity_price: item.act_price,
-          store: item.store
-        }
-      })
-      data.activityInfo = { ...data.activityInfo, list }
-      data.groupPriceFrom = items.length > 1
-    }
     if (ACTIVITY_LIST()[data.activityType]) {
       Taro.setNavigationBarColor({
         frontColor: '#ffffff',
@@ -349,13 +345,8 @@ function EspierDetail(props) {
       }
       draft.play = data.video ? true : false // 辉绮需求
       draft.promotionActivity = data.promotionActivity
-      draft.groupPriceFrom = !!data.groupPriceFrom
       // 初始化图片高度数组，使用默认高度
       draft.imgHeightList = new Array(data?.imgs?.length).fill(draft.defaultImageHeight)
-      if (draft.teamId) {
-        draft.skuPanelOpen = true
-        draft.selectType = 'activity_group_buy'
-      }
     })
 
     // 进入详情页算一次浏览，写入本地浏览记录（最多 10 条）
@@ -483,22 +474,42 @@ function EspierDetail(props) {
     })
   }
 
+  const syncNavigateMantle = (scrollTop = 0) => {
+    const bannerHeight = imgHeightList[curImgIdx] || defaultImageHeight
+    const nextNavigateMantle = scrollTop > bannerHeight
+    setState((draft) => {
+      draft.navigateMantle = nextNavigateMantle
+    })
+  }
+
+  const handleGoodsScroll = (e) => {
+    const detail = e?.detail || {}
+    console.log('[espier-detail] handleGoodsScroll', detail)
+    scrollTopRef.current = detail.scrollTop || 0
+    pageRef.current?.handlePageScroll(detail)
+    syncNavigateMantle(detail.scrollTop || 0)
+  }
+
+  useEffect(() => {
+    syncNavigateMantle(scrollTopRef.current)
+  }, [curImgIdx, imgHeightList])
+
   const setSwiperCss = (item) => {
     return {
       height: '100%',
       width: '100%',
-      backgroundSize: 'cover',
-      backgroundImage: `url(${item})`,
-      backgroundRepeat: 'no-repeat',
-      backgroundPosition: 'center'
+      'background-size': 'cover',
+      'background-image': `url(${item})`,
+      'background-repeat': 'no-repeat',
+      'background-position': 'center'
     }
   }
 
   let sessionFrom = {}
   if (info) {
-    sessionFrom['商品'] = info.itemName
+    sessionFrom[$t('934ffec2.9897d8')] = info.itemName
     if (userInfo) {
-      sessionFrom['昵称'] = userInfo.username
+      sessionFrom[$t('20b64b82.23eb0e')] = userInfo.username
     }
   }
 
@@ -507,6 +518,11 @@ function EspierDetail(props) {
       url: `/subpages/case/view-case?design_works=${JSON.stringify(info.designWorks)}`
     })
   }
+
+  const limitedBuyDetail = useMemo(
+    () => getLimitedBuyDetailLines(info),
+    [info?.activityType, info?.activityInfo]
+  )
 
   return (
     <SpPage
@@ -527,7 +543,7 @@ function EspierDetail(props) {
       }}
       renderFloat={
         info && (
-          <View>
+          <View className='page-item-espierdetail__float-container'>
             <SpFloatMenuItem
               onClick={() => {
                 Taro.navigateTo({ url: '/subpages/member/index' })
@@ -540,6 +556,7 @@ function EspierDetail(props) {
                 <Text className='iconfont icon-headphones'></Text>
               </SpFloatMenuItem>
             </SpChat>
+            <FloatSalesperson />
           </View>
         )
       }
@@ -556,7 +573,12 @@ function EspierDetail(props) {
       }
     >
       <View className='page-item-espierdetail__header-bg'></View>
-      <ScrollView scrollY className='page-item-espierdetail-goods-contents' style='height: 100%;'>
+      <ScrollView
+        scrollY
+        className='page-item-espierdetail-goods-contents'
+        style='height: 100vh;'
+        onScroll={handleGoodsScroll}
+      >
         {info && (
           <View className='goods-contents'>
             <View className='goods-pic-container'>
@@ -569,7 +591,7 @@ function EspierDetail(props) {
                 {info?.imgs?.map((img, idx) => (
                   <SwiperItem key={`swiperitem__${idx}`}>
                     <View style={setSwiperCss(img)}>
-                      <SpImage mode='scaleToFill' src={img} className='swiperitem__img' />
+                      <Image mode='scaleToFill' src={img} className='swiperitem__img' />
                     </View>
                   </SwiperItem>
                 ))}
@@ -605,7 +627,7 @@ function EspierDetail(props) {
                   {!play && (
                     <SpImage className='play-icon' src='play2.png' width={50} height={50} />
                   )}
-                  {play ? '退出视频' : '播放视频'}
+                  {play ? $t('a8427e1f.85f859') : $t('a8427e1f.c27cf5')}
                 </View>
               )}
             </View>
@@ -622,10 +644,7 @@ function EspierDetail(props) {
                   fetch()
                 }}
               >
-                <SpGoodsPrice
-                  info={curItem ? curItem : info}
-                  appendText={!curItem && groupPriceFrom ? '起' : ''}
-                />
+                <SpGoodsPrice info={curItem ? curItem : info} />
               </CompActivityBar>
             )}
 
@@ -637,10 +656,36 @@ function EspierDetail(props) {
                 )}
                 {info.designWorks && info.designWorks.length > 0 && (
                   <View className='goods-info-case' onClick={goToCaseView}>
-                    查看案例
+                    {$t('ca46254d.08a4a0')}
+                  </View>
+                )}
+                {(isWeixin || isAPP()) && (
+                  <View className='btn-share-wrap'>
+                    <View
+                      onClick={async () => {
+                        if (isAPP()) {
+                          Taro.SAPPShare.open()
+                        } else {
+                          setState((draft) => {
+                            draft.sharePanelOpen = true
+                          })
+                        }
+                      }}
+                    >
+                      <View className='btn-share'>
+                        <Text className='iconfont icon-fenxiang-01'></Text>
+                        <Text className='share-txt'>{$t('934ffec2.c31f48')}</Text>
+                      </View>
+                    </View>
                   </View>
                 )}
               </View>
+
+              {!!limitedBuyDetail.ruleText && (
+                <View className='goods-purchase-limits'>
+                  <Text className='goods-purchase-limits__rule'>{limitedBuyDetail.ruleText}</Text>
+                </View>
+              )}
 
               <CompVipGuide
                 info={{
@@ -658,42 +703,57 @@ function EspierDetail(props) {
                 onClick={handleReceiveCoupon}
               />
 
+              {(promotionPackage.length > 0 || promotionActivity.length > 0) && (
+                <View className='sku-block'>
+                  {promotionPackage.length > 0 && (
+                    <SpCell
+                      title={$t('6c0659eb.f4fb0d')}
+                      isLink
+                      onClick={() => {
+                        Taro.navigateTo({
+                          url: `/subpages/marketing/package-list?id=${info.itemId}&distributor_id=${info.distributorId}`
+                        })
+                      }}
+                    >
+                      <Text className='cell-value'>
+                        {ti('6578cf7b.0fe3d0', [promotionPackage.length])}
+                      </Text>
+                    </SpCell>
+                  )}
+                  {promotionActivity.length > 0 && (
+                    <SpCell
+                      title={$t('dc155244.cd5666')}
+                      isLink
+                      onClick={() => {
+                        setState((draft) => {
+                          draft.promotionOpen = true
+                        })
+                      }}
+                    >
+                      {promotionActivity.map((item, index) => (
+                        <View className='promotion-tag' key={`promotion-tag__${index}`}>
+                          {item.promotionTag}
+                        </View>
+                      ))}
+                    </SpCell>
+                  )}
+                </View>
+              )}
+
               <View className='goods-name-wrap'>
                 <View className='goods-name'>
                   <View className='title'>{info.itemName}</View>
                   <View className='brief'>{info.brief}</View>
                 </View>
-                {(isWeixin || isAPP()) && (
-                  // {(
-                  <View className='btn-share-wrap'>
-                    <View
-                      onClick={async () => {
-                        if (isAPP()) {
-                          Taro.SAPPShare.open()
-                        } else {
-                          // await getUserInfoAuth()
-                          setState((draft) => {
-                            draft.sharePanelOpen = true
-                          })
-                        }
-                      }}
-                    >
-                      <View className='btn-share'>
-                        <Text className='iconfont icon-fenxiang-01'></Text>
-                        <Text className='share-txt'>分享</Text>
-                      </View>
-                    </View>
-                  </View>
-                )}
               </View>
               {info.isMedicine == 1 && info?.medicineData?.is_prescription == 1 && (
                 <View className='item-pre'>
                   <View className='item-pre-title'>
-                    <Text className='medicine'>处方药</Text>
-                    <Text>处方药须凭处方在药师指导下购买和使用</Text>
+                    <Text className='medicine'>{$t('7d82f6d2.e8b7e1')}</Text>
+                    <Text>{$t('3fe32003.40410d')}</Text>
                   </View>
                   <View className='item-pre-content'>
-                    <View className='title'>用药提示</View>
+                    <View className='title'>{$t('88396cb9.2d4b03')}</View>
                     <View className='content'>
                       {/* <Text>功能主治：</Text> */}
                       {/* <Text className='content-title'>根据法规要求，请咨询药师了解处方药详细信息</Text> */}
@@ -705,10 +765,10 @@ function EspierDetail(props) {
               <View className='item-bn-sales'>
                 {/* <View className='item-bn'></View> */}
                 {info.salesSetting && (
-                  <View className='item-sales'>{`销量：${info.sales || 0}`}</View>
+                  <View className='item-sales'>{ti('a8427e1f.47df99', [info.sales || 0])}</View>
                 )}
                 {info.store_setting && (
-                  <View className='kc'>库存：{info.item_total_store ?? info.store}</View>
+                  <View className='kc'>{ti('a8427e1f.e203b0', [info.store])}</View>
                 )}
               </View>
             </View>
@@ -725,48 +785,12 @@ function EspierDetail(props) {
                     })
                   }}
                 >
-                  <SpCell title='规格' isLink>
+                  <SpCell title={$t('47ac6066.7c9aea')} isLink>
                     <Text className='cell-value'>{skuText}</Text>
                   </SpCell>
                 </SpLogin>
               </View>
             )}
-
-            <View className='sku-block'>
-              {promotionPackage.length > 0 && (
-                <SpCell
-                  title='组合优惠'
-                  isLink
-                  onClick={() => {
-                    Taro.navigateTo({
-                      url: `/subpages/marketing/package-list?id=${info.itemId}&distributor_id=${info.distributorId}`
-                    })
-                    // setState((draft) => {
-                    //   draft.packageOpen = true
-                    // })
-                  }}
-                >
-                  <Text className='cell-value'>{`共${promotionPackage.length}种组合随意搭配`}</Text>
-                </SpCell>
-              )}
-              {promotionActivity.length > 0 && (
-                <SpCell
-                  title='优惠活动'
-                  isLink
-                  onClick={() => {
-                    setState((draft) => {
-                      draft.promotionOpen = true
-                    })
-                  }}
-                >
-                  {promotionActivity.map((item, index) => (
-                    <View className='promotion-tag' key={`promotion-tag__${index}`}>
-                      {item.promotionTag}
-                    </View>
-                  ))}
-                </SpCell>
-              )}
-            </View>
 
             {/* {info.itemParams.length > 0 && <View className='goods-params'>
             <View className='params-hd'>商品参数</View>
@@ -782,7 +806,7 @@ function EspierDetail(props) {
 
             {info.itemParams.length > 0 && (
               <View className='goods-params-flat'>
-                <View className='parameter'>参数</View>
+                <View className='parameter'>{$t('ca46254d.3d0a2d')}</View>
                 <View className='parameter-content'>
                   {info.itemParams.map((item, index) => {
                     return (
@@ -809,7 +833,7 @@ function EspierDetail(props) {
 
             <View className='goods-desc'>
               <View className='desc-hd'>
-                <Text className='desc-title'>宝贝详情</Text>
+                <Text className='desc-title'>{$t('a8427e1f.002e0a')}</Text>
               </View>
               {isArray(info.intro) ? (
                 <View>
@@ -864,7 +888,6 @@ function EspierDetail(props) {
         open={skuPanelOpen}
         type={selectType}
         info={info}
-        teamId={teamId}
         onClose={() => {
           setState((draft) => {
             draft.skuPanelOpen = false
@@ -917,7 +940,7 @@ function EspierDetail(props) {
         />
       )}
 
-      <AtFloatLayout isOpened={isParameter} title='商品参数' onClose={handleClose}>
+      <AtFloatLayout isOpened={isParameter} title={$t('a8427e1f.8686bb')} onClose={handleClose}>
         <View className='product-parameter'>
           <View className='product-parameter-all'>
             {info?.itemParams?.map((item, index) => {
@@ -930,7 +953,7 @@ function EspierDetail(props) {
             })}
           </View>
           <AtButton type='primary' circle onClick={handleClose}>
-            确认
+            {$t('61e2d21a.e83a25')}
           </AtButton>
         </View>
       </AtFloatLayout>

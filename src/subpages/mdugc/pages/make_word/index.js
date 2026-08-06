@@ -4,14 +4,13 @@
  */
 import React, { Component } from 'react'
 import Taro from '@tarojs/taro'
-import { View, Text, Image, ScrollView } from '@tarojs/components'
-
-import { SpNote, BackToTop, Loading } from '@/components'
+import { View, ScrollView } from '@tarojs/components'
+import { BackToTop, Loading } from '@/components'
 import { styleNames, getThemeStyle, pickBy } from '@/utils'
 import { connect } from 'react-redux'
 import { withPager, withBackToTop } from '@/hocs'
-
-import api from '@/api'
+import * as mdugcApi from '@/api/mdugc'
+import { $t, i18n } from '@/i18n'
 import { SearchBar } from '../../components'
 import './index.scss'
 
@@ -31,10 +30,23 @@ export default class make_label extends Component {
   }
 
   componentDidMount() {
+    Taro.setNavigationBarTitle({ title: $t('78eb15d3.81a65b') })
+    this._onMakeWordLang = () => {
+      Taro.setNavigationBarTitle({ title: $t('78eb15d3.81a65b') })
+      this.forceUpdate()
+    }
+    i18n.on('languageChanged', this._onMakeWordLang)
     this.nextPage()
   }
+
+  componentWillUnmount() {
+    if (this._onMakeWordLang) {
+      i18n.off('languageChanged', this._onMakeWordLang)
+    }
+  }
+
   config = {
-    navigationBarTitleText: '添加话题'
+    navigationBarTitleText: ''
   }
   componentDidShow() {
     Taro.setNavigationBarColor({
@@ -89,7 +101,7 @@ export default class make_label extends Component {
       pageSize,
       topic_name: val
     }
-    const { list, total_count: total } = await api.mdugc.topiclist(params)
+    const { list, total_count: total } = await mdugcApi.topiclist(params)
     console.log('list, total', list, total, page)
 
     const nList = pickBy(list, {
@@ -134,7 +146,7 @@ export default class make_label extends Component {
       user_id: memberData.memberInfo.user_id,
       topic_name: val
     }
-    let { topic_name, topic_id, message, status } = await api.mdugc.topiccreate(data)
+    let { topic_name, topic_id, message, status } = await mdugcApi.topiccreate(data)
     if (status == 1) {
       this.topages({ topic_name, topic_id })
     }
@@ -154,7 +166,7 @@ export default class make_label extends Component {
             onChange={this.shonChange.bind(this)}
             onClear={this.shonClear.bind(this)}
             onConfirm={this.shonConfirm.bind(this)}
-            _placeholder='搜索'
+            _placeholder={$t('78eb15d3.e5f71f')}
             keyword={val}
           ></SearchBar>
         </View>
@@ -180,7 +192,7 @@ export default class make_label extends Component {
                     onClick={this.addtag.bind(this)}
                   >
                     <View className='ugcindex_list__scroll_scrolls_item_r_icon icon-jiahao'></View>
-                    添加自定义话题
+                    {$t('78eb15d3.200dbd')}
                   </View>
                 </View>
               ) : null}
@@ -195,7 +207,7 @@ export default class make_label extends Component {
                 )
               })}
             </View>
-            {page.isLoading && <Loading>正在加载...</Loading>}
+            {page.isLoading && <Loading>{$t('78eb15d3.bd0271')}</Loading>}
             {/* {
                 !page.isLoading && !page.hasNext && !list.length
                 && (<SpNote img='trades_empty.png'>列表页为空!</SpNote>)

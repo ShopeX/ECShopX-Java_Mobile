@@ -5,7 +5,6 @@
 import React, { Component } from 'react'
 import Taro, { getCurrentInstance } from '@tarojs/taro'
 import { View, Video } from '@tarojs/components'
-
 import './film.scss'
 
 export default class WgtFilm extends Component {
@@ -78,7 +77,7 @@ export default class WgtFilm extends Component {
     const { width, height, objectFit } = this.resolveSize(config, screenWidth, base)
 
     return (
-      <View className={`wgt ${base.padded ? 'wgt__padded' : null}`}>
+      <View className={`wgt wgt-guide-film ${base.padded ? 'wgt__padded' : null}`}>
         {base.title && (
           <View className='wgt__header'>
             <View className='wgt__title'>{base.title}</View>

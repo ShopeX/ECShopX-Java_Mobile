@@ -5,7 +5,6 @@
 import Taro, { getCurrentInstance } from '@tarojs/taro'
 import api from '@/api'
 import qs from 'qs'
-import S from '@/spx'
 import dayjs from 'dayjs'
 import { showToast, log, isArray, VERSION_STANDARD, resolveUrlParamsParse } from '@/utils'
 import configStore from '@/store'
@@ -13,11 +12,34 @@ import _isEqual from 'lodash/isEqual'
 import { SG_ROUTER_PARAMS, SG_GUIDE_PARAMS } from '@/consts/localstorage'
 
 import MapLoader from '@/utils/lbs'
+import S from '@/spx'
+import { $t } from '@/i18n'
 
-const $instance = getCurrentInstance()
 const { store } = configStore()
+
+// 经纬度逆地理缓存：同一位置在有效期内不重复请求 getAreaByJwd（避免每次返回首页都调接口）
+const LNGLAT_CACHE_TTL_MS = 5 * 60 * 1000 // 5 分钟
+const LNGLAT_CACHE_PRECISION = 4 // 小数点位数，约 10m 内视为同位置
+
+/** H5：从 location.search / hash 解析 query（browser、hash 路由都覆盖） */
+function getH5LocationQuery() {
+  if (typeof window === 'undefined' || !window.location) return {}
+  const { search = '', hash = '' } = window.location
+  let query = {}
+  if (search && search.length > 1) {
+    query = { ...query, ...qs.parse(search.slice(1)) }
+  }
+  // hash 形如 #/pages/index?dtid=1 或 #/?dtid=1
+  const hashQueryIndex = hash.indexOf('?')
+  if (hashQueryIndex >= 0) {
+    query = { ...query, ...qs.parse(hash.slice(hashQueryIndex + 1)) }
+  }
+  return query
+}
+
 class EntryLaunch {
   constructor() {
+    this._lnglatCache = null // { key: string, at: number, data: object }
     this.init()
   }
 
@@ -31,24 +53,47 @@ class EntryLaunch {
    * @function 获取小程序路由参数
    */
   async getRouteParams(options) {
-    const params = options?.query || options?.params || $instance.router?.params || {}
+    // 每次实时取 instance，模块顶层缓存的 getCurrentInstance 在 H5 首屏时常为空
+    const $instance = getCurrentInstance() || {}
+    const routerParams = $instance?.router?.params || {}
+    const h5Query = Taro.getEnv() === Taro.ENV_TYPE.WEB ? getH5LocationQuery() : {}
+    // H5 useDidShow(options) 往往不含 query，需合并 location / 实时 router
+    // 兼容直接传入扁平 params：getRouteParams(router.params)
+    const isFlatParams =
+      options &&
+      typeof options === 'object' &&
+      !options.params &&
+      !options.query &&
+      !options.path
+    const params = {
+      ...h5Query,
+      ...routerParams,
+      ...(isFlatParams ? options : {}),
+      ...(options?.params || {}),
+      ...(options?.query && typeof options.query === 'object' && !Array.isArray(options.query)
+        ? options.query
+        : {})
+    }
 
     const pageStack = Taro.getCurrentPages()
 
     const resPage = pageStack.find(
-      (item) => item.route == options?.path && _isEqual(options.query, item.$taroParams)
+      (item) =>
+        item != null && item.route == options?.path && _isEqual(options.query, item.$taroParams)
     )
 
     // 只返回小程序启动时的参数（包含冷启动和热启动）
     if (resPage) {
       return {
         ...Taro.getStorageSync(SG_ROUTER_PARAMS),
+        ...h5Query,
+        ...routerParams,
         runFlag: true // 标识小程序启动标志，用于判断是否是小程序启动
       }
     }
 
     let _options = {}
-    console.log('$instance.router?.params', $instance.router?.params)
+    console.log('$instance?.router?.params', routerParams)
     if (params?.scene) {
       console.log('params scene:', params.scene, resolveUrlParamsParse(params.scene))
       _options = {
@@ -66,6 +111,8 @@ class EntryLaunch {
         delete _options?.distributorInfo
         delete _options?.salespersonInfo
       }
+      // scene 解析后仍合并 URL/router 上的显式参数（如 dtid）
+      _options = { ...params, ..._options }
     } else {
       _options = params
     }
@@ -138,8 +185,9 @@ class EntryLaunch {
     const { is_open_wechatapp_location } = Taro.getStorageSync('settingInfo')
     const pages = Taro.getCurrentPages()
     const currentPage = pages[pages.length - 1]
-    const { dtid } =
-      process.env.TARO_ENV == 'weapp' ? currentPage.options : currentPage.$router.params
+    const pageParams =
+      process.env.TARO_ENV == 'weapp' ? currentPage?.options : currentPage?.$router?.params
+    const { dtid } = pageParams || {}
     let storeQuery = {} // 店铺查询参数
     if (dtid) {
       storeQuery = {
@@ -194,17 +242,11 @@ class EntryLaunch {
                 lng: res.longitude,
                 lat: res.latitude
               })
-              S.set('currentLocation', {
-                lng: res.longitude,
-                lat: res.latitude
-              })
             } else {
-              resolve({})
               reject({ message: res.errMsg })
             }
           },
           fail: (error) => {
-            resolve({})
             reject({ message: error })
           }
         })
@@ -222,7 +264,7 @@ class EntryLaunch {
             })
           },
           fail: (res) => {
-            reject({ message: '定位失败' + JSON.stringify(res) })
+            reject({ message: $t('0233b1ea.9831ba') + JSON.stringify(res) })
           }
         })
       })
@@ -247,7 +289,7 @@ class EntryLaunch {
             { timeout: 8000 }
           )
         } catch (error) {
-          reject({ message: '定位失败' })
+          reject({ message: $t('0233b1ea.9831ba') })
         }
       })
     }
@@ -282,13 +324,13 @@ class EntryLaunch {
         }
       } else {
         return {
-          error: '地址解析错误'
+          error: $t('9a2a8fcc.38e932')
         }
       }
     } catch (error) {
       console.error('getLnglatByAddress error:', error)
       return {
-        error: '地址解析错误'
+        error: $t('9a2a8fcc.38e932')
       }
     }
   }
@@ -310,20 +352,31 @@ class EntryLaunch {
   }
 
   /**
-   * @function 根据经纬度解析地址
+   * @function 根据经纬度解析地址（带短期缓存，同一位置 5 分钟内不重复请求 getAreaByJwd）
    * @params lng Number 经度
    * @params lat Number 纬度
    */
   async getAddressByLnglatWebAPI(lng, lat) {
+    if (lat == null || lng == null) return { error: $t('9a2a8fcc.38e932') }
+    const key = `${Number(lng).toFixed(LNGLAT_CACHE_PRECISION)}_${Number(lat).toFixed(
+      LNGLAT_CACHE_PRECISION
+    )}`
+    const now = Date.now()
+    if (
+      this._lnglatCache &&
+      this._lnglatCache.key === key &&
+      now - this._lnglatCache.at < LNGLAT_CACHE_TTL_MS
+    ) {
+      return this._lnglatCache.data
+    }
     try {
       const res = await api.wx.getAreaByLnglat({ lng, lat })
-      console.log('getAddressByLnglatWebAPI res:', res)
       if (res && res.address) {
         const {
           address_component: { province, city, district },
           address
         } = res
-        return {
+        const data = {
           lng,
           lat,
           address,
@@ -331,16 +384,14 @@ class EntryLaunch {
           city: isArray(city) ? province : city,
           district
         }
+        this._lnglatCache = { key, at: now, data }
+        return data
       } else {
-        return {
-          error: '地址解析错误'
-        }
+        return { error: $t('9a2a8fcc.38e932') }
       }
     } catch (error) {
       console.error('getAddressByLnglatWebAPI error:', error)
-      return {
-        error: '地址解析错误'
-      }
+      return { error: $t('9a2a8fcc.38e932') }
     }
   }
 
@@ -359,9 +410,41 @@ class EntryLaunch {
   }
 
   /**
-   * 判断是否开启定位，去获取经纬度，根据经纬度去获取地址
+   * 进店规则是否开启 LBS（/distributor/config/inRule → shop_lbs）
+   * 仅在此为真时允许吊起定位授权/引导弹窗；与 baseinfo 的 is_open_wechatapp_location 无关
    */
-  async isOpenPosition(callback) {
+  isEntryStoreLbsEnabled() {
+    const sys = store.getState()?.sys || {}
+    if (!sys.initState) return false
+    const lbs = sys.entryStoreByLBS
+    if (!lbs) return false
+    if (typeof lbs === 'object' && lbs != null && 'status' in lbs) {
+      return Boolean(lbs.status)
+    }
+    return Boolean(lbs)
+  }
+
+  /**
+   * 判断是否开启定位，去获取经纬度，根据经纬度去获取地址
+   * @param {Function} callback - 回调 (res)，res 为 null 表示位置未变化、跳过解析
+   * @param {{ previousLng?: number, previousLat?: number }} [opts] - 上次经纬度，与当前一致则不请求逆地理
+   */
+  async isOpenPosition(callback, opts = {}) {
+    if (!this.isEntryStoreLbsEnabled()) {
+      if (callback) callback(false)
+      return
+    }
+
+    const { previousLng, previousLat } = opts
+    const posUnchanged = (lng, lat) => {
+      if (previousLng == null || previousLat == null) return false
+      const p = LNGLAT_CACHE_PRECISION
+      return (
+        Number(lng).toFixed(p) === Number(previousLng).toFixed(p) &&
+        Number(lat).toFixed(p) === Number(previousLat).toFixed(p)
+      )
+    }
+
     if (process.env.TARO_ENV === 'weapp') {
       const { authSetting } = await Taro.getSetting()
       if (!authSetting['scope.userLocation']) {
@@ -369,6 +452,10 @@ class EntryLaunch {
           scope: 'scope.userLocation',
           success: async () => {
             let { lng, lat } = await this.getLocationInfo()
+            if (lat != null && posUnchanged(lng, lat)) {
+              if (callback) callback(null)
+              return
+            }
             let res = {}
             if (lat) {
               res = await this.getAddressByLnglatWebAPI(lng, lat)
@@ -377,21 +464,25 @@ class EntryLaunch {
           },
           fail: () => {
             Taro.showModal({
-              title: '提示',
-              content: '请打开定位权限',
+              title: $t('61e2d21a.02d981'),
+              content: $t('9a2a8fcc.4681f3'),
               success: async (resConfirm) => {
                 if (resConfirm.confirm) {
                   await Taro.openSetting()
                   const setting = await Taro.getSetting()
                   if (setting.authSetting['scope.userLocation']) {
                     let { lng, lat } = await this.getLocationInfo()
+                    if (lat != null && posUnchanged(lng, lat)) {
+                      if (callback) callback(null)
+                      return
+                    }
                     let res = {}
                     if (lat) {
                       res = await this.getAddressByLnglatWebAPI(lng, lat)
                     }
                     if (callback) callback(res)
                   } else {
-                    Taro.showToast({ title: '获取定位权限失败', icon: 'none' })
+                    Taro.showToast({ title: $t('9a2a8fcc.e9a580'), icon: 'none' })
                   }
                 } else {
                   if (callback) callback(false)
@@ -402,6 +493,10 @@ class EntryLaunch {
         })
       } else {
         let { lng, lat } = await this.getLocationInfo()
+        if (lat != null && posUnchanged(lng, lat)) {
+          if (callback) callback(null)
+          return
+        }
         let res = {}
         if (lat) {
           res = await this.getAddressByLnglatWebAPI(lng, lat)
@@ -450,11 +545,12 @@ class EntryLaunch {
    * 导购任务埋点上报
    */
   async postGuideTask(customPath) {
-    const { path, params } = $instance.router
+    const { path, params } = getCurrentInstance()?.router || {}
     const paths = customPath || path
     const routePath = {
       '/subpages/item/espier-detail': 'activeItemDetail',
       '/pages/item/espier-detail': 'activeItemDetail',
+      '/subpages/item/espier-detail': 'activeItemDetail',
       '/pages/custom/custom-page': 'activeCustomPage',
       '/subpage/pages/recommend/detail': 'activeSeedingDetail',
       '/subpages/marketing/coupon-center': 'activeDiscountCoupon',

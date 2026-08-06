@@ -8,8 +8,8 @@ import { SpImage, SpPrice } from '@/components'
 import { classNames } from '@/utils'
 import { useImmer } from 'use-immer'
 import api from '@/api'
+import * as communityApi from '@/api/community'
 import { useAsyncCallback } from '@/hooks'
-
 import './index.scss'
 
 const initialState = {
@@ -43,7 +43,7 @@ const CompGroupLogListItem = (props) => {
   // }
 
   // const getActivityList = async (pages = 1) => {
-  //   const list = await api.community.
+  //   const list = await communityApi.
   //   setState(draft => {
   //     draft.groupList = list.items
   //   })

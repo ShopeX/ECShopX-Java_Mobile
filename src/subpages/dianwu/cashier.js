@@ -7,9 +7,10 @@ import { useSelector, useDispatch } from 'react-redux'
 import { useImmer } from 'use-immer'
 import Taro, { getCurrentInstance, useDidHide } from '@tarojs/taro'
 import api from '@/api'
+import * as dianwuApi from '@/api/dianwu'
 import doc from '@/subpages/doc'
 import { View, Text, ScrollView, Camera } from '@tarojs/components'
-import { AtTabs, AtTabsPane, AtButton, AtCurtain } from 'taro-ui'
+import { AtTabs, AtTabsPane, AtButton } from 'taro-ui'
 import {
   SpPage,
   SpSearchInput,
@@ -23,54 +24,63 @@ import {
   SpInput as AtInput
 } from '@/components'
 import { useDianWuLogin, useDebounce } from '@/hooks'
-import { styleNames, pickBy, showToast, classNames, validate } from '@/utils'
+import { styleNames, pickBy, showToast, classNames } from '@/utils'
+import { useTranslation, $t, i18n, ti } from '@/i18n'
 import { selectMember } from '@/store/slices/dianwu'
 import CompGoods from './comps/comp-goods'
 import CompGift from './comps/comp-gift'
 import CompGoodsPrice from './comps/comp-goods-price'
 import CompTabbar from './comps/comp-tabbar'
+import CompDianwuSelectMember from './comps/comp-dianwu-select-member'
+import CompDianwuPlatformOrder from './comps/comp-dianwu-platform-order'
+import { isDianwuGoodsDisabled, resolveDianwuGoodsActions } from './utils/dianwu-goods-action'
 import './cashier.scss'
 
 const initialState = {
   keywords: '',
-  typeList: [
-    { title: '商品', value: 'goods' },
-    { title: '会员', value: 'member' }
-  ],
-  current: 0,
   cartList: [],
-  mobile: '',
   searchGoodsList: [],
-  searchMemberResult: null,
   discountDetailLayout: false,
   searchResultLayout: false,
   addUserCurtain: false,
-  isCameraOpend: false
+  isCameraOpend: false,
+  platformOrderItem: null,
+  isPlatformStoreBuy: false
 }
 
 function DianWuCashier() {
   const [state, setState] = useImmer(initialState)
   const {
     keywords,
-    typeList,
-    current,
     cartList,
-    mobile,
     discountDetailLayout,
     searchResultLayout,
     addUserCurtain,
     searchGoodsList,
-    searchMemberResult,
     isCameraOpend,
-    distributor_id
+    distributor_id,
+    platformOrderItem,
+    isPlatformStoreBuy
   } = state
   const pageRef = useRef()
+  const getCashierListRef = useRef(null)
   const scanIsUseableRef = useRef(true)
   const audioContextRef = useRef()
-  const $instance = getCurrentInstance()
+  const $instance = getCurrentInstance() || {}
 
   const { member } = useSelector((state) => state.dianwu)
   const dispatch = useDispatch()
+
+  useTranslation()
+
+  useEffect(() => {
+    const syncNavTitle = () => {
+      Taro.setNavigationBarTitle({ title: $t('7187dbd0.5cbddd') })
+    }
+    syncNavTitle()
+    i18n.on('languageChanged', syncNavTitle)
+    return () => i18n.off('languageChanged', syncNavTitle)
+  }, [])
 
   // useDianWuLogin()
 
@@ -79,24 +89,24 @@ function DianWuCashier() {
     //   useWebAudioImplement: true // 是否使用 WebAudio 作为底层音频驱动，默认关闭。对于短音频、播放频繁的音频建议开启此选项，开启后将获得更优的性能表现。由于开启此选项后也会带来一定的内存增长，因此对于长音频建议关闭此选项
     // })
     // audioContextRef.current.src = `${process.env.APP_IMAGE_CDN}/scan_success.wav`
-    const { distributor_id: dtid } = $instance.router.params
+    const { distributor_id: dtid } = $instance?.router?.params
     setState((draft) => {
       draft.distributor_id = dtid
     })
   }, [])
 
   useEffect(() => {
-    const { distributor_id: dtid } = $instance.router.params
+    const { distributor_id: dtid } = $instance?.router?.params
     getCashierList(dtid)
   }, [member])
 
   useEffect(() => {
-    if (discountDetailLayout || searchResultLayout || addUserCurtain) {
+    if (discountDetailLayout || searchResultLayout || addUserCurtain || platformOrderItem) {
       pageRef.current.pageLock()
     } else {
       pageRef.current.pageUnLock()
     }
-  }, [discountDetailLayout, searchResultLayout, addUserCurtain])
+  }, [discountDetailLayout, searchResultLayout, addUserCurtain, platformOrderItem])
 
   useEffect(() => {
     if (keywords) {
@@ -106,50 +116,36 @@ function DianWuCashier() {
 
   const handleSearchByKeyword = async (keywords) => {
     Taro.showLoading({ title: '' })
-    const { list: goodsList } = await api.dianwu.goodsItems({
+    const { list: goodsList, is_platform_store_buy } = await dianwuApi.goodsItems({
       page: 1,
       pageSize: 100,
-      keywords
+      keywords,
+      distributor_id
     })
     Taro.hideLoading()
 
     setState((draft) => {
       draft.searchGoodsList = pickBy(goodsList, doc.dianwu.GOODS_ITEM)
+      if (is_platform_store_buy != null) {
+        draft.isPlatformStoreBuy = !!is_platform_store_buy
+      }
       // draft.searchMemberList = pickBy(memberList, doc.dianwu.MEMBER_ITEM)
       draft.searchResultLayout = true
     })
   }
 
-  const handleScanCode = async () => {
-    const { errMsg, result } = await Taro.scanCode()
-    console.log('handleScanCode:', result)
-    if (errMsg == 'scanCode:ok') {
-      Taro.showLoading({ title: '' })
-      const { list } = await api.dianwu.getMembers({
-        user_card_code: result.split('_')[1]
-      })
-      // console.log(pickBy(list, doc.dianwu.MEMBER_ITEM))
-      Taro.hideLoading()
-      setState((draft) => {
-        draft.searchMemberResult = pickBy(list, doc.dianwu.MEMBER_ITEM)
-      })
-    } else {
-      showToast(errMsg)
-    }
-  }
-
   const handleScanGoodsBN = async () => {
-    // 注意：真机scancode扫码完成后回调，taro getCurrentInstance().router = null，无法获取到路由参数
+    // 注意：真机scancode扫码完成后回调，taro getCurrentInstance()?.router = null，无法获取到路由参数
     const { errMsg, result } = await Taro.scanCode()
     console.log('handleScanCode:', result)
     if (errMsg == 'scanCode:ok') {
       Taro.showLoading({ title: '' })
-      await api.dianwu.scanAddToCart({
+      await dianwuApi.scanAddToCart({
         barcode: result,
         distributor_id
       })
       Taro.hideLoading()
-      showToast('加入收银台成功')
+      showToast($t('7187dbd0.edd566'))
       getCashierList()
     } else {
       showToast(errMsg)
@@ -157,7 +153,7 @@ function DianWuCashier() {
   }
 
   const getCashierList = async (dtid) => {
-    const { valid_cart } = await api.dianwu.getCartDataList({
+    const { valid_cart } = await dianwuApi.getCartDataList({
       user_id: member?.userId,
       distributor_id: dtid || distributor_id
     })
@@ -165,9 +161,10 @@ function DianWuCashier() {
       draft.cartList = pickBy(valid_cart, doc.dianwu.CART_GOODS_ITEM)
     })
   }
+  getCashierListRef.current = getCashierList
 
   const onChangeInputNumber = useDebounce(async ({ cartId, itemId }, num) => {
-    await api.dianwu.updateCartData({
+    await dianwuApi.updateCartData({
       cart_id: cartId,
       item_id: itemId,
       num,
@@ -179,26 +176,26 @@ function DianWuCashier() {
 
   const handleDeleteCartItem = async ({ cartId }) => {
     const { confirm } = await Taro.showModal({
-      title: '提示',
-      content: '将当前商品移出收银台?',
+      title: $t('7187dbd0.02d981'),
+      content: $t('7187dbd0.638dc7'),
       showCancel: true,
-      cancel: '取消',
-      cancelText: '取消',
-      confirmText: '确认'
+      cancel: $t('7187dbd0.625fb2'),
+      cancelText: $t('7187dbd0.625fb2'),
+      confirmText: $t('7187dbd0.e83a25')
     })
     if (!confirm) return
-    await api.dianwu.deleteCartData(cartId)
+    await dianwuApi.deleteCartData(cartId)
     getCashierList()
   }
 
   const handleAddToCart = async ({ itemId }) => {
-    await api.dianwu.addToCart({
+    await dianwuApi.addToCart({
       item_id: itemId,
       num: 1,
       distributor_id
     })
     getCashierList()
-    showToast('加入收银台成功')
+    showToast($t('7187dbd0.edd566'))
   }
 
   const handleScanCodeByGoods = async (e) => {
@@ -207,12 +204,12 @@ function DianWuCashier() {
       scanIsUseableRef.current = false
       audioContextRef.current.play()
       try {
-        await api.dianwu.scanAddToCart({
+        await dianwuApi.scanAddToCart({
           barcode: e.detail.result,
           distributor_id
         })
         getCashierList()
-        showToast('加入收银台成功')
+        showToast($t('7187dbd0.edd566'))
       } catch (e) {
         console.error(e)
       }
@@ -220,26 +217,6 @@ function DianWuCashier() {
         scanIsUseableRef.current = true
       }, 2000)
     }
-  }
-
-  // 选择会员
-  const handleSelectMember = async () => {
-    const [item] = searchMemberResult
-    const userInfo = await api.dianwu.getMemberByUserId({ user_id: item.userId })
-    const { couponNum, point, vipDiscount } = pickBy(userInfo, doc.dianwu.MEMBER_INFO)
-    dispatch(
-      selectMember({
-        ...item,
-        couponNum,
-        point,
-        vipDiscount
-      })
-    )
-    setState((draft) => {
-      draft.addUserCurtain = false
-      draft.mobile = ''
-      draft.searchMemberResult = null
-    })
   }
 
   // 挂单
@@ -257,12 +234,12 @@ function DianWuCashier() {
       return
     }
     const { confirm } = await Taro.showModal({
-      title: '挂单确认',
-      content: '请确认是否挂单'
+      title: $t('7187dbd0.d36db0'),
+      content: $t('7187dbd0.a13882')
     })
     if (confirm) {
       try {
-        await api.dianwu.orderPendding({
+        await dianwuApi.orderPendding({
           user_id: member?.userId,
           distributor_id,
           showError: false
@@ -275,9 +252,9 @@ function DianWuCashier() {
       } catch (e) {
         if (e.res.data.data?.code == '42201') {
           const pendingModal = await Taro.showModal({
-            title: '挂单上限提醒',
+            title: $t('7187dbd0.6edb46'),
             content: e.res.data.data.message,
-            confirmText: '现在就去'
+            confirmText: $t('7187dbd0.6dcf61')
           })
           if (pendingModal.confirm) {
             Taro.navigateTo({
@@ -294,43 +271,6 @@ function DianWuCashier() {
           showToast(e.res.data.data.message)
         }
       }
-    }
-  }
-
-  const handleCreateMember = async () => {
-    const res = await api.dianwu.createMember({ mobile })
-    const newUser = pickBy(res, doc.dianwu.CREATE_MEMBER_ITEM)
-    const userInfo = await api.dianwu.getMemberByUserId({ user_id: newUser.userId })
-    const { couponNum, point, vipDiscount } = pickBy(userInfo, doc.dianwu.MEMBER_INFO)
-    dispatch(
-      selectMember({
-        ...newUser,
-        couponNum,
-        point,
-        vipDiscount
-      })
-    )
-    setState((draft) => {
-      draft.addUserCurtain = false
-    })
-  }
-
-  const onChangeMobile = (e) => {
-    setState((draft) => {
-      draft.mobile = e
-    })
-  }
-
-  const handleConfirm = async () => {
-    if (validate.isMobileNum(mobile)) {
-      const { list } = await api.dianwu.getMembers({
-        mobile
-      })
-      setState((draft) => {
-        draft.searchMemberResult = pickBy(list, doc.dianwu.MEMBER_ITEM)
-      })
-    } else {
-      showToast('请输入正确的手机号')
     }
   }
 
@@ -367,10 +307,10 @@ function DianWuCashier() {
             <View className='total-bar'>
               <View className='lf'>
                 <View className='total-mount'>
-                  合计 <SpPrice size={28} value={cartList[0]?.totalPrice} />
+                  {$t('7187dbd0.450efd')} <SpPrice size={28} value={cartList[0]?.totalPrice} />
                 </View>
                 <View className='discount-mount'>
-                  已优惠 <SpPrice size={28} value={cartList[0]?.discountFee} />
+                  {$t('7187dbd0.0997f9')} <SpPrice size={28} value={cartList[0]?.discountFee} />
                 </View>
               </View>
               <View
@@ -381,27 +321,28 @@ function DianWuCashier() {
                   })
                 }}
               >
-                优惠详情<Text className='iconfont icon-qianwang-01'></Text>
+                {$t('7187dbd0.ce989f')}
+                <Text className='iconfont icon-qianwang-01'></Text>
               </View>
             </View>
           )}
           <View className='footer-wrap'>
             <View className='total-info'>
               <View className='real-mount'>
-                <Text className='label'>应收 </Text>
+                <Text className='label'>{$t('7187dbd0.fccab9')} </Text>
                 <SpPrice value={cartList[0]?.totalFee || 0} />
               </View>
-              <View className='txt'>已选择{cartList[0]?.totalNum || 0}件商品</View>
+              <View className='txt'>{ti('7187dbd0.13a851', [cartList[0]?.totalNum || 0])}</View>
             </View>
             <View className='g-button'>
               <View className='g-button__first' onClick={handleOrderPendding}>
-                {cartList.length == 0 ? '取单' : '挂单'}
+                {cartList.length == 0 ? $t('7187dbd0.b10acb') : $t('7187dbd0.ee5b0a')}
               </View>
               <View
                 className='g-button__second'
                 onClick={() => {
                   if (cartList.length == 0) {
-                    showToast('请添加商品')
+                    showToast($t('7187dbd0.dd2124'))
                     return
                   }
 
@@ -418,7 +359,7 @@ function DianWuCashier() {
                   })
                 }}
               >
-                结算收银
+                {$t('7187dbd0.181c56')}
               </View>
             </View>
           </View>
@@ -428,7 +369,7 @@ function DianWuCashier() {
     >
       <View className='block-tools'>
         <SpSearchInput
-          placeholder='商品名称/货号/条码'
+          placeholder={$t('7187dbd0.68800b')}
           onConfirm={(val) => {
             setState((draft) => {
               draft.keywords = val
@@ -445,7 +386,7 @@ function DianWuCashier() {
               })
             }}
           >
-            <Text className='iconfont icon-xinzenghuiyuan-01'></Text> 选择会员
+            <Text className='iconfont icon-xinzenghuiyuan-01'></Text> {$t('7187dbd0.3a6fa4')}
             {/* <View className='g-button__second' onClick={handleScanCode}>
               <Text className='iconfont icon-saoma'></Text>扫商品/会员码
             </View> */}
@@ -461,7 +402,7 @@ function DianWuCashier() {
                 })
               }}
             >
-              <View className='name'>{member.username || '匿名'}</View>
+              <View className='name'>{member.username || $t('7187dbd0.1a75c1')}</View>
               <View className='mobile'>{member.mobile}</View>
             </View>
             <View className='rg'>
@@ -472,10 +413,6 @@ function DianWuCashier() {
                 className='btn-clear'
                 onClick={() => {
                   dispatch(selectMember(null))
-                  setState((draft) => {
-                    draft.mobile = ''
-                    draft.searchMemberResult = null
-                  })
                 }}
               >
                 <Text className='iconfont icon-shanchu-011'></Text>
@@ -485,7 +422,7 @@ function DianWuCashier() {
         )}
         <View className='code-to-cart' onClick={handleScanGoodsBN}>
           <View className='iconfont icon-saoma code-to-cart-icon'></View>
-          <View className='code-to-cart-text'>扫码加购</View>
+          <View className='code-to-cart-text'>{$t('7187dbd0.0296bf')}</View>
         </View>
       </View>
       {/* {isCameraOpend && (
@@ -532,7 +469,9 @@ function DianWuCashier() {
         ))}
       </View> */}
       <ScrollView className='item-list' scrollY>
-        {cartList[0]?.list.length == 0 && <SpNote img='empty_data.png' title='暂时还没有商品' />}
+        {cartList[0]?.list.length == 0 && (
+          <SpNote img='empty_data.png' title={$t('7187dbd0.fb857c')} />
+        )}
         {cartList[0]?.list.length > 0 && (
           <View className='block-goods'>
             {cartList.map((shopList, idx) => {
@@ -550,7 +489,7 @@ function DianWuCashier() {
                     <View className='item-bd'>
                       <View className='title'>
                         {item.isPrescription == 1 && item.isMedicine && (
-                          <Text className='prescription-drug'>处方药</Text>
+                          <Text className='prescription-drug'>{$t('7187dbd0.e8b7e1')}</Text>
                         )}
                         {item.itemName}
                       </View>
@@ -619,7 +558,7 @@ function DianWuCashier() {
                 {cartList[0]?.giftActivity.map((act, m) => {
                   return act.gifts.map((gift, n) => (
                     <View className='gift-item' key={`gift-item__${m}__${n}`}>
-                      <View className='gift-tag'>赠品</View>
+                      <View className='gift-tag'>{$t('7187dbd0.d017cc')}</View>
                       <View className='gift-content'>{gift.itemName}</View>
                       {gift.item_spec_desc && (
                         <Text className='gift-sku'>（{gift.item_spec_desc}）</Text>
@@ -651,7 +590,7 @@ function DianWuCashier() {
       </ScrollView>
 
       <SpFloatLayout
-        title='优惠详情'
+        title={$t('7187dbd0.ce989f')}
         open={discountDetailLayout}
         onClose={() => {
           setState((draft) => {
@@ -660,13 +599,13 @@ function DianWuCashier() {
         }}
       >
         <View className='discount-detail'>
-          <SpCell title={`${cartList[0]?.totalNum}件商品合计`}>
+          <SpCell title={ti('7187dbd0.631d07', [cartList[0]?.totalNum])}>
             <SpPrice value={cartList[0]?.totalPrice}></SpPrice>
           </SpCell>
-          <SpCell title='促销优惠'>
+          <SpCell title={$t('7187dbd0.7d9bcd')}>
             <SpPrice value={`-${cartList[0]?.promotionFee}`}></SpPrice>
           </SpCell>
-          <SpCell title='会员折扣'>
+          <SpCell title={$t('7187dbd0.eababe')}>
             <SpPrice value={`-${cartList[0]?.memberDiscount}`}></SpPrice>
           </SpCell>
         </View>
@@ -676,7 +615,7 @@ function DianWuCashier() {
         className='layout-search-result'
         title={
           <Text className='label'>
-            查询内容: <Text className='keywords'>{keywords}</Text>
+            {$t('7187dbd0.36e3c0')} <Text className='keywords'>{keywords}</Text>
           </Text>
         }
         open={searchResultLayout}
@@ -687,83 +626,68 @@ function DianWuCashier() {
         }}
       >
         <ScrollView className='tab-scroll-list' scrollY>
-          {searchGoodsList.map((item, index) => (
-            <View className='goods-item-wrap' key={`goods-item-wrap__${index}`}>
-              <CompGoods info={item}>
-                {item.store > 0 && (
-                  <AtButton
-                    circle
-                    className='btn-add-cart'
-                    onClick={handleAddToCart.bind(this, item)}
-                  >
-                    加入收银
-                  </AtButton>
-                )}
-              </CompGoods>
-            </View>
-          ))}
+          {searchGoodsList.map((item, index) => {
+            const actions = resolveDianwuGoodsActions(item, isPlatformStoreBuy)
+            return (
+              <View
+                className={classNames('goods-item-wrap', {
+                  'item-disabled': isDianwuGoodsDisabled(item, isPlatformStoreBuy)
+                })}
+                key={`goods-item-wrap__${index}`}
+              >
+                <CompGoods info={item} isPlatformStoreBuy={isPlatformStoreBuy}>
+                  {actions.addToCashier && (
+                    <AtButton
+                      circle
+                      className='btn-add-cart'
+                      onClick={handleAddToCart.bind(this, item)}
+                    >
+                      {$t('7187dbd0.cd2240')}
+                    </AtButton>
+                  )}
+
+                  {actions.buyNow && (
+                    <AtButton
+                      className='btn-add-cart btn-platform-order'
+                      circle
+                      onClick={() => {
+                        setState((draft) => {
+                          draft.platformOrderItem = item
+                        })
+                      }}
+                    >
+                      {$t('8cac8565.887eb6')}
+                    </AtButton>
+                  )}
+                </CompGoods>
+              </View>
+            )
+          })}
         </ScrollView>
       </SpFloatLayout>
 
-      <AtCurtain
-        isOpened={addUserCurtain}
+      <CompDianwuPlatformOrder
+        open={!!platformOrderItem}
+        item={platformOrderItem}
+        isPlatformStoreBuy={isPlatformStoreBuy}
+        distributor_id={distributor_id}
+        onClose={() => {
+          setState((draft) => {
+            draft.platformOrderItem = null
+          })
+        }}
+        onEventFetchOrder={getCashierList}
+      />
+
+      <CompDianwuSelectMember
+        open={addUserCurtain}
+        distributor_id={distributor_id}
         onClose={() => {
           setState((draft) => {
             draft.addUserCurtain = false
           })
         }}
-      >
-        <View className='search-user'>
-          <View className='search-user-hd'>
-            <View className='title'>查询会员</View>
-            <View className='scan-member' onClick={handleScanCode}>
-              <Text className='iconfont icon-saoma'></Text>扫会员码
-            </View>
-          </View>
-          <View className='search-user-bd'>
-            <View className='form-field'>
-              <AtInput
-                name='mobile'
-                value={mobile}
-                className='mobile'
-                placeholder='请输入手机号'
-                onChange={onChangeMobile}
-                onConfirm={handleConfirm}
-              />
-            </View>
-            {searchMemberResult && (
-              <View className='search-result'>
-                {searchMemberResult?.length == 0 && <Text>没有找到会员</Text>}
-                {searchMemberResult?.length > 0 && (
-                  <Text>{`${searchMemberResult[0]?.username} ${searchMemberResult[0]?.mobile}`}</Text>
-                )}
-              </View>
-            )}
-          </View>
-          <View className='search-user-ft'>
-            <View
-              className='btn-cancel'
-              onClick={() => {
-                setState((draft) => {
-                  draft.addUserCurtain = false
-                })
-              }}
-            >
-              取消
-            </View>
-            {searchMemberResult?.length > 0 && (
-              <AtButton className='btn-confirm' onClick={handleSelectMember}>
-                选择会员
-              </AtButton>
-            )}
-            {searchMemberResult?.length == 0 && (
-              <AtButton className='btn-confirm' onClick={handleCreateMember}>
-                立即创建
-              </AtButton>
-            )}
-          </View>
-        </View>
-      </AtCurtain>
+      />
     </SpPage>
   )
 }

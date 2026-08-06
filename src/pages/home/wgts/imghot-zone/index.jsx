@@ -4,7 +4,7 @@
  */
 import React, { useMemo } from 'react'
 import Taro from '@tarojs/taro'
-import { View } from '@tarojs/components'
+import { Button, View, ScrollView } from '@tarojs/components'
 import { SpImage, SpLogin } from '@/components'
 import { linkPage, classNames, styleNames, isArray, getDistributorId } from '@/utils'
 import { needLoginPage, needLoginPageType } from '@/consts'
@@ -33,33 +33,18 @@ function WgtImgHotZone(props) {
   // 获取外层样式（包含 outerMargin 和背景配置）
   const outerStyle = useMemo(() => {
     const style = getGlobalBaseStyle(base.outerMargin)
-
-    // 纵向布局时，外层容器高度优先使用 base.imgHeight
-    if (isVertical && base.imgHeight) {
-      style.height = Taro.pxTransform(base.imgHeight)
-    }
-
     return style
   }, [base, isVertical])
 
   // 容器样式（图片容器）
   const bodyStyle = useMemo(() => {
-    const style = {
-      // width: config.imgWidth ? Taro.pxTransform(config.imgWidth) : undefined
+    if (isVertical && config.imgHeight) {
+      return {
+        height: Taro.pxTransform(config.imgHeight)
+      }
     }
-
-    // 纵向布局时，优先使用 base.imgHeight
-    // if (isVertical && base.imgHeight) {
-    //   style.height = Taro.pxTransform(base.imgHeight)
-    // } else if (config.imgHeight) {
-    //   // 横向布局时，使用 config.imgHeight
-    //   style.height = Taro.pxTransform(config.imgHeight)
-    // } else {
-    //   style.height = 'auto'
-    // }
-    style.height = 'auto'
-    return style
-  }, [config.imgWidth, config.imgHeight, isVertical, base.imgHeight])
+    return null
+  }, [config.imgWidth, config.imgHeight, isVertical, base.imgHeight, base.outerMargin])
 
   // 点击处理
   const handleClickItem = async (item) => {
@@ -95,6 +80,17 @@ function WgtImgHotZone(props) {
         distributor_id
       })
 
+    if (item.id === 'customerService') {
+      return (
+        <Button
+          openType='contact'
+          key={item.id || Math.random()}
+          className='wgt-imghot-zone__body_zone opacity-0'
+          style={getZoneStyle(item)}
+        />
+      )
+    }
+
     if (needLogin(item)) {
       return (
         <SpLogin key={`imghotzone-login-${index}`} onChange={clickHandler}>
@@ -106,26 +102,42 @@ function WgtImgHotZone(props) {
     return <View {...zoneProps} onClick={clickHandler} />
   }
 
+  const renderImgContent = () => (
+    <>
+      <SpImage
+        src={config.imgUrl}
+        className='wgt-imghot-zone__body-img'
+        mode={!isVertical ? 'widthFix' : 'heightFix'}
+      />
+      {isArray(data) && data.length > 0 && data.map(renderHotZone)}
+    </>
+  )
+
   if (!info || !config.imgUrl) {
     return null
   }
 
   return (
     <View
-      className={classNames('wgt-imghot-zone', {
-        'wgt-imghot-zone__vertical': isVertical,
-        'wgt-imghot-zone__horizontal': !isVertical
-      })}
+      className={classNames('wgt-imghot-zone', {})}
       id={`wgt-imghot-zone-${id || ''}`}
       style={styleNames(outerStyle)}
     >
       <View className='wgt-imghot-zone__body' style={styleNames(bodyStyle)}>
-        <SpImage
-          src={config.imgUrl}
-          className='wgt-imghot-zone__body-img'
-          mode={isVertical ? 'heightFix' : 'widthFix'}
-        />
-        {isArray(data) && data.length > 0 && data.map(renderHotZone)}
+        {isVertical ? (
+          <ScrollView
+            scrollX
+            enhanced
+            showScrollbar={false}
+            className='wgt-imghot-zone__body-img-wrapper wgt-imghot-zone__body-img-wrapper__vertical'
+          >
+            <View className='wgt-imghot-zone__scroll-inner'>{renderImgContent()}</View>
+          </ScrollView>
+        ) : (
+          <View className='wgt-imghot-zone__body-img-wrapper wgt-imghot-zone__body-img-wrapper__horizontal'>
+            {renderImgContent()}
+          </View>
+        )}
       </View>
     </View>
   )

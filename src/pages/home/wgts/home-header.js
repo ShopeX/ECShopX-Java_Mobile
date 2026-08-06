@@ -7,12 +7,14 @@ import Taro, { getCurrentInstance } from '@tarojs/taro'
 import { View, Text } from '@tarojs/components'
 import { useSelector } from 'react-redux'
 import { VERSION_PLATFORM, classNames, isWeixin, VERSION_STANDARD } from '@/utils'
+import { useTranslation, $t } from '@/i18n'
 
 import './home-header.scss'
 
 function WgtHomeHeader(props) {
+  useTranslation()
   const { children, jump = true, isSetHight } = props
-  const { location = {} } = useSelector((state) => state.user)
+  const { location = {}, address } = useSelector((state) => state.user)
   const { openScanQrcode, entryStoreByLBS, openWechatappLocation } = useSelector(
     (state) => state.sys
   )
@@ -30,7 +32,7 @@ function WgtHomeHeader(props) {
             })
           }}
         >
-          <View className='shop-name'>{shopInfo?.name || '总店'}</View>
+          <View className='shop-name'>{shopInfo?.name || $t('cb50ec48.0d7757')}</View>
           <Text className='iconfont icon-qianwang-01'></Text>
         </View>
       )}
@@ -46,7 +48,18 @@ function WgtHomeHeader(props) {
             }
           }}
         >
-          <View className='address'>{location?.address || '北京市北京市昌平区'}</View>
+          <View className='address'>
+            {address?.adrdetail
+              ? [address.province, address.city, address.county, address.adrdetail]
+                  .filter(Boolean)
+                  .join('') ||
+                address.city ||
+                address.province ||
+                $t('cb50ec48.e9a36d')
+              : location?.address ||
+                [location?.province, location?.city, location?.district].filter(Boolean).join('') ||
+                $t('cb50ec48.e9a36d')}
+          </View>
           <Text className='iconfont icon-qianwang-01'></Text>
         </View>
       )}

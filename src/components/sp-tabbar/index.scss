@@ -6,14 +6,11 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  /* H5 下固定 height + footer 定高会裁切底部文案，改为 min-height 自适应 */
-  min-height: 124px;
-  height: auto;
+  height: 124px;
   background-color: #fff;
   border-top: 1px solid #e5e5e5;
-  padding: 16px 36px;
+  padding: 12px 36px 8px;
   box-sizing: border-box;
-  overflow: visible;
 
   .cart-count1 {
     font-family: PingFang SC, PingFang SC;
@@ -51,11 +48,10 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
+    gap: 4px;
     width: 96px;
-    height: auto;
     min-height: 86px;
-    flex-shrink: 0;
 
     &-cover-image {
       width: 86px;
@@ -65,9 +61,8 @@
     }
 
     &-text {
-      display: block;
+      flex-shrink: 0;
       height: 28px;
-      margin-top: 4px;
       font-family: PingFang SC, PingFang SC;
       font-weight: 500;
       font-size: 20px;
@@ -90,17 +85,14 @@
     }
     &-image-wrapper {
       position: relative;
-      width: 56px;
+      flex-shrink: 0;
       height: 56px;
-      line-height: 1;
       display: flex;
       align-items: center;
       justify-content: center;
-      flex-shrink: 0;
       .iconfont {
         font-size: 56px;
         line-height: 1;
-        display: block;
       }
     }
     &-image {

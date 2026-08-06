@@ -3,16 +3,15 @@
  * See LICENSE file for license details.
  */
 import React, { useRef, useEffect } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
-import Taro, { useDidShow, getCurrentInstance } from '@tarojs/taro'
+import Taro, { getCurrentInstance } from '@tarojs/taro'
 import { View, Image } from '@tarojs/components'
 import { useImmer } from 'use-immer'
 import { SpScrollView } from '@/components'
 import api from '@/api'
 import doc from '@/doc'
-import { useDebounce } from '@/hooks'
-
+import { useDebounce, useNavigation } from '@/hooks'
 import { pickBy, classNames, styleNames, showToast } from '@/utils'
+import { useTranslation, $t, ti, i18n } from '@/i18n'
 import CompFirstCategory from './comps/comp-first-category'
 import CompSecondCategory from './comps/comp-second-category'
 import CompThirdCategory from './comps/comp-third-category'
@@ -35,7 +34,9 @@ const initialState = {
 }
 
 function StoreItemList(props) {
-  const $instance = getCurrentInstance()
+  useTranslation()
+  const { setNavigationBarTitle } = useNavigation()
+  const $instance = getCurrentInstance() || {}
   const [state, setState] = useImmer(initialState)
   // const { purchase_share_info = {} } = useSelector((state) => state.purchase)
   const {
@@ -56,17 +57,23 @@ function StoreItemList(props) {
   const { addPurchases = () => {}, dtid } = props
 
   const goodsRef = useRef()
-  const dispatch = useDispatch()
   useEffect(() => {
     getCategoryList()
   }, [])
+
+  useEffect(() => {
+    const syncTitle = () => setNavigationBarTitle($t('4e79525a.c3ece5'))
+    syncTitle()
+    i18n.on('languageChanged', syncTitle)
+    return () => i18n.off('languageChanged', syncTitle)
+  }, [setNavigationBarTitle])
 
   useEffect(() => {
     if (cat_id) {
       goodsRef?.current.reset()
       changeList()
     }
-  }, [cat_id])
+  }, [cat_id, i18n.language])
 
   const getCategoryList = async () => {
     const res = await api.category.get({ distributor_id: dtid })
@@ -101,7 +108,7 @@ function StoreItemList(props) {
   }
 
   const fetch = async ({ pageIndex, pageSize }) => {
-    const { dis_id = null } = $instance.router.params
+    const { dis_id = null } = $instance?.router?.params
     const params = {
       page: pageIndex,
       pageSize,
@@ -203,10 +210,10 @@ function StoreItemList(props) {
     }
     console.log('item44444ttttttt', item)
     if (item.cart_num >= Number(item.activity_store)) {
-      return showToast(`最多加购${item.activity_store}件`)
+      return showToast(ti('a70522dc.21dd98', [item.activity_store]))
     }
     await api.purchase.addPurchaseCart(params)
-    showToast('加入购物车成功')
+    showToast($t('a70522dc.54fd8e'))
     // let changeList = JSON.parse(JSON.stringify(newList))
     // changeList.map(l=>{
     //   if(l.item_id == item.item_id){
@@ -225,7 +232,7 @@ function StoreItemList(props) {
   const changeList = async () => {
     const _secondList = [
       {
-        name: '全部',
+        name: $t('a70522dc.a8b0c2'),
         img: '',
         id: ''
       },
@@ -239,7 +246,7 @@ function StoreItemList(props) {
         _thirdList.length > 0
           ? [
               {
-                name: '全部',
+                name: $t('a70522dc.a8b0c2'),
                 img: '',
                 id: ''
               },

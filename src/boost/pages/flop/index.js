@@ -6,17 +6,20 @@ import React, { Component } from 'react'
 import Taro, { getCurrentInstance } from '@tarojs/taro'
 import { View, Image, Progress, Text, Button } from '@tarojs/components'
 import { pickBy, normalizeQuerys } from '@/utils'
-import { SpNavBar, SpLogin, SpFloatPrivacy } from '@/components'
+import { SpNavBar, SpLogin } from '@/components'
+import { SpFloatPrivacy } from '@/subpages/components'
 import api from '@/api'
+import * as boostApi from '@/api/boost'
 import S from '@/spx'
 import { connect } from 'react-redux'
+import { $t, ti } from '@/i18n'
 import './index.scss'
 
 @connect(({ user }) => ({
   memberData: user.userInfo
 }))
 export default class Flop extends Component {
-  $instance = getCurrentInstance()
+  $instance = getCurrentInstance() || {}
   constructor(props) {
     super(props)
 
@@ -34,15 +37,15 @@ export default class Flop extends Component {
 
   componentDidMount() {
     this.getBoostDetail()
-    S.getAuthToken() && this.handleClickWxOAuth()
+    S?.getAuthToken() && this.handleClickWxOAuth()
   }
 
   // 获取助力详情wechat-taroturntable
   getBoostDetail = async () => {
     Taro.showLoading({ mask: true })
-    let { bargain_id, user_id } = this.$instance.router.params
-    if (this.$instance.router.params.scene) {
-      const query = await normalizeQuerys(this.$instance.router.params)
+    let { bargain_id, user_id } = this.$instance?.router?.params
+    if (this.$instance?.router?.params.scene) {
+      const query = await normalizeQuerys(this.$instance?.router?.params)
       if (query.bid) {
         bargain_id = query.bid
       }
@@ -55,7 +58,7 @@ export default class Flop extends Component {
       user_bargain_info = {},
       bargain_log = {},
       user_info = {}
-    } = await api.boost.getUserBargain({
+    } = await boostApi.getUserBargain({
       bargain_id,
       user_id
     })
@@ -96,7 +99,7 @@ export default class Flop extends Component {
       isDiscount: true
     })
     Taro.showLoading({
-      title: '帮砍中',
+      title: $t('0900e1b3.824d28'),
       mask: true
     })
     const param = {
@@ -107,9 +110,9 @@ export default class Flop extends Component {
       headimgurl: myInfo.avatar
     }
     try {
-      const res = await api.boost.postDiscount(param)
+      const res = await boostApi.postDiscount(param)
       const price = Math.abs(res.cutdown_num / 100).toFixed(2)
-      const msg = res.cutdown_num > 0 ? `太棒了！成功助力好友` : `对不起，助力失败！增加${price}`
+      const msg = res.cutdown_num > 0 ? $t('0900e1b3.b03885') : ti('0900e1b3.602b2a', [price])
       Taro.hideLoading()
       Taro.showToast({
         title: msg,
@@ -131,7 +134,7 @@ export default class Flop extends Component {
     const { info } = this.state
     if (info.isOver) {
       Taro.showToast({
-        title: '活动已结束',
+        title: $t('0900e1b3.cdae1c'),
         icon: 'none',
         mask: true
       })
@@ -159,7 +162,7 @@ export default class Flop extends Component {
     const { info, boostList, isDisabled, cutPercent, showPrivacy } = this.state
     return (
       <View className='flop'>
-        <SpNavBar title='帮砍' leftIconType='chevron-left' fixed='true' />
+        <SpNavBar title={$t('4eb8e7f5.48efa1')} leftIconType='chevron-left' fixed='true' />
         <View className='goods'>
           <Image className='img' src={info.item_pics} mode='aspectFill' />
           <View className='info'>
@@ -189,8 +192,8 @@ export default class Flop extends Component {
             <Image src={require('../../assets/icon_3.png')} mode='aspectFill' className='logo' />
           </View>
           <View className='tip'>
-            <View>点击任意一张卡片</View>
-            <View>帮助好友领取随机折扣优惠</View>
+            <View>{$t('0900e1b3.6ac2f9')}</View>
+            <View>{$t('0900e1b3.a53954')}</View>
           </View>
           {S.getAuthToken()
             ? info.help_pics &&
@@ -225,7 +228,7 @@ export default class Flop extends Component {
               )}
         </View>
         <View className='boostMain'>
-          <View className='title'>好友助力榜</View>
+          <View className='title'>{$t('55b7258d.0c9d05')}</View>
           {boostList && boostList.length > 0 ? (
             <View className='boostList'>
               {boostList.map((item, index) => (
@@ -236,16 +239,16 @@ export default class Flop extends Component {
                   <View className='right'>
                     <View className='name'>{item.nickname}</View>
                     <View>
-                      {item.cutdown_num >= 0 ? `减掉` : '增加'} ¥
+                      {item.cutdown_num >= 0 ? $t('55b7258d.d2879e') : $t('55b7258d.491411')} ¥
                       {(item.cutdown_num / 100).toFixed(2)}
                     </View>
                   </View>
-                  {item.cutdown_num < 0 && <View className='tag'>帮了倒忙</View>}
+                  {item.cutdown_num < 0 && <View className='tag'>{$t('55b7258d.4ea589')}</View>}
                 </View>
               ))}
             </View>
           ) : (
-            <View className='boostList noHelp'>暂无好友相助~</View>
+            <View className='boostList noHelp'>{$t('55b7258d.359fdc')}</View>
           )}
         </View>
         <Button
@@ -253,7 +256,7 @@ export default class Flop extends Component {
           className={`showBtn ${isDisabled && 'disabled'}`}
           onClick={this.handleJoin.bind(this)}
         >
-          我也要参加
+          {$t('0900e1b3.304777')}
         </Button>
         <SpFloatPrivacy
           isOpened={showPrivacy}

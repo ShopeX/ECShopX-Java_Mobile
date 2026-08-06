@@ -11,8 +11,10 @@ import { SpPage, SpCheckbox, SpScrollView } from '@/components'
 import { AtButton } from 'taro-ui'
 import { updateSelectGoods } from '@/store/slices/community'
 import api from '@/api'
+import * as communityApi from '@/api/community'
 import doc from '@/subpages/doc'
 import { pickBy } from '@/utils'
+import { useTranslation, $t } from '@/i18n'
 import CompGoodsItem from './comps/comp-goodsitem'
 import './itemlist.scss'
 
@@ -22,11 +24,16 @@ const initialState = {
 }
 
 function ItemList(props) {
+  const { i18n } = useTranslation()
   const [state, setState] = useImmer(initialState)
   const { selectGoods } = useSelector((state) => state.community)
   const { list, selection } = state
   const dispatch = useDispatch()
   const goodsRef = useRef()
+
+  useEffect(() => {
+    Taro.setNavigationBarTitle({ title: $t('ef392f46.df218d') })
+  }, [i18n.language])
 
   useEffect(() => {
     setState((draft) => {
@@ -53,7 +60,7 @@ function ItemList(props) {
       page: pageIndex,
       page_size: pageSize
     }
-    const { total_count: total, list: plist } = await api.community.getChiefItems(params)
+    const { total_count: total, list: plist } = await communityApi.getChiefItems(params)
     const _plist = pickBy(plist, doc.community.COMMUNITY_GOODS_ITEM)
     setState((draft) => {
       draft.list = [...list, ..._plist]
@@ -75,7 +82,7 @@ function ItemList(props) {
       renderFooter={
         <View className='btn-wrap'>
           <AtButton circle type='primary' onClick={handleConfirm}>
-            确定
+            {$t('6c340cb2.38cf16')}
           </AtButton>
         </View>
       }

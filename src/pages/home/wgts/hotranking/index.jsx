@@ -6,17 +6,26 @@ import React, { useState, useEffect, useMemo, useContext } from 'react'
 import Taro from '@tarojs/taro'
 import { View, Text } from '@tarojs/components'
 import { SpImage } from '@/components'
-import { classNames, styleNames, linkPage, pickBy, getDistributorId } from '@/utils'
+import {
+  classNames,
+  styleNames,
+  linkPage,
+  pickBy,
+  getDistributorId,
+  getCurrencySymbol
+} from '@/utils'
 import doc from '@/doc'
 import api from '@/api'
 import { AtIcon } from 'taro-ui'
+import { useTranslation, $t } from '@/i18n'
 import GoodsLayout from '../goods-layout'
 import { getGlobalBaseStyle } from '../helper'
 import { WgtsContext } from '../wgts-context'
 import './index.scss'
 
 export default function WgtHotranking(props) {
-  const { info, id, dtid } = props
+  useTranslation()
+  const { info, id } = props
   const [goodsList, setGoodsList] = useState([])
   const [goodsLeftList, setGoodsLeftList] = useState([])
   const [goodsRightList, setGoodsRightList] = useState([])
@@ -27,10 +36,7 @@ export default function WgtHotranking(props) {
   const base = params.base || {}
   const data = params.data || {}
 
-  const { onAddToCart } = useContext(WgtsContext)
-  // 店铺页优先使用页面传入的 dtid，避免落到全局店铺 ID
-  const resolveDistributorId = (itemDistributorId) =>
-    itemDistributorId || dtid || getDistributorId() || ''
+  const { onAddToCart, eActivityId } = useContext(WgtsContext) || {}
 
   // 获取外层样式（包含 outerMargin 和背景配置）
   const outerStyle = useMemo(() => {
@@ -47,13 +53,17 @@ export default function WgtHotranking(props) {
     const fetchHotrankingGoods = async () => {
       setLoading(true)
       try {
-        const distributorId = resolveDistributorId()
-        const _data = await api.seckill.getWidgetItems({
+        const distributorId = getDistributorId()
+        const requestParams = {
           data_type: 'sales',
           data_value: data.id || '',
-          data_count: base.dataCount,
-          distributor_id: distributorId
-        })
+          num: base.dataCount,
+          distributor_id: distributorId || ''
+        }
+        if (eActivityId) {
+          requestParams.e_activity_id = eActivityId
+        }
+        const _data = await api.seckill.getWidgetItems(requestParams)
         // 如果 items 已经有数据，直接使用
         if (_data && Array.isArray(_data) && _data.length > 0) {
           const goods = pickBy(_data, doc.goods.WGT_SPEEDKILL_GOODS)
@@ -75,20 +85,12 @@ export default function WgtHotranking(props) {
     }
 
     fetchHotrankingGoods()
-  }, [data.id, base.dataCount, dtid])
+  }, [data.id, base.dataCount, eActivityId])
 
   // 处理更多按钮点击
   const handleClickMore = () => {
     if (base.moreLink && base.moreLink.length > 0) {
-      const moreLink = base.moreLink[0] || {}
-      linkPage({
-        ...moreLink,
-        distributor_id: moreLink.distributor_id || resolveDistributorId()
-      })
-    } else if (dtid) {
-      Taro.navigateTo({
-        url: `/subpages/store/item-list?dtid=${dtid}`
-      })
+      linkPage(base.moreLink[0])
     } else {
       Taro.navigateTo({
         url: '/subpages/item/list'
@@ -100,8 +102,7 @@ export default function WgtHotranking(props) {
   const handleClickItem = (item) => {
     linkPage({
       linkPage: 'goods',
-      id: item.goodsId || item.item_id || item.itemId,
-      distributor_id: resolveDistributorId(item.distributorId || item.distributor_id)
+      id: item.goodsId || item.item_id || item.itemId
     })
   }
 
@@ -144,7 +145,7 @@ export default function WgtHotranking(props) {
                 onClick={handleClickMore}
                 style={styleNames({ color: base.moreBtn?.color })}
               >
-                <Text>查看更多</Text>
+                <Text>{$t('47b99a9a.90ef7c')}</Text>
                 <AtIcon value='chevron-right' size={14} color={base.moreBtn?.color} />
               </View>
             )}
@@ -171,7 +172,7 @@ export default function WgtHotranking(props) {
                   {item.store <= 0 && (
                     <View className='soldout-mask'>
                       <View className='soldout-mask-text'>
-                        <Text>已售罄</Text>
+                        <Text>{$t('47b99a9a.b12876')}</Text>
                       </View>
                     </View>
                   )}
@@ -197,7 +198,9 @@ export default function WgtHotranking(props) {
                     {item.itemName || item.title}
                   </View>
                   <View className='wgt-hotranking__activity-item-price'>
-                    <Text className='wgt-hotranking__activity-item-price__unit'>￥</Text>
+                    <Text className='wgt-hotranking__activity-item-price__unit'>
+                      {getCurrencySymbol()}
+                    </Text>
                     <Text className='wgt-hotranking__activity-item-price__text'>
                       {item.mainPrice ||
                         (item.activityPrice

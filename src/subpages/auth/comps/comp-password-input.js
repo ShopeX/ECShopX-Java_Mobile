@@ -3,11 +3,11 @@
  * See LICENSE file for license details.
  */
 import React from 'react'
-import Taro, { getCurrentInstance } from '@tarojs/taro'
 import { View, Text } from '@tarojs/components'
 import { classNames } from '@/utils'
 import { useImmer } from 'use-immer'
 import { SpInput as AtInput } from '@/components'
+import { useTranslation, $t } from '@/i18n'
 import './comp-password-input.scss'
 
 const initialValue = {
@@ -16,7 +16,16 @@ const initialValue = {
 }
 
 const CompPasswordInput = (props) => {
-  const { onChange = () => {}, disabled, onFocus = () => {}, onBlur = () => {}, value } = props
+  const {
+    onChange = () => {},
+    disabled,
+    onFocus = () => {},
+    onBlur = () => {},
+    value,
+    placeholder
+  } = props
+
+  const placeholderText = placeholder ?? $t('24f4b47f.c4d0c8')
 
   const [state, setState] = useImmer(initialValue)
 
@@ -24,7 +33,7 @@ const CompPasswordInput = (props) => {
 
   const handleToggle = () => {
     setState((_state) => {
-      _state.type = type === 'text' ? 'password' : 'text'
+      _state.type = _state.type === 'text' ? 'password' : 'text'
     })
   }
 
@@ -33,7 +42,7 @@ const CompPasswordInput = (props) => {
       <AtInput
         clear
         type={type}
-        placeholder='密码需由6-16位数字或字母组成'
+        placeholder={placeholderText}
         placeholderClass='input-placeholder'
         onChange={onChange}
         onFocus={onFocus}

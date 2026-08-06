@@ -6,16 +6,35 @@ import React, { useEffect, useRef, useState } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import Taro, { useDidShow } from '@tarojs/taro'
 import { View, Text, Image } from '@tarojs/components'
-import { SpImage, SpPoint, SpPrice, SpVipLabel } from '@/components'
+import { SpImage, SpPoint, SpPrice, SpVipLabel, SpLogin } from '@/components'
 import { fetchUserFavs, addUserFav, deleteUserFav } from '@/store/slices/user'
 import { useLogin } from '@/hooks'
 import qs from 'qs'
 import S from '@/spx'
 
-import { classNames, showToast, VERSION_PLATFORM, VERSION_IN_PURCHASE, isWeixin } from '@/utils'
+import {
+  classNames,
+  showToast,
+  VERSION_PLATFORM,
+  VERSION_IN_PURCHASE,
+  isWeixin,
+  collectLimitedBuyTagTexts
+} from '@/utils'
 import { PROMOTION_TAG } from '@/consts'
+import { $t } from '@/i18n'
 
 import './index.scss'
+
+const PROMOTION_TAG_KEY = {
+  single_group: '2bb1a4ab.f47464',
+  full_minus: '2bb1a4ab.94b1fd',
+  full_discount: '2bb1a4ab.1c120b',
+  full_gift: '2bb1a4ab.8e2405',
+  normal: '2bb1a4ab.55c758',
+  limited_time_sale: '2bb1a4ab.a0aaca',
+  plus_price_buy: '2bb1a4ab.54e654',
+  member_preference: '2bb1a4ab.ef977e'
+}
 
 const $instance = Taro.getCurrentInstance()
 
@@ -42,17 +61,21 @@ function SpGoodsItem(props) {
     if (loadingRef.current) return
     loadingRef.current = true
     let isPurchase = false
-    if (isWeixin) {
-      isPurchase = $instance.page.route.includes('subpages/purchase')
-    } else {
-      isPurchase = $instance.page.path.includes('subpages/purchase')
+    const pageRoute = $instance?.page?.route
+    const pagePath = $instance?.page?.path
+    if (pageRoute || pagePath) {
+      if (isWeixin) {
+        isPurchase = (pageRoute || '').includes('subpages/purchase')
+      } else {
+        isPurchase = (pagePath || '').includes('subpages/purchase')
+      }
     }
     setIsPurchase(isPurchase)
   }
 
   const { priceDisplayConfig = {} } = useSelector((state) => state.purchase)
   const { items_page = {} } = priceDisplayConfig
-  const { activity_price: enPurActivityPrice } = items_page
+  const { activity_price: enPurActivityPrice = true } = items_page
   const {
     onClick,
     onAddToCart,
@@ -82,14 +105,8 @@ function SpGoodsItem(props) {
     await dispatch(fetchUserFavs())
     console.log('fav', fav)
     if (S.getAuthToken()) {
-      showToast(fav ? '已移出收藏' : '已加入收藏')
+      showToast(fav ? $t('21544271.b46077') : $t('21544271.151286'))
     }
-  }
-
-  const onChangeToolBar = (e) => {
-    e.stopPropagation()
-    console.log('info', info)
-    onAddToCart(info)
   }
 
   const handleClick = () => {
@@ -156,22 +173,46 @@ function SpGoodsItem(props) {
 
         <View className='goods-info'>
           <View className='goods-title'>
-            {info?.isPrescription == 1 && <Text className='prescription-drug'>处方药</Text>}
+            {info?.isPrescription == 1 && (
+              <Text className='prescription-drug'>{$t('7d82f6d2.e8b7e1')}</Text>
+            )}
             {info.itemName}
           </View>
           <View className='goods-desc'>{info.brief}</View>
         </View>
 
-        {/* 促销活动标签 */}
-        {showPromotion && info.promotion && info.promotion.length > 0 && (
-          <View className='promotions'>
-            {info.promotion.map((item, index) => (
-              <Text className='promotion-tag' key={`promotion-tag__${index}`}>
-                {PROMOTION_TAG()[item.tag_type]}
-              </Text>
-            ))}
-          </View>
-        )}
+        {/* 促销活动标签（含商品限购 limited_buy） */}
+        {showPromotion &&
+          (() => {
+            const limitedBuyTags = collectLimitedBuyTagTexts(info)
+            const promotionItems = (info.promotion || []).filter((item) => {
+              const type = item?.tag_type || item?.marketing_type
+              return type !== 'limited_buy'
+            })
+            const hasPromo = limitedBuyTags.length > 0 || promotionItems.length > 0
+            if (!hasPromo) return null
+            return (
+              <View className='promotions'>
+                {limitedBuyTags.map((text, index) => (
+                  <Text className='promotion-tag' key={`limited-buy-tag__${index}`}>
+                    {text}
+                  </Text>
+                ))}
+                {promotionItems.map((item, index) => {
+                  const type = item.tag_type || item.marketing_type
+                  return (
+                    <Text className='promotion-tag' key={`promotion-tag__${index}`}>
+                      {item.promotion_tag ||
+                        item.tag_name ||
+                        (PROMOTION_TAG_KEY[type]
+                          ? $t(PROMOTION_TAG_KEY[type])
+                          : PROMOTION_TAG()[type])}
+                    </Text>
+                  )
+                })}
+              </View>
+            )
+          })()}
 
         <View className='bd-block'>
           {/* 商品价格、积分 */}
@@ -187,37 +228,12 @@ function SpGoodsItem(props) {
 
           {!info.point && showPrice && (
             <View className='goods-price'>
-              <View className='gd-price'>
-                {isPurchase && (
-                  <>
-                    {info.activityPrice && enPurActivityPrice ? (
-                      <View className='act-price-wrap'>
-                        <SpPrice value={info.activityPrice} className='act-price' symbol='¥' />
-                        <SpPrice size={24} value={info.price} noSymbol lineThrough />
-                      </View>
-                    ) : (
-                      enPurActivityPrice && <SpPrice size={36} value={info.price} />
-                    )}
-                  </>
-                )}
-                {!isPurchase && (
-                  <SpPrice size={36} value={info.activityPrice || info.price}></SpPrice>
-                )}
-                {/* {info.marketPrice > 0 && enMarketPrice && (
-                  <SpPrice
-                    size={26}
-                    className='mkt-price'
-                    lineThrough
-                    value={info.marketPrice}
-                  ></SpPrice>
-                )} */}
-              </View>
               {!info.activityPrice && isLogin && !isPurchase && (
                 <View className='more-price'>
                   {info.memberPrice < info.price && enMemberPrice && (
                     <View className='vip-price'>
                       <SpPrice value={info.memberPrice} />
-                      <SpVipLabel content='会员价' type='member' />
+                      <SpVipLabel content={$t('d59e9e9d.8fdd6f')} type='member' />
                     </View>
                   )}
 
@@ -244,11 +260,43 @@ function SpGoodsItem(props) {
                     )}
                 </View>
               )}
+              <View className='gd-price flex flex-align-center'>
+                {isPurchase && (
+                  <>
+                    {info.activityPrice && enPurActivityPrice ? (
+                      <View className='act-price-wrap'>
+                        <SpPrice value={info.activityPrice} className='act-price' />
+                        <SpPrice size={24} value={info.price} lineThrough />
+                      </View>
+                    ) : (
+                      enPurActivityPrice && <SpPrice size={36} value={info.price} />
+                    )}
+                  </>
+                )}
+                {!isPurchase &&
+                  (info.memberPrice === info.price ||
+                    info.vipPrice === info.price ||
+                    info.svipPrice === info.price) && (
+                    <SpPrice size={36} value={info.activityPrice || info.price}></SpPrice>
+                  )}
+                {(info.memberPrice === info.price ||
+                  info.vipPrice === info.price ||
+                  info.svipPrice === info.price) &&
+                  info.marketPrice > 0 &&
+                  enMarketPrice && (
+                    <SpPrice
+                      size={26}
+                      className='mkt-price'
+                      lineThrough
+                      value={info.marketPrice}
+                    ></SpPrice>
+                  )}
+              </View>
             </View>
           )}
 
           <View className='bd-block-rg'>
-            {showFav && !VERSION_IN_PURCHASE && (
+            {/*showFav && !VERSION_IN_PURCHASE && (
               <View onClick={(e) => handleFavClick(e)}>
                 <Text
                   className={classNames(
@@ -257,17 +305,25 @@ function SpGoodsItem(props) {
                   )}
                 />
               </View>
-            )}
+            )*/}
 
             {showAddCart ? (
-              <View onClick={(e) => onChangeToolBar(e)}>
-                <Text className='iconfont icon-gouwuche2' />
+              <View onClick={(e) => e.stopPropagation()}>
+                <SpLogin onChange={() => onAddToCart(info)}>
+                  <View className='add-cart-btn'>
+                    <Text className='iconfont icon-gouwuche2' />
+                  </View>
+                </SpLogin>
               </View>
             ) : (
               ''
             )}
 
-            {info.point && info.point > 0 ? <View className='btn-exchange'>兑换</View> : ''}
+            {info.point && info.point > 0 ? (
+              <View className='btn-exchange'>{$t('af2f86f4.774e17')}</View>
+            ) : (
+              ''
+            )}
           </View>
         </View>
 

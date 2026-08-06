@@ -8,8 +8,10 @@ import { View, Image, Text, Block } from '@tarojs/components'
 import { SpImage } from '@/components'
 import S from '@/spx'
 import api from '@/api'
+import * as mdugcApi from '@/api/mdugc'
 import { styleNames, getThemeStyle } from '@/utils'
 import { connect } from 'react-redux'
+import { $t, i18n } from '@/i18n'
 
 //import '../../font/iconfont.scss'
 // import '../../../assets/font/iconfont.scss'
@@ -38,6 +40,14 @@ export default class Scrollitem extends Component {
     let { item } = this.props
     this.setspot(item)
     console.log(123456, item, this.props.memberData)
+    this._onLanguageChanged = () => this.forceUpdate()
+    i18n.on('languageChanged', this._onLanguageChanged)
+  }
+
+  componentWillUnmount() {
+    if (this._onLanguageChanged) {
+      i18n.off('languageChanged', this._onLanguageChanged)
+    }
   }
   componentWillReceiveProps(nextProps) {
     this.setspot(nextProps.item)
@@ -58,11 +68,11 @@ export default class Scrollitem extends Component {
   oncollection = async () => {
     let { item, memberData } = this.props
 
-    const isAuth = S.getAuthToken()
+    const isAuth = S?.getAuthToken()
     if (!isAuth || !memberData.memberInfo) {
       Taro.showToast({
         icon: 'none',
-        title: '请先登录'
+        title: $t('3385d936.8d2433')
       })
       // setTimeout(() => {
       //   Taro.redirectTo({
@@ -77,15 +87,15 @@ export default class Scrollitem extends Component {
       user_id: memberData.memberInfo.user_id,
       post_id: item.item_id
     }
-    let res = await api.mdugc.postlike(data)
+    let res = await mdugcApi.postlike(data)
     let message = ''
     if (res.action) {
       if (res.action == 'unlike') {
         iscollection = 0
-        message = '取消点赞'
-      } else if ((res.action = 'like')) {
+        message = $t('3385d936.967daf')
+      } else if (res.action === 'like') {
         iscollection = 1
-        message = '点赞成功'
+        message = $t('3385d936.319b56')
       }
       Taro.showToast({
         icon: 'none',
@@ -150,7 +160,9 @@ export default class Scrollitem extends Component {
                 }`}
               ></View>
               <View className='mask_i_text'>
-                {item.status == 2 || item.status == 4 ? '审核不通过' : '审核中'}
+                {item.status == 2 || item.status == 4
+                  ? $t('3385d936.abad33')
+                  : $t('3385d936.b720a6')}
               </View>
             </View>
           </View>

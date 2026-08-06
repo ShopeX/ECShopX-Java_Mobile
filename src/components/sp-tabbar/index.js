@@ -4,14 +4,23 @@
  */
 import Taro, { getCurrentPages } from '@tarojs/taro'
 import React, { useEffect, useState } from 'react'
-import { View, Text } from '@tarojs/components'
-import { useSelector } from 'react-redux'
+import { View, Image, Text } from '@tarojs/components'
+import { useSelector, useDispatch } from 'react-redux'
+import { AtTabBar } from 'taro-ui'
 import { TABBAR_PATH, TABBAR_ICON, SG_CHECK_STORE_RULE } from '@/consts'
-import { getCurrentRoute, isWeb } from '@/utils'
+import { classNames, styleNames, getCurrentRoute, isWeb, isIphoneX } from '@/utils'
+import { $t } from '@/i18n'
 import { intercept as routerIntercept } from '@/plugin/routeIntercept'
 import S from '@/spx'
 import './index.scss'
 import SpImage from '../sp-image'
+
+const TABBAR_TEXT = () => ({
+  home: $t('1734e75c.db1c89'),
+  category: $t('e6f782b6.d0771a'),
+  cart: $t('a2d3a891.c017be'),
+  member: $t('e4bfc1bd.07b181')
+})
 
 function SpTabbar() {
   const navipage = '/subpages/item/list?isTabBar=true'
@@ -19,12 +28,16 @@ function SpTabbar() {
   const { tabbar = {} } = useSelector((state) => state.sys)
   const { cartCount = 0 } = useSelector((state) => state.cart)
   const { color, backgroundColor, selectedColor } = tabbar?.config || {}
+  const inactiveColor = color || '#666666'
+  const activeColor = selectedColor || 'var(--color-primary)'
   const { data: tabList = [] } = tabbar || {}
 
   const pages = Taro.getCurrentPages()
   useEffect(() => {
     if (pages.length > 0) {
-      let currentPage = pages[pages.length - 1].route
+      const lastPage = pages[pages.length - 1]
+      let currentPage = lastPage?.route
+      if (currentPage == null) return
       currentPage = isWeb ? currentPage.split('?')[0] : `/${currentPage}`
       const {
         params: { id: customPageId }
@@ -94,11 +107,30 @@ function SpTabbar() {
   }
 
   return (
-    <View className='sp-tabbar' style={{ backgroundColor: backgroundColor }}>
+    <View className='sp-tabbar' style={{ backgroundColor }}>
       {tabList?.map((item, index) => {
         const iconPath = index == currentIndex ? item.selectedIconPath : item.iconPath
         return (
           <View className='sp-tabbar__item' key={index} onClick={() => handleTabbarClick(index)}>
+            {/* {index == 0 &&
+              (index !== currentIndex ? (
+                <>
+                  <SpImage src={item.iconPath} className='sp-tabbar__item-image' mode='aspectFill' />
+                  <View
+                    className='sp-tabbar__item-text'
+                    style={{ color: index == currentIndex ? selectedColor : color }}
+                  >
+                    {item.text}
+                  </View>
+                </>
+              ) : (
+                <SpImage
+                  src={item.selectedIconPath}
+                  className='sp-tabbar__item-cover-image'
+                  mode='aspectFill'
+                />
+              ))} */}
+
             <View className='sp-tabbar__item-image-wrapper'>
               {/^http/.test(iconPath) ? (
                 <SpImage src={iconPath} className='sp-tabbar__item-image' mode='aspectFill' />
@@ -124,9 +156,9 @@ function SpTabbar() {
 
             <Text
               className='sp-tabbar__item-text'
-              style={{ color: index == currentIndex ? selectedColor : color }}
+              style={{ color: index == currentIndex ? activeColor : inactiveColor }}
             >
-              {item.text}
+              {item.text || TABBAR_TEXT()[item.name] || ''}
             </Text>
           </View>
         )

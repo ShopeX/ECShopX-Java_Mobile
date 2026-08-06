@@ -11,16 +11,17 @@ import S from '@/spx'
 import api from '@/api'
 import qs from 'qs'
 import throttle from 'lodash/throttle'
+import { withTranslation } from 'react-i18next'
 import { withPager, withLogin } from '@/hocs'
+import { $t, ti } from '@/i18n'
 import { getCurrentRoute, pickBy, entryLaunch, log } from '@/utils'
 import entry from '@/utils/entry'
 import CustomHeader from './comps/header'
-
 import './shop-home.scss'
 
 @withPager
-export default class DistributionShopHome extends Component {
-  $instance = getCurrentInstance()
+class DistributionShopHome extends Component {
+  $instance = getCurrentInstance() || {}
   constructor(props) {
     super(props)
 
@@ -32,14 +33,14 @@ export default class DistributionShopHome extends Component {
       list: [],
       tabList: [
         {
-          title: '小店首页',
+          title: '',
           iconType: 'home',
           iconPrefixClass: 'iconfont icon',
           url: '/subpages/salesman/distribution/shop-home',
           urlRedirect: true
         },
         {
-          title: '分类',
+          title: '',
           iconType: 'category',
           iconPrefixClass: 'iconfont icon',
           url: '/subpages/salesman/distribution/shop-category',
@@ -70,7 +71,7 @@ export default class DistributionShopHome extends Component {
       paddindTop: 0,
       // 是否首页
       isHome: false,
-      searchConditionList: [{ label: '全部店铺', value: '' }],
+      searchConditionList: [{ label: '', value: '' }],
       parameter: {
         keywords: '',
         distributor_id: ''
@@ -80,7 +81,7 @@ export default class DistributionShopHome extends Component {
 
   async componentDidMount() {
     // if (!S.getAuthToken()) {
-    //   const { path } = this.$instance.router
+    //   const { path } = this.$instance?.router
     //   const params = await entryLaunch.getRouteParams()
     //   const redirect = encodeURIComponent(`${path}?${qs.stringify(params)}`)
     //   Taro.navigateTo({
@@ -99,14 +100,14 @@ export default class DistributionShopHome extends Component {
   }
 
   async salesmanShare() {
-    let params = this.$instance.router.params
+    let params = this.$instance?.router?.params
     if (params?.qr == 'Y') {
       let param = {
         promoter_user_id: params?.featuredshop
       }
       await api.salesman.salespersonBindusersalesperson(param)
       Taro.setStorageSync('salesmanUserinfo', param)
-      console.log(param, '分享成功，业务员已存储2')
+      console.log(param, 'salesmanShare: stored')
     }
   }
 
@@ -121,7 +122,7 @@ export default class DistributionShopHome extends Component {
     })
     list.unshift({
       value: '',
-      label: '全部店铺'
+      label: ''
     })
     this.setState({
       searchConditionList: list
@@ -132,7 +133,7 @@ export default class DistributionShopHome extends Component {
   onShareAppMessage() {
     const { info: shopInfo } = this.state
     const { userId } = Taro.getStorageSync('userinfo')
-    const title = shopInfo.shop_name || `${shopInfo.username}的小店`
+    const title = shopInfo.shop_name || ti('a569438d.2b0a44', [shopInfo.username])
     return {
       title: shopInfo.share_title || title,
       imageUrl: shopInfo.applets_share_img || shopInfo.shop_pic,
@@ -205,7 +206,7 @@ export default class DistributionShopHome extends Component {
 
   // 获取小店信息
   getShopInfo = async () => {
-    // const options = this.$instance.router.params
+    // const options = this.$instance?.router?.params
     const { tabList } = this.state
     // 当前登录用户
     const { userId } = Taro.getStorageSync('userinfo')
@@ -247,10 +248,10 @@ export default class DistributionShopHome extends Component {
     tabList[0].url += `?featuredshop=${param.user_id}`
     tabList[1].url += `?featuredshop=${param.user_id}`
     // 是否当前页面
-    const isCurrentPage = this.$instance.router.path.indexOf('distribution/shop-home') !== -1
+    const isCurrentPage = this.$instance?.router?.path.indexOf('distribution/shop-home') !== -1
     if (isCurrentPage) {
       Taro.setNavigationBarTitle({
-        title: shop_name || `${nickname || username || mobile}的小店`
+        title: shop_name || ti('a569438d.2b0a44', [nickname || username || mobile])
       })
     }
 
@@ -338,7 +339,7 @@ export default class DistributionShopHome extends Component {
       const curTab = this.state.tabList[current]
       const { url, urlRedirect } = curTab
 
-      const fullPath = getCurrentRoute(this.$instance.router).fullPath.split('?')[0]
+      const fullPath = getCurrentRoute(this.$instance?.router).fullPath.split('?')[0]
       if (url && fullPath !== url) {
         if (!urlRedirect || (url === '/subpages/member/index' && !S.getAuthToken())) {
           Taro.navigateTo({ url })
@@ -521,15 +522,15 @@ export default class DistributionShopHome extends Component {
     // 筛选选项
     const filterList = [
       {
-        title: '综合',
+        title: $t('a569438d.88e7de'),
         type: 0
       },
       {
-        title: '销量',
+        title: $t('a569438d.44e7eb'),
         type: 1
       },
       {
-        title: '价格',
+        title: $t('a569438d.0e9fd9'),
         type: 2
       }
     ]
@@ -541,7 +542,7 @@ export default class DistributionShopHome extends Component {
     return (
       <View className='page-distribution-shop'>
         <CustomHeader isWhite={paddindTop > 0} isHome={isHome} statusBarHeight={statusBarHeight} />
-        <SpNavBar title='小店' leftIconType='chevron-left' fixed='true' />
+        <SpNavBar title={$t('a569438d.a9c0ec')} leftIconType='chevron-left' fixed='true' />
         <View className='shop-banner'>
           <View className='shop-def'>
             <Image
@@ -558,17 +559,19 @@ export default class DistributionShopHome extends Component {
                 mode='aspectFill'
               />
               <View className='shop-name-goods'>
-                <View className='names'>{info.shop_name || `${info.username}的小店`}</View>
+                <View className='names'>
+                  {info.shop_name || ti('a569438d.2b0a44', [info.username])}
+                </View>
                 <View className='num'>
                   {goods_total}
-                  <View className='text'>件商品</View>
+                  <View className='text'>{$t('a569438d.777ba9')}</View>
                 </View>
               </View>
             </View>
             <View className='right'>
               <Button className='share' open-type='share'>
                 <View className='iconfont icon-share'></View>
-                <View className='text'>分享店铺</View>
+                <View className='text'>{$t('a569438d.586b7c')}</View>
               </Button>
             </View>
           </View>
@@ -580,9 +583,11 @@ export default class DistributionShopHome extends Component {
           }ms linear;`}
         >
           <SpSearchInput
-            placeholder='输入内容'
+            placeholder={$t('a569438d.ec47d2')}
             isShowSearchCondition
-            searchConditionList={searchConditionList}
+            searchConditionList={searchConditionList.map((row) =>
+              row.value === '' ? { ...row, label: row.label || $t('a569438d.77678b') } : row
+            )}
             onConfirm={this.onConfirms.bind(this)}
             onHandleSearch={this.onHandleSearch.bind(this)}
           />
@@ -594,9 +599,7 @@ export default class DistributionShopHome extends Component {
                 onClick={this.handleFilterChange.bind(this, item)}
               >
                 {item.title}
-                {item.type === 2 && item.title === '价格' && (
-                  <View className={`sort ${sort ? 'down' : 'up'}`}></View>
-                )}
+                {item.type === 2 && <View className={`sort ${sort ? 'down' : 'up'}`}></View>}
               </View>
             ))}
 
@@ -613,7 +616,7 @@ export default class DistributionShopHome extends Component {
                     className='keywords'
                     value={keywords}
                     focus={isFocus}
-                    placeholder='搜索小店商品'
+                    placeholder={$t('a569438d.69a024')}
                     confirmType='search'
                     onConfirm={this.handleConfirm.bind(this)}
                     onBlur={this.handleCloseSearch.bind(this)}
@@ -659,17 +662,29 @@ export default class DistributionShopHome extends Component {
               </View>
             </View>
           ))}
-          {page.isLoading ? <Loading className='loadingContent'>正在加载...</Loading> : null}
+          {page.isLoading ? (
+            <Loading className='loadingContent'>{$t('a569438d.bd0271')}</Loading>
+          ) : null}
           {!page.isLoading && !page.hasNext && list.length <= 0 && (
             <SpNote className='empty' img='trades_empty.png'>
-              暂无数据~
+              {$t('a569438d.ba1de9')}
             </SpNote>
           )}
         </View>
         <BackToTop show={showBackToTop} onClick={this.scrollBackToTop.bind(this)} />
 
-        <AtTabBar fixed tabList={tabList} onClick={this.handleClick} current={localCurrent} />
+        <AtTabBar
+          fixed
+          tabList={tabList.map((item, index) => ({
+            ...item,
+            title: index === 0 ? $t('a569438d.b8286c') : $t('a569438d.d0771a')
+          }))}
+          onClick={this.handleClick}
+          current={localCurrent}
+        />
       </View>
     )
   }
 }
+
+export default withTranslation()(DistributionShopHome)

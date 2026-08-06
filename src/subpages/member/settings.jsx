@@ -10,7 +10,13 @@ import { SpPage, SpCell, SpFloatLayout, SpCheckbox } from '@/components'
 import { isWeb } from '@/utils'
 import { SG_CHECK_STORE_RULE } from '@/consts'
 import { View } from '@tarojs/components'
-import i18n from '@/lang/consts'
+import {
+  useTranslation,
+  $t,
+  syncI18nLanguage,
+  normalizeStorageLang,
+  SUPPORTED_STORAGE_LANGS
+} from '@/i18n'
 import './settings.scss'
 
 const initialState = {
@@ -20,31 +26,37 @@ const initialState = {
 }
 
 const Settings = () => {
+  const { i18n } = useTranslation()
   const [state, setState] = useImmer(initialState)
-  const lang = Taro.getStorageSync('lang')
-  console.log('lang', lang, 'i18n', i18n)
+  const lang =
+    normalizeStorageLang(Taro.getStorageSync('lang')) ||
+    normalizeStorageLang(process.env.APP_DEFAULT_LANGUAGE) ||
+    'en'
 
   useEffect(() => {
-    // 初始化语言列表
     setState((draft) => {
-      draft.languageList = Object.keys(i18n).map((key) => {
-        return {
-          name: i18n[key],
-          key,
-          ischecked: key === lang
-        }
-      })
+      draft.languageList = SUPPORTED_STORAGE_LANGS.map((key) => ({
+        key,
+        name: $t(`lang.name.${key}`),
+        ischecked: key === lang
+      }))
       draft.selectLang = lang
     })
-  }, [])
+  }, [lang, setState])
+
+  useEffect(() => {
+    Taro.setNavigationBarTitle({
+      title: $t('162d72a5.e366cc')
+    })
+  }, [i18n.language])
 
   return (
     <SpPage className='sp-settings'>
       <View className='block-container'>
         <SpCell
           isLink
-          title='切换语言'
-          value={i18n[lang]}
+          title={$t('settings.switchLanguage')}
+          value={$t(`lang.name.${lang}`)}
           onClick={() => {
             setState((draft) => {
               draft.selectLang = lang
@@ -56,7 +68,7 @@ const Settings = () => {
 
       {/* 切换语言弹窗 */}
       <SpFloatLayout
-        title='切换语言'
+        title={$t('settings.switchLanguage')}
         open={state.showSwitchLanguage}
         onClose={() => {
           setState((draft) => {
@@ -67,8 +79,9 @@ const Settings = () => {
           <AtButton
             circle
             type='primary'
-            onClick={() => {
+            onClick={async () => {
               Taro.$changeLang(state.selectLang)
+              await syncI18nLanguage(state.selectLang)
               Taro.setStorageSync(SG_CHECK_STORE_RULE, 0)
               if (isWeb) {
                 window.location.href = `${window.location.origin}/subpages/member/index`
@@ -79,20 +92,30 @@ const Settings = () => {
               }
             }}
           >
-            确定
+            {$t('settings.confirm')}
           </AtButton>
         }
       >
         <View className='lang-list'>
           {state.languageList.map((item, index) => (
-            <View className='lang-item' key={`lang-item__${index}`}>
+            <View
+              className='lang-item'
+              key={`lang-item__${index}`}
+              onClick={() => {
+                setState((draft) => {
+                  draft.selectLang = item.key
+                })
+              }}
+            >
               <SpCheckbox
-                checked={item.key == state.selectLang}
-                canCancel={item.key == state.selectLang}
-                onChange={(e) => {
-                  setState((draft) => {
-                    draft.selectLang = item.key
-                  })
+                checked={item.key === state.selectLang}
+                canCancel={item.key === state.selectLang}
+                onChange={(checked) => {
+                  if (checked) {
+                    setState((draft) => {
+                      draft.selectLang = item.key
+                    })
+                  }
                 }}
               >
                 {item.name}

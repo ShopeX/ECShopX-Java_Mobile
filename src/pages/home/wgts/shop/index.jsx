@@ -6,6 +6,7 @@ import { classNames } from '@/utils'
 import { SpShop } from '@/components'
 import api from '@/api'
 import isArray from 'lodash/isArray'
+import { $t } from '@/i18n'
 import { getGlobalBaseStyle } from '../helper'
 import './index.scss'
 
@@ -84,7 +85,7 @@ function WgtShop(props) {
   }
 
   const handleMoreNearby = () => {
-    Taro.navigateTo({ url: '/subpages/ecshopx/shop-list' })
+    Taro.navigateTo({ url: '/subpages/store/nearby-list' })
   }
 
   const showEmpty = dataType === 'nearby' && !nearbyLoading && displayData.length === 0
@@ -101,7 +102,7 @@ function WgtShop(props) {
       <View className='wgt-shop__content'>
         {showEmpty ? (
           <View className='wgt-shop__empty'>
-            <Text className='wgt-shop__empty-txt'>更多商家接入中，敬请期待</Text>
+            <Text className='wgt-shop__empty-txt'>{$t('5eda2f64.d17ff7')}</Text>
           </View>
         ) : (
           isArray(displayData) &&
@@ -144,7 +145,7 @@ function WgtShop(props) {
         {showMore && (
           <View className='wgt-shop__more' onClick={handleMoreNearby}>
             <Text className='iconfont icon-spiritling-dingwei' />
-            <Text className='wgt-shop__more-txt'>更多附近商家</Text>
+            <Text className='wgt-shop__more-txt'>{$t('5eda2f64.77f8be')}</Text>
             <Text className='iconfont icon-qianwang-01' />
           </View>
         )}

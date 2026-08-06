@@ -6,7 +6,6 @@ import React, { Component } from 'react'
 import Taro, { getCurrentInstance } from '@tarojs/taro'
 import { View } from '@tarojs/components'
 import { linkPage } from './helper'
-
 import './writing.scss'
 
 export default class WgtWriting extends Component {
@@ -44,8 +43,8 @@ export default class WgtWriting extends Component {
       return null
     }
 
-    const { config, base, data } = info
-    const curContent = (data[curIdx] || {}).content
+    const { config, base, data = [] } = info
+    const curContent = ((data || [])[curIdx] || {}).content
     let contentArr = []
     if (curContent) {
       contentArr = curContent.split('\n')

@@ -3,19 +3,20 @@
  * See LICENSE file for license details.
  */
 import React, { Component } from 'react'
-import Taro, { getCurrentInstance } from '@tarojs/taro'
+import Taro from '@tarojs/taro'
 import { View, Text, ScrollView, Image } from '@tarojs/components'
 import { AtTabs, AtTabsPane, AtCountdown } from 'taro-ui'
-import { Loading, SpNote, Price, SpNavBar } from '@/components'
+import { withTranslation } from 'react-i18next'
+import { Loading, SpNote, SpPrice, SpNavBar } from '@/components'
+import { $t } from '@/i18n'
 import _mapKeys from 'lodash/mapKeys'
 import api from '@/api'
 import { withPager } from '@/hocs'
 import { calcTimer, isNavbar, classNames, getDistributorId } from '@/utils'
-
 import './group-list.scss'
 
 @withPager
-export default class GroupList extends Component {
+class GroupList extends Component {
   constructor(props) {
     super(props)
 
@@ -23,8 +24,8 @@ export default class GroupList extends Component {
       ...this.state,
       curTabIdx: 0,
       tabList: [
-        { title: '进行中', status: 0 },
-        { title: '未开始', status: 1 }
+        { title: '', status: 0 },
+        { title: '', status: 1 }
       ],
       list: [],
       shareInfo: {}
@@ -32,12 +33,23 @@ export default class GroupList extends Component {
   }
 
   componentDidMount() {
+    this.syncNavTitle()
     this.nextPage()
     api.wx.shareSetting({ shareindex: 'group' }).then((res) => {
       this.setState({
         shareInfo: res
       })
     })
+  }
+
+  componentDidUpdate(prevProps) {
+    if (prevProps.i18n?.language !== this.props.i18n?.language) {
+      this.syncNavTitle()
+    }
+  }
+
+  syncNavTitle = () => {
+    Taro.setNavigationBarTitle({ title: $t('0b8348a9.f47464') })
   }
 
   async fetch(params) {
@@ -125,6 +137,10 @@ export default class GroupList extends Component {
 
   render() {
     const { tabList, curTabIdx, list, page } = this.state
+    const tabListForUi = tabList.map((tab, index) => ({
+      ...tab,
+      title: index === 0 ? $t('da5ae518.fb852f') : $t('da5ae518.dd4e55')
+    }))
 
     return (
       <View
@@ -132,11 +148,11 @@ export default class GroupList extends Component {
           'has-navbar': isNavbar()
         })}
       >
-        <SpNavBar title='团购' leftIconType='chevron-left' fixed='true' />
+        <SpNavBar title={$t('0b8348a9.f47464')} leftIconType='chevron-left' fixed='true' />
         <AtTabs
           className='group-list__tabs'
           current={curTabIdx}
-          tabList={tabList}
+          tabList={tabListForUi}
           onClick={this.handleClickTab}
         >
           {/* {tabList.map((panes, pIdx) => (
@@ -160,19 +176,19 @@ export default class GroupList extends Component {
                   <View className='group-item__cont'>
                     <Text className='group-item__title'>
                       {item.team_status == 2 && (
-                        <Text className='group-item__title-status'>【已满团】</Text>
+                        <Text className='group-item__title-status'>{$t('0b8348a9.ae490e')}</Text>
                       )}
                       {item.team_status == 3 && (
-                        <Text className='group-item__title-status'>【未成团】</Text>
+                        <Text className='group-item__title-status'>{$t('0b8348a9.6621b9')}</Text>
                       )}
                       {item.goods_name}
                     </Text>
                     <View className='group-item__desc'>
                       <View className='group-item__tuan'>
                         <Text className='group-item__tuan-num'>{item.person_num}</Text>
-                        <Text className='group-item__tuan-txt'>人团</Text>
+                        <Text className='group-item__tuan-txt'>{$t('0b8348a9.58d9ce')}</Text>
                       </View>
-                      <Price
+                      <SpPrice
                         primary
                         className='group-item__price'
                         value={item.act_price}
@@ -187,7 +203,12 @@ export default class GroupList extends Component {
                         <View className='at-icon at-icon-clock'></View>
                         <AtCountdown
                           isShowDay
-                          format={{ day: '天', hours: ':', minutes: ':', seconds: '' }}
+                          format={{
+                            day: $t('12b6c337.249aba'),
+                            hours: ':',
+                            minutes: ':',
+                            seconds: ''
+                          }}
                           day={remaining_time_obj.dd}
                           hours={remaining_time_obj.hh}
                           minutes={remaining_time_obj.mm}
@@ -196,21 +217,23 @@ export default class GroupList extends Component {
                       </View>
                     )}
                     {curTabIdx === 0 ? (
-                      <View className='btn-go'>去开团</View>
+                      <View className='btn-go'>{$t('0b8348a9.d79460')}</View>
                     ) : (
-                      <View className='btn-go disabled'>未开始</View>
+                      <View className='btn-go disabled'>{$t('da5ae518.dd4e55')}</View>
                     )}
                   </View>
                 </View>
               </View>
             )
           })}
-          {page.isLoading && <Loading>正在加载...</Loading>}
+          {page.isLoading && <Loading>{$t('56af9ff8.bd0271')}</Loading>}
           {!page.isLoading && !page.hasNext && !list.length && (
-            <SpNote img='trades_empty.png'>暂无数据~</SpNote>
+            <SpNote img='trades_empty.png'>{$t('56af9ff8.ba1de9')}</SpNote>
           )}
         </ScrollView>
       </View>
     )
   }
 }
+
+export default withTranslation()(GroupList)

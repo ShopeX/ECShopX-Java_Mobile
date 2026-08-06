@@ -3,8 +3,10 @@
  * See LICENSE file for license details.
  */
 import React, { useEffect, useRef } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
+import { useSelector } from 'react-redux'
 import { useImmer } from 'use-immer'
+import { useTranslation } from 'react-i18next'
+import { $t, ti } from '@/i18n'
 import Taro, { getCurrentInstance, useRouter } from '@tarojs/taro'
 import { View, Text, ScrollView, Picker } from '@tarojs/components'
 import { AtButton, AtTextarea, AtCheckbox } from 'taro-ui'
@@ -45,11 +47,14 @@ const initialState = {
   isShow: false
 }
 
+const FALLBACK_PRIMARY = '#d42f29' // 与 store/slices/colors 默认一致，冷启动进分包时 store 可能未初始化
+
 function GoodReservate(props) {
-  const $instance = getCurrentInstance()
+  useTranslation()
+  const $instance = getCurrentInstance() || {}
   const [state, setState] = useImmer(initialState)
   const colors = useSelector((state) => state.colors.current)
-  const dispatch = useDispatch()
+  const primary = colors?.data?.[0]?.primary ?? FALLBACK_PRIMARY
   const router = useRouter()
   const {
     formList,
@@ -77,13 +82,13 @@ function GoodReservate(props) {
   const fetchActivity = async () => {
     let activity_info = {}
     let recordInfo = {}
-    let isEdit = router.params.record_id
+    let isEdit = router?.params.record_id
     const res = await api.user.registrationActivity({
-      activity_id: router.params.activity_id
+      activity_id: router?.params.activity_id
     })
     activity_info = res.activity_info
     if (activity_info.join_limit == res.total_join_num && res.total_join_num != 0 && !isEdit) {
-      showToast('您已经超出活动次数')
+      showToast($t('8b06fbc1.eb69dc'))
       setTimeout(() => {
         Taro.navigateBack()
       }, 700)
@@ -98,10 +103,10 @@ function GoodReservate(props) {
       return
     }
 
-    if (router.params.record_id) {
+    if (router?.params.record_id) {
       //编辑
       recordInfo = await api.user.registrationRecordInfo({
-        record_id: router.params.record_id
+        record_id: router?.params.record_id
       })
     }
 
@@ -110,18 +115,24 @@ function GoodReservate(props) {
     let _formList = []
 
     if (isEdit) {
-      //编辑
-      _formList = recordInfo?.content?.[0]?.formdata ?? []
+      // 编辑：合并所有 content 区块，并为每项标记 contentIndex 便于提交时按块回填
+      const contentBlocks = recordInfo?.content ?? []
+      _formList = contentBlocks.flatMap((block, idx) =>
+        (block.formdata || []).map((f) => ({ ...f, contentIndex: idx }))
+      )
     } else {
-      //新增
-      _formList = activity_info?.formdata?.content?.[0]?.formdata ?? []
+      // 新增：合并所有 content 区块展示，并为每项标记 contentIndex
+      const contentBlocks = activity_info?.formdata?.content ?? []
+      _formList = contentBlocks.flatMap((block, idx) =>
+        (block.formdata || []).map((f) => ({ ...f, contentIndex: idx }))
+      )
     }
     let _form = {}
     let _rules = {}
     if (_formList.length) {
       _formList.forEach((item) => {
         if (item.options && !isEdit) {
-          //新增才需要转换
+          // 新增才需要转换
           item.options = JSON.parse(item.options)
         }
 
@@ -155,17 +166,19 @@ function GoodReservate(props) {
                   console.log('value', value, flatArray(value))
                   const _flatArray = flatArray(value)
                   if (!_flatArray.length) {
-                    return Promise.reject(`请上传${item.field_title}`)
+                    return Promise.reject(ti('8b06fbc1.7d53e1', [item.field_title]))
                   }
 
                   if (item.form_element == 'idcard' && _flatArray.length != 2) {
-                    return Promise.reject(`${item.field_title}请上传完整`)
+                    return Promise.reject(ti('8b06fbc1.d62db4', [item.field_title]))
                   }
                 }
               }
             ]
           } else {
-            _rules[item.id] = [{ required: true, message: `${item.field_title}不能为空` }]
+            _rules[item.id] = [
+              { required: true, message: ti('8b06fbc1.c0378d', [item.field_title]) }
+            ]
           }
         }
       })
@@ -268,7 +281,7 @@ function GoodReservate(props) {
             name={id}
             value={form[id]}
             type={form_element}
-            placeholder={`请填写${field_title}`}
+            placeholder={ti('8b06fbc1.1bb95c', [field_title])}
             onChange={(e) => onChange(e, id)}
           />
         )
@@ -278,7 +291,7 @@ function GoodReservate(props) {
             name={id}
             value={form[id]}
             type={form_element}
-            placeholder={`请填写${field_title}`}
+            placeholder={ti('8b06fbc1.1bb95c', [field_title])}
             onChange={(e) => onChangeNumber(e, id)}
           />
         )
@@ -289,7 +302,7 @@ function GoodReservate(props) {
             name={id}
             value={form[id]}
             cursor={form?.id?.length}
-            placeholder={`请填写${field_title}`}
+            placeholder={ti('8b06fbc1.1bb95c', [field_title])}
             onChange={(e) => onChange(e, id)}
           />
         )
@@ -319,7 +332,7 @@ function GoodReservate(props) {
                   ? form[id]
                   : [options?.findIndex((item) => item.value == form[id]) ?? 0]
               )}
-              {form[id] || <Text className='search-condition-empty'>请选择</Text>}
+              {form[id] || <Text className='search-condition-empty'>{$t('8b06fbc1.708c9d')}</Text>}
               <View className='iconfont icon-arrowDown search-condition-icon'></View>
             </View>
           </Picker>
@@ -335,7 +348,9 @@ function GoodReservate(props) {
               })
             }}
           >
-            {form[id]?.join('') || <Text className='search-condition-empty'>请选择</Text>}
+            {form[id]?.join('') || (
+              <Text className='search-condition-empty'>{$t('8b06fbc1.708c9d')}</Text>
+            )}
             <View className='iconfont icon-arrowDown area-icon'></View>
           </View>
         )
@@ -345,7 +360,9 @@ function GoodReservate(props) {
             className='search-condition'
             onClick={() => handleShowCheckbox(options, id, field_title)}
           >
-            {form[id]?.join('、') || <Text className='search-condition-empty'>请选择</Text>}
+            {form[id]?.join('、') || (
+              <Text className='search-condition-empty'>{$t('8b06fbc1.708c9d')}</Text>
+            )}
             <View className='iconfont icon-arrowDown area-icon'></View>
           </View>
         )
@@ -355,8 +372,8 @@ function GoodReservate(props) {
           <CompImgPicker
             info={
               form_element == 'idcard'
-                ? ['上传身份证人像面', '上传身份证国徽面']
-                : [`上传${field_title}`]
+                ? [$t('8b06fbc1.00d145'), $t('8b06fbc1.43e5cf')]
+                : [ti('8b06fbc1.5f3a5e', [field_title])]
             }
             mode={form_element == 'idcard' ? 'idCard' : 'shareholderCertificate'}
             value={form[id]}
@@ -370,19 +387,27 @@ function GoodReservate(props) {
 
   console.log('formList', formList)
 
-  const renderFormList = (list = []) => {
+  const contentBlocks = info?.formdata?.content ?? []
+
+  const renderFormList = () => {
+    if (!formList.length) return null
     return (
-      <>
-        {list.length > 0 && (
-          <SpForm ref={formRef} className='form-list' formData={form} rules={rules}>
-            {list.map((item, idx) => (
-              <SpFormItem label={item.field_title} prop={item.id} key={idx}>
-                {renderFormItem(item)}
-              </SpFormItem>
-            ))}
-          </SpForm>
-        )}
-      </>
+      <SpForm ref={formRef} className='form-list' formData={form} rules={rules}>
+        {contentBlocks.map((block, blockIdx) => {
+          const blockFields = formList.filter((item) => item.contentIndex === blockIdx)
+          if (!blockFields.length) return null
+          return (
+            <View key={blockIdx} className='form-block'>
+              {block.title ? <View className='form-block__title'>{block.title}</View> : null}
+              {blockFields.map((item, idx) => (
+                <SpFormItem label={item.field_title} prop={item.id} key={item.id || idx}>
+                  {renderFormItem(item)}
+                </SpFormItem>
+              ))}
+            </View>
+          )
+        })}
+      </SpForm>
     )
   }
 
@@ -395,26 +420,27 @@ function GoodReservate(props) {
   const handleSubmit = async () => {
     const { activity_id } = info
     let new_subdata = { activity_id, formdata: { content: [] }, distributor_id: getDistributorId() }
-    const _content = formList.map((item) => ({
-      ...item,
-      answer: ['idcard', 'otherfile'].includes(item.form_element)
-        ? flatArray(form[item.id])
-        : form[item.id]
-    }))
-    let formDatacontent = _cloneDeep(info.formdata?.content)
-
-    formDatacontent[0].formdata = _content
+    const formDatacontent = (info.formdata?.content || []).map((block, blockIdx) => {
+      const blockFields = formList.filter((item) => item.contentIndex === blockIdx)
+      const formdata = blockFields.map((item) => ({
+        ...item,
+        answer: ['idcard', 'otherfile'].includes(item.form_element)
+          ? flatArray(form[item.id])
+          : form[item.id]
+      }))
+      return { ..._cloneDeep(block), formdata }
+    })
     new_subdata.formdata.content = JSON.stringify(formDatacontent)
-    console.log('new_subdata', new_subdata, _content)
+    console.log('new_subdata', new_subdata, formDatacontent)
 
-    if (router.params.record_id) {
+    if (router?.params.record_id) {
       //编辑
-      new_subdata.record_id = router.params.record_id
+      new_subdata.record_id = router?.params.record_id
     }
     try {
       const res = await api.user.registrationSubmit(new_subdata)
       console.log(res)
-      showToast('提交成功')
+      showToast($t('8b06fbc1.23b62e'))
       Taro.redirectTo({
         url: `/marketing/pages/reservation/goods-reservate-result?activity_id=${activity_id}`
       })
@@ -479,11 +505,11 @@ function GoodReservate(props) {
               circle
               type='primary'
               className='submit-btn'
-              style={`background: ${colors.data[0].primary}; border-color: ${colors.data[0].primary}`}
+              style={`background: ${primary}; border-color: ${primary}`}
               loading={submitLoading}
               onClick={handleReservate}
             >
-              提交
+              {$t('8b06fbc1.939d53')}
             </AtButton>
           </View>
         )
@@ -501,7 +527,7 @@ function GoodReservate(props) {
               提示：欲在天津会场出席的s大家看我喝点酒哈我觉得回家啊我活动空间啊我和贷记卡文化科技大会。
             </View> */}
 
-            <View className='page-good-reservate__form'>{renderFormList(formList)}</View>
+            <View className='page-good-reservate__form'>{renderFormList()}</View>
           </View>
         </ScrollView>
       </View>
@@ -509,7 +535,7 @@ function GoodReservate(props) {
       <SpAddress isOpened={isOpened} onClose={handleClickClose} onChange={onPickerChange} />
 
       <SpFloatLayout
-        title={`选择${currentFieldTitle}`}
+        title={ti('8b06fbc1.3cfec3', [currentFieldTitle])}
         open={showCheckboxPanel}
         onClose={() => handleCheckboxBtnClick('cancle')}
         renderFooter={
@@ -517,10 +543,10 @@ function GoodReservate(props) {
             circle
             type='primary'
             className='submit-btn'
-            style={`background: ${colors.data[0].primary}; border-color: ${colors.data[0].primary}`}
+            style={`background: ${primary}; border-color: ${primary}`}
             onClick={() => handleCheckboxBtnClick()}
           >
-            确定
+            {$t('8b06fbc1.38cf16')}
           </AtButton>
         }
       >

@@ -11,8 +11,18 @@ import { useAsyncCallback } from '@/hooks'
 import doc from '@/doc'
 import api from '@/api'
 import { SpNoShop, SpImage, SpShopCoupon, SpPrice, SpGoodsItem, SpSkuSelect } from '@/components'
-import { classNames, styleNames, isEmpty, entryLaunch, showToast, pickBy, isString } from '@/utils'
+import {
+  classNames,
+  styleNames,
+  isEmpty,
+  entryLaunch,
+  showToast,
+  pickBy,
+  isString,
+  getCurrencySymbol
+} from '@/utils'
 import { AtActivityIndicator } from 'taro-ui'
+import { useTranslation, $t, ti } from '@/i18n'
 import { WgtsContext } from './wgts-context'
 import './nearby-shop.scss'
 
@@ -32,6 +42,7 @@ const initialState = {
 }
 
 function WgtNearbyShop(props) {
+  useTranslation()
   const { info } = props
   if (!info) {
     return null
@@ -221,13 +232,15 @@ function WgtNearbyShop(props) {
                     <View className='shop-names' onClick={() => handleClickItem(item)}>
                       <View className='name'>{item.name}</View>
                       {item?.selfDeliveryRule?.is_open && item?.is_self_delivery && (
-                        <View className='deliver'>商家自配</View>
+                        <View className='deliver'>{$t('5eda2f64.c9f382')}</View>
                       )}
                     </View>
                     <View className='score' onClick={() => handleClickItem(item)}>
                       <View className='sales'>
-                        <Text className='monthly'>评分: {item?.scoreList.avg_star}</Text>
-                        <Text>月销：{item.sales_count}</Text>
+                        <Text className='monthly'>
+                          {ti('5eda2f64.43febe', [item?.scoreList?.avg_star])}
+                        </Text>
+                        <Text>{ti('5eda2f64.297c82', [item.sales_count])}</Text>
                       </View>
                       {item.distance_show && (
                         <View className='sales'>
@@ -239,16 +252,24 @@ function WgtNearbyShop(props) {
                     {item?.selfDeliveryRule?.is_open == 'true' && item?.is_self_delivery && (
                       <View className='freight'>
                         <Text>
-                          起送¥{item.selfDeliveryRule.min_amount} ｜
-                          {item.selfDeliveryRule.rule[0].selected == 'true'
-                            ? item.selfDeliveryRule.rule[0].freight_fee == '0'
-                              ? `满¥${item.selfDeliveryRule.rule[0].full}元免运费`
-                              : `满¥${item.selfDeliveryRule.rule[0].full}元运费${item.selfDeliveryRule.rule[0].freight_fee}元`
-                            : item.selfDeliveryRule.rule[1].freight_fee == '0'
-                            ? `满¥${item.selfDeliveryRule.rule[1].full}元免运费`
-                            : `满¥${item.selfDeliveryRule.rule[1].full}元运费${item.selfDeliveryRule.rule[1].freight_fee}元`}
+                          {ti('5eda2f64.9218ca', [item.selfDeliveryRule.min_amount])}
+                          {(() => {
+                            const r0 = item.selfDeliveryRule.rule[0]
+                            const r1 = item.selfDeliveryRule.rule[1]
+                            if (r0.selected == 'true') {
+                              return r0.freight_fee == '0'
+                                ? ti('5eda2f64.8486a2', [r0.full])
+                                : ti('5eda2f64.9cdbde', [r0.full, r0.freight_fee])
+                            }
+                            return r1.freight_fee == '0'
+                              ? ti('5eda2f64.8486a2', [r1.full])
+                              : ti('5eda2f64.9cdbde', [r1.full, r1.freight_fee])
+                          })()}
                         </Text>
-                        <Text class='freight-money'>¥{item.selfDeliveryRule.freight_fee}</Text>
+                        <Text class='freight-money'>
+                          {getCurrencySymbol()}
+                          {item.selfDeliveryRule.freight_fee}
+                        </Text>
                       </View>
                     )}
                     {base.show_coupon && (
@@ -299,7 +320,7 @@ function WgtNearbyShop(props) {
                               ></SpPrice>
                               {goods.market_price > 0 && goods.pric > goods.market_price && (
                                 <View className='coupon-commodity-price'>
-                                  ¥{goods.market_price / 100}
+                                  <SpPrice unit='cent' value={goods.market_price} />
                                 </View>
                               )}
                             </View>
@@ -324,7 +345,7 @@ function WgtNearbyShop(props) {
             >
               <View className='more'>
                 <Text className='iconfont icon-spiritling-dingwei'></Text>
-                更多附近商家
+                {$t('5eda2f64.77f8be')}
               </View>
               <Text className='iconfont icon-qianwang-01'></Text>
             </View>
@@ -357,7 +378,7 @@ function WgtNearbyShop(props) {
         {total_count - shopList.length > 0 && (
           <View className='ac_btn'>
             <View className='more' onClick={() => seeMore()}>
-              查看更多
+              {$t('5eda2f64.90ef7c')}
               <View className='in-icon in-icon-youjiantou'></View>
             </View>
           </View>
@@ -446,15 +467,16 @@ function WgtNearbyShop(props) {
           ? storeList()
           : storeProducts()}
 
-        {indicator && <AtActivityIndicator size={32} content='正在拼命加载数据...' />}
+        {indicator && <AtActivityIndicator size={32} content={$t('5eda2f64.ea69f8')} />}
 
         {noData && (
           // {base.show_nearby_merchants && (
           <View className='empty-con'>
             <SpImage src='empty_data.png' width={292} height={224} />
             <View className='empty-tip'>
-              更多{listTypes.length && listTypes[activeIndex].types == 'business' ? '商家' : '商品'}
-              接入中，敬请期待
+              {listTypes.length && listTypes[activeIndex].types == 'business'
+                ? $t('5eda2f64.d17ff7')
+                : $t('5eda2f64.cd80ba')}
             </View>
           </View>
         )}

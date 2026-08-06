@@ -9,6 +9,83 @@ import { View, Image, Text } from '@tarojs/components'
 import { classNames, isBase64 } from '@/utils'
 import './index.scss'
 
+function getImageCdnBase() {
+  return process.env.APP_IMAGE_CDN || ''
+}
+
+function isAbsoluteImageSrc(src) {
+  if (!src || typeof src !== 'string') return false
+  const trimmed = src.trim()
+  return /^(https?:|\/\/|wxfile:|cloud:|data:)/i.test(trimmed)
+}
+
+/** 相对路径拼接 CDN，避免双斜杠；无 CDN 时保留以 / 开头的路径 */
+function joinImageCdn(src) {
+  const path = (src || 'default_img.png').replace(/^\/+/, '')
+  const base = getImageCdnBase().replace(/\/+$/, '')
+  if (!base) {
+    return src?.startsWith('/') ? src : `/${path}`
+  }
+  return `${base}/${path}`
+}
+
+function resolveImageSrc(src) {
+  if (!src) {
+    return joinImageCdn('default_img.png')
+  }
+  if (isBase64(src)) {
+    return src
+  }
+  const trimmed = String(src).trim()
+  if (/^\/\//.test(trimmed)) {
+    return `https:${trimmed}`
+  }
+  if (isAbsoluteImageSrc(trimmed)) {
+    return trimmed
+  }
+  return joinImageCdn(trimmed)
+}
+
+function getDiskDriver() {
+  try {
+    return Taro.getStorageSync('otherSetting')?.disk_driver || 'qiniu'
+  } catch {
+    return 'qiniu'
+  }
+}
+
+/** 仅质量 + WebP，不缩放；需与 otherSetting.disk_driver 一致，否则 CDN 400 */
+function appendImageProcess(url, { quality, ossWebp }) {
+  if (
+    url.indexOf('x-oss-process') >= 0 ||
+    url.indexOf('imageView2') >= 0 ||
+    url.indexOf('imageMogr2') >= 0
+  ) {
+    return url
+  }
+  const q = quality != null ? quality : 80
+  const sep = url.indexOf('?') >= 0 ? '&' : '?'
+  const disk = getDiskDriver()
+
+  if (disk === 'oss') {
+    const ossParams = [`quality,Q_${q}`]
+    if (ossWebp !== false) {
+      ossParams.push('format,webp')
+    }
+    return `${url}${sep}x-oss-process=image/${ossParams.join('/')}`
+  }
+
+  if (disk === 'qiniu') {
+    let fop = `imageMogr2/quality/${q}`
+    if (ossWebp !== false) {
+      fop += '/format/webp'
+    }
+    return `${url}${sep}${fop}`
+  }
+
+  return url
+}
+
 function SpImage(props) {
   // 状态管理：加载成功/失败状态
   const [state, setState] = useImmer({
@@ -18,26 +95,19 @@ function SpImage(props) {
 
   // 计算最终图片URL（关键：避免OSS参数乱序导致重复请求）
   const imgUrl = useMemo(() => {
-    // 优先使用本地/网络绝对路径或Base64
-    if (props.src) {
-      if (/^http/.test(props.src) || isBase64(props.src)) {
-        return props.src
-      }
-    }
+    let url = resolveImageSrc(props.src)
+    const isOssUrl = props.isOss && /^https?:\/\//i.test(url)
 
-    // 构造OSS路径（固定参数顺序避免URL重复）
-    const base = process.env.APP_IMAGE_CDN
-    let url = `${base}/${props.src || 'default_img.png'}`
-
-    // OSS图片处理参数（按固定顺序拼接）
-    if (!isBase64(url) && props.isOss && props.width && props.height) {
-      const { width, height } = props
-      // 按w/h顺序拼接参数（关键优化点）
-      url += `?x-oss-process=image/resize,m_fill,w_${width},h_${height}`
+    // 与 sp-img 一致：仅当前存储为 oss/qiniu 时追加处理参数（七牛 URL 拼 x-oss-process 会 400）
+    if (!isBase64(url) && isOssUrl) {
+      url = appendImageProcess(url, {
+        quality: props.quality,
+        ossWebp: props.ossWebp
+      })
     }
 
     return url
-  }, [props.src, props.isOss, props.width, props.height])
+  }, [props.src, props.isOss, props.quality, props.ossWebp])
 
   // 计算容器高度（基于宽高比）
   const containerHeight = useMemo(() => {
@@ -87,25 +157,25 @@ function SpImage(props) {
   return (
     <View
       className={classNames('sp-image-container sp-image', props.className)}
-      style={containerStyle}
+      style={{ ...containerStyle, ...props.style }}
     >
-      {/* 加载占位区域（未加载时显示） */}
-      {!state.loadSuccess && (
-        <View
-          className='sp-image-placeholder'
-          style={{
-            width: '100%',
-            height: '100%',
-            borderRadius: Taro.pxTransform(props.circle || props.radius),
-            backgroundColor: props.placeholderColor
-          }}
-        ></View>
-      )}
+      {/* 加载占位区域（加载完成后淡出，与图片淡入过渡衔接） */}
+      <View
+        className={classNames('sp-image-placeholder', {
+          'sp-image-placeholder--hidden': state.loadSuccess
+        })}
+        style={{
+          width: '100%',
+          height: '100%',
+          borderRadius: Taro.pxTransform(props.circle || props.radius),
+          backgroundColor: props.placeholderColor
+        }}
+      />
 
-      {/* 实际图片组件 */}
+      {/* 实际图片组件（加载完成后淡入） */}
       <Image
         className={classNames('sp-image-content', {
-          'sp-image--loaded': state.loadSuccess // 加载成功标记
+          'sp-image--loaded': state.loadSuccess
         })}
         src={imgUrl}
         mode={props.mode || 'widthFix'}
@@ -114,10 +184,7 @@ function SpImage(props) {
         showMenuByLongpress={props.isShowMenuByLongpress ?? true}
         onClick={props.onClick}
         lazyLoad={props.lazyLoad ?? false}
-        style={{
-          ...imageStyle,
-          opacity: state.loadSuccess ? 1 : 0 // 关键：通过透明度过渡实现平滑显示
-        }}
+        style={imageStyle}
       />
     </View>
   )
@@ -148,6 +215,8 @@ SpImage.defaultProps = {
   ratio: [],
   src: '',
   width: '',
+  quality: 80, // OSS 质量 1–100
+  ossWebp: true, // 输出 WebP 减小体积，设为 false 可关闭
   placeholderColor: 'transparent',
   onClick: () => {},
   onError: () => {},

@@ -2,19 +2,21 @@
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
  */
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useMemo } from 'react'
+import { useSelector, useDispatch } from 'react-redux'
 import { View, Text, Image, Form, Picker } from '@tarojs/components'
 import Taro from '@tarojs/taro'
 import { AtTabBar, AtSearchBar, AtButton } from 'taro-ui'
 import SpTabbar from '@/components/sp-tabbar'
-import { autoGetLocation } from '@/utils/wxApi'
 import api from '@/api'
 import SpPage from '@/components/sp-page'
 import SpScrollView from '@/components/sp-scrollview'
-import { classNames, pickBy, entryLaunch } from '@/utils'
-import S from '@/spx'
+import { classNames, pickBy, entryLaunch, isEmpty } from '@/utils'
+import { updateLocation } from '@/store/slices/user'
 import { useImmer } from 'use-immer'
 import doc from '@/doc'
+import * as caseDoc from '@/doc/case'
+import { useTranslation, $t } from '@/i18n'
 import './list.scss'
 
 const defaultChecked = [
@@ -28,25 +30,10 @@ const defaultLocationData = {
   cityId: '1438'
 }
 
-const tagListConfig = [
-  {
-    title: '户型',
-    key: 'houseTypes'
-  },
-  {
-    title: '风格',
-    key: 'styles'
-  },
-  {
-    title: '排序',
-    key: 'sorts'
-  }
-]
-
 const initialState = {
   footerHeight: 0,
   currentLocation: null,
-  locationData: defaultLocationData,
+  locationData: { cityName: '全国', cityId: 0 },
   locationList: [],
   locationRange: [[], []],
   locationValue: [0, 0],
@@ -58,45 +45,76 @@ const initialState = {
   leftList: [],
   params: {},
   tagContentList: {
-    houseTypes: [{ tagName: '全部', id: '' }],
-    styles: [{ tagName: '全部', id: '' }],
+    houseTypes: [
+      {
+        tagNameKey: 'f1d3181c.a8b0c2',
+        id: '',
+        source: 'unitTypeLabelIds',
+        type: 'radio'
+      }
+    ],
+    styles: [
+      {
+        tagNameKey: 'f1d3181c.a8b0c2',
+        id: '',
+        source: 'styleLabelIds',
+        type: 'radio'
+      }
+    ],
     sorts: [
       {
-        tagName: '默认',
+        tagNameKey: '4ede271e.18c634',
         type: 'radio',
         id: 'default',
         source: 'customerOrder'
       },
       {
-        tagName: '最热',
+        tagNameKey: '4ede271e.4d2d97',
         type: 'radio',
         id: 'hot',
         source: 'customerOrder'
       },
       {
-        tagName: '最新',
+        tagNameKey: '4ede271e.8818d4',
         id: 'latest',
         type: 'radio',
         source: 'customerOrder'
       }
     ]
-  },
-  tabList: [
-    {
-      title: '本地案例'
-    },
-    {
-      title: '全国案例'
-    }
-  ]
+  }
 }
 
 function CaseList() {
+  const { i18n } = useTranslation()
+  const { location } = useSelector((state) => state.user)
+  const { entryStoreByLBS } = useSelector((state) => state.sys)
   const [state, setState] = useImmer(initialState)
   const listRef = useRef(null)
+  const dispatch = useDispatch()
+
+  const tabList = useMemo(
+    () => [{ title: $t('4ede271e.d64a9a') }, { title: $t('4ede271e.914a10') }],
+    [i18n.language]
+  )
+
+  const tagListConfig = useMemo(
+    () => [
+      { title: $t('4ede271e.06f7b1'), key: 'houseTypes' },
+      { title: $t('4ede271e.70e966'), key: 'styles' },
+      { title: $t('4ede271e.c360e9'), key: 'sorts' }
+    ],
+    [i18n.language]
+  )
+
+  const formatLocationLabel = (data) => {
+    if (data.cityId === 0 || data.cityId === '0') return $t('4ede271e.b6bd56')
+    if (String(data.cityId) === '1438' || data.cityName === '杭州市') return $t('4ede271e.ea011c')
+    return data.cityName
+  }
+
+  const tagLabel = (item) => (item.tagNameKey ? $t(item.tagNameKey) : item.tagName)
 
   const {
-    tabList,
     currentIndex,
     locationData,
     locationRange,
@@ -179,7 +197,7 @@ function CaseList() {
       options.tags_params = [...unitIds, ...styleIds]
     }
 
-    if (currentIndex != 1 || locationData.cityId != 0) {
+    if (currentIndex != 0 || locationData.cityId != 0) {
       options.city_id = locationData.cityName
     }
     const res = await api.design.getDesignList(options)
@@ -217,12 +235,11 @@ function CaseList() {
     }
   }
 
-  const getStorageLocation = async () => {
-    const currentLocation = S.get('currentLocation')
-    if (currentLocation) {
+  const getStorageLocation = async (locationInfo) => {
+    if (!isEmpty(location) || !isEmpty(locationInfo)) {
       const data = await entryLaunch.getAddressByLnglatWebAPI(
-        currentLocation.longitude,
-        currentLocation.latitude
+        location?.lng || locationInfo?.lng,
+        location?.lat || locationInfo?.lat
       )
       const { city, error } = data
       if (error) {
@@ -234,7 +251,7 @@ function CaseList() {
       }
       setState((draft) => {
         draft.locationData = { cityName: city, cityId: '1438' }
-        draft.currentLocation = currentLocation
+        draft.currentLocation = location || locationInfo
       })
       refresh()
     } else {
@@ -246,23 +263,26 @@ function CaseList() {
   }
 
   const handleAutoGetLoaction = () => {
-    autoGetLocation().then((data) => {
-      const { latitude, longitude } = data
-      S.set('currentLocation', {
-        latitude,
-        longitude
-      })
-      getStorageLocation()
-    })
+    if (entryStoreByLBS) {
+      if (isEmpty(location)) {
+        entryLaunch.isOpenPosition((res) => {
+          if (res.lat) {
+            dispatch(updateLocation(res))
+            getStorageLocation(res)
+          }
+        })
+      } else {
+        getStorageLocation()
+      }
+    }
   }
 
   const handleToggleTab = (value) => {
     setState((draft) => {
       draft.currentIndex = value
     })
+    // value 0 = 全国案例, value 1 = 本地案例
     if (value == 0) {
-      getStorageLocation()
-    } else {
       setState((draft) => {
         draft.locationData = {
           cityName: '全国',
@@ -276,6 +296,8 @@ function CaseList() {
         }
       })
       refresh()
+    } else {
+      getStorageLocation()
     }
   }
 
@@ -364,7 +386,6 @@ function CaseList() {
   }
 
   useEffect(() => {
-    getStorageLocation()
     api.design.getDesignTagsList().then((data) => {
       let house_type, style
       data.forEach((item) => {
@@ -388,11 +409,11 @@ function CaseList() {
       })
       house_type.unshift({
         id: 'house_all',
-        tagName: '全部'
+        tagNameKey: 'f1d3181c.a8b0c2'
       })
       style.unshift({
         id: 'style_all',
-        tagName: '全部'
+        tagNameKey: 'f1d3181c.a8b0c2'
       })
       setState((draft) => {
         draft.tagContentList = {
@@ -411,8 +432,17 @@ function CaseList() {
       })
     })
     initLocationPicker()
+    // 延迟执行确保 SpScrollView 已挂载、listRef 已就绪，否则 reset() 不会触发首屏加载
+    const timer = setTimeout(() => {
+      refresh()
+    }, 300)
+    return () => clearTimeout(timer)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  useEffect(() => {
+    Taro.setNavigationBarTitle({ title: $t('4ede271e.6a93e0') })
+  }, [i18n.language])
 
   return (
     <View className='sp-case-list'>
@@ -432,12 +462,12 @@ function CaseList() {
             current={currentIndex}
           />
           <View className='sp-search'>
-            {currentIndex == 0 && (
+            {currentIndex == 1 && (
               <View onClick={handleAutoGetLoaction}>
-                <Text className='sp-case-list--head-city'>{locationData.cityName}</Text>
+                <Text className='sp-case-list--head-city'>{formatLocationLabel(locationData)}</Text>
               </View>
             )}
-            {currentIndex == 1 && (
+            {currentIndex == 0 && (
               <Picker
                 mode='multiSelector'
                 value={locationValue}
@@ -445,14 +475,14 @@ function CaseList() {
                 onColumnChange={handleColumnChange}
                 onChange={handleLocationPickerChange}
               >
-                <Text className='sp-search--city'>{locationData.cityName}</Text>
+                <Text className='sp-search--city'>{formatLocationLabel(locationData)}</Text>
               </Picker>
             )}
 
             <View className='sp-search--content'>
               <Form onSubmit={refresh}>
                 <AtSearchBar
-                  placeholder='搜索文案'
+                  placeholder={$t('4ede271e.9ab198')}
                   value={designName}
                   onClear={handleDesignNameClear}
                   onChange={handleDesignNameChange}
@@ -512,7 +542,7 @@ function CaseList() {
                                 className={tagCls}
                                 key={item.id + item.source}
                               >
-                                {item.tagName}
+                                {tagLabel(item)}
                               </View>
                             )
                           })}
@@ -528,7 +558,7 @@ function CaseList() {
                       type='secondary'
                       className='sp-tag--content-action-btn sp-tag--content-action-reset'
                     >
-                      重置
+                      {$t('986be21d.4b9c32')}
                     </AtButton>
                   </View>
                   <View>
@@ -537,7 +567,7 @@ function CaseList() {
                       onClick={handleSubmitSelect}
                       className='sp-tag--content-action-btn sp-tag--content-action-submit'
                     >
-                      确认
+                      {$t('61e2d21a.e83a25')}
                     </AtButton>
                   </View>
                 </View>

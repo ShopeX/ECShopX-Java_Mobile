@@ -2,27 +2,24 @@
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
  */
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useMemo } from 'react'
 import { useSelector } from 'react-redux'
 import { useImmer } from 'use-immer'
 import Taro, { useRouter } from '@tarojs/taro'
 import { View, ScrollView } from '@tarojs/components'
-import { SpPage, SpScrollView, SpTagBar, SpImage, SpTradeItem } from '@/components'
+import { SpPage, SpScrollView } from '@/components'
+import { SpTagBar } from '@/subpages/components'
 import api from '@/api'
 import doc from '@/doc'
 import { pickBy } from '@/utils'
+import { useTranslation, $t, i18n } from '@/i18n'
+import { useNavigation } from '@/hooks'
 import CompTradeItem from './comps/comp-tradeitem'
 import CompTrackDetail from './comps/comp-track-detail'
 import CompTrackType from './comps/comp-trade-type'
 import './list.scss'
 
 const initialState = {
-  tradeStatus: [
-    { tag_name: '全部订单', value: '0' },
-    { tag_name: '待支付', value: '5' },
-    { tag_name: '待收货', value: '1' },
-    { tag_name: '待评价', value: '7', is_rate: 0 }
-  ],
   typeVal: '0',
   status: '0',
   tradeList: [],
@@ -32,23 +29,32 @@ const initialState = {
   info: null
 }
 function TradeList(props) {
+  useTranslation()
+  const { setNavigationBarTitle } = useNavigation()
   const [state, setState] = useImmer(initialState)
-  const {
-    tradeStatus,
-    status,
-    tradeType,
-    typeVal,
-    tradeList,
-    refresherTriggered,
-    trackDetailList,
-    openTrackDetail,
-    info
-  } = state
+  const { status, tradeList, refresherTriggered, trackDetailList, openTrackDetail, info } = state
   const tradeRef = useRef()
   const router = useRouter()
 
+  const tradeStatus = useMemo(
+    () => [
+      { tag_name: $t('2800cb77.dbb4d8'), value: '0' },
+      { tag_name: $t('2800cb77.9246fe'), value: '5' },
+      { tag_name: $t('2800cb77.4933ca'), value: '1' },
+      { tag_name: $t('2800cb77.a48b28'), value: '7', is_rate: 0 }
+    ],
+    [i18n.language]
+  )
+
   useEffect(() => {
-    const { status = 0 } = router.params
+    const syncTitle = () => setNavigationBarTitle($t('cea61a53.07166e'))
+    syncTitle()
+    i18n.on('languageChanged', syncTitle)
+    return () => i18n.off('languageChanged', syncTitle)
+  }, [setNavigationBarTitle])
+
+  useEffect(() => {
+    const { status = 0 } = router?.params
     setState((draft) => {
       draft.status = status
     })
@@ -78,7 +84,7 @@ function TradeList(props) {
       draft.tradeList = []
     })
     tradeRef.current.reset()
-  }, [status, typeVal])
+  }, [status])
 
   const fetch = async ({ pageIndex, pageSize }) => {
     const { is_rate } = tradeStatus.find((item) => item.value == status)
@@ -87,10 +93,8 @@ function TradeList(props) {
       pageSize,
       order_type: 'normal',
       status,
-      is_rate,
-      order_class: typeVal == '1' ? 'employee_purchase' : 'normal'
+      is_rate
     }
-    // params.order_class = typeVal == '1' ? 'employee_purchase' : 'normal'
 
     const {
       list,
@@ -112,12 +116,6 @@ function TradeList(props) {
     })
   }
 
-  const onChangeTradeType = (e) => {
-    setState((draft) => {
-      draft.typeVal = e
-    })
-  }
-
   const onRefresherRefresh = () => {
     setState((draft) => {
       draft.refresherTriggered = true
@@ -129,7 +127,6 @@ function TradeList(props) {
 
   return (
     <SpPage scrollToTopBtn className='page-trade-list'>
-      <CompTrackType value={typeVal} onChange={onChangeTradeType} />
       <SpTagBar list={tradeStatus} value={status} onChange={onChangeTradeState} />
       <ScrollView
         className='list-scroll-container'
@@ -144,7 +141,7 @@ function TradeList(props) {
           auto={false}
           ref={tradeRef}
           fetch={fetch}
-          emptyMsg='没有查询到订单'
+          emptyMsg={$t('2800cb77.082a19')}
         >
           {tradeList.map((item, index) => (
             <View className='trade-item-wrap' key={index}>

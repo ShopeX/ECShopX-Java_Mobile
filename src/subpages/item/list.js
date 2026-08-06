@@ -2,37 +2,29 @@
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
  */
-import React, { useRef, useEffect, useState } from 'react'
-import { View, Text, ScrollView } from '@tarojs/components'
-import Taro, { getCurrentInstance, useDidShow } from '@tarojs/taro'
+import React, { useRef, useEffect, useState, useMemo } from 'react'
+import { View, Text } from '@tarojs/components'
+import Taro, { getCurrentInstance } from '@tarojs/taro'
 import { useSelector, useDispatch } from 'react-redux'
 import { useImmer } from 'use-immer'
 import throttle from 'lodash/throttle'
-import {
-  SpFilterBar,
-  SpTagBar,
-  SpGoodsItem,
-  SpSearchBar,
-  SpPage,
-  SpScrollView,
-  SpDrawer,
-  SpSelect,
-  SpSkuSelect
-} from '@/components'
+import { SpGoodsItem, SpSearchBar, SpPage, SpScrollView, SpSelect, SpSkuSelect } from '@/components'
+import { SpFilterBar, SpTagBar, SpDrawer } from '@/subpages/components'
 import { fetchUserFavs } from '@/store/slices/user'
 import doc from '@/doc'
 import api from '@/api'
 import {
   pickBy,
   classNames,
-  isWeixin,
   getDistributorId,
-  styleNames,
   entryLaunch,
   VERSION_STANDARD,
   showToast
 } from '@/utils'
 import S from '@/spx'
+import { $t, useTranslation } from '@/i18n'
+
+import FloatSalesperson from '@/subpages/store/comps/float-salesperson'
 
 import './list.scss'
 
@@ -43,12 +35,6 @@ const initialState = {
   rightList: [],
   brandList: [],
   brandSelect: [],
-  filterList: [
-    { title: '综合' },
-    { title: '销量' },
-    { title: '价格', icon: 'icon-shengxu-01' },
-    { title: '价格', icon: 'icon-jiangxu-01' }
-  ],
   curFilterIdx: 0,
   tagList: [],
   curTagIdx: 0,
@@ -64,34 +50,76 @@ const initialState = {
 }
 
 function ItemList() {
-  const $instance = getCurrentInstance()
+  const { i18n } = useTranslation()
+  const $instance = getCurrentInstance() || {}
   const [state, setState] = useImmer(initialState)
   const {
     keywords,
     leftList,
     rightList,
     selectType,
-    brandList,
     skuPanelOpen,
     brandSelect,
     curFilterIdx,
-    filterList,
     tagList,
     curTagIdx,
     info,
-    show,
     fixTop,
-    routerParams,
-    backTopScrollTop
+    routerParams
   } = state
   const [isShowSearch, setIsShowSearch] = useState(false)
-  const { cat_id, main_cat_id, tag_id, card_id, user_card_id, all } = routerParams || {}
+  const { cat_id, main_cat_id, tag_id, card_id, user_card_id } = routerParams || {}
   const { shopInfo } = useSelector((state) => state.shop)
   const dispatch = useDispatch()
 
   const goodsRef = useRef()
   const pageRef = useRef()
-  // console.log('$instance.router.params', $instance.router?.params)
+
+  const hydrateListActivities = async (list = []) => {
+    const items = await Promise.all(
+      list.map(async (item) => {
+        if (item.activityType || item.activityInfo) return item
+        try {
+          const detail = await api.item.detail(item.itemId, {
+            showError: false,
+            distributor_id: item.distributorId || getDistributorId()
+          })
+          return {
+            ...item,
+            activityType: detail.activity_type,
+            activityInfo: detail.activity_info,
+            promotion: item.promotion || detail.promotion_activity || []
+          }
+        } catch (e) {
+          return item
+        }
+      })
+    )
+    return items
+  }
+  const filterListForView = useMemo(
+    () => [
+      { title: $t('ddb371f2.88e7de') },
+      { title: $t('ddb371f2.44e7eb') },
+      { title: $t('ddb371f2.0e9fd9'), icon: 'icon-shengxu-01' },
+      { title: $t('ddb371f2.0e9fd9'), icon: 'icon-jiangxu-01' }
+    ],
+    [i18n.language]
+  )
+
+  const tagListForView = useMemo(
+    () =>
+      tagList.map((item) =>
+        item.tag_id === 0 ? { ...item, tag_name: $t('f1d3181c.a8b0c2') } : item
+      ),
+    [tagList, i18n.language]
+  )
+
+  // console.log('$instance?.router?.params', $instance?.router?.params)
+  useEffect(() => {
+    Taro.setNavigationBarTitle({ title: $t('ddb371f2.437974') })
+  }, [i18n.language])
+
   useEffect(() => {
     if (S.getAuthToken()) {
       dispatch(fetchUserFavs())
@@ -100,12 +128,22 @@ function ItemList() {
 
   useEffect(() => {
     // card_id, user_card_id: 兑换券参数
-    entryLaunch.getRouteParams($instance.router.params).then((params) => {
-      const { cat_id, keywords, main_cat_id, tag_id, card_id, user_card_id, all = false } = params
+    // 分类挂件跳转传 category_id，兼容历史 cat_id
+    entryLaunch.getRouteParams({ params: $instance?.router?.params }).then((params) => {
+      const {
+        cat_id,
+        category_id,
+        keywords,
+        main_cat_id,
+        tag_id,
+        card_id,
+        user_card_id,
+        all = false
+      } = params
 
       setState((draft) => {
         draft.routerParams = {
-          cat_id,
+          cat_id: cat_id || category_id,
           keywords,
           main_cat_id,
           tag_id,
@@ -140,7 +178,7 @@ function ItemList() {
 
   const fetch = async ({ pageIndex, pageSize }) => {
     // card_id: 兑换券id
-    const { mcid, cid } = $instance.router.params
+    const { mcid, cid } = $instance?.router?.params
     let params = {
       page: pageIndex,
       pageSize,
@@ -186,15 +224,9 @@ function ItemList() {
       // }
     }
 
-    const {
-      list,
-      total_count,
-      item_params_list = [],
-      select_tags_list = [],
-      brand_list
-    } = await api.item.search(params)
+    const { list, total_count, select_tags_list = [], brand_list } = await api.item.search(params)
     console.time('list render')
-    const n_list = pickBy(list, doc.goods.ITEM_LIST_GOODS)
+    const n_list = await hydrateListActivities(pickBy(list, doc.goods.ITEM_LIST_GOODS))
     const resLeftList = n_list.filter((item, index) => {
       if (index % 2 == 0) {
         return item
@@ -215,7 +247,7 @@ function ItemList() {
         if (select_tags_list.length > 0) {
           v.tagList = [
             {
-              tag_name: '全部',
+              tag_name: '',
               tag_id: 0
             }
           ].concat(select_tags_list)
@@ -282,31 +314,6 @@ function ItemList() {
     goodsRef.current.reset()
   }
 
-  const onChangeBrand = (val) => {
-    setState((draft) => {
-      draft.brandSelect = val
-    })
-  }
-
-  const onConfirmBrand = async () => {
-    await setState((draft) => {
-      draft.leftList = []
-      draft.rightList = []
-      draft.show = false
-    })
-    goodsRef.current.reset()
-  }
-
-  const onResetBrand = async () => {
-    await setState((draft) => {
-      draft.brandSelect = []
-      draft.leftList = []
-      draft.rightList = []
-      draft.show = false
-    })
-    goodsRef.current.reset()
-  }
-
   const handleClickStore = (item) => {
     const url = `/subpages/store/index?id=${item.distributor_info.distributor_id}`
     Taro.navigateTo({
@@ -336,13 +343,15 @@ function ItemList() {
   return (
     <SpPage
       scrollToTopBtn
-      className={classNames('page-item-list', {
+      className={classNames('page-item-list', 'page-item-list--page-scroll', {
         'has-tagbar': tagList.length > 0
       })}
       ref={pageRef}
+      title='商品列表'
+      renderFloat={<FloatSalesperson />}
     >
       <View className='search-wrap'>
-        {VERSION_STANDARD && card_id && (
+        {/* {VERSION_STANDARD && card_id && (
           <View
             className='store-picker'
             onClick={() => {
@@ -354,10 +363,10 @@ function ItemList() {
             <View className='shop-name'>{shopInfo.store_name || '暂无店铺信息'}</View>
             <Text className='iconfont icon-qianwang-01'></Text>
           </View>
-        )}
+        )} */}
         <SpSearchBar
           keyword={keywords}
-          placeholder='搜索'
+          placeholder={$t('ddb371f2.e5f71f')}
           onFocus={handleOnFocus}
           onChange={handleOnChange}
           onClear={handleOnClear}
@@ -367,13 +376,18 @@ function ItemList() {
       </View>
       <View className='item-list-head'>
         {tagList.length > 0 && (
-          <SpTagBar className='tag-list' list={tagList} value={curTagIdx} onChange={onChangeTag} />
+          <SpTagBar
+            className='tag-list'
+            list={tagListForView}
+            value={curTagIdx}
+            onChange={onChangeTag}
+          />
         )}
 
         <SpFilterBar
           custom
           current={curFilterIdx}
-          list={filterList}
+          list={filterListForView}
           onChange={handleFilterChange}
         />
       </View>

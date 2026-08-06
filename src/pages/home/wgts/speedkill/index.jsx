@@ -6,17 +6,26 @@ import React, { useState, useEffect, useMemo, useContext } from 'react'
 import Taro from '@tarojs/taro'
 import { View, Text } from '@tarojs/components'
 import { SpImage } from '@/components'
-import { classNames, styleNames, linkPage, pickBy, getDistributorId } from '@/utils'
+import {
+  classNames,
+  styleNames,
+  linkPage,
+  pickBy,
+  getDistributorId,
+  getCurrencySymbol
+} from '@/utils'
 import doc from '@/doc'
 import api from '@/api'
 import { AtIcon } from 'taro-ui'
+import { useTranslation, $t, ti } from '@/i18n'
 import GoodsLayout from '../goods-layout'
 import { getGlobalBaseStyle } from '../helper'
 import { WgtsContext } from '../wgts-context'
 import './index.scss'
 
 export default function WgtSpeedkill(props) {
-  const { info, id, dtid } = props
+  useTranslation()
+  const { info, id } = props
   const [goodsList, setGoodsList] = useState([])
   const [goodsLeftList, setGoodsLeftList] = useState([])
   const [goodsRightList, setGoodsRightList] = useState([])
@@ -27,9 +36,7 @@ export default function WgtSpeedkill(props) {
   const base = params.base || {}
   const data = params.data || {}
 
-  const { onAddToCart } = useContext(WgtsContext)
-  const resolveDistributorId = (itemDistributorId) =>
-    itemDistributorId || dtid || getDistributorId() || ''
+  const { onAddToCart, eActivityId } = useContext(WgtsContext) || {}
 
   // 获取外层样式（包含 outerMargin 和背景配置）
   const outerStyle = useMemo(() => {
@@ -58,13 +65,17 @@ export default function WgtSpeedkill(props) {
 
       setLoading(true)
       try {
-        const distributorId = resolveDistributorId()
-        const _data = await api.seckill.getWidgetItems({
+        const distributorId = getDistributorId()
+        const requestParams = {
           data_type: 'seckill',
           data_value: data.id || '',
-          data_count: base.dataCount,
-          distributor_id: distributorId
-        })
+          num: base.dataCount,
+          distributor_id: distributorId || ''
+        }
+        if (eActivityId) {
+          requestParams.e_activity_id = eActivityId
+        }
+        const _data = await api.seckill.getWidgetItems(requestParams)
         if (_data && Array.isArray(_data) && _data.length > 0) {
           const goods = pickBy(_data, doc.goods.WGT_SPEEDKILL_GOODS)
           setGoodsList(goods.slice(0, base.dataCount))
@@ -83,7 +94,7 @@ export default function WgtSpeedkill(props) {
     }
 
     fetchSeckillGoods()
-  }, [data.id, base.dataCount, dtid])
+  }, [data.id, base.dataCount, eActivityId])
 
   // TODO 获取秒杀信息待定
   const getSeckillInfo = (list) => {
@@ -109,21 +120,25 @@ export default function WgtSpeedkill(props) {
       if (startDay === today)
         return (
           <View className='-title-limitedTime-text'>
-            <Text className='sp-shelves-goods__header-title-limitedTime-text-title'>今日开抢</Text>
+            <Text className='sp-shelves-goods__header-title-limitedTime-text-title'>
+              {$t('597601cb.4739d2')}
+            </Text>
             <Text className='sp-shelves-goods__header-title-limitedTime-text-time'>{timeStr}</Text>
           </View>
         )
       if (startDay === tomorrow)
         return (
           <View className='sp-shelves-goods__header-title-limitedTime-text'>
-            <Text className='sp-shelves-goods__header-title-limitedTime-text-title'>明日开抢</Text>
+            <Text className='sp-shelves-goods__header-title-limitedTime-text-title'>
+              {$t('597601cb.b151a1')}
+            </Text>
             <Text className='sp-shelves-goods__header-title-limitedTime-text-time'>{timeStr}</Text>
           </View>
         )
       return (
         <View className='sp-shelves-goods__header-title-limitedTime-text'>
           <Text className='sp-shelves-goods__header-title-limitedTime-text-title'>
-            {startDate.getMonth() + 1}月{startDate.getDate()}日
+            {ti('597601cb.b5ed77', [startDate.getMonth() + 1, startDate.getDate()])}
           </Text>
           <Text className='sp-shelves-goods__header-title-limitedTime-text-time'>{timeStr}</Text>
         </View>
@@ -147,11 +162,7 @@ export default function WgtSpeedkill(props) {
   // 处理更多按钮点击
   const handleClickMore = () => {
     if (base.moreLink && base.moreLink.length > 0) {
-      const moreLink = base.moreLink[0] || {}
-      linkPage({
-        ...moreLink,
-        distributor_id: moreLink.distributor_id || resolveDistributorId()
-      })
+      linkPage(base.moreLink[0])
     } else if (data.id) {
       Taro.navigateTo({
         url: `/marketing/pages/item/seckill-goods-list?seckill_id=${data.id}`
@@ -163,8 +174,7 @@ export default function WgtSpeedkill(props) {
   const handleClickItem = (item) => {
     linkPage({
       linkPage: 'goods',
-      id: item.goodsId || item.item_id || item.itemId,
-      distributor_id: resolveDistributorId(item.distributorId || item.distributor_id)
+      id: item.goodsId || item.item_id || item.itemId
     })
   }
 
@@ -211,7 +221,7 @@ export default function WgtSpeedkill(props) {
                 onClick={handleClickMore}
                 style={styleNames({ color: base.moreBtn?.color || base.moreBtnColor })}
               >
-                <Text>查看更多</Text>
+                <Text>{$t('597601cb.90ef7c')}</Text>
                 <AtIcon
                   value='chevron-right'
                   size={14}
@@ -240,7 +250,7 @@ export default function WgtSpeedkill(props) {
                   {item.store <= 0 && (
                     <View className='soldout-mask'>
                       <View className='soldout-mask-text'>
-                        <Text>已售罄</Text>
+                        <Text>{$t('597601cb.b12876')}</Text>
                       </View>
                     </View>
                   )}
@@ -251,9 +261,11 @@ export default function WgtSpeedkill(props) {
                   </View>
                   <View className='wgt-speedkill__activity-item-price'>
                     <Text className='wgt-speedkill__activity-item-price__activity_name'>
-                      秒杀价
+                      {$t('597601cb.c0a30e')}
                     </Text>
-                    <Text className='wgt-speedkill__activity-item-price__unit'>￥</Text>
+                    <Text className='wgt-speedkill__activity-item-price__unit'>
+                      {getCurrencySymbol()}
+                    </Text>
                     <Text className='wgt-speedkill__activity-item-price__text'>
                       {item.mainPrice ||
                         (item.activityPrice

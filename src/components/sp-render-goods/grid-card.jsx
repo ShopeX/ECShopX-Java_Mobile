@@ -4,11 +4,13 @@ import { SpImage, SpPrice } from '@/components'
 import SpTag from '@/components/sp-tag/index'
 import Taro, { getCurrentInstance } from '@tarojs/taro'
 import qs from 'qs'
+import { $t, useTranslation } from '@/i18n'
 import { classNames } from '@/utils'
 
 import './grid-card.scss'
 
 function SpGoodsGridCard(props) {
+  useTranslation()
   const { info = null, onClick, mode = 'aspectFill' } = props
   const handleClick = () => {
     if (!info) return
@@ -40,7 +42,6 @@ function SpGoodsGridCard(props) {
   return (
     <View
       id={`sp-goods-grid-card-${info.itemId}`}
-      key={props.key}
       className={classNames('sp-goods-grid-card', props.className)}
       onClick={handleClick}
     >
@@ -55,7 +56,7 @@ function SpGoodsGridCard(props) {
         {info.store <= 0 && (
           <View className='soldout-mask'>
             <View className='soldout-mask-text'>
-              <Text>已售罄</Text>
+              <Text>{$t('8a5d1351.b12876')}</Text>
             </View>
           </View>
         )}
@@ -129,7 +130,6 @@ SpGoodsGridCard.defaultProps = {
   className: '',
   id: '',
   info: null,
-  key: '',
   onClick: null,
   mode: 'aspectFill',
   width: 200,

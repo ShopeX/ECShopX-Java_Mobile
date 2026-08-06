@@ -3,6 +3,7 @@
  * See LICENSE file for license details.
  */
 import React from 'react'
+import Taro from '@tarojs/taro'
 import { useSelector, useDispatch } from 'react-redux'
 import { View, Text } from '@tarojs/components'
 import { SpImage, SpLogin } from '@/components'
@@ -10,22 +11,24 @@ import api from '@/api'
 import S from '@/spx'
 import { isArray, classNames, styleNames } from '@/utils'
 import { closeCart, setGoodsSkuInfo } from '@/store/slices/guide'
+import { useTranslation, $t } from '@/i18n'
 import { linkPage } from './helper'
 import './imghot-zone.scss'
 
 function WgtImgHotZone(props) {
+  useTranslation()
   const { info } = props
   const { base, config, data } = info
   const dispatch = useDispatch()
 
   const handleClickItem = (item) => {
     if (item.linkPage === 'cashcoupon') {
-      const toke = S.getAuthToken()
+      const toke = S?.getAuthToken()
       if (!toke) {
-        S.login()
+        S?.login()
       } else {
         api.member.sendCashCoupon({ stock_id: item.id }).then((res) => {
-          S.toast(res.msg)
+          S?.toast(res.msg)
         })
       }
       return
@@ -40,12 +43,12 @@ function WgtImgHotZone(props) {
   const onClickAddCart = async (id) => {
     if (!S.getAuthToken()) {
       Taro.showToast({
-        title: '请先登录再购买',
+        title: $t('20d574cd.d9b8b5'),
         icon: 'none'
       })
 
       setTimeout(() => {
-        S.login()
+        S?.login()
       }, 50)
 
       return

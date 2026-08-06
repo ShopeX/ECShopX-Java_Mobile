@@ -8,8 +8,10 @@ import { View, Image, Text } from '@tarojs/components'
 import { connect } from 'react-redux'
 import { withPager, withBackToTop } from '@/hocs'
 import { AtFloatLayout } from 'taro-ui'
-import { SpToast, CouponItem, SpCheckbox, SpHtmlContent } from '@/components'
+import { SpToast, CouponItem, SpCheckbox } from '@/components'
+import { SpHtmlContent } from '@/subpages/components'
 import api from '@/api'
+import { $t } from '@/i18n'
 import { pickBy, normalizeQuerys } from '@/utils'
 import S from '@/spx'
 import entry from '@/utils/entry'
@@ -22,7 +24,7 @@ import '../../pages/member/qrcode-buy.scss'
 @withPager
 @withBackToTop
 export default class QrcodeBuy extends Component {
-  $instance = getCurrentInstance()
+  $instance = getCurrentInstance() || {}
   constructor(props) {
     super(props)
 
@@ -38,8 +40,8 @@ export default class QrcodeBuy extends Component {
   }
 
   async componentDidMount() {
-    const options = this.$instance.router.params
-    const query = await normalizeQuerys(this.$instance.router.params)
+    const options = this.$instance?.router?.params
+    const query = await normalizeQuerys(this.$instance?.router?.params)
     console.log(query, 38)
     Taro.setStorageSync('isqrcode', query.qrcode)
     Taro.setStorageSync('odtid', query.odtid)
@@ -108,17 +110,17 @@ export default class QrcodeBuy extends Component {
 
   handleLoginClick = () => {
     if (this.state.isCkeckTips === false) {
-      return S.toast('请先同意用户协议')
+      return S?.toast($t('0fb13d9f.6cce87'))
     }
     Taro.navigateTo({
       url: '/subpage/pages/auth/wxauth'
     })
-    // S.login(this, true)
+    // S?.login(this, true)
   }
 
   handleCamera = async () => {
     if (!S.getAuthToken()) {
-      return S.toast('请先授权')
+      return S?.toast($t('e02eaf53.3a34e2'))
     }
     // const distributor = Taro.getStorageSync('curStore')
     const odtid = Taro.getStorageSync('odtid')
@@ -132,7 +134,7 @@ export default class QrcodeBuy extends Component {
         }
         try {
           const result = await api.user.scancodeAddcart(query)
-          S.toast(result.msg)
+          S?.toast(result.msg)
         } catch (e) {
           Taro.showToast({
             icon: 'none',
@@ -206,7 +208,7 @@ export default class QrcodeBuy extends Component {
               mode='widthFix'
               className='qrcode-buy__scanning'
             ></Image>
-            <View>扫描商品条码</View>
+            <View>{$t('0fb13d9f.11afe0')}</View>
           </View>
         </View>
 
@@ -217,12 +219,12 @@ export default class QrcodeBuy extends Component {
               onClick={this.handleLoginClick.bind(this)}
               style={`background: ${colors.data[0].primary}`}
             >
-              立即授权
+              {$t('0fb13d9f.9d6bb4')}
             </View>
             <View className='wauth-btn__tips'>
               <SpCheckbox checked={isCkeckTips} />
               <Text className='wauth-btn__text' onClick={this.handleTips.bind(this)}>
-                用户协议
+                {$t('ace75665.c96e43')}
               </Text>
             </View>
           </View>
@@ -230,22 +232,22 @@ export default class QrcodeBuy extends Component {
           <View className='auth-btns'>
             <View className='auth-btns__item' onClick={this.handleHome.bind(this)}>
               <View className='iconfont iconfont-home'></View>
-              <View>商城首页</View>
+              <View>{$t('0fb13d9f.971adb')}</View>
             </View>
             <View className='auth-btns__item' onClick={this.handleCart.bind(this)}>
               <View className='iconfont icon-cart'></View>
-              <View>购物车</View>
+              <View>{$t('a2d3a891.c017be')}</View>
             </View>
             <View className='auth-btns__item' onClick={this.handleTrade.bind(this)}>
               <View className='iconfont-home'></View>
-              <View>我的订单</View>
+              <View>{$t('b1d321d6.a73872')}</View>
             </View>
           </View>
         )}
 
         <AtFloatLayout
           isOpened={tipsInfoShow}
-          title='用户协议'
+          title={$t('ace75665.c96e43')}
           onClose={this.handleClose.bind(this)}
         >
           {tipsInfo && <SpHtmlContent className='pay-rule-style' content={tipsInfo} />}

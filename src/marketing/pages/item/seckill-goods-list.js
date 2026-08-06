@@ -5,22 +5,18 @@
 import React, { Component } from 'react'
 import Taro, { getCurrentInstance } from '@tarojs/taro'
 import { View, ScrollView, Text, Image } from '@tarojs/components'
+import { withTranslation } from 'react-i18next'
 import { withPager, withBackToTop } from '@/hocs'
 import { BackToTop, Loading, SpNote, GoodsItem, SpNavBar } from '@/components'
 import { AtCountdown } from 'taro-ui'
 import { connect } from 'react-redux'
+import { $t } from '@/i18n'
 import api from '@/api'
 import { classNames, pickBy, isNavbar, getDistributorId } from '@/utils'
-
 import './seckill-goods-list.scss'
 
-@connect(({ colors }) => ({
-  colors: colors.current
-}))
-@withPager
-@withBackToTop
-export default class SeckillGoodsList extends Component {
-  $instance = getCurrentInstance()
+class SeckillGoodsList extends Component {
+  $instance = getCurrentInstance() || {}
   constructor(props) {
     super(props)
 
@@ -37,6 +33,7 @@ export default class SeckillGoodsList extends Component {
   }
 
   componentDidMount() {
+    this.syncNavTitle()
     // this.setState({
     //   query: {
     //     status: this.state.curTabIdx === 0 ? 'valid' : 'notice',
@@ -45,7 +42,7 @@ export default class SeckillGoodsList extends Component {
     // }, () => {
     //   this.nextPage()
     // })
-    console.log(this.$instance.router.params, 41)
+    console.log(this.$instance?.router?.params, 41)
     this.nextPage()
     api.wx.shareSetting({ shareindex: 'seckill' }).then((res) => {
       this.setState({
@@ -54,8 +51,18 @@ export default class SeckillGoodsList extends Component {
     })
   }
 
+  componentDidUpdate(prevProps) {
+    if (prevProps.i18n?.language !== this.props.i18n?.language) {
+      this.syncNavTitle()
+    }
+  }
+
+  syncNavTitle = () => {
+    Taro.setNavigationBarTitle({ title: $t('c4d2fddd.d1ca1e') })
+  }
+
   onShareAppMessage() {
-    const seckill_id = this.$instance.router.params.seckill_id
+    const seckill_id = this.$instance?.router?.params.seckill_id
     const res = this.state.shareInfo
     const { userId } = Taro.getStorageSync('userinfo')
     let query = userId ? `?uid=${userId}` : ''
@@ -111,8 +118,8 @@ export default class SeckillGoodsList extends Component {
     const { page_no: page, page_size: pageSize } = params
     const dtid = getDistributorId()
     const query = {
-      seckill_id: this.$instance.router.params.seckill_id,
-      type: this.$instance.router.params.seckill_type,
+      seckill_id: this.$instance?.router?.params.seckill_id,
+      type: this.$instance?.router?.params.seckill_type,
       distributor_id: dtid,
       page,
       pageSize
@@ -160,7 +167,7 @@ export default class SeckillGoodsList extends Component {
           'has-navbar': isNavbar()
         })}
       >
-        <SpNavBar title='微商城' />
+        <SpNavBar title={$t('c4d2fddd.d1ca1e')} />
         <ScrollView
           className='seckill-goods__scroll'
           scrollY
@@ -172,7 +179,7 @@ export default class SeckillGoodsList extends Component {
           <Image className='seckill-goods__swiper' src={imgurl} mode='widthFix' />
           {status === 'it_has_ended' ? (
             <View className='seckill-goods__timer'>
-              <Text>活动已结束</Text>
+              <Text>{$t('c4d2fddd.cdae1c')}</Text>
             </View>
           ) : (
             <View className='seckill-goods__timer'>
@@ -185,8 +192,8 @@ export default class SeckillGoodsList extends Component {
                     minutes={timer.mm}
                     seconds={timer.ss}
                   />
-                  {status === 'in_the_notice' && <Text>后开始</Text>}
-                  {status === 'in_sale' && <Text>后结束</Text>}
+                  {status === 'in_the_notice' && <Text>{$t('c4d2fddd.e42723')}</Text>}
+                  {status === 'in_sale' && <Text>{$t('c4d2fddd.23a300')}</Text>}
                 </View>
               )}
             </View>
@@ -204,18 +211,18 @@ export default class SeckillGoodsList extends Component {
                       className='seckill-goods__list-btn'
                       style={`background: ${colors.data[0].primary}`}
                     >
-                      {status === 'in_the_notice' && <Text>去看看</Text>}
-                      {status === 'in_sale' && <Text>马上抢</Text>}
-                      {status === 'it_has_ended' && <Text>原价买</Text>}
+                      {status === 'in_the_notice' && <Text>{$t('c4d2fddd.5aa512')}</Text>}
+                      {status === 'in_sale' && <Text>{$t('c4d2fddd.f7e08e')}</Text>}
+                      {status === 'it_has_ended' && <Text>{$t('c4d2fddd.01df40')}</Text>}
                     </View>
                   </GoodsItem>
                 </View>
               )
             })}
           </View>
-          {page.isLoading ? <Loading>正在加载...</Loading> : null}
+          {page.isLoading ? <Loading>{$t('56af9ff8.bd0271')}</Loading> : null}
           {!page.isLoading && !page.hasNext && !list.length && (
-            <SpNote img='trades_empty.png'>暂无数据~</SpNote>
+            <SpNote img='trades_empty.png'>{$t('56af9ff8.ba1de9')}</SpNote>
           )}
         </ScrollView>
 
@@ -224,3 +231,7 @@ export default class SeckillGoodsList extends Component {
     )
   }
 }
+
+export default connect(({ colors }) => ({
+  colors: colors.current
+}))(withPager(withBackToTop(withTranslation()(SeckillGoodsList))))

@@ -42,7 +42,6 @@ import {
   isAPP,
   buildSharePath
 } from '@/utils'
-
 import doc from '@/doc'
 import entryLaunch from '@/utils/entryLaunch'
 import qs from 'qs'
@@ -50,9 +49,9 @@ import S from '@/spx'
 import { Tracker } from '@/service'
 import { useNavigation, useLogin } from '@/hooks'
 import { ACTIVITY_LIST } from '@/consts'
+import { useTranslation, $t } from '@/i18n'
 import CompEvaluation from './comps/comp-evaluation'
 import { WgtFilm, WgtSlider, WgtWriting, WgtGoods, WgtHeading } from '../../pages/home/wgts'
-
 import './espier-detail.scss'
 
 const MSpSkuSelect = React.memo(SpSkuSelect)
@@ -87,8 +86,9 @@ const initialState = {
 }
 
 function EspierDetail(props) {
-  const $instance = getCurrentInstance()
-  // const { type, id, dtid } = $instance.router.params
+  useTranslation()
+  const $instance = getCurrentInstance() || {}
+  // const { type, id, dtid } = $instance?.router?.params
   // const { type, id, dtid } = await entryLaunch.getRouteParams()
   const { getUserInfoAuth } = useLogin()
   const pageRef = useRef()
@@ -219,7 +219,7 @@ function EspierDetail(props) {
         if (data.approveStatus == 'instock') {
           setState((draft) => {
             draft.isDefault = true
-            draft.defaultMsg = '商品已下架'
+            draft.defaultMsg = $t('46b3dd02.1b81ee')
           })
         }
       } catch (e) {
@@ -376,7 +376,7 @@ function EspierDetail(props) {
                 }}
               >
                 {!play && <SpImage className='play-icon' src='play2.png' width={50} height={50} />}
-                {play ? '退出视频' : '播放视频'}
+                {play ? $t('46b3dd02.85f859') : $t('46b3dd02.c27cf5')}
               </View>
             )}
           </View>
@@ -412,7 +412,7 @@ function EspierDetail(props) {
           {!info.nospec && (
             <View className='sku-block'>
               <SpCell
-                title='规格'
+                title={$t('46b3dd02.ea887b')}
                 isLink
                 onClick={() => {
                   setState((draft) => {
@@ -427,7 +427,7 @@ function EspierDetail(props) {
           )}
 
           <View className='goods-params'>
-            <View className='params-hd'>商品参数</View>
+            <View className='params-hd'>{$t('46b3dd02.8686bb')}</View>
             <View className='params-bd'>
               {info.itemParams.map((item, index) => (
                 <View className='params-item' key={`params-item__${index}`}>
@@ -443,7 +443,7 @@ function EspierDetail(props) {
 
           <View className='goods-desc'>
             <View className='desc-hd'>
-              <Text className='desc-title'>宝贝详情</Text>
+              <Text className='desc-title'>{$t('46b3dd02.002e0a')}</Text>
             </View>
             {isArray(info.intro) ? (
               <View>

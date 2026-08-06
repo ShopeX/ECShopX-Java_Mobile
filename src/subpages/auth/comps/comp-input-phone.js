@@ -9,6 +9,7 @@ import { useImmer } from 'use-immer'
 import api from '@/api'
 import { SpInput as AtInput } from '@/components'
 import classNames from 'classnames'
+import { useTranslation, $t } from '@/i18n'
 import './comp-input-phone.scss'
 
 const initialValue = {
@@ -16,6 +17,7 @@ const initialValue = {
 }
 
 const CompInputPhone = (props) => {
+  useTranslation()
   const {
     name,
     type,
@@ -68,12 +70,12 @@ const CompInputPhone = (props) => {
         name='mobile'
         maxLength={11}
         type='tel'
-        placeholder='请输入您的手机号码'
+        placeholder={placeholder ?? $t('70e510e9.787a47')}
         onChange={handleChange}
         value={value}
         {...restProps}
       />
-      {error && needValidate && <View className='error'>该手机号码未注册</View>}
+      {error && needValidate && <View className='error'>{$t('70e510e9.1fb0b4')}</View>}
     </View>
   )
 }

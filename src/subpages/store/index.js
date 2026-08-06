@@ -9,13 +9,23 @@ import Taro, {
   useDidShow,
   getCurrentInstance
 } from '@tarojs/taro'
-import { View, Text } from '@tarojs/components'
+import { View, Text, ScrollView } from '@tarojs/components'
 import { useSelector, useDispatch } from 'react-redux'
 import { SG_ROUTER_PARAMS } from '@/consts'
 import S from '@/spx'
-import { SpFloatMenuItem, SpPage, SpSearch, SpRecommend, SpSkuSelect, SpLogin } from '@/components'
+import {
+  SpFloatMenuItem,
+  SpPage,
+  SpSearch,
+  SpRecommend,
+  SpSkuSelect,
+  SpLogin,
+  SpPoweredBy,
+  SpImage
+} from '@/components'
 import api from '@/api'
 import doc from '@/doc'
+import * as shopDoc from '@/doc/shop'
 import {
   getDistributorId,
   classNames,
@@ -23,11 +33,11 @@ import {
   pickBy,
   log,
   showToast,
-  buildSharePath,
-  isArray
+  buildSharePath
 } from '@/utils'
 import { useImmer } from 'use-immer'
 import { useNavigation } from '@/hooks'
+import { useTranslation, $t } from '@/i18n'
 import _toString from 'lodash/toString'
 import HomeWgts from '@/pages/home/comps/home-wgts'
 import { WgtsContext } from '@/pages/home/wgts/wgts-context'
@@ -36,7 +46,6 @@ import CompShopBrand from './comps/comp-shopbrand'
 import Categorys from './categorys'
 import CompTab from './comps/comp-tab'
 import CompAddCart from './comps/comp-add-cart'
-
 import './index.scss'
 
 const MSpSkuSelect = React.memo(SpSkuSelect)
@@ -52,19 +61,23 @@ const initState = {
   info: null,
   skuPanelOpen: false,
   selectType: 'picker',
-  statusBarHeight: '',
   open: false,
-  hideClose: true
+  hideClose: true,
+  /** 页面滚动超过 20px 时搜索条白底 */
+  searchSolidBg: false,
+  /** 自定义导航高度，沉浸式时用于顶起搜索/头图内容 */
+  navbarHeight: 0
 }
 
 function StoreIndex() {
+  useTranslation()
   const [state, setState] = useImmer(initState)
   const [likeList, setLikeList] = useImmer([])
   const { openRecommend, colorPrimary } = useSelector((state) => state.sys)
   const { shopCartCount } = useSelector((state) => state.cart)
   const { setNavigationBarTitle } = useNavigation()
-  const $instance = getCurrentInstance()
-  const router = $instance.router
+  const $instance = getCurrentInstance() || {}
+  const router = $instance?.router
 
   const {
     wgts,
@@ -76,9 +89,9 @@ function StoreIndex() {
     info,
     skuPanelOpen,
     selectType,
-    statusBarHeight,
     open,
-    hideClose
+    searchSolidBg,
+    navbarHeight
   } = state
 
   const dispatch = useDispatch()
@@ -87,7 +100,6 @@ function StoreIndex() {
 
   useDidShow(() => {
     fetchWgts()
-    init()
     salesmanShare()
   })
 
@@ -145,14 +157,6 @@ function StoreIndex() {
     // }
   }
 
-  const init = async () => {
-    const { statusBarHeight } = await Taro.getSystemInfoSync()
-    setState((draft) => {
-      draft.statusBarHeight = statusBarHeight
-    })
-    console.log('MenuButton:', statusBarHeight)
-  }
-
   const fetchWgts = async () => {
     const { id, dtid, uid } = await parameter()
 
@@ -164,37 +168,24 @@ function StoreIndex() {
     if (!status) {
       setState((draft) => {
         draft.isDefault = true
-        draft.loading = false
-        draft.wgts = []
       })
       return
-    }
-
-    try {
+    } else {
       const storeInfo = await api.shop.getShop({
         distributor_id,
         show_score: 1,
         show_marketing_activity: 1
       })
-      const res = await api.shop.getStoreShopTemplate({
+      const { config } = await api.shop.getStoreShopTemplate({
         distributor_id
       })
-      // 接口可能返回非数组 config，需兜底避免 render 时 .find 报错
-      const config = Array.isArray(res?.config) ? res.config : []
       setState((draft) => {
-        draft.wgts = isArray(config) ? config : []
+        draft.wgts = config
         draft.distributorId = distributor_id
-        draft.storeInfo = pickBy(storeInfo, doc.shop.STORE_INFO)
+        draft.storeInfo = pickBy(storeInfo, shopDoc.STORE_INFO)
         draft.loading = false
       })
       await shopping(distributor_id)
-    } catch (error) {
-      log.error('fetchWgts:', error)
-      setState((draft) => {
-        draft.wgts = []
-        draft.distributorId = distributor_id
-        draft.loading = false
-      })
     }
   }
 
@@ -242,7 +233,7 @@ function StoreIndex() {
   const addPurchases = async (id) => {
     let data
     Taro.showLoading({
-      title: '加载中'
+      title: $t('17670153.f013ea')
     })
     const { dtid } = await parameter()
     const itemDetail = await api.item.detail(id, {
@@ -301,7 +292,7 @@ function StoreIndex() {
   }
 
   // const settlement = () => {
-  //   const { type = 'distributor' } = router.params
+  //   const { type = 'distributor' } = router?.params
   //   const { shop_id, is_delivery, is_ziti, shop_name, address, lat, lng, hour, mobile } =
   //     shopCartCount.storeDetails
   //   const query = {
@@ -336,18 +327,17 @@ function StoreIndex() {
         draft.open = true
       })
     } else {
-      showToast('购物车暂无数据，请先加购')
+      showToast($t('17670153.a590f1'))
     }
   }
 
-  const safeWgts = isArray(wgts) ? wgts : []
-  let searchComp = safeWgts.find((wgt) => wgt.name == 'search')
-  const pageData = safeWgts.find((wgt) => wgt.name == 'page')
+  let searchComp = wgts.find((wgt) => wgt.name == 'search')
+  const pageData = wgts.find((wgt) => wgt.name == 'page')
   let filterWgts = []
-  if (searchComp && searchComp.config?.fixTop) {
-    filterWgts = safeWgts.filter((wgt) => wgt.name !== 'search')
+  if (searchComp && searchComp.config.fixTop) {
+    filterWgts = wgts.filter((wgt) => wgt.name !== 'search')
   } else {
-    filterWgts = safeWgts
+    filterWgts = wgts
     searchComp = null
   }
   // const fixedTop = searchComp && searchComp.config.fixTop
@@ -356,27 +346,24 @@ function StoreIndex() {
     <SpPage
       className='page-store-index'
       isDefault={isDefault}
-      defaultMsg='该店铺已注销，在别的店铺看看吧'
+      defaultMsg={$t('17670153.03b176')}
       loading={loading}
       scrollToTopBtn
       ref={pageRef}
-      // navigateMantle
-      pageConfig={pageData?.base}
-      // renderTitle={
-      //   fixedTop && (
-      //     <>
-      //     <SpSearch
-      //       isFixTop={searchComp.config.fixTop}
-      //       onClick={() => {
-      //         Taro.navigateTo({
-      //           url: `/subpages/store/item-list?dtid=${distributorId}`
-      //         })
-      //       }}
-      //     />
-      //     </>
-
-      //   )
-      // }
+      showpoweredBy={false}
+      immersive
+      pageConfig={{
+        ...(pageData?.base || {}),
+        // 未滚动时导航透明，让店铺 banner 顶到屏幕顶部
+        navigateBackgroundColor: searchSolidBg
+          ? pageData?.base?.navigateBackgroundColor || '#fff'
+          : 'transparent'
+      }}
+      onReady={({ gNavbarH }) => {
+        setState((draft) => {
+          draft.navbarHeight = gNavbarH || 0
+        })
+      }}
       renderFloat={
         <View>
           <SpFloatMenuItem
@@ -397,93 +384,123 @@ function StoreIndex() {
       }
       renderFooter={<CompTab popFrame={popFrame} />}
     >
-      {searchComp && (
-        <View className='search'>
-          <SpSearch
-            // isFixTop={searchComp?.config?.fixTop}
-            info={searchComp}
-            onClick={() => {
-              Taro.navigateTo({
-                url: `/subpages/store/item-list?dtid=${distributorId}`
-              })
-            }}
-          />
-        </View>
-      )}
-
-      <View
-        className={searchComp ? 'header-block' : 'header-block-pad'}
-        style={{ background: `url('${storeInfo?.banner}') no-repeat center center / cover` }}
-      >
-        <CompShopBrand storeInfo={storeInfo} dtid={distributorId} />
-      </View>
-
-      <View
-        className='switchs'
-        style={{
-          background: `${pageData?.base?.pageBackgroundColor || '#fff'}`,
-          top: `${statusBarHeight + 40}px`
+      <ScrollView
+        scrollY
+        className='search-scroll'
+        style={{ height: `100%` }}
+        onScroll={(e) => {
+          const st = e?.detail?.scrollTop ?? 0
+          setState((draft) => {
+            draft.searchSolidBg = st > 15
+          })
         }}
       >
-        <Text
-          className={classNames(productSwitching ? 'switchings' : 'switching')}
-          onClick={() => tabbarSwitching(true)}
-        >
-          首页
-        </Text>
-        <Text
-          className={classNames('switched', productSwitching ? 'switching' : 'switchings')}
-          onClick={() => tabbarSwitching(false)}
-        >
-          商品分类
-        </Text>
-      </View>
+        {searchComp && (
+          <View
+            className={classNames('search', {
+              'search--solid': searchSolidBg
+            })}
+            style={navbarHeight ? { top: `${navbarHeight}px` } : undefined}
+          >
+            <SpSearch
+              // isFixTop={searchComp?.config?.fixTop}
+              info={searchComp}
+              onClick={() => {
+                Taro.navigateTo({
+                  url: `/subpages/store/item-list?dtid=${distributorId}`
+                })
+              }}
+            />
+          </View>
+        )}
 
-      {productSwitching && safeWgts.length > 0 ? (
-        <WgtsContext.Provider
-          value={{
-            onAddToCart
+        <View className={searchComp ? 'header-block' : 'header-block-pad'}>
+          {/* widthFix：按原图比例完整展示，高度随图片自适应 */}
+          {storeInfo?.banner ? (
+            <SpImage
+              className='store-banner'
+              src={storeInfo.banner}
+              mode='widthFix'
+              width={750}
+            />
+          ) : (
+            <View
+              className='store-banner store-banner--empty'
+              style={navbarHeight ? { paddingTop: `${navbarHeight}px` } : undefined}
+            />
+          )}
+          <CompShopBrand storeInfo={storeInfo} dtid={distributorId} />
+        </View>
+
+        <View
+          className='switchs'
+          style={{
+            background: `${pageData?.base?.pageBackgroundColor || '#fff'}`,
+            top: `0px`
           }}
         >
-          <HomeWgts wgts={filterWgts} dtid={distributorId} onLoad={fetchLikeList}>
-            {/* 猜你喜欢 */}
-            <SpRecommend className='recommend-block' info={likeList} />
-          </HomeWgts>
-        </WgtsContext.Provider>
-      ) : (
-        <Categorys addPurchases={addPurchases} dtid={distributorId} />
-      )}
+          <Text
+            className={classNames(productSwitching ? 'switchings' : 'switching')}
+            onClick={() => tabbarSwitching(true)}
+          >
+            {$t('17670153.db1c89')}
+          </Text>
+          <Text
+            className={classNames('switched', productSwitching ? 'switching' : 'switchings')}
+            onClick={() => tabbarSwitching(false)}
+          >
+            {$t('17670153.c3ece5')}
+          </Text>
+        </View>
 
-      {/* Sku选择器 */}
-      <MSpSkuSelect
-        open={skuPanelOpen}
-        type={selectType}
-        info={info}
-        onClose={() => {
-          setState((draft) => {
-            draft.skuPanelOpen = false
-          })
-        }}
-        onChange={(skuText, curItem) => {
-          setState((draft) => {
-            draft.skuText = skuText
-            draft.curItem = curItem
-          })
-        }}
-      />
+        {productSwitching && wgts.length > 0 ? (
+          <WgtsContext.Provider
+            value={{
+              onAddToCart
+            }}
+          >
+            <HomeWgts wgts={filterWgts} dtid={distributorId} onLoad={fetchLikeList}>
+              {/* 猜你喜欢 */}
+              <SpRecommend className='recommend-block' info={likeList} />
+            </HomeWgts>
+          </WgtsContext.Provider>
+        ) : (
+          <Categorys addPurchases={addPurchases} dtid={distributorId} />
+        )}
+        <View className='sp-page__powered-by w-full'>
+          <SpPoweredBy />
+        </View>
+        {/* Sku选择器 */}
+        <MSpSkuSelect
+          open={skuPanelOpen}
+          type={selectType}
+          info={info}
+          onClose={() => {
+            setState((draft) => {
+              draft.skuPanelOpen = false
+            })
+          }}
+          onChange={(skuText, curItem) => {
+            setState((draft) => {
+              draft.skuText = skuText
+              draft.curItem = curItem
+            })
+          }}
+        />
 
-      {/* 购物车弹框 */}
-      <CompAddCart
-        open={open}
-        onMaskCloses={() =>
-          setState((draft) => {
-            draft.open = false
-          })
-        }
-        parameter={parameter}
-      />
+        {/* 购物车弹框 */}
+        <CompAddCart
+          open={open}
+          onMaskCloses={() =>
+            setState((draft) => {
+              draft.open = false
+            })
+          }
+          parameter={parameter}
+        />
 
-      <SpLogin ref={loginRef} />
+        <SpLogin ref={loginRef} />
+      </ScrollView>
     </SpPage>
   )
 }

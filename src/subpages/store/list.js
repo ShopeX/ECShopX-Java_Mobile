@@ -11,12 +11,13 @@ import { SpPage, SpScrollView, SpAddress } from '@/components'
 import { updateLocation, updateChooseAddress } from '@/store/slices/user'
 import { updateShopInfo } from '@/store/slices/shop'
 import api from '@/api'
-import { useLogin } from '@/hooks'
+import { useLogin, useNavigation } from '@/hooks'
+import { useTranslation, $t, i18n } from '@/i18n'
 import { SG_ROUTER_PARAMS, SG_CHECK_STORE_RULE } from '@/consts/localstorage'
 import doc from '@/doc'
+import * as shopDoc from '@/doc/shop'
 import { entryLaunch, pickBy, classNames, showToast, log, isArray, isObject } from '@/utils'
 import CompShopItem from './comps/comp-shopitem'
-
 import './list.scss'
 
 const defaultChooseValue = ['北京市', '北京市', '昌平区']
@@ -42,6 +43,8 @@ const initialState = {
 }
 
 function NearlyShop(props) {
+  useTranslation()
+  const { setNavigationBarTitle } = useNavigation()
   const { isLogin } = useLogin({
     autoLogin: false,
     policyUpdateHook: (isUpdate) => {
@@ -70,6 +73,13 @@ function NearlyShop(props) {
   const shopRef = useRef()
   const pageRef = useRef()
   const dispatch = useDispatch()
+
+  useEffect(() => {
+    const syncTitle = () => setNavigationBarTitle($t('5cfe28e8.a4d703'))
+    syncTitle()
+    i18n.on('languageChanged', syncTitle)
+    return () => i18n.off('languageChanged', syncTitle)
+  }, [setNavigationBarTitle])
 
   useEffect(() => {
     fetchDefaultShop()
@@ -126,7 +136,8 @@ function NearlyShop(props) {
       pageSize,
       type,
       search_type: 2, // 1=搜索商品；2=搜索门店
-      sort_type: 1
+      sort_type: 1,
+      is_valid: true
     }
 
     // 构建位置相关参数
@@ -142,6 +153,17 @@ function NearlyShop(props) {
         params = {
           ...params,
           name: keyword
+        }
+      }
+      // 默认 filterType 为 1，但首页等已用 getAreaByJwd 写入 location 时仍应带经纬度拉附近门店
+      if (location?.lat && location?.lng) {
+        params = {
+          ...params,
+          lat: location.lat,
+          lng: location.lng,
+          province: location.province,
+          city: location.city,
+          area: location.district
         }
       }
     } else if (filterType == 2) {
@@ -178,7 +200,7 @@ function NearlyShop(props) {
     const { list, total_count: total, defualt_address, is_recommend } = await api.shop.list(params)
     // 未开启店铺隔离时，直接获取所有店铺数据
     setState((draft) => {
-      draft.shopList = draft.shopList.concat(pickBy(list, doc.shop.SHOP_ITEM))
+      draft.shopList = draft.shopList.concat(pickBy(list, shopDoc.SHOP_ITEM))
       draft.isRecommend = is_recommend === 1
       draft.defualt_address = defualt_address
       draft.refresh = false
@@ -277,7 +299,7 @@ function NearlyShop(props) {
   }
 
   return (
-    <SpPage className='page-store-list' ref={pageRef}>
+    <SpPage className='page-store-list' ref={pageRef} title={$t('5cfe28e8.a4d703')}>
       <View className='search-block'>
         <View className='search-bar'>
           {/* <View className='region-picker'>
@@ -298,7 +320,7 @@ function NearlyShop(props) {
             <Text className='iconfont icon-sousuo-01'></Text>
             <Input
               className='search-comp'
-              placeholder='请输入想搜索的店铺'
+              placeholder={$t('02473b99.682680')}
               confirmType='search'
               value={state.keyword}
               onInput={onInputChange}
@@ -312,21 +334,25 @@ function NearlyShop(props) {
       </View>
 
       <View className='location-block'>
-        <View className='block-title'>当前定位地址</View>
+        <View className='block-title'>{$t('02473b99.0e93e0')}</View>
         <View className='location-wrap'>
-          <Text className='location-address'>{location?.address || '无法获取您的位置信息'}</Text>
+          <Text className='location-address'>{location?.address || $t('02473b99.3c7849')}</Text>
           <View className='btn-location' onClick={getLocationInfo}>
             <Text
               className={classNames('iconfont icon-zhongxindingwei', {
                 active: state.locationIng
               })}
             ></Text>
-            {location?.address ? (state.locationIng ? '定位中...' : '重新定位') : '开启定位'}
+            {location?.address
+              ? state.locationIng
+                ? $t('02473b99.2c4006')
+                : $t('02473b99.b915af')
+              : $t('02473b99.846faf')}
           </View>
         </View>
         {address?.county && isToken && (
           <View className='block-title block-flex'>
-            <View>我的收货地址</View>
+            <View>{$t('02473b99.abbe43')}</View>
           </View>
         )}
 
@@ -340,7 +366,9 @@ function NearlyShop(props) {
       </View>
 
       <View className='nearlyshop-list'>
-        <View className='list-title'>{location?.address ? '附近门店' : '推荐门店'}</View>
+        <View className='list-title'>
+          {location?.address ? $t('02473b99.81b37c') : $t('02473b99.5a166b')}
+        </View>
         <SpScrollView ref={shopRef} auto={false} className='shoplist-block' fetch={fetchShop}>
           {state.shopList.map((item, index) => (
             <View

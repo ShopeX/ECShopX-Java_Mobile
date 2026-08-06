@@ -8,8 +8,9 @@ import { View, Text, Image, ScrollView } from '@tarojs/components'
 import { SpNote, BackToTop, Loading } from '@/components'
 import { pickBy } from '@/utils'
 import { withPager, withBackToTop } from '@/hocs'
-
 import api from '@/api'
+import * as mdugcApi from '@/api/mdugc'
+import { $t, i18n } from '@/i18n'
 
 import './index.scss'
 
@@ -26,7 +27,7 @@ export default class make_fabulous extends Component {
   }
 
   async componentDidMount() {
-    let { num } = this.$router.params
+    let { num } = this.$router?.params
     let data = {
       type: 'like'
     }
@@ -34,12 +35,25 @@ export default class make_fabulous extends Component {
     // num=Number(num)
     if (num) {
       console.log('触发num')
-      let { type } = await api.mdugc.messagesetTohasRead(data)
+      let { type } = await mdugcApi.messagesetTohasRead(data)
     }
     this.nextPage()
+    Taro.setNavigationBarTitle({ title: $t('8efcbbe9.4cec9b') })
+    this._onMakeFabulousLang = () => {
+      Taro.setNavigationBarTitle({ title: $t('8efcbbe9.4cec9b') })
+      this.forceUpdate()
+    }
+    i18n.on('languageChanged', this._onMakeFabulousLang)
   }
+
+  componentWillUnmount() {
+    if (this._onMakeFabulousLang) {
+      i18n.off('languageChanged', this._onMakeFabulousLang)
+    }
+  }
+
   config = {
-    navigationBarTitleText: '收到的赞'
+    navigationBarTitleText: ''
   }
   // 列表
   async fetch(params) {
@@ -49,7 +63,7 @@ export default class make_fabulous extends Component {
       pageSize,
       type: 'like'
     }
-    const { list, total_count: total } = await api.mdugc.messagelist(params)
+    const { list, total_count: total } = await mdugcApi.messagelist(params)
     console.log('list, total', list, total)
 
     const nList = pickBy(list, {
@@ -128,9 +142,9 @@ export default class make_fabulous extends Component {
                 )
               })}
             </View>
-            {page.isLoading && <Loading>正在加载...</Loading>}
+            {page.isLoading && <Loading>{$t('8efcbbe9.bd0271')}</Loading>}
             {!page.isLoading && !page.hasNext && !list.length && (
-              <SpNote img='trades_empty.png'>列表页为空!</SpNote>
+              <SpNote img='trades_empty.png'>{$t('8efcbbe9.1feb58')}</SpNote>
             )}
           </ScrollView>
         </View>

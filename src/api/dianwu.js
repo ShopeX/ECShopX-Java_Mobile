@@ -18,6 +18,16 @@ export function addToCart(params) {
   return req.post('/operator/cartdataadd', params)
 }
 
+// 商品加入立即下单
+export function cartFastBuyAdd(params) {
+  return req.post('/operator/cartfastbuyadd', params)
+}
+
+// 移动收银选择会员后同步会话（POST body；company_id 由 req 拦截器注入，与 cartdataadd 一致）
+export function memberReady(params) {
+  return req.post('/operator/member/ready', params)
+}
+
 // 扫码加入收银台
 export function scanAddToCart(params) {
   return req.post('/operator/scancodeAddcart', params)

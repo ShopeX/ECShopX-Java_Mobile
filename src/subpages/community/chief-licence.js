@@ -7,27 +7,34 @@ import { useSelector } from 'react-redux'
 import { useImmer } from 'use-immer'
 import Taro, { getCurrentInstance } from '@tarojs/taro'
 import api from '@/api'
+import * as communityApi from '@/api/community'
 import doc from '@/doc'
 import { View, ScrollView, RichText } from '@tarojs/components'
 import { SpPage } from '@/components'
 import { isWeb, isAlipay, htmlStringToNodeArray } from '@/utils'
+import { useTranslation, $t } from '@/i18n'
 import './chief-licence.scss'
 
 const initialState = {
   content: ''
 }
 function PointRule(props) {
+  const { i18n } = useTranslation()
   const [state, setState] = useImmer(initialState)
-  const $instance = getCurrentInstance()
+  const $instance = getCurrentInstance() || {}
   const { content } = state
+
+  useEffect(() => {
+    Taro.setNavigationBarTitle({ title: $t('10555bbd.dd530f') })
+  }, [i18n.language])
 
   useEffect(() => {
     aggrementAndExplanation()
   }, [])
 
   const aggrementAndExplanation = async () => {
-    const { distributor_id } = $instance.router.params
-    const { aggrement } = await api.community.aggrementAndExplanation({ distributor_id })
+    const { distributor_id } = $instance?.router?.params
+    const { aggrement } = await communityApi.aggrementAndExplanation({ distributor_id })
     setState((draft) => {
       draft.content = aggrement
     })

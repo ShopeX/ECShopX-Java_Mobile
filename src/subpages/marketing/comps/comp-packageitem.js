@@ -3,14 +3,13 @@
  * See LICENSE file for license details.
  */
 import React, { useEffect } from 'react'
-import { useSelector } from 'react-redux'
-import Taro from '@tarojs/taro'
 import { View } from '@tarojs/components'
 import { useImmer } from 'use-immer'
 import { SpCheckboxNew, SpGoodsCell, SpSkuSelect } from '@/components'
 import api from '@/api'
 import { pickBy } from '@/utils'
 import doc from '@/doc'
+import { useTranslation, $t } from '@/i18n'
 import './comp-packageitem.scss'
 
 const initialState = {
@@ -27,6 +26,7 @@ const initialState = {
 
 const MSpSkuSelect = React.memo(SpSkuSelect)
 function CompPackageItem(props) {
+  useTranslation()
   const { info, onChange } = props
   const [state, setState] = useImmer(initialState)
   const {
@@ -102,6 +102,7 @@ function CompPackageItem(props) {
 
   const onChangeSkuSelect = (specText, curItem) => {
     console.log(specText, curItem)
+    if (!curItem || !curItem.itemId) return
     if (curGoodsType == 0) {
       setState((draft) => {
         draft.mainGoods.specText = specText
@@ -114,7 +115,6 @@ function CompPackageItem(props) {
       })
     } else {
       setState((draft) => {
-        console.log(package_price[curItem.itemId].price)
         draft.makeUpGoods[curMakeUpGoodsIndex].specText = specText
         draft.makeUpGoods[curMakeUpGoodsIndex]['curItem'] = {
           ...curItem,
@@ -140,7 +140,9 @@ function CompPackageItem(props) {
       if (mainGoods.curItem) {
         itemId = mainGoods.curItem.itemId
         // packageTotalPrice += mainGoods.curItem.packagePrice
-        packageTotalPrice += main_package_price[itemId].price / 100
+        packageTotalPrice += main_package_price?.[itemId]?.price
+          ? main_package_price[itemId].price / 100
+          : mainGoods.curItem?.price || 0
       }
     }
     makeUpGoods.forEach((goods) => {
@@ -153,7 +155,9 @@ function CompPackageItem(props) {
           if (goods.curItem) {
             sitemIds.push(goods.curItem.itemId)
             // packageTotalPrice += goods.curItem.packagePrice
-            packageTotalPrice += package_price[goods.curItem.itemId].price / 100
+            packageTotalPrice += package_price?.[goods.curItem.itemId]?.price
+              ? package_price[goods.curItem.itemId].price / 100
+              : goods.curItem?.price || 0
           } else {
             sitemIds.push(null)
           }
@@ -166,9 +170,9 @@ function CompPackageItem(props) {
   console.log('makeUpGoods:', makeUpGoods)
   return (
     <View className='comp-packageitem'>
-      <View className='main-goods'>主商品</View>
+      <View className='main-goods'>{$t('d95e19a2.91b4c9')}</View>
       <SpGoodsCell info={mainGoods} onSelectSku={onSelectSku.bind(this, 0, null)} />
-      <View className='select-goods'>可选商品</View>
+      <View className='select-goods'>{$t('6c0659eb.809ab0')}</View>
       {makeUpGoods.map((item, index) => (
         <View className='makeup-goods-item' key={`makeup-goods-item__${index}`}>
           <SpCheckboxNew

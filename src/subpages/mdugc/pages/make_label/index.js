@@ -4,14 +4,13 @@
  */
 import React, { Component } from 'react'
 import Taro from '@tarojs/taro'
-import { View, Text, Image, ScrollView } from '@tarojs/components'
-
-import { SpNote, BackToTop, Loading } from '@/components'
+import { View, ScrollView } from '@tarojs/components'
+import { BackToTop, Loading } from '@/components'
 import { connect } from 'react-redux'
 import { pickBy, styleNames, getThemeStyle } from '@/utils'
 import { withPager, withBackToTop } from '@/hocs'
-
-import api from '@/api'
+import * as mdugcApi from '@/api/mdugc'
+import { $t, i18n } from '@/i18n'
 import { SearchBar } from '../../components'
 import './index.scss'
 
@@ -31,10 +30,23 @@ export default class make_label extends Component {
   }
 
   componentDidMount() {
+    Taro.setNavigationBarTitle({ title: $t('b38f25a1.736eaa') })
+    this._onMakeLabelLang = () => {
+      Taro.setNavigationBarTitle({ title: $t('b38f25a1.736eaa') })
+      this.forceUpdate()
+    }
+    i18n.on('languageChanged', this._onMakeLabelLang)
     this.nextPage()
   }
+
+  componentWillUnmount() {
+    if (this._onMakeLabelLang) {
+      i18n.off('languageChanged', this._onMakeLabelLang)
+    }
+  }
+
   config = {
-    navigationBarTitleText: '添加标签'
+    navigationBarTitleText: ''
   }
   componentDidShow() {
     Taro.setNavigationBarColor({
@@ -89,7 +101,7 @@ export default class make_label extends Component {
       pageSize,
       tag_name: val
     }
-    const { list, total_count: total } = await api.mdugc.taglist(params)
+    const { list, total_count: total } = await mdugcApi.taglist(params)
     console.log('list, total', list, total)
 
     const nList = pickBy(list, {
@@ -134,7 +146,7 @@ export default class make_label extends Component {
       user_id: memberData.memberInfo.user_id,
       tag_name: val
     }
-    let { tag_id, tag_name, message, status } = await api.mdugc.tagcreate(data)
+    let { tag_id, tag_name, message, status } = await mdugcApi.tagcreate(data)
     if (status == 1) {
       this.topages({ tag_name, tag_id })
     }
@@ -154,7 +166,7 @@ export default class make_label extends Component {
             onChange={this.shonChange.bind(this)}
             onClear={this.shonClear.bind(this)}
             onConfirm={this.shonConfirm.bind(this)}
-            _placeholder='请输入'
+            _placeholder={$t('b38f25a1.02cc4f')}
             maxLength='20'
             keyword={val}
           ></SearchBar>
@@ -181,7 +193,7 @@ export default class make_label extends Component {
                     onClick={this.addtag.bind(this)}
                   >
                     <View className='ugcindex_list__scroll_scrolls_item_r_icon iconfont icon-tianjia1'></View>
-                    添加标签
+                    {$t('b38f25a1.736eaa')}
                   </View>
                 </View>
               ) : null}
@@ -197,7 +209,7 @@ export default class make_label extends Component {
                 )
               })}
             </View>
-            {page.isLoading && <Loading>正在加载...</Loading>}
+            {page.isLoading && <Loading>{$t('b38f25a1.bd0271')}</Loading>}
             {/* {
                 !page.isLoading && !page.hasNext && !list.length
                 && (<SpNote img='trades_empty.png'>列表页为空!</SpNote>)

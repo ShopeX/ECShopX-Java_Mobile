@@ -9,15 +9,16 @@ import { Loading, SpImg, SpNote, SpNavBar } from '@/components'
 import { classNames, pickBy, getCurrentRoute } from '@/utils'
 import { AtTabBar } from 'taro-ui'
 import S from '@/spx'
+import { withTranslation } from 'react-i18next'
 import { withPager, withBackToTop } from '@/hocs'
+import { $t } from '@/i18n'
 import api from '@/api'
-
 import './shop-category.scss'
 
 @withPager
 @withBackToTop
-export default class DistributionShopCategory extends Component {
-  $instance = getCurrentInstance()
+class DistributionShopCategory extends Component {
+  $instance = getCurrentInstance() || {}
   constructor(props) {
     super(props)
 
@@ -27,14 +28,14 @@ export default class DistributionShopCategory extends Component {
       currentIndex: 0,
       tabList: [
         {
-          title: '小店首页',
+          title: '',
           iconType: 'home',
           iconPrefixClass: 'iconfont icon',
           url: '/subpages/salesman/distribution/shop-home',
           urlRedirect: true
         },
         {
-          title: '分类',
+          title: '',
           iconType: 'category',
           iconPrefixClass: 'iconfont icon',
           url: '/subpages/salesman/distribution/shop-category',
@@ -63,7 +64,7 @@ export default class DistributionShopCategory extends Component {
   }
 
   async fetchInfo() {
-    const options = this.$instance.router.params
+    const options = this.$instance?.router?.params
     const { userId } = Taro.getStorageSync('userinfo')
     const distributionShopId = Taro.getStorageSync('distribution_shop_id')
     const query = {
@@ -88,14 +89,14 @@ export default class DistributionShopCategory extends Component {
         hasSeries: false,
         tabList: [
           {
-            title: '小店首页',
+            title: '',
             iconType: 'home',
             iconPrefixClass: 'iconfont icon',
             url: `/subpages/salesman/distribution/shop-home?featuredshop=${options.featuredshop}`,
             urlRedirect: true
           },
           {
-            title: '分类',
+            title: '',
             iconType: 'category',
             iconPrefixClass: 'iconfont icon',
             url: `/subpages/salesman/distribution/shop-category?featuredshop=${options.featuredshop}`,
@@ -112,7 +113,7 @@ export default class DistributionShopCategory extends Component {
   async fetch(params) {
     const { page_no: page, page_size: pageSize } = params
     const { defaultId } = this.state
-    const options = this.$instance.router.params
+    const options = this.$instance?.router?.params
     const { userId } = Taro.getStorageSync('userinfo')
     const distributionShopId = Taro.getStorageSync('distribution_shop_id')
 
@@ -184,7 +185,7 @@ export default class DistributionShopCategory extends Component {
       const curTab = this.state.tabList[current]
       const { url, urlRedirect } = curTab
 
-      const fullPath = getCurrentRoute(this.$instance.router).fullPath.split('?')[0]
+      const fullPath = getCurrentRoute(this.$instance?.router).fullPath.split('?')[0]
       if (url && fullPath !== url) {
         if (!urlRedirect || (url === '/subpages/member/index' && !S.getAuthToken())) {
           Taro.navigateTo({ url })
@@ -196,7 +197,7 @@ export default class DistributionShopCategory extends Component {
   }
 
   handleClickItem = (item) => {
-    const options = this.$instance.router.params
+    const options = this.$instance?.router?.params
     const { userId } = Taro.getStorageSync('userinfo')
     const distributionShopId = Taro.getStorageSync('distribution_shop_id')
     let id = distributionShopId || userId
@@ -221,9 +222,13 @@ export default class DistributionShopCategory extends Component {
     const { list, hasSeries, tabList, localCurrent, contentList, currentIndex, page, scrollTop } =
       this.state
     const isHaveLeft = list.length > 0
+    const displayTabList = tabList.map((item, index) => ({
+      ...item,
+      title: index === 0 ? $t('e6f782b6.b8286c') : $t('e6f782b6.d0771a')
+    }))
     return (
       <View className='page-category-index'>
-        <SpNavBar title='分类' leftIconType='chevron-left' fixed='true' />
+        <SpNavBar title={$t('e6f782b6.d0771a')} leftIconType='chevron-left' fixed='true' />
         <View
           className={`${
             hasSeries && tabList.length !== 0 ? 'category-comps' : 'category-comps-not'
@@ -287,16 +292,23 @@ export default class DistributionShopCategory extends Component {
                       </View>
                     ))}
                 </View>
-                {page.isLoading ? <Loading>正在加载...</Loading> : null}
+                {page.isLoading ? <Loading>{$t('e6f782b6.bd0271')}</Loading> : null}
                 {!page.isLoading && !page.hasNext && !contentList.length && (
-                  <SpNote img='trades_empty.png'>暂无数据~</SpNote>
+                  <SpNote img='trades_empty.png'>{$t('e6f782b6.ba1de9')}</SpNote>
                 )}
               </ScrollView>
             </View>
           </View>
         </View>
-        <AtTabBar fixed tabList={tabList} onClick={this.handleClick} current={localCurrent} />
+        <AtTabBar
+          fixed
+          tabList={displayTabList}
+          onClick={this.handleClick}
+          current={localCurrent}
+        />
       </View>
     )
   }
 }
+
+export default withTranslation()(DistributionShopCategory)

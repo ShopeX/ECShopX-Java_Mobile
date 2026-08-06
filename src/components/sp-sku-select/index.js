@@ -36,6 +36,7 @@ import {
   VERSION_STANDARD,
   isWeb
 } from '@/utils'
+import { useTranslation, $t, ti } from '@/i18n'
 import './index.scss'
 
 // 数据类型
@@ -55,65 +56,13 @@ const initialState = {
   skuText: '',
   num: 1,
   loading: false,
-  minNum: 1,
-  groupSkuInvalid: false
+  minNum: 1
 }
 const $instance = Taro.getCurrentInstance()
-
-const getGroupActivityList = (activityInfo) => {
-  if (!activityInfo) {
-    return null
-  }
-  if (activityInfo.list && typeof activityInfo.list === 'object') {
-    return activityInfo.list
-  }
-  if (Array.isArray(activityInfo.items) && activityInfo.items.length > 0) {
-    const list = {}
-    activityInfo.items.forEach((item) => {
-      list[String(item.item_id)] = {
-        item_id: item.item_id,
-        activity_price: item.act_price,
-        store: item.store
-      }
-    })
-    return list
-  }
-  return null
-}
-
-const applyGroupSkuActivity = (skuItem, info) => {
-  if (!skuItem || info.activityType !== 'group') {
-    return { item: skuItem, groupSkuInvalid: false }
-  }
-  const list = getGroupActivityList(info.activityInfo)
-  if (!list || Object.keys(list).length === 0) {
-    return { item: skuItem, groupSkuInvalid: true }
-  }
-  const row = list[skuItem.itemId] || list[String(skuItem.itemId)]
-  if (!row) {
-    return { item: skuItem, groupSkuInvalid: true }
-  }
-  const actPrice = Number(row.activity_price) / 100
-  const actStore = Number(row.store)
-  const productStore = Number(skuItem.store)
-  let store = productStore
-  if (!isNaN(actStore) && actStore >= 0) {
-    store = !isNaN(productStore) && productStore >= 0 ? Math.min(actStore, productStore) : actStore
-  }
-  return {
-    item: {
-      ...skuItem,
-      activityPrice: actPrice,
-      store
-    },
-    groupSkuInvalid: false
-  }
-}
 
 function SpSkuSelect(props) {
   const {
     info,
-    teamId = null,
     open = false,
     onClose = () => {},
     onChange = () => {},
@@ -124,7 +73,7 @@ function SpSkuSelect(props) {
   } = props
   // const [state, setState] = useImmer(initialState)
   const [state, setState] = useAsyncCallback(initialState)
-  const { selection, disabledSet, curItem, skuText, num, loading, minNum, groupSkuInvalid } = state
+  const { selection, disabledSet, curItem, skuText, num, loading, minNum } = state
   const { customerLnformation } = useSelector((state) => state.cart)
   const { shopInfo } = useSelector((state) => state.shop)
   const dispatch = useDispatch()
@@ -159,13 +108,18 @@ function SpSkuSelect(props) {
   // }, [open])
 
   const init = () => {
-    const { skuList, specItems } = info
+    const { skuList, specItems, curItem } = info
     console.log('skuList:', skuList)
     console.log('specItems:', specItems)
+    skuDictRef.current = {}
     specItems.forEach((item) => {
       const key = item.specItem.map((spec) => spec.specId).join('_')
       skuDictRef.current[key] = item
     })
+    // 优先使用上一次已选择的规格，避免重新打开后回退到默认规格
+    const matchedSelectedSpecItem = curItem?.itemId
+      ? specItems.find((item) => `${item.itemId}` === `${curItem.itemId}`)
+      : null
     // 默认选中有库存并且前端可销售的sku
     let defaultSpecItem = specItems.find(
       (item) => item.store > 0 && ['onsale'].includes(item.approveStatus)
@@ -176,8 +130,9 @@ function SpSkuSelect(props) {
     }
 
     let selection = Array(skuList.length).fill(null)
-    if (defaultSpecItem) {
-      selection = defaultSpecItem.specItem.map((item) => item.specId)
+    const targetSpecItem = matchedSelectedSpecItem || defaultSpecItem
+    if (targetSpecItem) {
+      selection = targetSpecItem.specItem.map((item) => item.specId)
     }
 
     calcDisabled(selection)
@@ -252,18 +207,16 @@ function SpSkuSelect(props) {
       disabledSet
     )
 
-    const rawItem = skuDictRef.current[selection.join('_')]
-    const { item: curItem, groupSkuInvalid } = applyGroupSkuActivity(rawItem, info)
-    const skuText = rawItem
-      ? `已选：${rawItem.specItem.map((item) => `${item.skuName}:${item.specName}`).join(',')}`
-      : '请选择规格'
+    const curItem = skuDictRef.current[selection.join('_')]
+    const skuText = curItem
+      ? `${curItem.specItem.map((item) => `${item.specName}`).join(' ')}`
+      : $t('46dc5ce5.4fd966')
 
     setState((draft) => {
       draft.selection = selection
       draft.disabledSet = disabledSet
       draft.curItem = curItem
       draft.skuText = skuText
-      draft.groupSkuInvalid = groupSkuInvalid
     })
 
     await specItemed(selection) //处理起订量
@@ -322,7 +275,7 @@ function SpSkuSelect(props) {
   const addToCart = async () => {
     const { nospec } = info
     if (!nospec && !curItem) {
-      showToast('请选择规格')
+      showToast($t('46dc5ce5.4fd966'))
       return
     }
     Taro.showLoading({ title: '' })
@@ -372,7 +325,7 @@ function SpSkuSelect(props) {
 
   const shopping = async () => {
     const { id, dtid } = await entryLaunch.getRouteParams()
-    const distributor_id = getDistributorId(id || dtid)
+    const distributor_id = getDistributorId(dtid || id)
     let params = {
       distributor_id,
       shop_type: 'distributor'
@@ -412,11 +365,7 @@ function SpSkuSelect(props) {
   const fastBuy = async () => {
     const { nospec } = info
     if (!nospec && !curItem) {
-      showToast('请选择规格')
-      return
-    }
-    if (info.activityType === 'group' && groupSkuInvalid) {
-      showToast('该规格未参与拼团')
+      showToast($t('46dc5ce5.4fd966'))
       return
     }
     Taro.showLoading({ title: '' })
@@ -443,7 +392,7 @@ function SpSkuSelect(props) {
       : `/pages/cart/espier-checkout?cart_type=fastbuy&shop_id=${distributorId}`
 
     if (VERSION_STANDARD) {
-      url += '&shop_type=distributor'
+      url += '&type=distributor'
     }
 
     if (activityType == 'seckill' || activityType === 'limited_time_sale') {
@@ -457,9 +406,6 @@ function SpSkuSelect(props) {
     } else if (activityType == 'group') {
       const { groups_activity_id } = activityInfo
       url += `&type=${activityType}&group_id=${groups_activity_id}`
-      if (teamId) {
-        url += `&team_id=${teamId}`
-      }
     }
     Taro.hideLoading()
     console.log('navigateTo:url', url)
@@ -470,11 +416,11 @@ function SpSkuSelect(props) {
   }
 
   const handleSubscribe = async () => {
-    const { dtid } = $instance.router.params
+    const { dtid } = $instance?.router?.params
     // console.log('onSubscribe:subscribe', subscribe)
 
     if (isWeb) {
-      showToast('请在小程序完成商品到货通知')
+      showToast($t('21544271.a793a0'))
       return
     }
 
@@ -488,7 +434,7 @@ function SpSkuSelect(props) {
     Taro.requestSubscribeMessage({
       tmplIds: template_id,
       success: () => {
-        showToast('订阅成功')
+        showToast($t('21544271.9f91d7'))
         onSubscribe()
       },
       fail: () => {
@@ -506,13 +452,6 @@ function SpSkuSelect(props) {
       }
     })
     const isNoStore = info.nospec ? info.store <= 0 : curItem?.store <= 0
-    if (info.activityType === 'group' && groupSkuInvalid) {
-      return (
-        <AtButton circle type='primary' disabled>
-          该规格未参与拼团
-        </AtButton>
-      )
-    }
     if (isNoStore) {
       return (
         <AtButton circle type='primary' onClick={handleSubscribe}>
@@ -522,7 +461,7 @@ function SpSkuSelect(props) {
     } else if (type == 'picker') {
       return (
         <AtButton circle type='primary' onClick={onClose}>
-          确定
+          {$t('b232790d.38cf16')}
         </AtButton>
       )
     } else if (type == 'addcart') {
@@ -532,10 +471,9 @@ function SpSkuSelect(props) {
         </AtButton>
       )
     } else {
-      const joinBtnTxt = teamId ? '我要参团' : btnTxt
       return (
         <AtButton circle loading={loading} type='primary' onClick={fastBuy}>
-          {joinBtnTxt}
+          {btnTxt}
         </AtButton>
       )
     }
@@ -552,9 +490,9 @@ function SpSkuSelect(props) {
       if (activityType == 'limited_buy') {
         limitNum = activityInfo.rule.limit
         if (activityInfo.rule.day == 0) {
-          limitTxt = `（限购${limitNum}件）`
+          limitTxt = ti('47ac6066.244ae6', [limitNum])
         } else {
-          limitTxt = `（每${activityInfo.rule.day}天，限购${limitNum}件）`
+          limitTxt = ti('47ac6066.21bb9b', [activityInfo.rule.day, limitNum])
         }
       } else if (activityType == 'seckill' || activityType == 'limited_time_sale') {
         if (nospec) {
@@ -564,7 +502,7 @@ function SpSkuSelect(props) {
             limitNum = curItem.limitNum
           }
         }
-        limitTxt = `（限购${limitNum}件）`
+        limitTxt = ti('47ac6066.244ae6', [limitNum])
       } else if (activityType == 'group') {
         limitNum = 1
       }
@@ -573,12 +511,12 @@ function SpSkuSelect(props) {
     // 内购加购限制 + 内购立即购买限制
     if (type == 'addcart' && purlimitByCart) {
       limitNum = purlimitByCart
-      limitTxt = `（限购${purlimitByCart}件）`
+      limitTxt = ti('47ac6066.244ae6', [purlimitByCart])
     }
 
     if (type == 'fastbuy' && purlimitByFastbuy) {
       limitNum = purlimitByFastbuy
-      limitTxt = `（限购${purlimitByFastbuy}件）`
+      limitTxt = ti('47ac6066.244ae6', [purlimitByFastbuy])
     }
 
     if (limitNum) {
@@ -592,8 +530,10 @@ function SpSkuSelect(props) {
     return (
       <View className='buy-count'>
         <View className='label'>
-          购买数量 {limitNum && <Text className='limit-count'>{limitTxt}</Text>}
-          {info.startNum > 0 && <Text className='limit-count'>(起订量{minNum}件)</Text>}
+          {$t('47ac6066.548ef4')} {limitNum && <Text className='limit-count'>{limitTxt}</Text>}
+          {info.startNum > 0 && (
+            <Text className='limit-count'>{ti('2043bbcc.989408', [minNum])}</Text>
+          )}
         </View>
 
         <SpInputNumber
@@ -632,10 +572,15 @@ function SpSkuSelect(props) {
             <SpPrice value={curItem ? curItem.price : info.price}></SpPrice>
             <SpPrice value={curItem ? curItem.marketPrice : info.marketPrice} lineThrough></SpPrice>
           </View> */}
+          <View className='title'>{info.itemName}</View>
           <SpGoodsPrice info={curItem || info} />
-          <View className='goods-sku-txt'>{skuText}</View>
+          <View className='goods-sku-txt'>
+            {curItem ? ti('47ac6066.aa995b', [skuText]) : skuText}
+          </View>
           {info.store_setting && (
-            <View className='goods-sku-store'>库存：{curItem ? curItem.store : info.store}</View>
+            <View className='goods-sku-store'>
+              {ti('a8427e1f.e203b0', [curItem ? curItem.store : info.store])}
+            </View>
           )}
         </View>
       </View>

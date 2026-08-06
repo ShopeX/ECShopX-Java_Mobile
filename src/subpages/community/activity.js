@@ -2,19 +2,19 @@
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
  */
-import React, { useRef } from 'react'
+import React, { useRef, useMemo, useEffect } from 'react'
 import { View, ScrollView, Image } from '@tarojs/components'
 import { AtModal } from 'taro-ui'
 import Taro, { getCurrentInstance } from '@tarojs/taro'
-import { SpPage, SpScrollView, SpFilterBar, SpPrice } from '@/components'
+import { SpPage, SpScrollView, SpPrice } from '@/components'
+import { SpFilterBar } from '@/subpages/components'
 import { pickBy, classNames, showToast } from '@/utils'
 import { useSelector } from 'react-redux'
 import { useImmer } from 'use-immer'
 import doc from '@/subpages/doc'
-import api from '@/api'
+import * as communityApi from '@/api/community'
 
-import CompTabbar from './comps/comp-tabbar'
-
+import { useTranslation, $t } from '@/i18n'
 import './activity.scss'
 
 const initialState = {
@@ -24,18 +24,26 @@ const initialState = {
   isOpened: false,
   currentInfo: {}
 }
-const tabList = [
-  { title: '默认', type: '' },
-  { title: '上新', type: 'create_time' },
-  { title: '销量', type: 'order_num' }
-]
-
 function ActivityPage() {
+  const { i18n } = useTranslation()
   const [state, setState] = useImmer(initialState)
   const { colorPrimary } = useSelector((state) => state.sys)
   const activityRef = useRef()
 
   const { activityList, curTabIdx, isOpened, currentInfo, tabType } = state
+
+  const tabList = useMemo(
+    () => [
+      { title: $t('f3965db2.18c634'), type: '' },
+      { title: $t('f3965db2.314ef5'), type: 'create_time' },
+      { title: $t('f3965db2.44e7eb'), type: 'order_num' }
+    ],
+    [i18n.language]
+  )
+
+  useEffect(() => {
+    Taro.setNavigationBarTitle({ title: $t('a948faa6.ff279c') })
+  }, [i18n.language])
 
   const fetch = async ({ pageIndex, pageSize }) => {
     let params = {
@@ -43,7 +51,7 @@ function ActivityPage() {
       pageSize,
       order_by: tabType
     }
-    const { list, total_count: total } = await api.community.getActivityList(params)
+    const { list, total_count: total } = await communityApi.getActivityList(params)
     const n_list = pickBy(list, doc.community.COMMUNITY_ACTIVITY_LIST)
     setState((draft) => {
       draft.activityList = [...activityList, ...n_list]
@@ -64,8 +72,8 @@ function ActivityPage() {
   const onModalChange = async (isOpened, type) => {
     if (type == 'confirm') {
       const { activityId } = currentInfo
-      api.community.confirmDelivery(activityId).then((res) => {
-        showToast('操作成功')
+      communityApi.confirmDelivery(activityId).then((res) => {
+        showToast($t('f3965db2.33130f'))
         setState((draft) => {
           draft.curTabIdx = 0
           draft.tabType = ''
@@ -87,8 +95,8 @@ function ActivityPage() {
   }
 
   const onCloseChange = async (info) => {
-    await api.community.closeCode({ activity_id: info.activityId }).then((res) => {
-      showToast('核销成功')
+    await communityApi.closeCode({ activity_id: info.activityId }).then((res) => {
+      showToast($t('f3965db2.065407'))
     })
   }
 
@@ -149,11 +157,11 @@ function ActivityPage() {
             <View className='page-community-activity-static'>
               <View className='activity-static'>
                 <SpPrice value={info.totalFee} unit='cent' primary />
-                <View className='activity-static-desc'>实际收入(元)</View>
+                <View className='activity-static-desc'>{$t('f3965db2.1ab793')}</View>
               </View>
               <View className='activity-static'>
                 <SpPrice value={info.orderNum || 0} noSymbol noDecimal />
-                <View className='activity-static-desc'>已跟团</View>
+                <View className='activity-static-desc'>{$t('f3965db2.54fec0')}</View>
               </View>
               {/* <View className='activity-static'>
                 <SpPrice value={20} noSymbol noDecimal />
@@ -171,7 +179,7 @@ function ActivityPage() {
                   className='footer-btn'
                   style={`border: 1PX solid ${colorPrimary}; color: ${colorPrimary}`}
                 >
-                  确认收货
+                  {$t('f3965db2.775b01')}
                 </View>
               )}
               {info.canWriteoff == 1 && (
@@ -180,7 +188,7 @@ function ActivityPage() {
                   className='footer-btn'
                   style={`border: 1PX solid ${colorPrimary}; color: ${colorPrimary}`}
                 >
-                  批量核销
+                  {$t('f3965db2.177245')}
                 </View>
               )}
             </View>
@@ -190,9 +198,9 @@ function ActivityPage() {
       <AtModal
         isOpened={isOpened}
         className='activity-modal'
-        cancelText='取消'
-        confirmText='确认'
-        content='是否确认收货'
+        cancelText={$t('f3965db2.625fb2')}
+        confirmText={$t('f3965db2.e83a25')}
+        content={$t('f3965db2.b5c60b')}
         closeOnClickOverlay={false}
         onCancel={() => onModalChange(false, 'cancel')}
         onConfirm={() => onModalChange(false, 'confirm')}

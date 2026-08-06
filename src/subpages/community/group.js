@@ -7,19 +7,14 @@ import { useSelector, useDispatch } from 'react-redux'
 import { useImmer } from 'use-immer'
 import Taro, { getCurrentInstance } from '@tarojs/taro'
 import { View, Text, Picker, ScrollView } from '@tarojs/components'
-import {
-  SpPage,
-  SpImage,
-  SpButton,
-  SpUpload,
-  SpCell,
-  SpPicker,
-  SpInput as AtInput
-} from '@/components'
-import { AtButton, AtTextarea } from 'taro-ui'
+import { SpPage, SpImage, SpButton, SpUpload, SpCell, SpInput } from '@/components'
+import { SpPicker } from '@/subpages/components'
+import { AtButton, AtTextarea, AtInput } from 'taro-ui'
 import imgUploader from '@/utils/upload'
 import { classNames, showToast, pickBy } from '@/utils'
+import { useTranslation, $t } from '@/i18n'
 import api from '@/api'
+import * as communityApi from '@/api/community'
 import doc from '@/subpages/doc'
 import { updateSelectGoods, updateSelectCommunityZiti } from '@/store/slices/community'
 import dayjs from 'dayjs'
@@ -27,8 +22,8 @@ import CompGoodsItem from './comps/comp-goodsitem'
 import './group.scss'
 
 const COMPS_LIST = [
-  { name: '大图', icon: 'icon-picture', key: 'bigimage' },
-  { name: '文字', icon: 'icon-bianji1', key: 'text' }
+  { labelKey: 'fb7ff6e1.780c04', icon: 'icon-picture', key: 'bigimage' },
+  { labelKey: 'fb7ff6e1.ca746b', icon: 'icon-bianji1', key: 'text' }
 ]
 
 const initialState = {
@@ -47,17 +42,18 @@ const initialState = {
   shareImageUrl: ''
 }
 function Group(props) {
+  useTranslation()
   const [state, setState] = useImmer(initialState)
   const { userInfo = {} } = useSelector((state) => state.user)
   const { selectCommunityZiti, selectGoods } = useSelector((state) => state.community)
   const { qrcode, activityName, comps, startDate, startTime, endDate, endTime, shareImageUrl } =
     state
   const dispatch = useDispatch()
-  const $instance = getCurrentInstance()
+  const $instance = getCurrentInstance() || {}
   const pageRef = useRef('')
 
   useEffect(() => {
-    if ($instance.router.params.id) {
+    if ($instance?.router?.params.id) {
       fetchActivity()
     }
     Taro.nextTick(() => {
@@ -66,7 +62,7 @@ function Group(props) {
   }, [])
 
   const fetchActivity = async () => {
-    const res = await api.community.getChiefActivity($instance.router.params.id)
+    const res = await communityApi.getChiefActivity($instance?.router?.params.id)
     console.log('fetchDetail:', pickBy(res, doc.community.COMMUNITY_ACTIVITY_ITEM))
     const { activityIntro, activityName, activityPics, startTime, endTime, shareImageUrl } = pickBy(
       res,
@@ -116,9 +112,9 @@ function Group(props) {
     }
   }
 
-  const getCompName = ({ type }) => {
+  const getCompLabel = ({ type }) => {
     const res = COMPS_LIST.find((item) => item.key == type)
-    return res.name
+    return res ? $t(res.labelKey) : ''
   }
 
   const handleClickAction = async ({ type }, action, index) => {
@@ -153,7 +149,7 @@ function Group(props) {
         break
       case 'delete':
         const { confirm } = await Taro.showModal({
-          content: '请确认是否删除'
+          content: $t('fb7ff6e1.daedc7')
         })
         if (confirm) {
           tempComps.splice(index, 1)
@@ -181,7 +177,7 @@ function Group(props) {
 
   const createChiefActivity = async () => {
     if (!activityName) {
-      return showToast('请填写团购活动标题')
+      return showToast($t('fb7ff6e1.8ee7c2'))
     }
 
     // if (qrcode.length == 0) {
@@ -191,27 +187,27 @@ function Group(props) {
     const comp = comps.find((item) => !item.value)
     if (comp) {
       if (comp.type == 'text') {
-        return showToast('请输入团购活动内容')
+        return showToast($t('fb7ff6e1.19c54d'))
       }
       if (comp.type == 'bigimage') {
-        return showToast('请添加团购活动图片')
+        return showToast($t('fb7ff6e1.560fb7'))
       }
     }
 
     if (selectGoods.length == 0) {
-      return showToast('请选择团购商品')
+      return showToast($t('fb7ff6e1.25e390'))
     }
 
     if (!selectCommunityZiti) {
-      return showToast('请选择自提地址')
+      return showToast($t('edc703ce.cb8251'))
     }
 
     if (!startDate || !startTime) {
-      return showToast('请输入团购开始时间')
+      return showToast($t('fb7ff6e1.6a4b8c'))
     }
 
     if (!endDate || !endTime) {
-      return showToast('请输入团购结束时间')
+      return showToast($t('fb7ff6e1.76caf1'))
     }
 
     const params = {
@@ -224,20 +220,20 @@ function Group(props) {
       end_time: `${endDate} ${endTime}`,
       share_image_url: shareImageUrl
     }
-    let cur_id = $instance.router.params.id
+    let cur_id = $instance?.router?.params.id
     let act_id
     // 修改活动
     if (cur_id) {
-      await api.community.modiflyChiefActivity(cur_id, params)
+      await communityApi.modiflyChiefActivity(cur_id, params)
       act_id = cur_id
     } else {
-      const { activity_id } = await api.community.createChiefActivity(params)
+      const { activity_id } = await communityApi.createChiefActivity(params)
       act_id = activity_id
     }
 
     dispatch(updateSelectGoods([]))
     dispatch(updateSelectCommunityZiti(null))
-    showToast(cur_id ? '活动修改成功' : '活动添加成功')
+    showToast(cur_id ? $t('fb7ff6e1.ec1cf6') : $t('fb7ff6e1.265420'))
     setTimeout(() => {
       if (cur_id) {
         Taro.navigateBack()
@@ -273,7 +269,7 @@ function Group(props) {
       renderFooter={
         <View className='btn-group'>
           <AtButton circle type='primary' onClick={createChiefActivity}>
-            发布团购
+            {$t('fb7ff6e1.965178')}
           </AtButton>
         </View>
       }
@@ -289,18 +285,18 @@ function Group(props) {
           </View>
         </View>
         <View className='card-block'>
-          <View className='card-block-hd'>团购介绍</View>
+          <View className='card-block-hd'>{$t('fb7ff6e1.2603c1')}</View>
           <View className='card-block-bd padding-20'>
             <View className='tipas'>
               <AtInput
                 name='activityName'
                 value={activityName}
                 className='group-name'
-                placeholder='请输入团购活动标题'
+                placeholder={$t('fb7ff6e1.befbc4')}
                 onChange={onInputChange.bind(this, 'activityName')}
               />
             </View>
-            <View className='tip'>添加群或个人微信二维码，方便团员取得联系</View>
+            <View className='tip'>{$t('fb7ff6e1.e53fa1')}</View>
 
             <View className='teamhead-barcode'>
               <SpUpload
@@ -316,37 +312,37 @@ function Group(props) {
               {comps?.map((item, index) => (
                 <View className='comp-item-wrap' key={`comp-item__${index}`}>
                   <View className='comp-info'>
-                    <Text className='comp-name'>{getCompName(item)}</Text>
+                    <Text className='comp-name'>{getCompLabel(item)}</Text>
                     <View className='bt-group'>
                       <View
                         className={classNames('btn-text', { disabled: index == 0 })}
                         onClick={handleClickAction.bind(this, item, 'up', index)}
                       >
-                        上移
+                        {$t('fb7ff6e1.315eac')}
                       </View>
                       <View
                         className={classNames('btn-text', { disabled: index == comps.length - 1 })}
                         onClick={handleClickAction.bind(this, item, 'down', index)}
                       >
-                        下移
+                        {$t('fb7ff6e1.17acd2')}
                       </View>
                       <View
                         className={classNames('btn-text', { disabled: index == 0 })}
                         onClick={handleClickAction.bind(this, item, 'top', index)}
                       >
-                        置顶
+                        {$t('fb7ff6e1.3d43ff')}
                       </View>
                       <View
                         className='btn-text'
                         onClick={handleClickAction.bind(this, item, 'add', index)}
                       >
-                        添加
+                        {$t('fb7ff6e1.b58c75')}
                       </View>
                       <View
                         className='btn-text'
                         onClick={handleClickAction.bind(this, item, 'delete', index)}
                       >
-                        删除
+                        {$t('fb7ff6e1.2f4aad')}
                       </View>
                     </View>
                   </View>
@@ -355,7 +351,7 @@ function Group(props) {
                     <AtTextarea
                       name={`${item.type}__${index}`}
                       value={item.value}
-                      placeholder='请输入团购活动内容'
+                      placeholder={$t('fb7ff6e1.19c54d')}
                       count={false}
                       onChange={onTextAreaChange.bind(this, index)}
                     />
@@ -372,7 +368,7 @@ function Group(props) {
                 onClick={onCompsClick.bind(this, item)}
               >
                 <Text className={classNames('iconfont', item.icon)}></Text>
-                <Text className='btn-icon-txt'>{item.name}</Text>
+                <Text className='btn-icon-txt'>{$t(item.labelKey)}</Text>
               </View>
             ))}
           </View>
@@ -380,7 +376,7 @@ function Group(props) {
 
         <View className='card-block'>
           <View className='card-block-hd'>
-            <Text>团购商品</Text>
+            <Text>{$t('fb7ff6e1.80e092')}</Text>
             <View
               className='btn-import'
               onClick={() => {
@@ -389,7 +385,7 @@ function Group(props) {
                 })
               }}
             >
-              选品
+              {$t('fb7ff6e1.8687fa')}
             </View>
           </View>
           <View className='card-block-bd padding-20'>
@@ -402,11 +398,11 @@ function Group(props) {
         </View>
 
         <View className='card-block'>
-          <View className='card-block-hd'>团购设置</View>
+          <View className='card-block-hd'>{$t('fb7ff6e1.9a8425')}</View>
           <View className='card-block-bd'>
             <SpCell
               border
-              title='选择服务小区'
+              title={$t('fb7ff6e1.0f71a2')}
               isLink
               onClick={() => {
                 Taro.navigateTo({ url: '/subpages/community/picker-community' })
@@ -415,12 +411,12 @@ function Group(props) {
               {selectCommunityZiti ? (
                 <View className='ziti-info'>{selectCommunityZiti.zitiName}</View>
               ) : (
-                <View className='ziti-info placeholder'>选择服务小区</View>
+                <View className='ziti-info placeholder'>{$t('fb7ff6e1.0f71a2')}</View>
               )}
             </SpCell>
             {/* <SpCell border title="需要用户填写信息" isLink/> */}
 
-            <SpCell border title='团购开始时间' isLink>
+            <SpCell border title={$t('fb7ff6e1.480b70')} isLink>
               <View className='picker-container'>
                 <Picker
                   className='date-picker'
@@ -431,7 +427,7 @@ function Group(props) {
                     })
                   }}
                 >
-                  <View className='picker-value'>{startDate || '选择日期'}</View>
+                  <View className='picker-value'>{startDate || $t('fb7ff6e1.2bebdd')}</View>
                 </Picker>
                 <Picker
                   className='time-picker'
@@ -442,12 +438,12 @@ function Group(props) {
                     })
                   }}
                 >
-                  <View className='picker-value'>{startTime || '选择时间'}</View>
+                  <View className='picker-value'>{startTime || $t('fb7ff6e1.2c825a')}</View>
                 </Picker>
               </View>
             </SpCell>
 
-            <SpCell border title='团购结束时间' isLink>
+            <SpCell border title={$t('fb7ff6e1.70d851')} isLink>
               <View className='picker-container'>
                 <Picker
                   className='date-picker'
@@ -458,7 +454,7 @@ function Group(props) {
                     })
                   }}
                 >
-                  <View className='picker-value'>{endDate || '选择日期'}</View>
+                  <View className='picker-value'>{endDate || $t('fb7ff6e1.2bebdd')}</View>
                 </Picker>
                 <Picker
                   className='time-picker'
@@ -469,7 +465,7 @@ function Group(props) {
                     })
                   }}
                 >
-                  <View className='picker-value'>{endTime || '选择时间'}</View>
+                  <View className='picker-value'>{endTime || $t('fb7ff6e1.2c825a')}</View>
                 </Picker>
               </View>
             </SpCell>
@@ -490,8 +486,8 @@ function Group(props) {
           </View>
         </View>
         <View className='card-block share'>
-          <SpCell title='活动分享卡片封面' isLink>
-            <Text className='tips'>默认为页面首屏</Text>
+          <SpCell title={$t('fb7ff6e1.530ad7')} isLink>
+            <Text className='tips'>{$t('fb7ff6e1.472d02')}</Text>
             <SpImage onClick={onChooseClick} src={shareImageUrl} width={100} />
           </SpCell>
         </View>

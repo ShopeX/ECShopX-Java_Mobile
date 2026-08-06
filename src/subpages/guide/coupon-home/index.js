@@ -27,6 +27,8 @@ import {
   BaNavBar,
   BaCoupon
 } from '@/subpages/guide/components'
+import { SG_GUIDE_PARAMS } from '@/consts/localstorage'
+import { useTranslation, $t } from '@/i18n'
 import './index.scss'
 
 const initialState = {
@@ -34,11 +36,12 @@ const initialState = {
   footerHeight: 0
 }
 function GuideCouponIndex(props) {
+  const { i18n } = useTranslation()
   const { isLogin, login } = useQwLogin({
     autoLogin: true
   })
-  const $instance = getCurrentInstance()
-  const { subtask_id = '' } = getCurrentInstance().router.params
+  const $instance = getCurrentInstance() || {}
+  const { subtask_id = '' } = getCurrentInstance()?.router?.params
   const [state, setState] = useImmer(initialState)
   const { list } = state
   const couponRef = useRef()
@@ -54,6 +57,10 @@ function GuideCouponIndex(props) {
       couponRef.current.reset()
     }
   }, [isLogin])
+
+  useEffect(() => {
+    Taro.setNavigationBarTitle({ title: $t('1370bbc3.643cd0') })
+  }, [i18n.language])
 
   useDidShow(() => {
     Taro.hideShareMenu({
@@ -91,9 +98,10 @@ function GuideCouponIndex(props) {
   }
 
   const fetch = async () => {
-    const { card_id = '', item_id = '' } = $instance.router.params
-    const { distributor_id } = userInfo
+    const { card_id = '', item_id = '' } = $instance?.router?.params
+    const { distributor_id, work_userid: gu_user_id } = userInfo
     const params = {
+      work_userid: gu_user_id,
       end_date: 1,
       distributor_id,
       card_id,

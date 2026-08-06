@@ -9,29 +9,69 @@ import Taro from '@tarojs/taro'
 import api from '@/api'
 import doc from '@/doc'
 import { View, ScrollView, Text } from '@tarojs/components'
-import { SpImage, SpCouponPackage } from '@/components'
+import { SpImage, SpCouponPackage, SpLogin } from '@/components'
 import { classNames, styleNames, isWeixin, showToast } from '@/utils'
 import S from '@/spx'
+import { useTranslation, $t } from '@/i18n'
+import { SG_GUIDE_PARAMS } from '@/consts/localstorage'
 import './coupon.scss'
 
 const initialState = {
-  visibleCouponPkg: false
+  visibleCouponPkg: false,
+  showLoginModal: false,
+  pendingClaim: null // { type: 'coupon'|'pkg', item }
 }
 function WgtCoupon(props) {
+  useTranslation()
   const { base, data, voucher_package } = props.info
   const [state, setState] = useImmer(initialState)
-  const { visibleCouponPkg } = state
+  const { visibleCouponPkg, showLoginModal, pendingClaim } = state
+  const { gu } = Taro.getStorageSync(SG_GUIDE_PARAMS)
+  let work_userid = ''
+  if (gu) {
+    work_userid = gu.split('_')[0]
+  }
   useEffect(() => {}, [])
 
-  const handleClickItem = async ({ id }) => {
+  // 点击领取：未登录弹窗，已登录直接领
+  const onClaimCoupon = (item) => {
     if (!S.getAuthToken()) {
-      showToast('请先登录再领取')
-      Taro.navigateTo({
-        url: `/subpages/member/index`
+      setState((draft) => {
+        draft.showLoginModal = true
+        draft.pendingClaim = { type: 'coupon', item }
       })
       return
     }
+    doClaimCoupon(item)
+  }
 
+  const onClaimPkg = (item) => {
+    if (!S.getAuthToken()) {
+      setState((draft) => {
+        draft.showLoginModal = true
+        draft.pendingClaim = { type: 'pkg', item }
+      })
+      return
+    }
+    doClaimPkg(item)
+  }
+
+  // 登录弹窗成功回调：执行待领取并关闭弹窗
+  const onLoginSuccess = () => {
+    if (!pendingClaim) return
+    if (pendingClaim.type === 'coupon') {
+      doClaimCoupon(pendingClaim.item)
+    } else {
+      doClaimPkg(pendingClaim.item)
+    }
+    setState((draft) => {
+      draft.showLoginModal = false
+      draft.pendingClaim = null
+    })
+  }
+
+  // 单张优惠券领取
+  const doClaimCoupon = async (item) => {
     if (isWeixin) {
       const { template_id } = await api.user.newWxaMsgTmpl({
         temp_name: 'yykweishop',
@@ -40,38 +80,35 @@ function WgtCoupon(props) {
       Taro.requestSubscribeMessage({
         tmplIds: template_id,
         success: () => {
-          handleGetCard(id)
+          handleGetCard(item.id)
         },
         fail: () => {
-          handleGetCard(id)
+          handleGetCard(item.id)
         }
       })
     } else {
-      handleGetCard(id)
+      handleGetCard(item.id)
     }
   }
 
   // 券包领取
-  const handleClickItemPkg = async ({ package_id }) => {
-    if (!S.getAuthToken()) {
-      showToast('请先登录再领取')
-      Taro.navigateTo({
-        url: `/subpages/member/index`
-      })
-      return
-    }
-    await api.vip.getReceiveCardPackage({ package_id })
-    showToast('券包领取成功')
+  const doClaimPkg = async (item) => {
+    await api.vip.getReceiveCardPackage({ package_id: item.package_id })
+    showToast($t('e82b4bf3.5ccc9d'))
     setState((draft) => {
       draft.visibleCouponPkg = true
     })
   }
 
   const handleGetCard = async (id) => {
-    await api.member.homeCouponGet({
+    const params = {
       card_id: id
-    })
-    showToast('优惠券领取成功')
+    }
+    if (work_userid) {
+      params.work_userid = work_userid
+    }
+    await api.member.homeCouponGet(params)
+    showToast($t('e82b4bf3.ed4e1b'))
   }
 
   const len = data.length + (voucher_package?.length ?? 0)
@@ -108,12 +145,12 @@ function WgtCoupon(props) {
       >
         {data.map((item, index) => (
           <View
+            key={`coupon-item__${index}`}
             className={classNames('wgt-coupon-item', {
               'has-img': item.imgUrl
             })}
-            key={`coupon-item__${index}`}
             style={styleNames(getCouponStyle(item))}
-            onClick={handleClickItem.bind(this, item)}
+            onClick={() => onClaimCoupon(item)}
           >
             {!item.imgUrl && (
               <View class='coupon-bd'>
@@ -126,13 +163,13 @@ function WgtCoupon(props) {
                 {item.type == 'discount' && (
                   <View class='coupon-amount'>
                     <Text class='value'>{item.amount}</Text>
-                    <Text class='symbol'>折</Text>
+                    <Text class='symbol'>{$t('e82b4bf3.96c015')}</Text>
                   </View>
                 )}
                 {item.type == 'new_gift' && (
                   <View class='coupon-amount'>
                     <Text class='value'>{item.amount / 100}</Text>
-                    <Text class='symbol'>元</Text>
+                    <Text class='symbol'>{$t('e82b4bf3.c16655')}</Text>
                   </View>
                 )}
                 <View class='coupon-desc'>
@@ -143,7 +180,7 @@ function WgtCoupon(props) {
             )}
             {!item.imgUrl && (
               <View class='coupon-ft'>
-                <View class='btn'>领取</View>
+                <View class='btn'>{$t('e82b4bf3.9c1b27')}</View>
               </View>
             )}
           </View>
@@ -151,16 +188,17 @@ function WgtCoupon(props) {
 
         {voucher_package.map((item, index) => (
           <View
+            key={`coupon-pkg__${index}`}
             className={classNames('wgt-coupon-item', {
               'has-img': item.imgUrl
             })}
             style={styleNames(getCouponStyle(item))}
-            onClick={handleClickItemPkg.bind(this, item)}
+            onClick={() => onClaimPkg(item)}
           >
             {!item.imgUrl && (
               <View class='coupon-bd'>
                 <View class='coupon-amount'>
-                  <Text class='package-value'>券包</Text>
+                  <Text class='package-value'>{$t('e82b4bf3.7fac13')}</Text>
                 </View>
                 <View class='coupon-desc'>
                   <Text class='name'>{item.title}</Text>
@@ -170,7 +208,7 @@ function WgtCoupon(props) {
             )}
             {!item.imgUrl && (
               <View class='coupon-ft'>
-                <View class='btn'>领取</View>
+                <View class='btn'>{$t('e82b4bf3.9c1b27')}</View>
               </View>
             )}
           </View>
@@ -188,6 +226,18 @@ function WgtCoupon(props) {
           }}
         />
       )}
+
+      {/* 统一登录弹窗：放在组件根，避免在横向滚动窄条内导致样式异常 */}
+      <SpLogin
+        visible={showLoginModal}
+        onChange={onLoginSuccess}
+        onClose={() => {
+          setState((draft) => {
+            draft.showLoginModal = false
+            draft.pendingClaim = null
+          })
+        }}
+      />
     </View>
   )
 }

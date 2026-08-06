@@ -12,8 +12,14 @@ dist/
 .swc
 .vscode
 .env.local
-.cursor/
 .claude/
 AGENTS.md
 openspec/
 scripts/
+.agent/
+.codex/
+.cursor/
+.codegraph
+.github
+openwiki/
+CLAUDE.md

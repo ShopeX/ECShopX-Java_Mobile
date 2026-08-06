@@ -5,13 +5,13 @@
 import React, { Component } from 'react'
 import Taro, { getCurrentInstance } from '@tarojs/taro'
 import { View, Text, Image } from '@tarojs/components'
-import { Price } from '@/components'
+import { SpPrice } from '@/components'
 import InputNumber from '@/components/input-number'
 import { isObject, classNames } from '@/utils'
-
+import { $t, i18n } from '@/i18n'
 import './cart-item.scss'
 
-export default class GoodsItem extends Component {
+class GoodsItem extends Component {
   static defaultProps = {
     onClick: () => {},
     onClickPromotion: () => {},
@@ -24,6 +24,17 @@ export default class GoodsItem extends Component {
 
   static options = {
     addGlobalClass: true
+  }
+
+  componentDidMount() {
+    this._onLanguageChanged = () => this.forceUpdate()
+    i18n.on('languageChanged', this._onLanguageChanged)
+  }
+
+  componentWillUnmount() {
+    if (this._onLanguageChanged) {
+      i18n.off('languageChanged', this._onLanguageChanged)
+    }
   }
 
   // onNumChange= (val) => {
@@ -86,7 +97,9 @@ export default class GoodsItem extends Component {
             )}
             <View className='cart-item__cont-hd'>
               <View className='cart-item__title' onClick={this.props.onClickImgAndTitle}>
-                {info.is_plus_buy && <Text className='cart-item__tag'> 加价购 </Text>}
+                {info.is_plus_buy && (
+                  <Text className='cart-item__tag'> {$t('25211a55.54e654')} </Text>
+                )}
                 {info.title}
               </View>
               {info.desc && <Text className='cart-item__desc'>{info.desc}</Text>}
@@ -102,9 +115,8 @@ export default class GoodsItem extends Component {
             </View>
 
             <View className='cart-item__prices'>
-              <Price
+              <SpPrice
                 primary
-                classes='cart-item__price'
                 className='cart-item__price'
                 symbol={info.curSymbol}
                 noSymbol={noCurSymbol}
@@ -113,13 +125,13 @@ export default class GoodsItem extends Component {
                 value={price}
               />
               {showMarketPrice && (
-                <Price
+                <SpPrice
                   symbol={info.curSymbol}
                   noSymbol={noCurSymbol}
-                  classes='cart-item__price-market'
                   className='cart-item__price-market'
                   value={info.market_price}
                   noDecimal={noCurDecimal}
+                  lineThrough
                 />
               )}
             </View>
@@ -140,3 +152,5 @@ export default class GoodsItem extends Component {
     )
   }
 }
+
+export default GoodsItem

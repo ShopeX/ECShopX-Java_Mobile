@@ -10,6 +10,7 @@ import { SpCheckbox, CouponItem, Loading, SpNote } from '@/components'
 import { pickBy } from '@/utils'
 import { withPager } from '@/hocs'
 import api from '@/api'
+import { $t } from '@/i18n'
 
 import './coupon-picker.scss'
 
@@ -23,7 +24,7 @@ import './coupon-picker.scss'
 )
 @withPager
 export default class CouponPicker extends Component {
-  $instance = getCurrentInstance()
+  $instance = getCurrentInstance() || {}
   constructor(props) {
     super(props)
     this.state = {
@@ -46,7 +47,7 @@ export default class CouponPicker extends Component {
       distributor_id,
       source,
       goodType
-    } = this.$instance.router.params
+    } = this.$instance?.router?.params
     // const { curCoupon } = this.props
     const { page_no: page, page_size: pageSize } = query
 
@@ -156,9 +157,9 @@ export default class CouponPicker extends Component {
               </CouponItem>
             )
           })}
-          {page.isLoading && <Loading>正在加载...</Loading>}
+          {page.isLoading && <Loading>{$t('10293ac1.bd0271')}</Loading>}
           {!page.isLoading && !page.hasNext && !coupons.length && (
-            <SpNote img='trades_empty.png'>赶快去添加吧~</SpNote>
+            <SpNote img='trades_empty.png'>{$t('708ca93b.8a4368')}</SpNote>
           )}
         </ScrollView>
         <View
@@ -166,7 +167,7 @@ export default class CouponPicker extends Component {
           onClick={this.handleCouponSelect.bind(this, 'coupon', null)}
         >
           <View className='coupon-item__bd'>
-            <Text className='coupon-item__title'>不使用优惠券</Text>
+            <Text className='coupon-item__title'>{$t('e3cbe5fd.0efb01')}</Text>
           </View>
           <View className='coupon-item__ft'>
             <SpCheckbox checked={!curCoupon || !curCoupon.value} />

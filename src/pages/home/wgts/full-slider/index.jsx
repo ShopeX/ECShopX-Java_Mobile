@@ -14,7 +14,7 @@ import { WgtsContext } from '../wgts-context'
 import { getGlobalBaseStyle } from '../helper'
 import './index.scss'
 
-const $instance = getCurrentInstance()
+const $instance = getCurrentInstance() || {}
 const initState = {
   curIdx: 0,
   play: false,
@@ -81,6 +81,13 @@ function WgtFullSlider(props) {
         : `calc(100vh - ${homeHeight}rpx - ${heightS}px)`
     })
   }, [immersive, isShowHomeHeader, isTab, footerHeight])
+
+  // footerHeight 由 SpPage onReady 异步注入，需在变化后重新计算高度
+  useEffect(() => {
+    if (show) {
+      setHeight()
+    }
+  }, [show, setHeight])
 
   // 切换视频播放
   const togglePlay = (itemIndex) => {

@@ -13,7 +13,9 @@ import { SpPage } from '@/components'
 import api from '@/api'
 import doc from '@/doc'
 import { pickBy, log, buildSharePath } from '@/utils'
-import { WgtFilm, WgtSlider, WgtWriting, WgtGoods, WgtHeading } from '../components/wgts'
+import { useTranslation, $t, ti } from '@/i18n'
+import { WgtGoodsCard } from '@/pages/home/wgts'
+import { WgtFilm, WgtSlider, WgtWriting, WgtHeading } from '../components/wgts'
 import './detail.scss'
 
 const initialState = {
@@ -24,7 +26,8 @@ const initialState = {
   updated: ''
 }
 function GuideRecommendDetail(props) {
-  const $instance = getCurrentInstance()
+  const { i18n } = useTranslation()
+  const $instance = getCurrentInstance() || {}
   const [state, setState] = useImmer(initialState)
   const { img, shareImageUrl, itemId, title, content, articleFocusNum, updated } = state
   const { userInfo } = useSelector((state) => state.guide)
@@ -32,6 +35,10 @@ function GuideRecommendDetail(props) {
   useEffect(() => {
     fetch()
   }, [])
+
+  useEffect(() => {
+    Taro.setNavigationBarTitle({ title: $t('f57edc27.8d29da') })
+  }, [i18n.language])
 
   useDidShow(() => {
     Taro.hideShareMenu({
@@ -42,7 +49,7 @@ function GuideRecommendDetail(props) {
 
   useShareAppMessage(async () => {
     const { salesperson_id, work_userid, distributor_id, shop_code } = userInfo
-    const { subtask_id } = $instance.router.params
+    const { subtask_id } = $instance?.router?.params
     const query = {
       id: itemId,
       dtid: distributor_id,
@@ -60,7 +67,7 @@ function GuideRecommendDetail(props) {
   })
 
   const fetch = async () => {
-    const { id } = $instance.router.params
+    const { id } = $instance?.router?.params
     // 关注数加1
     const resFocus = await api.article.focus(id)
     const res = await api.article.detail(id)
@@ -78,15 +85,13 @@ function GuideRecommendDetail(props) {
     })
   }
 
-  const handleClickGoods = async () => {}
-
   return (
     <SpPage
       className='guide-recommend-detail'
       renderFooter={
         <View className='btn-wrap'>
           <AtButton circle className='btn-share' type='primary' openType='share'>
-            分享给顾客
+            {$t('f57edc27.e6bd60')}
           </AtButton>
         </View>
       }
@@ -95,7 +100,6 @@ function GuideRecommendDetail(props) {
         <View className='article-title'>{title}</View>
         <View className='article-info'>
           <Text className='update-time'>{updated}</Text>
-          <Text className='focus-num'>{`${articleFocusNum}关注`}</Text>
         </View>
       </View>
       <View className='article-bd'>
@@ -106,9 +110,7 @@ function GuideRecommendDetail(props) {
               {item.name === 'slider' && <WgtSlider info={item} />}
               {item.name === 'writing' && <WgtWriting info={item} />}
               {item.name === 'heading' && <WgtHeading info={item} />}
-              {item.name === 'goods' && (
-                <WgtGoods onClick={handleClickGoods.bind(this, 'goods')} info={item} />
-              )}
+              {item.name === 'goodsCard' && <WgtGoodsCard info={item} />}
             </View>
           ))}
         </View>

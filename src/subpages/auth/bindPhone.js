@@ -5,13 +5,15 @@
 import React, { useEffect } from 'react'
 import { View, Text, Image } from '@tarojs/components'
 import Taro, { getCurrentInstance, useDidShow } from '@tarojs/taro'
-import { SpPage, SpTimer, SpInput as AtInput } from '@/components'
+import { SpPage, SpInput as AtInput } from '@/components'
+import { SpTimer } from '@/subpages/components'
 import { classNames, validate, showToast, tokenParseH5 } from '@/utils'
 import { AtForm, AtButton } from 'taro-ui'
 import { useLogin } from '@/hooks'
 import api from '@/api'
 import S from '@/spx'
 import { useImmer } from 'use-immer'
+import { useTranslation, $t } from '@/i18n'
 import { setTokenAndRedirect, setToken } from './util'
 import './bindPhone.scss'
 
@@ -26,10 +28,18 @@ const initialValue = {
 }
 
 const PageBindPhone = () => {
-  const $instance = getCurrentInstance()
+  const { i18n } = useTranslation()
+  const $instance = getCurrentInstance() || {}
+
+  useEffect(() => {
+    Taro.setNavigationBarTitle({ title: $t('c91bc1c0.c36b02') })
+    const onLang = () => Taro.setNavigationBarTitle({ title: $t('c91bc1c0.c36b02') })
+    i18n.on('languageChanged', onLang)
+    return () => i18n.off('languageChanged', onLang)
+  }, [i18n])
   const {
-    params: { unionid, redi_url }
-  } = $instance.router
+    params: { unionid, redi_url, user_type, trustlogin_tag }
+  } = $instance?.router
 
   const { getUserInfo } = useLogin()
 
@@ -52,11 +62,11 @@ const PageBindPhone = () => {
 
   const handleTimerStart = async (resolve) => {
     if (!validate.isMobileNum(username)) {
-      showToast('请输入正确的手机号')
+      showToast($t('d121a348.a32ab5'))
       return
     }
     if (!validate.isRequired(yzm)) {
-      showToast('请输入图形验证码')
+      showToast($t('d121a348.e70066'))
       return
     }
     try {
@@ -66,7 +76,7 @@ const PageBindPhone = () => {
         yzm: yzm,
         token: imgInfo.imageToken
       })
-      showToast('验证码已发送')
+      showToast($t('d121a348.4d7fb5'))
       resolve()
     } catch (e) {
       getImageVcode()
@@ -86,7 +96,8 @@ const PageBindPhone = () => {
         username,
         check_type,
         vcode,
-        union_id: unionid
+        union_id: unionid,
+        user_type: user_type || trustlogin_tag || 'wechat'
       })
       const { is_new } = tokenParseH5(token)
 
@@ -131,7 +142,7 @@ const PageBindPhone = () => {
       onClickLeftIcon={handleClickLeft}
     >
       <View className='auth-hd'>
-        <View className='title'>手机号绑定</View>
+        <View className='title'>{$t('d121a348.398180')}</View>
       </View>
       <View className='auth-bd'>
         <AtForm className='form'>
@@ -142,7 +153,7 @@ const PageBindPhone = () => {
               maxLength={11}
               type='tel'
               value={username}
-              placeholder='请输入您的手机号码'
+              placeholder={$t('d121a348.787a47')}
               onChange={handleInputChange('username')}
             />
           </View>
@@ -154,7 +165,7 @@ const PageBindPhone = () => {
                 clear
                 name='yzm'
                 value={yzm}
-                placeholder='请输入图形验证码'
+                placeholder={$t('d121a348.e70066')}
                 onChange={handleInputChange('yzm')}
               />
             </View>
@@ -171,7 +182,7 @@ const PageBindPhone = () => {
                 clear
                 name='vcode'
                 value={vcode}
-                placeholder='请输入验证码'
+                placeholder={$t('d121a348.d0c06a')}
                 onChange={handleInputChange('vcode')}
               />
             </View>
@@ -188,7 +199,7 @@ const PageBindPhone = () => {
               className='login-button'
               onClick={handleSubmit}
             >
-              下一步
+              {$t('d121a348.38ce27')}
             </AtButton>
           </View>
         </AtForm>

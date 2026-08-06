@@ -10,8 +10,10 @@ import api from '@/api'
 import doc from '@/doc'
 import { View, Text } from '@tarojs/components'
 import { changeCoupon } from '@/store/slices/cart'
-import { SpPage, SpTagBar, SpScrollView, SpCoupon, SpImage, SpCheckboxNew } from '@/components'
+import { SpPage, SpScrollView, SpCoupon, SpImage, SpCheckboxNew } from '@/components'
+import { SpTagBar } from '@/subpages/components'
 import { pickBy } from '@/utils'
+import { useTranslation, $t } from '@/i18n'
 import './coupon-picker.scss'
 
 const initialState = {
@@ -20,10 +22,15 @@ const initialState = {
   select: null
 }
 function CouponPicker(props) {
-  const $instance = getCurrentInstance()
+  const { i18n } = useTranslation()
+  const $instance = getCurrentInstance() || {}
   const [state, setState] = useImmer(initialState)
   let { couponListVaild, couponListInVaild, select } = state
   const dispatch = useDispatch()
+
+  useEffect(() => {
+    Taro.setNavigationBarTitle({ title: $t('88ca1eba.45bcee') })
+  }, [i18n.language])
 
   const fetch = async ({ pageIndex, pageSize }) => {
     const {
@@ -36,7 +43,7 @@ function CouponPicker(props) {
       goodType,
       coupon = null,
       cxdid
-    } = $instance.router.params
+    } = $instance?.router?.params
     const params = {
       page_no: pageIndex,
       page_size: pageSize,
@@ -101,7 +108,7 @@ function CouponPicker(props) {
       renderFooter={
         <View className='btn-wrap'>
           <SpCheckboxNew onChange={onChangeSelectCoupon.bind(this, null)} checked={select === null}>
-            暂不使用优惠券
+            {$t('cb6b4b19.af4202')}
           </SpCheckboxNew>
         </View>
       }
@@ -117,7 +124,11 @@ function CouponPicker(props) {
             />
           </View>
         ))}
-        {couponListInVaild.length > 0 ? <View className='invalid-title'>不可用优惠券</View> : ''}
+        {couponListInVaild.length > 0 ? (
+          <View className='invalid-title'>{$t('cb6b4b19.c3a1b6')}</View>
+        ) : (
+          ''
+        )}
         {couponListInVaild.map((item, index) => (
           <View className='coupon-item-wrap' key={`coupon-item__${index}`}>
             <SpCoupon info={item} />

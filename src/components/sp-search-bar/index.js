@@ -8,6 +8,7 @@ import { View, Form, Text, Image } from '@tarojs/components'
 import { AtSearchBar, AtForm } from 'taro-ui'
 import { classNames } from '@/utils'
 import { toggleTouchMove } from '@/utils/dom'
+import { $t } from '@/i18n'
 
 import './index.scss'
 
@@ -17,7 +18,6 @@ export default class SpSearchBar extends Component {
     keyword: '',
     showDailog: true,
     history: true,
-    placeholder: '搜索',
     localStorageKey: 'searchHistory',
     onCancel: () => {},
     onChange: () => {},
@@ -74,13 +74,14 @@ export default class SpSearchBar extends Component {
   }
 
   handleConfirm = (e) => {
-    e.preventDefault && e.preventDefault()
-    e.stopPropagation && e.stopPropagation()
-    const keywords = e.detail.value.trim()
+    e?.preventDefault?.()
+    e?.stopPropagation?.()
+    const raw = typeof e === 'string' ? e : e?.detail?.value
+    const keywords = (raw == null ? '' : String(raw)).trim()
     if (keywords) {
       const value = Taro.getStorageSync(this.props.localStorageKey)
       let defaultValue = []
-      if (value) {
+      if (value && typeof value === 'string') {
         const array = value.split(',')
         if (!array.includes(keywords)) {
           array.unshift(keywords)
@@ -90,8 +91,9 @@ export default class SpSearchBar extends Component {
         defaultValue.push(keywords)
       }
       Taro.setStorage({ key: this.props.localStorageKey, data: defaultValue.toString() })
-      this.props.onConfirm(e.detail.value)
     }
+    // 空关键词也要回调，便于清空搜索后重新拉全量列表
+    this.props.onConfirm(keywords)
     this.setState({
       showSearchDailog: false,
       isShowAction: false
@@ -125,7 +127,7 @@ export default class SpSearchBar extends Component {
   }
 
   render() {
-    const { isFixed, keyword, showDailog, placeholder, history } = this.props
+    const { isFixed, keyword, showDailog, placeholder = '', history } = this.props
     const { showSearchDailog, historyList, isShowAction, searchValue } = this.state
     return (
       <View
@@ -141,8 +143,8 @@ export default class SpSearchBar extends Component {
           <AtSearchBar
             className='sp-search-bar__bar'
             value={keyword}
-            placeholder={placeholder}
-            actionName='取消'
+            placeholder={placeholder || $t('78eb15d3.e5f71f')}
+            actionName={$t('61e2d21a.625fb2')}
             showActionButton={isShowAction}
             onFocus={this.handleFocusSearchHistory.bind(this, true)}
             onClear={this.handleClear}
@@ -160,7 +162,7 @@ export default class SpSearchBar extends Component {
             )}
           >
             <View className='sp-search-bar__history-title'>
-              <Text className='title'>最近搜索</Text>
+              <Text className='title'>{$t('7fa435fc.e8cb95')}</Text>
               <Text
                 className='icon-trashCan icon-del'
                 onClick={this.handleClickDelete.bind(this)}

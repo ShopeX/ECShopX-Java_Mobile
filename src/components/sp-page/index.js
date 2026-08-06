@@ -11,7 +11,7 @@ import React, {
   forwardRef,
   useCallback
 } from 'react'
-import { useSelector } from 'react-redux'
+import { useSelector, useDispatch } from 'react-redux'
 import Taro, {
   useRouter,
   useDidShow,
@@ -42,6 +42,8 @@ import {
   VERSION_SHUYUN
 } from '@/utils'
 import context from '@/hooks/usePageContext'
+import { setShowGuideConsultModal } from '@/store/slices/shop'
+import ConsultModal from '@/subpages/store/comps/consult-modal'
 import CustomNavigationHeader from './header'
 import './index.scss'
 
@@ -78,6 +80,7 @@ const SpPage = memo(
     const [state, setState] = useImmer(initialState)
     const wrapRef = useRef(null)
     const scrollTopRef = useRef(0)
+    const dispatch = useDispatch()
     const setStatusBarBgColorFromSticky = useCallback((color, sourceId) => {
       setState((draft) => {
         if (color != null) {
@@ -93,6 +96,7 @@ const SpPage = memo(
     }, [])
     const sys = useSelector((state) => state.sys)
     const { lang } = useSelector((state) => state.user)
+    const { showGuideConsultModal, salespersonInfo } = useSelector((state) => state.shop)
     const isRTL = lang === 'ar'
     const [showToTop, setShowToTop] = useState(false)
     const [isPageVisible, setIsPageVisible] = useState(true) // 页面是否显示
@@ -126,6 +130,17 @@ const SpPage = memo(
         })
       }
     }, [state.lock])
+
+    // 企微导购弹框：无导购二维码时关闭状态，避免一直为 true
+    useEffect(() => {
+      if (
+        showGuideConsultModal &&
+        !salespersonInfo?.work_qrcode &&
+        !salespersonInfo?.work_qrcode_configid
+      ) {
+        dispatch(setShowGuideConsultModal(false))
+      }
+    }, [showGuideConsultModal, salespersonInfo, dispatch])
 
     useEffect(() => {
       if (!isPageVisible) return
@@ -368,11 +383,9 @@ const SpPage = memo(
             style={styleNames({
               'padding-top': `${!props.immersive && state.customNavigation ? state.gNavbarH : 0}px`,
               'padding-bottom': props.renderFooter
-                ? isWeb
-                  ? `calc(${Taro.pxTransform(props.footerHeight)} + env(safe-area-inset-bottom))`
-                  : Taro.pxTransform(
-                      props.footerHeight + (isIphoneX() ? DEFAULT_SAFE_AREA_HEIGHT : 0)
-                    )
+                ? Taro.pxTransform(
+                    props.footerHeight + (isIphoneX() ? DEFAULT_SAFE_AREA_HEIGHT : 0)
+                  )
                 : 0
             })}
           >
@@ -407,20 +420,10 @@ const SpPage = memo(
           <View
             key={lang}
             className='sp-page__footer'
-            style={styleNames(
-              isWeb
-                ? {
-                    // H5：用 min-height，避免定高把 tabbar 文案裁切/压到浏览器底栏下
-                    'min-height': `${Taro.pxTransform(props.footerHeight)}`,
-                    'height': 'auto'
-                  }
-                : {
-                    'height': `${Taro.pxTransform(props.footerHeight)}`,
-                    'padding-bottom': `${
-                      isIphoneX() ? Taro.pxTransform(DEFAULT_SAFE_AREA_HEIGHT) : 0
-                    }`
-                  }
-            )}
+            style={styleNames({
+              'height': props.renderFooter ? `${Taro.pxTransform(props.footerHeight)}` : 0,
+              'padding-bottom': `${isIphoneX() ? Taro.pxTransform(DEFAULT_SAFE_AREA_HEIGHT) : 0}`
+            })}
           >
             <context.Provider value={{}}>{props.renderFooter}</context.Provider>
           </View>
@@ -437,6 +440,20 @@ const SpPage = memo(
           </View>
         )}
         <CookieConsent />
+        {/* 全局企微导购联系弹框（与 FloatSalesperson 一致，如热区/分类页点击企微导购服务时弹出） */}
+        {showGuideConsultModal && salespersonInfo?.work_qrcode && (
+          <ConsultModal
+            visible={showGuideConsultModal}
+            type='2'
+            data={{
+              qrcodeUrl: salespersonInfo.work_qrcode,
+              salespersonName: salespersonInfo.salesperson_name,
+              salespersonAvatar: salespersonInfo.salesperson_avatar,
+              bgAvatarUrl: salespersonInfo.bg_avatar_url
+            }}
+            onClose={() => dispatch(setShowGuideConsultModal(false))}
+          />
+        )}
       </View>
     )
   })

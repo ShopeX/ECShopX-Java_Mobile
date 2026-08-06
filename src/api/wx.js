@@ -10,8 +10,12 @@ export function getOpenid({ code }) {
   return req.get('/oauth/getopenid', { code })
 }
 
-export function getredirecturl({ url }) {
-  return req.get('/oauth/getredirecturl', { url })
+export async function getredirecturl({ url }) {
+  const data = await req.get('/oauth/getredirecturl', { url })
+  /* 调试：getredirecturl 已返回，调用方赋值 window.location 前暂停，可查看 data / redirect_url */
+  // eslint-disable-next-line no-debugger
+  debugger
+  return data
 }
 
 export function info(data) {
@@ -152,6 +156,18 @@ export function getPrivacyTime(params) {
 
 export function getWxAuth(params) {
   return req.get(`/trustlogin/params`, params)
+}
+
+export function getTrustLoginList(params = {}) {
+  return req.get('/trustlogin/list', { version_tag: 'touch', ...params })
+}
+
+export function socialLoginH5(params) {
+  return req.post('/new_login', {
+    ...params,
+    auth_type: 'social_oauth',
+    version_tag: 'touch'
+  })
 }
 
 export function getIsNew(params) {

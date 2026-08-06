@@ -9,7 +9,7 @@ import { View, Text, ScrollView } from '@tarojs/components'
 import { useImmer } from 'use-immer'
 import classNames from 'classnames'
 import api from '@/api'
-import { platformTemplateName } from '@/utils'
+import { getDistributorId, platformTemplateName } from '@/utils'
 import { SpImage, SpLoading, SpPoweredBy } from '@/components'
 import {
   WgtShop,
@@ -17,7 +17,8 @@ import {
   WgtClassify,
   WgtImgHotZone,
   WgtSlider,
-  WgtFilm
+  WgtFilm,
+  WgtGoods
 } from '@/pages/home/wgts'
 import './category-flat-layout.scss'
 
@@ -39,7 +40,9 @@ function CategoryFlatLayout() {
 
   const gettabsList = async () => {
     try {
-      const res = await api.category.get({})
+      const res = await api.category.get({
+        distributor_id: getDistributorId()
+      })
       setState((draft) => {
         draft.categories = res
       })
@@ -194,6 +197,9 @@ function CategoryFlatLayout() {
                   )}{' '}
                   {/** 轮播 */}
                   {item.name === 'film' && <WgtFilm info={item} id={index + 1} />} {/** 视频 */}
+                  {/** 商品 */}
+                  {item.name === 'goods' && <WgtGoods info={item} id={item.id || idx} />}{' '}
+                  {/** 商品 */}
                 </>
               ))}
               <View className='category-flat-layout__powered-by-wrap'>

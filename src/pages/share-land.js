@@ -5,10 +5,12 @@
 import React, { useEffect } from 'react'
 import Taro, { useRouter } from '@tarojs/taro'
 import dayjs from 'dayjs'
+import { SpPage } from '@/components'
 import { SG_ROUTER_PARAMS, SG_GUIDE_PARAMS, SG_GUIDE_PARAMS_UPDATETIME } from '@/consts'
-import S from '@/spx'
 import qs from 'qs'
-import { entryLaunch, showToast } from '@/utils'
+import { $t } from '@/i18n'
+import { entryLaunch, getExtConfigData, showToast } from '@/utils'
+import api from '@/api'
 
 /**
  * 统一分享落地页
@@ -30,9 +32,13 @@ function ShareIand() {
   const resloveRouterParams = async () => {
     const routeParams = await entryLaunch.getRouteParams(router)
     Taro.setStorageSync(SG_ROUTER_PARAMS, routeParams)
+
     if (routeParams?.gu || routeParams?.gu_user_id) {
       // 导购参数处理
-      Taro.setStorageSync(SG_GUIDE_PARAMS, routeParams)
+      Taro.setStorageSync(SG_GUIDE_PARAMS, {
+        ...routeParams,
+        gu_user_id: routeParams.gu_user_id || routeParams.gu.split('_')[0]
+      })
       Taro.setStorageSync(SG_GUIDE_PARAMS_UPDATETIME, dayjs().unix())
       // if (S.getAuthToken()) {
       //   entryLaunch.postGuideUV() // 导购uv上报
@@ -43,12 +49,37 @@ function ShareIand() {
     if (routeParams?.t == 1) {
       handlePrescription(routeParams)
     } else {
-      handleShareLand(routeParams)
+      await handleShareLand(routeParams)
+    }
+  }
+
+  const reportPurchaseScanBehavior = async (routeParams) => {
+    const activity_id = routeParams.activity_id || routeParams.aid || routeParams.id
+    const enterprise_id = routeParams.enterprise_id || routeParams.eid
+    if (!activity_id || !enterprise_id) return
+
+    const { company_id: extCompanyId } = getExtConfigData()
+    const company_id = routeParams.company_id || routeParams.companyId || extCompanyId
+    const visitor_key = Taro.getStorageSync('userinfo')?.openid || ''
+    const payload = {
+      behavior_type: 'scan',
+      activity_id,
+      enterprise_id,
+      visitor_key
+    }
+    if (company_id) {
+      payload.company_id = company_id
+    }
+
+    try {
+      await api.purchase.reportEmployeepurchaseBehavior(payload)
+    } catch (e) {
+      console.error('[purchase] scan behavior report failed', e)
     }
   }
 
   // 处理落地页类型
-  const handleShareLand = (routeParams) => {
+  const handleShareLand = async (routeParams) => {
     const { from_scene, ...otherParams } = routeParams
     const welcomeRoutes = {
       // 导购欢迎语
@@ -79,7 +110,8 @@ function ShareIand() {
       'poster_community_memberdetail': '/subpages/community/group-memberdetail', // 小程序-海报分享&页面转发-社区
       'poster_coupon_center': '/subpages/marketing/coupon-center', // 小程序-海报分享&页面转发-领券中心
       'poster_mdugc_detail': '/subpages/mdugc/note-detail', // 小程序-海报分享&页面转发-笔记详情
-      'poster_pointshop_espier_detail': '/subpages/pointshop/espier-detail' // 小程序-海报分享&页面转发-积分商品详情
+      'poster_pointshop_espier_detail': '/subpages/pointshop/espier-detail', // 小程序-海报分享&页面转发-积分商品详情
+      'poster_goods_reservate': '/marketing/pages/reservation/goods-reservate' // 小程序-海报分享&页面转发-预约商品
     }
 
     // 过滤掉内部使用的参数
@@ -94,15 +126,18 @@ function ShareIand() {
     // entryLaunch.postGuideUV() // 导购uv上报
     // entryLaunch.postGuideTask(welcomeRoutes[from_scene]) // 导购任务上报
 
-    const targetUrl = queryString
-      ? `${welcomeRoutes[from_scene]}?${queryString}`
-      : welcomeRoutes[from_scene]
-    console.log('导购任务分享跳转:', targetUrl, welcomeRoutes[from_scene])
+    const targetPath = welcomeRoutes[from_scene]
+    if (targetPath === '/pages/purchase/auth') {
+      await reportPurchaseScanBehavior(routeParams)
+    }
 
-    if (welcomeRoutes[from_scene]) {
+    const targetUrl = queryString ? `${targetPath}?${queryString}` : targetPath
+    console.log('导购任务分享跳转:', targetUrl, targetPath)
+
+    if (targetPath) {
       Taro.redirectTo({ url: targetUrl })
     } else {
-      showToast('页面跳转失败')
+      showToast($t('9264688e.6ac521'))
       setTimeout(() => {
         Taro.redirectTo({ url: '/pages/index' })
       }, 1500)
@@ -155,7 +190,7 @@ function ShareIand() {
     Taro.redirectTo({ url: targetUrl })
   }
 
-  return null
+  return <SpPage className='page-share-land' loading showpoweredBy={false} />
 }
 
 export default ShareIand

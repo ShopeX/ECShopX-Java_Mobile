@@ -10,6 +10,7 @@ import { useImmer } from 'use-immer'
 import { SpFloatMenuItem } from '@/components'
 import { showToast, isAlipay, isWeixin, isWeb, isAPP } from '@/utils'
 import api from '@/api'
+import { $t } from '@/i18n'
 
 import './index.scss'
 
@@ -22,7 +23,13 @@ function SpChat(props) {
   const [state, setState] = useImmer(initialState)
   const { isWeAppKefu } = state
   const { echat, meiqia } = useSelector((state) => state.sys)
-  const $instance = getCurrentInstance()
+  const { salespersonInfo } = useSelector((state) => state.shop)
+  const $instance = getCurrentInstance() || {}
+
+  // 小程序客服开关：接口 show_float 0=关闭 1=开启，关闭后不展示悬浮客服
+  if (salespersonInfo?.show_float == 0) {
+    return null
+  }
 
   useEffect(() => {
     init()
@@ -39,13 +46,13 @@ function SpChat(props) {
   const handleKeFu = async () => {
     if (echat?.is_open == 'true') {
       if (!echat.echat_url) {
-        showToast('请配置一洽客服链接')
+        showToast($t('95b7f312.39c863'))
       } else {
         Taro.navigateTo({ url: `/pages/chat/index?url=${encodeURIComponent(echat.echat_url)}` })
       }
     } else if (meiqia?.is_open) {
       // 获取店铺美洽配置
-      const { dtid } = $instance.router.params
+      const { dtid } = $instance?.router?.params
       const meiqiaConfig = await api.im.getImConfigByDistributor(dtid)
       const { channel, meiqia_url } = meiqiaConfig
       let chat_link = ''
@@ -61,7 +68,7 @@ function SpChat(props) {
         chat_link = meiqia_url.common
       }
       if (!chat_link) {
-        return showToast('客服暂不在线，请稍后再试~')
+        return showToast($t('95b7f312.b1af86'))
       }
       Taro.navigateTo({ url: `/pages/chat/index?url=${encodeURIComponent(chat_link)}` })
     }

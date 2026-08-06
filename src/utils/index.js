@@ -7,10 +7,10 @@ import classNames from 'classnames'
 import qs from 'qs'
 import dayjs from 'dayjs'
 import copy from 'copy-to-clipboard'
-import S from '@/spx'
 import { STATUS_TYPES_MAP, SG_ROUTER_PARAMS } from '@/consts'
 import api from '@/api'
 import configStore from '@/store'
+import S from '@/spx'
 import _get from 'lodash/get'
 import _findKey from 'lodash/findKey'
 import _pickBy from 'lodash/pickBy'
@@ -20,6 +20,7 @@ import _remove from 'lodash/remove'
 import debounce from 'lodash/debounce'
 import throttle from 'lodash/throttle'
 import parse from 'mini-html-parser2'
+import { $t } from '@/i18n'
 import log from './log'
 import canvasExp from './canvasExp'
 import calCommonExp from './calCommonExp'
@@ -84,6 +85,17 @@ export const isAlipay = Taro.getEnv() == Taro.ENV_TYPE.ALIPAY
 
 /** 在微信平台 */
 export const isWeixin = Taro.getEnv() == Taro.ENV_TYPE.WEAPP
+
+/** 是否电脑端微信小程序（Windows / Mac 客户端） */
+export const isPCMiniProgram = () => {
+  if (!isWeixin) return false
+  try {
+    const { platform } = Taro.getSystemInfoSync() || {}
+    return platform === 'windows' || platform === 'mac'
+  } catch {
+    return false
+  }
+}
 
 /** 在H5平台 */
 export const isWeb = Taro.getEnv() == Taro.ENV_TYPE.WEB
@@ -160,10 +172,10 @@ export const isIphoneX = () => {
 
 // TODO: 验证方法在h5及边界情况稳定性
 export function getCurrentRoute() {
-  const router = getCurrentInstance().router
+  const router = getCurrentInstance()?.router
   // eslint-disable-next-line
-  const { $taroTimestamp, ...params } = router.params || {}
-  const path = router.path
+  const { $taroTimestamp, ...params } = router?.params || {}
+  const path = router?.path
   const fullPath = `${path}${Object.keys(params).length > 0 ? '?' + qs.stringify(params) : ''}`
 
   return {
@@ -266,7 +278,7 @@ export function formatDateTime(time, formatter = 'YYYY-MM-DD HH:mm:ss') {
   return dayjs(newTime).format(formatter)
 }
 
-export function copyText(text, msg = '内容已复制') {
+export function copyText(text, msg = $t('8968c625.a81a86')) {
   return new Promise((resolve, reject) => {
     if (process.env.TARO_ENV === 'weapp') {
       Taro.setClipboardData({
@@ -489,7 +501,7 @@ function validColor(color) {
  * } data 新增上报数据
  */
 export async function buriedPoint(data) {
-  const params = getCurrentInstance().router.params
+  const params = getCurrentInstance()?.router?.params || {}
   let {
     gu,
     subtask_id = '',
@@ -622,7 +634,8 @@ export const hasNavbar = isWeb && !getBrowserEnv().weixin
 export function showToast(title, callback) {
   Taro.showToast({
     title,
-    icon: 'none'
+    icon: 'none',
+    duration: 3000
   })
   setTimeout(() => {
     callback?.()
@@ -631,7 +644,7 @@ export function showToast(title, callback) {
 
 export function hex2rgb(hex) {
   if (![4, 7].includes(hex.length)) {
-    throw new Error('格式错误')
+    throw new Error($t('8968c625.0257f0'))
   }
   let result = hex.slice(1)
   // 如果是颜色叠值, 统一转换成6位颜色值
@@ -773,11 +786,59 @@ export const isShowMarketPrice = (mktPrice) => {
   return !isNaN(mktPrice) && mktPrice > 0
 }
 
-export const onEventChannel = (eventName, data) => {
-  const pages = Taro.getCurrentPages()
+/**
+ * 打开方页面与上一页通信的 EventChannel。
+ * Taro 3 小程序需从 getCurrentInstance().page 取，仅用 getCurrentPages 可能得到无 emit 的桩对象。
+ */
+export function getCurrentOpenerEventChannel() {
+  try {
+    const inst = getCurrentInstance?.()
+    const fromPage = inst?.page?.getOpenerEventChannel?.()
+    if (fromPage && typeof fromPage.emit === 'function') {
+      return fromPage
+    }
+  } catch (e) {
+    // ignore
+  }
+  const pages = Taro.getCurrentPages?.() || []
   const current = pages[pages.length - 1]
-  const eventChannel = current.getOpenerEventChannel()
-  eventChannel.emit(eventName, data)
+  const ch = current?.getOpenerEventChannel?.()
+  if (ch && typeof ch.emit === 'function') {
+    return ch
+  }
+  return null
+}
+
+/**
+ * 向 navigateTo 来源页发送事件；原生 Channel 不可用时回退 Taro.eventCenter（需对端 on 同名事件）。
+ * @param {string} eventName
+ * @param {*} [data] 有则 emit(eventName, data)，无则 emit(eventName)
+ */
+export function emitOpenerEvent(eventName, data) {
+  const eventChannel = getCurrentOpenerEventChannel()
+  if (eventChannel) {
+    try {
+      if (arguments.length >= 2) {
+        eventChannel.emit(eventName, data)
+      } else {
+        eventChannel.emit(eventName)
+      }
+      return
+    } catch (e) {
+      // fall through
+    }
+  }
+  if (typeof Taro.eventCenter?.trigger === 'function') {
+    if (arguments.length >= 2) {
+      Taro.eventCenter.trigger(eventName, data)
+    } else {
+      Taro.eventCenter.trigger(eventName)
+    }
+  }
+}
+
+export const onEventChannel = (eventName, data) => {
+  emitOpenerEvent(eventName, data)
 }
 
 // 支付宝小程序取code
@@ -878,7 +939,7 @@ const getMemberLevel = (gradeInfo = {}) => {
 
 export const pxToRpx = (px) => {
   const { screenWidth } = Taro.getSystemInfoSync()
-  return parseInt((screenWidth * px) / 375)
+  return parseInt((750 * px) / screenWidth)
 }
 
 export const rpxToPx = (rpx) => {
@@ -902,7 +963,6 @@ export function buildSharePath(from_scene, params = {}) {
     ...params
   }
   const queryString = qs.stringify(shareParams)
-  debugger
   return `/pages/share-land${queryString ? '?' + queryString : ''}`
 }
 
@@ -969,3 +1029,7 @@ export * from './platforms'
 export * from './system'
 
 export * from './store'
+
+export * from './limited-buy'
+
+export { getCurrencySymbol, transformTextByPoint, getDtidIdUrl } from './helper'

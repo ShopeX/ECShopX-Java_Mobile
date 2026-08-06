@@ -7,10 +7,11 @@ import Taro, { getCurrentInstance } from '@tarojs/taro'
 import { View, ScrollView } from '@tarojs/components'
 import { SpNavBar } from '@/components'
 import api from '@/api'
+import * as boostApi from '@/api/boost'
 import { debounce, pickBy } from '@/utils'
+import { $t } from '@/i18n'
 import LoadingMore from '../../component/loadingMore'
 import BargainItem from '../../component/bargainItem'
-
 import './index.scss'
 
 export default class Home extends Component {
@@ -34,9 +35,9 @@ export default class Home extends Component {
   }
 
   getList = async (isRefrsh = false) => {
-    Taro.showLoading({ title: '正在加载中', mask: true })
+    Taro.showLoading({ title: $t('4fddca54.c40ee4'), mask: true })
     const { param, list } = this.state
-    const data = await api.boost.getList(param)
+    const data = await boostApi.getList(param)
     const total_count = data.total_count
     const isEnd = param.page >= total_count / param.pageSize
     const newList = pickBy(data.list || [], {
@@ -94,7 +95,7 @@ export default class Home extends Component {
     const { list, scrollTop, isRefresh, isLoading, isEnd, isEmpty } = this.state
     return (
       <View className='home'>
-        <SpNavBar title='助力首页' leftIconType='chevron-left' fixed='true' />
+        <SpNavBar title={$t('2e9d55c3.a112c1')} leftIconType='chevron-left' fixed='true' />
         <ScrollView
           className='list'
           scrollY
