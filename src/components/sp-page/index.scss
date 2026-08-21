@@ -189,7 +189,6 @@
         flex: 1;
         min-width: 0;
         margin-left: 20px;
-
       }
       &.is-web .search-container {
         max-width: none !important;
@@ -296,7 +295,7 @@
           border-radius: 8px;
           overflow: hidden;
           position: relative;
-          border: 1PX solid #e0e0e0;
+          border: 1px solid #e0e0e0;
           background-color: #fff;
           height: 64px;
 

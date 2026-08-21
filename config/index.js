@@ -36,7 +36,12 @@ const IS_APP = BUILD_TARGET === 'app'
 // 是否打包成APP服务
 const IS_APP_SERVER = BUILD_APP_SERVER === 'server'
 
-const copyPatterns = [{ from: 'src/assets', to: `${DIST_PATH}/assets` }]
+// 宝塔等子路径部署：APP_PUBLIC_PATH=/mobile/ 、APP_ROUTER_BASENAME=/mobile
+const H5_PUBLIC_PATH =
+  process.env.APP_PUBLIC_PATH || (IS_APP ? (IS_APP_SERVER ? '/' : './') : '/')
+const H5_ROUTER_BASENAME = process.env.APP_ROUTER_BASENAME || undefined
+
+const copyPatterns = []
 const i18nResourceTransform = (content) =>
   content.toString().replace(/\.\/locales\/(zhcn|zhtw|en|ar)\.json/g, './locales/$1.js')
 const i18nLocaleTransform = (content) => `module.exports = ${content.toString()}\n`
@@ -214,7 +219,7 @@ const config = {
 
   h5: {
     sassLoaderOption: SASS_LOADER_OPTION,
-    publicPath: IS_APP ? (IS_APP_SERVER ? '/' : './') : '/',
+    publicPath: H5_PUBLIC_PATH,
 
     router: {
       // mode: 'browser'
@@ -223,7 +228,8 @@ const config = {
       // browser 模式下把首页映射到 `/`，避免 navigateTo('/') / 根地址回跳失败
       customRoutes: {
         '/pages/index': '/'
-      }
+      },
+      ...(H5_ROUTER_BASENAME ? { basename: H5_ROUTER_BASENAME } : {})
     },
     webpackChain(chain) {
       chain.performance.hints(false)
