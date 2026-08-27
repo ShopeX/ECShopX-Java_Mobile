@@ -21,7 +21,8 @@ export function isPurchasePrepaidPoint(data) {
 }
 
 /** 订单是否为企业购预充点数单（orderClass + purchaseMode） */
-export function isEmployeePurchasePrepaidOrder(order = {}) {
+export function isEmployeePurchasePrepaidOrder(order) {
+  if (!order) return false
   const orderClass = order.orderClass ?? order.order_class
   const mode = order.purchaseMode ?? order.purchase_mode
   return orderClass === 'employee_purchase' && isPrepaidPoint(mode)
