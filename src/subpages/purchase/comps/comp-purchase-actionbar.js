@@ -18,16 +18,18 @@ import { SpImage } from '@/components'
 import api from '@/api'
 import { classNames, navigateTo, showToast } from '@/utils'
 import { $t, useTranslation } from '@/i18n'
+import {
+  isPurchasePrepaidPoint,
+  formatPurchaseAmount,
+  getPurchaseModeFromActivity
+} from '../utils/purchase-mode'
 import './comp-purchase-actionbar.scss'
 
-function formatRemainingYuan(activityData) {
-  if (!activityData) return '¥0.00'
+function formatRemainingAmount(activityData) {
+  if (!activityData) return formatPurchaseAmount(0, getPurchaseModeFromActivity(null))
   const cents =
     activityData.surplus_limitfee ?? activityData.left_fee ?? activityData?.fee?.left_fee
-  if (cents == null || cents === '') return '¥0.00'
-  const n = Number(cents) / 100
-  if (Number.isNaN(n)) return '¥0.00'
-  return `¥${n.toFixed(2)}`
+  return formatPurchaseAmount(cents, getPurchaseModeFromActivity(activityData))
 }
 
 function CompPurchaseActionbar(props) {
@@ -88,9 +90,10 @@ function CompPurchaseActionbar(props) {
     loadActivity()
   })
 
-  /** 与活动页一致：员工内购且开启亲友分享时才展示「分享亲友」 */
+  /** 与活动页一致：员工内购且开启亲友分享时才展示「分享亲友」；预充点数模式隐藏 */
   const canShowShareFriend = useMemo(() => {
     if (!fetchedActivity) return false
+    if (isPurchasePrepaidPoint(fetchedActivity)) return false
     return !!(fetchedActivity.is_employee && fetchedActivity.if_relative_join)
   }, [fetchedActivity])
 
@@ -115,7 +118,7 @@ function CompPurchaseActionbar(props) {
     if (!useRemoteQuota) {
       return remainingAmountFromParent
     }
-    return formatRemainingYuan(fetchedActivity)
+    return formatRemainingAmount(fetchedActivity)
   }, [useRemoteQuota, remainingAmountFromParent, fetchedActivity])
 
   const handleCart = useCallback(() => {

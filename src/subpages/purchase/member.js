@@ -41,6 +41,11 @@ import CompBanner from './comps/comp-banner'
 import CompPanel from './comps/comp-panel'
 import CompMenu from './comps/comp-menu'
 import CompHelpCenter from './comps/comp-helpcenter'
+import {
+  isPurchasePrepaidPoint,
+  formatPurchaseAmount,
+  getPurchaseModeFromActivity
+} from './utils/purchase-mode'
 import './member.scss'
 
 const initialConfigState = {
@@ -412,6 +417,19 @@ function MemberIndex(props) {
     })
   }
 
+  const purchaseMode = getPurchaseModeFromActivity(purchaseInfo)
+  const isPrepaidPointMode = isPurchasePrepaidPoint(purchaseInfo)
+
+  const formatQuotaValue = (cents) => {
+    if (!isLogin) return '****'
+    if (isPrepaidPointMode) {
+      return formatPurchaseAmount(cents, purchaseMode)
+    }
+    if (cents == null || cents === '') return '0.00'
+    const n = Number(cents) / 100
+    return Number.isNaN(n) ? '0.00' : n.toFixed(2)
+  }
+
   if (!config) {
     return null
   }
@@ -462,33 +480,17 @@ function MemberIndex(props) {
             <View className='header-bd'>
               <View className='bd-item'>
                 <View className='bd-item-label'>{$t('2d09f91d.4d1507')}</View>
-                <View className='bd-item-value'>
-                  {isLogin
-                    ? purchaseInfo.limit_fee
-                      ? (purchaseInfo.limit_fee / 100).toFixed(2)
-                      : '0.00'
-                    : '****'}
-                </View>
+                <View className='bd-item-value'>{formatQuotaValue(purchaseInfo.limit_fee)}</View>
               </View>
               <View className='bd-item'>
                 <View className='bd-item-label'>{$t('3bfb8e27.159198')}</View>
                 <View className='bd-item-value'>
-                  {isLogin
-                    ? purchaseInfo.aggregate_fee
-                      ? (purchaseInfo.aggregate_fee / 100).toFixed(2)
-                      : '0.00'
-                    : '****'}
+                  {formatQuotaValue(purchaseInfo.aggregate_fee)}
                 </View>
               </View>
               <View className='bd-item deposit-item'>
                 <View className='bd-item-label'>{$t('10c783c7.9aa89b')}</View>
-                <View className='bd-item-value'>
-                  {isLogin
-                    ? purchaseInfo.left_fee
-                      ? (purchaseInfo.left_fee / 100).toFixed(2)
-                      : '0.00'
-                    : '****'}
-                </View>
+                <View className='bd-item-value'>{formatQuotaValue(purchaseInfo.left_fee)}</View>
               </View>
               {/* <View className='bd-item' onClick={handleClickLink.bind(this, '/pages/member/item-fav')}>
             <View className='bd-item-label'>收藏(个)</View>
@@ -593,7 +595,8 @@ function MemberIndex(props) {
         <CompMenu
           accessMenu={{
             ...config.menu,
-            purchase: purchaseInfo?.is_employee && purchaseInfo?.if_relative_join,
+            purchase:
+              purchaseInfo?.is_employee && purchaseInfo?.if_relative_join && !isPrepaidPointMode,
             popularize: userInfo ? userInfo.popularize : false
           }}
           isPromoter={userInfo ? userInfo.isPromoter : false}

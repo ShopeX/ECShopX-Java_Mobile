@@ -555,14 +555,13 @@ if (process.env.TARO_ENV === 'weapp') {
     network: 'all',
     packages: [I18N_SUBPACKAGE_ROOT]
   }
-  const preloadRule = {
-    'pages/index': i18nPreloadRule,
-    'pages/purchase/index': i18nPreloadRule
-  }
-  const entryPage = config.pages[0]
-  if (entryPage && !preloadRule[entryPage]) {
-    preloadRule[entryPage] = i18nPreloadRule
-  }
+  const preloadRule = {}
+  const i18nEntryPages = ['pages/index', 'pages/purchase/index', config.pages[0]].filter(Boolean)
+  i18nEntryPages.forEach((page) => {
+    if (config.pages.includes(page) && !preloadRule[page]) {
+      preloadRule[page] = i18nPreloadRule
+    }
+  })
   config.preloadRule = preloadRule
 }
 

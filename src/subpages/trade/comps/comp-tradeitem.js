@@ -2,7 +2,7 @@
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
  */
-import React, { useEffect } from 'react'
+import React from 'react'
 import { useSelector } from 'react-redux'
 import Taro from '@tarojs/taro'
 import { View, Text } from '@tarojs/components'
@@ -10,6 +10,10 @@ import { AtButton } from 'taro-ui'
 import { SpImage, SpPrice, SpTradeItem } from '@/components'
 import { VERSION_STANDARD } from '@/utils'
 import { useTranslation, $t, ti } from '@/i18n'
+import {
+  isEmployeePurchasePrepaidOrder,
+  getPrepaidPaymentLabel
+} from '@/subpages/purchase/utils/purchase-mode'
 import tradeHooks from '../hooks'
 import './comp-tradeitem.scss'
 
@@ -19,22 +23,30 @@ function CompTradeItem(props) {
   if (!info) {
     return null
   }
-  const { tradeActionBtns, getTradeAction } = tradeHooks()
+  const { getTradeAction } = tradeHooks()
   const {
     distributorInfo,
     orderId,
     createDate,
     orderStatusMsg,
     items,
-    orderStatus,
     totalFee,
     orderClass,
     point,
-    distributorId
+    distributorId,
+    purchaseModeDesc,
+    employeePurchaseTag
   } = info
   const { pointName } = useSelector((state) => state.sys)
 
   const btns = getTradeAction(info)
+  const isPrepaidPurchaseOrder = isEmployeePurchasePrepaidOrder(info)
+  const purchaseTag =
+    employeePurchaseTag || (orderClass === 'employee_purchase' ? $t('c2581d4c.6fb7d0') : '')
+  const modeDesc =
+    orderClass === 'employee_purchase'
+      ? purchaseModeDesc || (isPrepaidPurchaseOrder ? getPrepaidPaymentLabel(info) : '')
+      : ''
 
   const handleClickItem = ({ key, action }) => {
     if (
@@ -84,12 +96,16 @@ function CompTradeItem(props) {
           <View className='shop-info' onClick={onViewStorePage}>
             <SpImage src={distributorInfo?.logo} width={100} height={100} />
             <View className='shop-name'>
+              {purchaseTag ? <Text className='purchase-tag'>{purchaseTag}</Text> : null}
               {distributorInfo?.name}
               {!VERSION_STANDARD && <Text className='iconfont icon-qianwang-01'></Text>}
             </View>
           </View>
           <View className='trade-no'>{ti('351d8689.78f59a', [orderId])}</View>
-          <View className='trade-time'>{ti('351d8689.8bf28c', [createDate])}</View>
+          <View className='trade-time'>
+            {ti('351d8689.8bf28c', [createDate])}
+            {modeDesc ? <Text className='purchase-mode-desc'> · {modeDesc}</Text> : null}
+          </View>
         </View>
         <View className='trade-state'>{orderStatusMsg}</View>
       </View>
@@ -97,6 +113,7 @@ function CompTradeItem(props) {
         {items.map((good, goodlIns) => (
           <SpTradeItem
             key={goodlIns}
+            pointMode={isPrepaidPurchaseOrder}
             info={{
               ...good,
               orderClass
@@ -126,7 +143,7 @@ function CompTradeItem(props) {
             <View style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
               <Text className='num'>{ti('351d8689.17d01f', [totalNum])}</Text>
               <Text className='label'>{$t('351d8689.94a7de')}</Text>
-              <SpPrice value={totalFee} size={38} />
+              <SpPrice value={totalFee} size={38} pointMode={isPrepaidPurchaseOrder} />
             </View>
           )}
         </View>

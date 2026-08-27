@@ -12,6 +12,7 @@ import './index.scss'
 
 function SpTradeItem(props) {
   useTranslation()
+  const propsPointMode = props.pointMode
   const { info, onClick = () => {} } = props
   if (!info) return null
   const {
@@ -53,7 +54,10 @@ function SpTradeItem(props) {
               ) : null}
             </Text>
           )}
-          {orderClass == 'normal' && <SpPrice value={price} />}
+          {orderClass == 'employee_purchase' && (
+            <SpPrice value={price} pointMode={propsPointMode} />
+          )}
+          {orderClass == 'normal' && <SpPrice value={price} pointMode={propsPointMode} />}
         </View>
         <View className='goods-info-bd'>
           <Text className='spec-desc'>{itemSpecDesc}</Text>

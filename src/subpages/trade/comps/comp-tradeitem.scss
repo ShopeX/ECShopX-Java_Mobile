@@ -87,12 +87,28 @@
       display: flex;
       align-items: center;
 
+      .purchase-tag {
+        display: inline-block;
+        margin-right: 8px;
+        padding: 0 8px;
+        font-size: 20px;
+        font-weight: 400;
+        line-height: 32px;
+        color: #ffffff;
+        background: #4980ff;
+        border-radius: 4px;
+      }
+
       .icon-qianwang-01 {
         font-size: 20px;
         color: #222;
         margin-left: 6px;
       }
     }
+  }
+
+  .purchase-mode-desc {
+    color: #999;
   }
 
   .trade-item-ft {

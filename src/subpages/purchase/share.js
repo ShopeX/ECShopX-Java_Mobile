@@ -11,8 +11,13 @@ import { SharePurchase } from '@/subpages/components'
 import api from '@/api'
 import { connect } from 'react-redux'
 import { withPager } from '@/hocs'
-import { formatDateTime, log } from '@/utils'
+import { formatDateTime, log, showToast } from '@/utils'
 import { $t, i18n } from '@/i18n'
+import {
+  isPurchasePrepaidPoint,
+  formatPurchaseAmount,
+  getPurchaseModeFromActivity
+} from './utils/purchase-mode'
 import './share.scss'
 
 @connect(({ purchase }) => ({
@@ -34,7 +39,8 @@ export default class PurchaseIndex extends Component {
       relative_list: [],
       isOpened: false,
       posterModalOpen: false,
-      enterpriseName: ''
+      enterpriseName: '',
+      blocked: false
     }
   }
 
@@ -62,7 +68,7 @@ export default class PurchaseIndex extends Component {
     }
     try {
       const data = await api.purchase.getUserEnterprises({
-        disabled: 0,
+        disabled: 0
       })
       const found = data?.find((x) => x.enterprise_id == eid)
       this.setState({
@@ -96,6 +102,14 @@ export default class PurchaseIndex extends Component {
   async getActivitydata() {
     const { activity_id, enterprise_id } = this.props.purchase_share_info || {}
     const data = await api.purchase.getEmployeeActivitydata({ activity_id, enterprise_id })
+    if (isPurchasePrepaidPoint(data)) {
+      this.setState({ blocked: true, info: data })
+      showToast('预充点数模式不支持分享亲友')
+      setTimeout(() => {
+        Taro.navigateBack()
+      }, 1500)
+      return
+    }
     this.setState({
       info: data
     })
@@ -139,19 +153,17 @@ export default class PurchaseIndex extends Component {
   }
 
   formatUsedYuan(cents) {
-    if (cents == null || cents === '') {
-      return '¥0'
-    }
-    const y = Number(cents) / 100
-    if (Number.isNaN(y)) {
-      return '¥0'
-    }
-    return Number.isInteger(y) ? `¥${y}` : `¥${y.toFixed(2)}`
+    const mode = getPurchaseModeFromActivity(this.state.info)
+    return formatPurchaseAmount(cents, mode)
   }
 
   render() {
-    const { info, relative_list, isOpened, posterModalOpen, enterpriseName } = this.state
+    const { info, relative_list, isOpened, posterModalOpen, enterpriseName, blocked } = this.state
     const { purchase_share_info } = this.props
+
+    if (blocked) {
+      return null
+    }
 
     const canShareNum = Math.max(0, (info.invite_limit || 0) - (info.invited_num || 0))
     const activityStartTs = info?.relative_begin_time ? info.relative_begin_time * 1000 : null

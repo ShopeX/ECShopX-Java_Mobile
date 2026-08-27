@@ -75,3 +75,5 @@ export const deliveryList = [
     key: 'is_ziti'
   }
 ]
+
+export * from '../utils/purchase-mode'

@@ -33,6 +33,10 @@ import qs from 'qs'
 import S from '@/spx'
 import CompPurchaseNav from '@/pages/purchase/comps/comp-purchase-nav'
 import { useTranslation, $t, ti } from '@/i18n'
+import {
+  isPurchasePrepaidPoint,
+  getPrepaidPaymentLabel
+} from '@/subpages/purchase/utils/purchase-mode'
 import { initialState } from './const'
 import SpPurchaseDeliver from './comps/sp-purchase-deliver'
 import './espier-checkout.scss'
@@ -54,6 +58,7 @@ function PurchaseCheckout(props) {
   const { cashierPayment } = usePayment()
 
   const [enterpriseName, setEnterpriseName] = useState('')
+  const [activityInfo, setActivityInfo] = useState({})
   const [state, setState] = useAsyncCallback(initialState)
 
   const dispatch = useDispatch()
@@ -150,6 +155,42 @@ function PurchaseCheckout(props) {
     }
     load()
   }, [curEnterpriseId, purchase_share_info?.enterprise_id, router?.params?.enterprise_id])
+
+  const isPrepaidPointMode = isPurchasePrepaidPoint(activityInfo)
+
+  useEffect(() => {
+    const { activity_id, enterprise_id } = purchase_share_info
+    if (!activity_id || !enterprise_id) {
+      setActivityInfo({})
+      return
+    }
+    const loadActivity = async () => {
+      try {
+        const data = await api.purchase.getEmployeeActivitydata({
+          activity_id,
+          enterprise_id
+        })
+        setActivityInfo(data || {})
+      } catch (e) {
+        setActivityInfo({})
+      }
+    }
+    loadActivity()
+  }, [purchase_share_info?.activity_id, purchase_share_info?.enterprise_id])
+
+  useEffect(() => {
+    if (isPrepaidPointMode) {
+      setState((draft) => {
+        draft.payType = 'prepaid_point'
+        draft.payChannel = 'prepaid_point'
+      })
+    } else if (!payType && defalutPaytype) {
+      setState((draft) => {
+        draft.payType = defalutPaytype
+        draft.payChannel = defalutPaytype
+      })
+    }
+  }, [isPrepaidPointMode, defalutPaytype])
 
   useEffect(() => {
     if (isLogin) {
@@ -286,7 +327,37 @@ function PurchaseCheckout(props) {
     let orderInfo
     let orderId
 
-    if ((isWeb || isAPP()) && payType !== 'deposit') {
+    const prepaidParams = {
+      ...params,
+      pay_type: 'prepaid_point',
+      pay_channel: 'prepaid_point'
+    }
+
+    if (isPrepaidPointMode) {
+      try {
+        const { trade_info } = await api.trade.create(prepaidParams)
+        orderInfo = trade_info
+        orderId = trade_info.order_id
+      } catch (e) {
+        Taro.hideLoading()
+        const errMsg = e?.message || e?.res?.data?.data?.message || e?.errMsg || ''
+        if (errMsg) {
+          showToast(errMsg)
+        }
+        setState((draft) => {
+          draft.submitLoading = false
+        })
+        return
+      }
+      Taro.hideLoading()
+      setState((draft) => {
+        draft.submitLoading = false
+      })
+      Taro.redirectTo({ url: `/pages/cart/cashier-result?order_id=${orderId}` })
+      return
+    }
+
+    if ((isWeb || isAPP()) && payType !== 'deposit' && payType !== 'prepaid_point') {
       try {
         const h5ResInfo = await api.trade.h5create({
           ...params,
@@ -308,6 +379,10 @@ function PurchaseCheckout(props) {
         setState((draft) => {
           draft.submitLoading = false
         })
+        const errMsg = e?.message || e?.res?.data?.data?.message || ''
+        if (errMsg.includes('预充点数不足')) {
+          showToast(errMsg)
+        }
         return
       }
     }
@@ -326,8 +401,8 @@ function PurchaseCheckout(props) {
       return
     }
 
-    // 储值支付 或者 积分抵扣
-    if (payType === 'deposit' || params.pay_type == 'point') {
+    // 储值支付、积分抵扣或预充点数
+    if (payType === 'deposit' || params.pay_type == 'point' || params.pay_type == 'prepaid_point') {
       Taro.redirectTo({ url: `/pages/cart/cashier-result?order_id=${orderId}` })
     } else {
       if (
@@ -388,6 +463,7 @@ function PurchaseCheckout(props) {
   }
 
   const handlePaymentShow = () => {
+    if (isPrepaidPointMode) return
     setState((draft) => {
       // draft.isPaymentOpend = true
       draft.openCashier = true
@@ -559,7 +635,11 @@ function PurchaseCheckout(props) {
       promotion: 'normal',
       isNostores: entryStoreByLBS ? 0 : 1, // 这个传参需要和后端在确定一下
       point_use,
-      pay_type: point_use > 0 && totalInfo.total_fee == 0 ? 'point' : payType,
+      pay_type: isPrepaidPointMode
+        ? 'prepaid_point'
+        : point_use > 0 && totalInfo.total_fee == 0
+        ? 'point'
+        : payType,
       distributor_id: receiptType === 'ziti' && ziti_shopid ? ziti_shopid : dtid,
       activity_id: _activity_id,
       enterprise_id: _enterprise_id
@@ -589,7 +669,7 @@ function PurchaseCheckout(props) {
     // 提交时候获取参数 把留言信息传进去
     cus_parmas.remark = remark
     // cus_parmas.pay_type = totalInfo.freight_type === 'point' ? 'point' : payType
-    cus_parmas.pay_channel = payChannel
+    cus_parmas.pay_channel = isPrepaidPointMode ? 'prepaid_point' : payChannel
     // }
 
     return cus_parmas
@@ -645,6 +725,7 @@ function PurchaseCheckout(props) {
             unit='cent'
             className='page-espier-checkout__toolbar-price'
             value={totalInfo.total_fee}
+            pointMode={isPrepaidPointMode}
           />
         </View>
       </View>
@@ -661,7 +742,11 @@ function PurchaseCheckout(props) {
     </View>
   )
 
-  const payMethodLabel = payChannel ? PAYMENT_TYPE()[payChannel] : $t('edc703ce.a49dc0')
+  const payMethodLabel = isPrepaidPointMode
+    ? getPrepaidPaymentLabel(activityInfo)
+    : payChannel
+    ? PAYMENT_TYPE()[payChannel]
+    : $t('edc703ce.a49dc0')
 
   return (
     <SpPage
@@ -727,6 +812,7 @@ function PurchaseCheckout(props) {
                           <SpPrice
                             className='page-espier-checkout__goods-price-current'
                             value={item.price}
+                            pointMode={isPrepaidPointMode}
                           />
                           {Number(item.salePrice) > 0 ? (
                             <SpPrice
@@ -734,6 +820,7 @@ function PurchaseCheckout(props) {
                               value={item.salePrice}
                               size={24}
                               lineThrough
+                              pointMode={isPrepaidPointMode}
                             />
                           ) : null}
                         </View>
@@ -745,6 +832,7 @@ function PurchaseCheckout(props) {
                               ? item.salePrice
                               : item.price
                           }
+                          pointMode={isPrepaidPointMode}
                         />
                       )}
                     </View>
@@ -759,23 +847,25 @@ function PurchaseCheckout(props) {
         {!bargain_id && (
           <View
             className='page-espier-checkout__card page-espier-checkout__pay'
-            onClick={handlePaymentShow}
+            onClick={isPrepaidPointMode ? undefined : handlePaymentShow}
           >
             <View className='page-espier-checkout__pay-row'>
               <Text className='page-espier-checkout__card-title page-espier-checkout__pay-title'>
                 {$t('250b375e.0c9d2b')}
               </Text>
               <View className='page-espier-checkout__pay-bd'>
-                {totalInfo.deduction ? (
+                {totalInfo.deduction && !isPrepaidPointMode ? (
                   <Text className='page-espier-checkout__pay-point'>
                     {ti('edc703ce.dfb3e1', [`${totalInfo.remainpt}${pointName}`])}
                   </Text>
                 ) : null}
                 <Text className='page-espier-checkout__pay-val'>{payMethodLabel}</Text>
-                <Text className='iconfont icon-arrowRight page-espier-checkout__pay-arrow' />
+                {!isPrepaidPointMode && (
+                  <Text className='iconfont icon-arrowRight page-espier-checkout__pay-arrow' />
+                )}
               </View>
             </View>
-            {totalInfo.deduction ? (
+            {totalInfo.deduction && !isPrepaidPointMode ? (
               <View className='page-espier-checkout__pay-extra'>
                 {ti('9c730348.c72db2', [totalInfo.point, pointName])}
                 <SpPrice unit='cent' value={totalInfo.deduction} />
@@ -800,6 +890,7 @@ function PurchaseCheckout(props) {
               unit='cent'
               className='page-espier-checkout__order-v'
               value={totalInfo.item_fee_new}
+              pointMode={isPrepaidPointMode}
             />
           </View>
           <View className='page-espier-checkout__order-row'>
@@ -808,6 +899,7 @@ function PurchaseCheckout(props) {
               unit='cent'
               className='page-espier-checkout__order-v'
               value={totalInfo.discount_fee}
+              pointMode={isPrepaidPointMode}
             />
           </View>
           <View className='page-espier-checkout__order-row'>
@@ -816,6 +908,7 @@ function PurchaseCheckout(props) {
               unit='cent'
               className='page-espier-checkout__order-v'
               value={totalInfo.freight_fee}
+              pointMode={isPrepaidPointMode}
             />
           </View>
           {(VERSION_STANDARD || VERSION_B2C || (VERSION_PLATFORM && dtid == 0)) &&
@@ -845,23 +938,25 @@ function PurchaseCheckout(props) {
         )}
       </View>
 
-      <SpCashier
-        isOpened={openCashier}
-        paymentAmount={totalInfo.freight_fee}
-        isPurchase
-        value={payChannel}
-        onClose={() => {
-          setState((draft) => {
-            draft.openCashier = false
-          })
-        }}
-        onChange={(value) => {
-          setState((draft) => {
-            draft.payType = value?.paymentCode
-            draft.payChannel = value?.paymentChannel
-          })
-        }}
-      />
+      {!isPrepaidPointMode && (
+        <SpCashier
+          isOpened={openCashier}
+          paymentAmount={totalInfo.freight_fee}
+          isPurchase
+          value={payChannel}
+          onClose={() => {
+            setState((draft) => {
+              draft.openCashier = false
+            })
+          }}
+          onChange={(value) => {
+            setState((draft) => {
+              draft.payType = value?.paymentCode
+              draft.payChannel = value?.paymentChannel
+            })
+          }}
+        />
+      )}
     </SpPage>
   )
 }

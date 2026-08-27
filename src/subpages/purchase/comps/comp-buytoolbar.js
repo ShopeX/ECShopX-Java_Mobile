@@ -17,7 +17,13 @@ import './comp-buytoolbar.scss'
 
 function CompGoodsBuyToolbar(props) {
   useTranslation()
-  const { info, onChange = () => {}, onSubscribe = () => {}, curItem = null } = props
+  const {
+    info,
+    onChange = () => {},
+    onSubscribe = () => {},
+    curItem = null,
+    pointMode = false
+  } = props
   const { cartCount = 0 } = useSelector((state) => state.purchase)
   const btns = []
 
@@ -144,7 +150,7 @@ function CompGoodsBuyToolbar(props) {
     <View className='comp-goodsbuytoolbar-espier'>
       <View className='comp-goodsbuytoolbar-espier__inner'>
         <View className='comp-goodsbuytoolbar-espier__price'>
-          <SpGoodsPrice isPurchase info={priceInfo} />
+          <SpGoodsPrice isPurchase pointMode={pointMode} info={priceInfo} />
         </View>
 
         <View

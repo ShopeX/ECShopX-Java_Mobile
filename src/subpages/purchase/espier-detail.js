@@ -48,6 +48,12 @@ import CompShare from './comps/comp-share'
 import CompPromation from './comps/comp-promation'
 import CompGroup from './comps/comp-group'
 import CompSkuSelect from './comps/comp-skuselect'
+import {
+  formatPurchaseAmount,
+  getPurchaseModeFromActivity,
+  isPrepaidPoint,
+  isPurchasePrepaidPoint
+} from './utils/purchase-mode'
 import './espier-detail.scss'
 
 const MSpSkuSelect = React.memo(CompSkuSelect)
@@ -115,7 +121,7 @@ function enrichEspierPurchaseDetail(mapped, raw) {
 }
 
 /** 限购金额：多规格时优先当前 SKU 的 limit_fee，否则 activity_info.fee / 根 fee / 扁平（单位分） */
-function resolvePurchaseLimitAmountLine(info, curItem) {
+function resolvePurchaseLimitAmountLine(info, curItem, purchaseMode) {
   if (!info) return null
   let limitFee
   if (!info.nospec && curItem != null) {
@@ -129,6 +135,9 @@ function resolvePurchaseLimitAmountLine(info, curItem) {
       info.purchaseAmountLimitFee
   }
   if (limitFee == null || limitFee === '') return null
+  if (isPrepaidPoint(purchaseMode)) {
+    return `商品总额不超过 ${formatPurchaseAmount(limitFee, purchaseMode)}`
+  }
   const n = Number(limitFee) / 100
   if (Number.isNaN(n)) return null
   return ti('47ac6066.b8e9f0', [n.toFixed(2)])
@@ -199,6 +208,7 @@ function EspierDetail(props) {
   const { setNavigationBarTitle } = useNavigation()
 
   const [enterpriseName, setEnterpriseName] = useState('')
+  const [purchaseActivityInfo, setPurchaseActivityInfo] = useState({})
   const [state, setState] = useImmer(initialState)
   const {
     info,
@@ -268,7 +278,7 @@ function EspierDetail(props) {
     const loadEnterpriseName = async () => {
       try {
         const data = await api.purchase.getUserEnterprises({
-          disabled: 0,
+          disabled: 0
         })
         const found = data?.find((x) => x.enterprise_id == eid)
         setEnterpriseName(found?.name || found?.enterprise_name || '')
@@ -278,6 +288,38 @@ function EspierDetail(props) {
     }
     loadEnterpriseName()
   }, [curEnterpriseId, enterpriseId, purchase_share_info?.enterprise_id])
+
+  useEffect(() => {
+    const aid = activityId || purchase_share_info?.activity_id
+    const eid = enterpriseId || purchase_share_info?.enterprise_id || curEnterpriseId
+    if (!aid || !eid) {
+      setPurchaseActivityInfo({})
+      return
+    }
+    const loadActivity = async () => {
+      try {
+        const data = await api.purchase.getEmployeeActivitydata({
+          activity_id: aid,
+          enterprise_id: eid
+        })
+        setPurchaseActivityInfo(data || {})
+      } catch (e) {
+        setPurchaseActivityInfo({})
+      }
+    }
+    loadActivity()
+  }, [
+    activityId,
+    enterpriseId,
+    curEnterpriseId,
+    purchase_share_info?.activity_id,
+    purchase_share_info?.enterprise_id
+  ])
+
+  const isPrepaidPointMode = useMemo(
+    () => isPurchasePrepaidPoint(purchaseActivityInfo),
+    [purchaseActivityInfo]
+  )
 
   useEffect(() => {
     if (id) {
@@ -506,9 +548,13 @@ function EspierDetail(props) {
     () => (info ? resolvePurchaseLimitQty(info, curItem) : null),
     [info, curItem]
   )
+  const purchaseMode = useMemo(
+    () => getPurchaseModeFromActivity(purchaseActivityInfo),
+    [purchaseActivityInfo]
+  )
   const purchaseLimitAmountLine = useMemo(
-    () => (info ? resolvePurchaseLimitAmountLine(info, curItem) : null),
-    [info, curItem, i18n.language]
+    () => (info ? resolvePurchaseLimitAmountLine(info, curItem, purchaseMode) : null),
+    [info, curItem, purchaseMode, i18n.language]
   )
   const showPurchaseLimits = purchaseLimitQty != null || !!purchaseLimitAmountLine
   const deliveryAddressLine = formatEspierDetailAddressLine(address)
@@ -540,6 +586,7 @@ function EspierDetail(props) {
         <CompBuytoolbar
           curItem={curItem}
           info={info}
+          pointMode={isPrepaidPointMode}
           onChange={onChangeToolBar}
           onSubscribe={() => {
             fetch()
@@ -623,7 +670,11 @@ function EspierDetail(props) {
                 fetch()
               }}
             >
-              <SpGoodsPrice isPurchase info={curItem ? curItem : info} />
+              <SpGoodsPrice
+                isPurchase
+                pointMode={isPrepaidPointMode}
+                info={curItem ? curItem : info}
+              />
             </CompActivityBar>
           )}
 
@@ -790,6 +841,7 @@ function EspierDetail(props) {
         type={selectType}
         info={info}
         selectedItem={curItem}
+        pointMode={isPrepaidPointMode}
         onClose={() => {
           setState((draft) => {
             draft.skuPanelOpen = false

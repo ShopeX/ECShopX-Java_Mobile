@@ -8,19 +8,13 @@ import React, { useEffect, useRef, useState } from 'react'
 import { View, Text } from '@tarojs/components'
 import { classNames } from '@/utils'
 import { $t, useTranslation } from '@/i18n'
+import { formatPurchaseAmount, getPurchaseModeFromActivity } from '../utils/purchase-mode'
 import './comp-purchase-quota-sheet.scss'
 
 const SHEET_ANIMATION_DURATION = 240
 
-function formatQuotaYuan(cents) {
-  if (cents == null || cents === '') {
-    return '¥0.00'
-  }
-  const n = Number(cents) / 100
-  if (Number.isNaN(n)) {
-    return '¥0.00'
-  }
-  return `¥${n.toFixed(2)}`
+function formatQuotaAmount(cents, purchaseMode) {
+  return formatPurchaseAmount(cents, getPurchaseModeFromActivity({ purchase_mode: purchaseMode }))
 }
 
 function CompPurchaseQuotaSheet(props) {
@@ -32,7 +26,9 @@ function CompPurchaseQuotaSheet(props) {
     /** 单位：分，与 getEmployeeActivitydata / member 额度字段一致 */
     totalFeeCents,
     usedFeeCents,
-    remainingFeeCents
+    remainingFeeCents,
+    /** purchase_mode，预充点数模式下展示「点」 */
+    purchaseMode
   } = props
 
   const [shouldRender, setShouldRender] = useState(open)
@@ -82,9 +78,9 @@ function CompPurchaseQuotaSheet(props) {
     return null
   }
 
-  const totalText = formatQuotaYuan(totalFeeCents)
-  const usedText = formatQuotaYuan(usedFeeCents)
-  const remainingText = formatQuotaYuan(remainingFeeCents)
+  const totalText = formatQuotaAmount(totalFeeCents, purchaseMode)
+  const usedText = formatQuotaAmount(usedFeeCents, purchaseMode)
+  const remainingText = formatQuotaAmount(remainingFeeCents, purchaseMode)
 
   return (
     <View

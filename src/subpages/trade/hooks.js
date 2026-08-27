@@ -7,6 +7,9 @@ import { useState, useRef, useEffect } from 'react'
 import { useImmer } from 'use-immer'
 import api from '@/api'
 import { useTranslation, $t } from '@/i18n'
+import { isEmployeePurchasePrepaidOrder } from '@/subpages/purchase/utils/purchase-mode'
+
+export { isEmployeePurchasePrepaidOrder }
 
 export default (props) => {
   useTranslation()
@@ -246,5 +249,5 @@ export default (props) => {
     return btns
   }
 
-  return { tradeActionBtns, getTradeAction, getItemAction }
+  return { tradeActionBtns, getTradeAction, getItemAction, isEmployeePurchasePrepaidOrder }
 }

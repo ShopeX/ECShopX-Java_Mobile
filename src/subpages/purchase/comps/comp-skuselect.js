@@ -102,7 +102,8 @@ function PurchaseSkuSelect(props) {
     onChange = () => {},
     selectedItem = null,
     type,
-    hideInputNumber = false
+    hideInputNumber = false,
+    pointMode = false
   } = props
   const [state, setState] = useAsyncCallback(initialState)
   const { purchase_share_info = {}, cartCount = 0 } = useSelector((state) => state.purchase)
@@ -412,7 +413,7 @@ function PurchaseSkuSelect(props) {
         />
         <View className='sp-sku-select-espier__header-main'>
           <View className='sp-sku-select-espier__price-row'>
-            <SpGoodsPrice isPurchase info={curItem || info} />
+            <SpGoodsPrice isPurchase pointMode={pointMode} info={curItem || info} />
           </View>
           {shouldShowSelectedWrap && (
             <View

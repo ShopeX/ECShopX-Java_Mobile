@@ -84,6 +84,7 @@ export default (props = {}) => {
         break
       case 'deposit':
       case 'point':
+      case 'prepaid_point':
         depositPay(params, orderInfo)
         break
       case 'alipaymini':
@@ -420,7 +421,7 @@ export default (props = {}) => {
         payError(orderInfo)
       }
     }
-    if (pay_type == 'point') {
+    if (pay_type == 'point' || pay_type == 'prepaid_point') {
       isTradeDetaiPage() ? orderPoints(params, orderInfo) : paySuccess(params, orderInfo)
     }
   }
@@ -436,6 +437,10 @@ export default (props = {}) => {
       })
       paySuccess(params, orderInfo)
     } catch (e) {
+      const errMsg = e?.message || e?.res?.data?.data?.message || ''
+      if (pay_type === 'prepaid_point' && errMsg) {
+        showToast(errMsg)
+      }
       payError(orderInfo)
     }
   }

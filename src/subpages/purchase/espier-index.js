@@ -28,6 +28,11 @@ import CompGoodsItem from '@/pages/cart/comps/comp-goodsitem'
 import CompPurchaseNav from '@/pages/purchase/comps/comp-purchase-nav'
 import CompPurchaseActionbar from '@/subpages/purchase/comps/comp-purchase-actionbar'
 import CompPurchaseQuotaSheet from '@/subpages/purchase/comps/comp-purchase-quota-sheet'
+import {
+  isPurchasePrepaidPoint,
+  formatPurchaseAmount,
+  getPurchaseModeFromActivity
+} from '@/subpages/purchase/utils/purchase-mode'
 import { useTranslation, $t, ti } from '@/i18n'
 import './espier-index.scss'
 
@@ -149,7 +154,7 @@ function CartIndex() {
     const load = async () => {
       try {
         const data = await api.purchase.getUserEnterprises({
-          disabled: 0,
+          disabled: 0
         })
         const found = data?.find((x) => x.enterprise_id == eid)
         setEnterpriseName(found?.name || found?.enterprise_name || '')
@@ -168,10 +173,7 @@ function CartIndex() {
   const remainingAmountText = useMemo(() => {
     const cents =
       activityInfo?.surplus_limitfee ?? activityInfo?.left_fee ?? activityInfo?.fee?.left_fee
-    if (cents == null || cents === '') return '¥0.00'
-    const n = Number(cents) / 100
-    if (Number.isNaN(n)) return '¥0.00'
-    return `¥${n.toFixed(2)}`
+    return formatPurchaseAmount(cents, getPurchaseModeFromActivity(activityInfo))
   }, [activityInfo])
 
   const quotaFeeCents = useMemo(
@@ -184,10 +186,12 @@ function CartIndex() {
     [activityInfo]
   )
 
-  const isPurchaseShare = useMemo(
-    () => !!(activityInfo?.is_employee && activityInfo?.if_relative_join),
-    [activityInfo]
-  )
+  const isPurchaseShare = useMemo(() => {
+    if (isPurchasePrepaidPoint(activityInfo)) return false
+    return !!(activityInfo?.is_employee && activityInfo?.if_relative_join)
+  }, [activityInfo])
+
+  const isPrepaidPointMode = useMemo(() => isPurchasePrepaidPoint(activityInfo), [activityInfo])
 
   const onActionBarShare = useCallback(() => {
     if (!isPurchaseShare) {
@@ -506,6 +510,7 @@ function CartIndex() {
                                 <CompGoodsItem
                                   info={c_sitem}
                                   isPurchase
+                                  pointMode={isPrepaidPointMode}
                                   inputMax={resolvePurchaseCartItemMax(c_sitem)}
                                   onDelete={onDeleteCartGoodsItem.bind(this, c_sitem)}
                                   onChange={onChangeCartGoodsItem.bind(this, c_sitem)}
@@ -520,6 +525,8 @@ function CartIndex() {
                                       disabled
                                       info={pack_sitem}
                                       goodType='packages'
+                                      isPurchase
+                                      pointMode={isPrepaidPointMode}
                                       isShowAddInput={false}
                                       isShowDeleteIcon={false}
                                     />
@@ -558,7 +565,11 @@ function CartIndex() {
                         <View>
                           <View className='total-price-wrap'>
                             {$t('f9ef9536.7b2864')}
-                            <SpPrice className='total-pirce' value={all_item.total_fee / 100} />
+                            <SpPrice
+                              className='total-pirce'
+                              value={all_item.total_fee / 100}
+                              pointMode={isPrepaidPointMode}
+                            />
                           </View>
                           {all_item.discount_fee > 0 && (
                             <View className='discount-price-wrap'>
@@ -566,6 +577,7 @@ function CartIndex() {
                               <SpPrice
                                 className='total-pirce'
                                 value={all_item.discount_fee / 100}
+                                pointMode={isPrepaidPointMode}
                               />
                             </View>
                           )}
@@ -633,6 +645,7 @@ function CartIndex() {
         totalFeeCents={quotaFeeCents.total}
         usedFeeCents={quotaFeeCents.used}
         remainingFeeCents={quotaFeeCents.remaining}
+        purchaseMode={getPurchaseModeFromActivity(activityInfo)}
       />
 
       <CompPurchaseActionbar

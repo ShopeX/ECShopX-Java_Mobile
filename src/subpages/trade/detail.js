@@ -18,6 +18,10 @@ import { useTranslation, $t, ti, i18n } from '@/i18n'
 import { pickBy, copyText, showToast, isArray, VERSION_STANDARD, getCurrencySymbol } from '@/utils'
 import S from '@/spx'
 import FloatSalesperson from '@/subpages/store/comps/float-salesperson'
+import {
+  isEmployeePurchasePrepaidOrder,
+  getPrepaidPaymentLabel
+} from '@/subpages/purchase/utils/purchase-mode'
 import tradeHooks from './hooks'
 import CompTradeCancel from './comps/comp-tradecancel'
 import CompWriteOffCode from './comps/comp-writeoff-code'
@@ -205,6 +209,10 @@ function TradeDetail(props) {
 
   const handleClickAction = async ({ key, action }) => {
     if (key == 'pay') {
+      if (isEmployeePurchasePrepaidOrder(info)) {
+        onHandlerPayOrder({ paymentCode: 'prepaid_point', paymentChannel: 'prepaid_point' })
+        return
+      }
       setState((draft) => {
         draft.openCashier = true
       })
@@ -260,6 +268,27 @@ function TradeDetail(props) {
   // 订单支付
   const onHandlerPayOrder = ({ paymentCode: payType, paymentChannel }) => {
     const { activityType, orderId, orderType, offlinePayCheckStatus } = info
+    if (isEmployeePurchasePrepaidOrder(info)) {
+      const params = {
+        activityType,
+        pay_channel: 'prepaid_point',
+        pay_type: 'prepaid_point'
+      }
+      const orderInfo = {
+        order_id: orderId,
+        order_type: orderType,
+        pay_type: 'prepaid_point',
+        has_check: ![null, undefined].includes(offlinePayCheckStatus)
+      }
+      cashierPayment(params, orderInfo, () => {
+        fetch()
+        setTimeout(() => {
+          Taro.eventCenter.trigger('onEventOrderStatusChange')
+        }, 200)
+        Taro.hideLoading()
+      })
+      return
+    }
     const params = {
       activityType: activityType,
       pay_channel: paymentChannel,
@@ -486,6 +515,17 @@ function TradeDetail(props) {
     return <SpPrice unit='cent' value={marketPrice} size={28} />
   }, [info?.items])
   const markDownDiscount = info?.discountInfo?.find((i) => i?.type === 'mark_down')
+  const isPrepaidPurchaseOrder = isEmployeePurchasePrepaidOrder(info)
+  const employeePurchaseTag =
+    info?.employeePurchaseTag ||
+    (info?.orderClass === 'employee_purchase' ? $t('c2581d4c.6fb7d0') : '')
+
+  const renderPurchasePrice = (value, extraProps = {}) => {
+    if (isPrepaidPurchaseOrder) {
+      return <SpPrice value={value} size={28} pointMode {...extraProps} />
+    }
+    return <SpPrice value={value} size={28} {...extraProps} />
+  }
 
   return (
     <SpPage
@@ -735,9 +775,18 @@ function TradeDetail(props) {
           }
           <View className='block-container'>
             <View className='trade-shop' onClick={onViewStorePage}>
+              {employeePurchaseTag ? (
+                <Text className='trade-shop__purchase-tag'>{employeePurchaseTag}</Text>
+              ) : null}
               {info?.distributorName}
               {!VERSION_STANDARD && <Text className='iconfont icon-qianwang-01' />}
             </View>
+            {info?.orderClass === 'employee_purchase' &&
+            (info?.purchaseModeDesc || isPrepaidPurchaseOrder) ? (
+              <View className='trade-purchase-mode'>
+                {info?.purchaseModeDesc || getPrepaidPaymentLabel(info)}
+              </View>
+            ) : null}
             {/* <View className='trade-no'>
             <Text className='no'>{`订单编号: ${info?.orderId}`}</Text>
             <View className='btn-copy' onClick={hanldeCopy.bind(this, info?.orderId)}>
@@ -752,6 +801,7 @@ function TradeDetail(props) {
                       ...goods,
                       orderClass: info.orderClass
                     }}
+                    pointMode={isPrepaidPurchaseOrder}
                     onClick={onClickItem}
                   />
                   {/* {renderItemActions(goods)} */}
@@ -777,33 +827,31 @@ function TradeDetail(props) {
                           : ''
                       }`
                     } else {
-                      return <SpPrice value={info?.itemFee} size={28} />
+                      return renderPurchasePrice(info?.itemFee)
                     }
                   })()}
                 />
                 <SpCell
                   title={$t('34d31722.9a935b')}
                   value={
-                    info?.freightType == 'point' ? (
-                      `${pointName} ${info?.freightFee * 100}`
-                    ) : (
-                      <SpPrice value={info?.freightFee} size={28} />
-                    )
+                    info?.freightType == 'point'
+                      ? `${pointName} ${info?.freightFee * 100}`
+                      : renderPurchasePrice(info?.freightFee)
                   }
                 />
                 <SpCell
                   title={$t('34d31722.252caa')}
-                  value={<SpPrice value={info?.promotionDiscount} size={28} />}
+                  value={renderPurchasePrice(info?.promotionDiscount)}
                 />
                 {markDownDiscount?.discount_fee > 0 && (
                   <SpCell
                     title={$t('34d31722.aa448f')}
-                    value={<SpPrice value={markDownDiscount?.discount_fee} size={28} />}
+                    value={renderPurchasePrice(markDownDiscount?.discount_fee)}
                   />
                 )}
                 <SpCell
                   title={$t('34d31722.2f3635')}
-                  value={<SpPrice value={info?.couponDiscount} size={28} />}
+                  value={renderPurchasePrice(info?.couponDiscount)}
                 />
                 <SpCell
                   title={$t('34d31722.0c9d2b')}
@@ -817,6 +865,8 @@ function TradeDetail(props) {
                         )}
                         {info?.payType == 'offline_pay'
                           ? info?.offlinePayName
+                          : isPrepaidPurchaseOrder
+                          ? getPrepaidPaymentLabel(info)
                           : PAYMENT_TYPE()[info?.payType] || ''}
                       </View>
                     )
@@ -826,7 +876,7 @@ function TradeDetail(props) {
                   <SpCell
                     title={$t('34d31722.d443a9')}
                     value={(() => {
-                      return <SpPrice value={info?.pointFee} size={28} />
+                      return renderPurchasePrice(info?.pointFee)
                     })()}
                   />
                 )}
@@ -840,7 +890,7 @@ function TradeDetail(props) {
                           : ''
                       }`
                     } else {
-                      return <SpPrice value={info?.totalFee} size={28} />
+                      return renderPurchasePrice(info?.totalFee)
                     }
                   })()}
                 />
@@ -943,7 +993,7 @@ function TradeDetail(props) {
         </ScrollView>
       )}
 
-      {info?.orderStatus === 'NOTPAY' && (
+      {info?.orderStatus === 'NOTPAY' && !isPrepaidPurchaseOrder && (
         <SpCashier
           isPurchase={info.orderClass == 'employee_purchase'}
           defaultVal={info?.payChannel}

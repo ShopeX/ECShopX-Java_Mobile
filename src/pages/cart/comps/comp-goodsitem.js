@@ -36,6 +36,7 @@ function CompGoodsItem(props) {
     isShowAddInput = true,
     isShowDeleteIcon = true,
     isPurchase = false,
+    pointMode = false,
     goodType,
     onDelete = () => {},
     onChange = () => {},
@@ -254,11 +255,22 @@ function CompGoodsItem(props) {
                 <>
                   {enPurActivityPrice ? (
                     <View className='act-price-wrap'>
-                      <SpPrice unit='cent' value={info.price} className='act-price' />
-                      <SpPrice unit='cent' value={info.sale_price} size={24} lineThrough />
+                      <SpPrice
+                        unit='cent'
+                        value={info.price}
+                        className='act-price'
+                        pointMode={pointMode}
+                      />
+                      <SpPrice
+                        unit='cent'
+                        value={info.sale_price}
+                        size={24}
+                        lineThrough
+                        pointMode={pointMode}
+                      />
                     </View>
                   ) : (
-                    <SpPrice unit='cent' value={info.sale_price} />
+                    <SpPrice unit='cent' value={info.sale_price} pointMode={pointMode} />
                   )}
                 </>
               )}

@@ -26,6 +26,11 @@ import { WgtsContext } from '@/pages/home/wgts/wgts-context'
 import CompSkuSelect from './comps/comp-skuselect'
 import CompPurchaseActionbar from './comps/comp-purchase-actionbar'
 import CompPurchaseQuotaSheet from './comps/comp-purchase-quota-sheet'
+import {
+  isPurchasePrepaidPoint,
+  formatPurchaseAmount,
+  getPurchaseModeFromActivity
+} from './utils/purchase-mode'
 import './index.scss'
 
 const MSpPrivacyModal = React.memo(SpPrivacyModal)
@@ -86,14 +91,8 @@ function Home() {
   const remainingAmountText = useMemo(() => {
     const cents =
       activityInfo?.surplus_limitfee ?? activityInfo?.left_fee ?? activityInfo?.fee?.left_fee
-    if (cents == null || cents === '') {
-      return '¥0.00'
-    }
-    const n = Number(cents) / 100
-    if (Number.isNaN(n)) {
-      return '¥0.00'
-    }
-    return `¥${n.toFixed(2)}`
+    const mode = getPurchaseModeFromActivity(activityInfo)
+    return formatPurchaseAmount(cents, mode)
   }, [activityInfo])
 
   /** 额度抽屉：与 member / share 注释区字段一致，单位分 */
@@ -138,6 +137,7 @@ function Home() {
 
   //是否可以分享亲友
   const isPurchaseShare = useMemo(() => {
+    if (isPurchasePrepaidPoint(activityInfo)) return false
     return !!(activityInfo?.is_employee && activityInfo?.if_relative_join)
   }, [activityInfo])
 
@@ -460,6 +460,7 @@ function Home() {
         totalFeeCents={quotaFeeCents.total}
         usedFeeCents={quotaFeeCents.used}
         remainingFeeCents={quotaFeeCents.remaining}
+        purchaseMode={getPurchaseModeFromActivity(activityInfo)}
       />
 
       <SharePurchase

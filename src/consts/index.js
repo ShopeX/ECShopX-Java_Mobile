@@ -294,7 +294,8 @@ export const PAYMENT_TYPE = () => ({
   alipaymini: $t('e3a5dbf4.e3b206'),
   doumen_intl: $t('e3a5dbf4.5833ba'),
   point: $t('e3a5dbf4.accd19'),
-  offline_pay: $t('e3a5dbf4.2d8019')
+  offline_pay: $t('e3a5dbf4.2d8019'),
+  prepaid_point: '预充点数'
 })
 
 export const TRANSFORM_PAYTYPE = () => ({

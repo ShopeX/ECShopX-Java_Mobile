@@ -17,6 +17,7 @@ function SpOrderItem(props) {
     info = null,
     isPointitemGood = false,
     isPurchase = false,
+    pointMode = false,
     onClick = () => {},
     customFooter,
     showDesc,
@@ -98,10 +99,10 @@ function SpOrderItem(props) {
                     <Text className='sp-order-item__pruchase-price-label'>
                       {$t('08059c3f.3da735')}
                     </Text>
-                    <SpPrice value={info.price}></SpPrice>
+                    <SpPrice value={info.price} pointMode={pointMode}></SpPrice>
                   </View>
                   <View className='sp-order-item__pruchase-sprice'>
-                    <SpPrice value={info.salePrice} />
+                    <SpPrice value={info.salePrice} pointMode={pointMode} />
                   </View>
                 </View>
               )}

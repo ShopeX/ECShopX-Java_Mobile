@@ -47,7 +47,8 @@ export default class SpPrice extends Component {
     discount: false,
     equal: false,
     sizePreset: 'normal',
-    digits: 2
+    digits: 2,
+    pointMode: false
   }
 
   static externalClasses = ['classes']
@@ -74,8 +75,20 @@ export default class SpPrice extends Component {
   }
 
   renderCardVariant() {
-    const { className, primary, discount, equal, sizePreset, digits, noSymbol, appendText, plus } =
-      this.props
+    const {
+      className,
+      primary,
+      discount,
+      equal,
+      sizePreset,
+      digits,
+      noSymbol: noSymbolProp,
+      appendText: appendTextProp,
+      plus,
+      pointMode
+    } = this.props
+    const noSymbol = pointMode ? true : noSymbolProp
+    const appendText = pointMode ? appendTextProp || '' : appendTextProp
     const raw = this.resolveRawValue()
     const unit = this.resolveUnit()
     let num = raw
@@ -120,11 +133,11 @@ export default class SpPrice extends Component {
   renderDefaultVariant() {
     const {
       value = '',
-      noSymbol,
+      noSymbol: noSymbolProp,
       primary,
       noDecimal,
       className,
-      appendText,
+      appendText: appendTextProp,
       lineThrough,
       plus,
       size,
@@ -134,8 +147,11 @@ export default class SpPrice extends Component {
       unitSize,
       family = '',
       showdecimal = false,
-      discount
+      discount,
+      pointMode
     } = this.props
+    const noSymbol = pointMode ? true : noSymbolProp
+    const appendText = pointMode ? appendTextProp || '' : appendTextProp
     const unit = this.resolveUnit()
     let _value = this.resolveRawValue()
     if (isString(_value)) {

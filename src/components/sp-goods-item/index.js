@@ -89,7 +89,8 @@ function SpGoodsItem(props) {
     renderBrand,
     mode,
     goodsType,
-    lazyLoad
+    lazyLoad,
+    pointMode = false
   } = props
   const { isLogin } = useLogin()
 
@@ -265,11 +266,17 @@ function SpGoodsItem(props) {
                   <>
                     {info.activityPrice && enPurActivityPrice ? (
                       <View className='act-price-wrap'>
-                        <SpPrice value={info.activityPrice} className='act-price' />
-                        <SpPrice size={24} value={info.price} lineThrough />
+                        <SpPrice
+                          value={info.activityPrice}
+                          className='act-price'
+                          pointMode={pointMode}
+                        />
+                        <SpPrice size={24} value={info.price} lineThrough pointMode={pointMode} />
                       </View>
                     ) : (
-                      enPurActivityPrice && <SpPrice size={36} value={info.price} />
+                      enPurActivityPrice && (
+                        <SpPrice size={36} value={info.price} pointMode={pointMode} />
+                      )
                     )}
                   </>
                 )}

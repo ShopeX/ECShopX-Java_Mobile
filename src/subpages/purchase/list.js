@@ -35,6 +35,7 @@ import {
 import S from '@/spx'
 import CompPurchaseNav from '@/pages/purchase/comps/comp-purchase-nav'
 import CompPurchaseActionbar from '@/subpages/purchase/comps/comp-purchase-actionbar'
+import { isPurchasePrepaidPoint } from '@/subpages/purchase/utils/purchase-mode'
 import { useTranslation, $t, ti } from '@/i18n'
 import './list.scss'
 
@@ -76,6 +77,7 @@ function ItemList() {
   } = state
   const [isShowSearch, setIsShowSearch] = useState(false)
   const [enterpriseName, setEnterpriseName] = useState('')
+  const [activityInfo, setActivityInfo] = useState({})
   const router = useRouter()
   const { cat_id, main_cat_id, tag_id, card_id, user_card_id } = routerParams || {}
   const { shopInfo } = useSelector((state) => state.shop)
@@ -86,6 +88,10 @@ function ItemList() {
     cartCount = 0
   } = useSelector((state) => state.purchase)
   const dispatch = useDispatch()
+
+  const activityId = purchase_share_info?.activity_id
+  const enterpriseId = purchase_share_info?.enterprise_id
+  const isPrepaidPointMode = useMemo(() => isPurchasePrepaidPoint(activityInfo), [activityInfo])
 
   const filterList = useMemo(
     () => [
@@ -112,19 +118,21 @@ function ItemList() {
   useEffect(() => {
     // card_id, user_card_id: 兑换券参数
     // 分类挂件跳转传 category_id，兼容历史 cat_id
-    entryLaunch.getRouteParams({ params: $instance?.router?.params || router?.params }).then((params) => {
-      const { cat_id, category_id, main_cat_id, tag_id, card_id, user_card_id } = params
+    entryLaunch
+      .getRouteParams({ params: $instance?.router?.params || router?.params })
+      .then((params) => {
+        const { cat_id, category_id, main_cat_id, tag_id, card_id, user_card_id } = params
 
-      setState((draft) => {
-        draft.routerParams = {
-          cat_id: cat_id || category_id,
-          main_cat_id,
-          tag_id,
-          card_id,
-          user_card_id
-        }
+        setState((draft) => {
+          draft.routerParams = {
+            cat_id: cat_id || category_id,
+            main_cat_id,
+            tag_id,
+            card_id,
+            user_card_id
+          }
+        })
       })
-    })
   }, [])
 
   useEffect(() => {
@@ -143,7 +151,7 @@ function ItemList() {
     const loadEnterpriseName = async () => {
       try {
         const data = await api.purchase.getUserEnterprises({
-          disabled: 0,
+          disabled: 0
         })
         const found = data?.find((x) => x.enterprise_id == eid)
         setEnterpriseName(found?.name || found?.enterprise_name || '')
@@ -153,6 +161,25 @@ function ItemList() {
     }
     loadEnterpriseName()
   }, [curEnterpriseId, router?.params?.enterprise_id, purchase_share_info?.enterprise_id])
+
+  useEffect(() => {
+    if (!activityId || !enterpriseId) {
+      setActivityInfo({})
+      return
+    }
+    const loadActivity = async () => {
+      try {
+        const data = await api.purchase.getEmployeeActivitydata({
+          activity_id: activityId,
+          enterprise_id: enterpriseId
+        })
+        setActivityInfo(data || {})
+      } catch (e) {
+        setActivityInfo({})
+      }
+    }
+    loadActivity()
+  }, [activityId, enterpriseId])
 
   useEffect(() => {
     if (shopInfo && card_id) {
@@ -458,6 +485,7 @@ function ItemList() {
                   <SpGoodsItem
                     onStoreClick={handleClickStore}
                     isPurchase
+                    pointMode={isPrepaidPointMode}
                     info={{
                       ...item,
                       card_id,
@@ -475,6 +503,7 @@ function ItemList() {
                   <SpGoodsItem
                     onStoreClick={handleClickStore}
                     isPurchase
+                    pointMode={isPrepaidPointMode}
                     info={{
                       ...item,
                       card_id,
