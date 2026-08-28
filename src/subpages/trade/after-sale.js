@@ -457,16 +457,6 @@ function TradeAfterSale(props) {
                         <View className='goods-info-tip'>{$t('44d65d28.47107ea8')}</View>
                       ) : null}
                     </View>
-                    <View className='goods-info-ft'>
-                      <Text>{$t('44d65d28.3a1664')}</Text>
-                      <SpInputNumber
-                        disabled={!item.leftAftersalesNum}
-                        value={item.refundNum}
-                        max={item.leftAftersalesNum}
-                        min={1}
-                        onChange={(e) => onChangeItemNum(e, index)}
-                      />
-                    </View>
                   </View>
                 </View>
               )
