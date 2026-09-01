@@ -7,13 +7,10 @@ import { useSelector } from 'react-redux'
 import Taro from '@tarojs/taro'
 import { View, Text } from '@tarojs/components'
 import { AtButton } from 'taro-ui'
-import { SpImage, SpPrice, SpTradeItem } from '@/components'
+import { SpPrice, SpTradeItem } from '@/components'
 import { VERSION_STANDARD } from '@/utils'
 import { useTranslation, $t, ti } from '@/i18n'
-import {
-  isEmployeePurchasePrepaidOrder,
-  getPrepaidPaymentLabel
-} from '@/subpages/purchase/utils/purchase-mode'
+import { isEmployeePurchasePrepaidOrder } from '@/subpages/purchase/utils/purchase-mode'
 import tradeHooks from '../hooks'
 import './comp-tradeitem.scss'
 
@@ -34,7 +31,6 @@ function CompTradeItem(props) {
     orderClass,
     point,
     distributorId,
-    purchaseModeDesc,
     employeePurchaseTag
   } = info
   const { pointName } = useSelector((state) => state.sys)
@@ -43,10 +39,6 @@ function CompTradeItem(props) {
   const isPrepaidPurchaseOrder = isEmployeePurchasePrepaidOrder(info)
   const purchaseTag =
     employeePurchaseTag || (orderClass === 'employee_purchase' ? $t('c2581d4c.6fb7d0') : '')
-  const modeDesc =
-    orderClass === 'employee_purchase'
-      ? purchaseModeDesc || (isPrepaidPurchaseOrder ? getPrepaidPaymentLabel(info) : '')
-      : ''
 
   const handleClickItem = ({ key, action }) => {
     if (
@@ -94,17 +86,14 @@ function CompTradeItem(props) {
       <View className='trade-item-hd' onClick={onViewTradeDetail}>
         <View>
           <View className='shop-info' onClick={onViewStorePage}>
-            <SpImage src={distributorInfo?.logo} width={100} height={100} />
             <View className='shop-name'>
-              {purchaseTag ? <Text className='purchase-tag'>{purchaseTag}</Text> : null}
               {distributorInfo?.name}
               {!VERSION_STANDARD && <Text className='iconfont icon-qianwang-01'></Text>}
             </View>
           </View>
-          <View className='trade-no'>{ti('351d8689.78f59a', [orderId])}</View>
-          <View className='trade-time'>
-            {ti('351d8689.8bf28c', [createDate])}
-            {modeDesc ? <Text className='purchase-mode-desc'> · {modeDesc}</Text> : null}
+          <View className='trade-no'>
+            <Text className='trade-no__text'>{ti('351d8689.78f59a', [orderId])}</Text>
+            {purchaseTag ? <Text className='purchase-tag'>{purchaseTag}</Text> : null}
           </View>
         </View>
         <View className='trade-state'>{orderStatusMsg}</View>
@@ -122,7 +111,7 @@ function CompTradeItem(props) {
         ))}
 
         <View className='trade-total'>
-          <View className='delivery'></View>
+          <View className='delivery'>{createDate}</View>
           {orderClass == 'pointsmall' && (
             <View style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
               <Text className='num'>{ti('351d8689.17d01f', [totalNum])}</Text>

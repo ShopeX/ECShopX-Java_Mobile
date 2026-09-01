@@ -383,37 +383,16 @@
     }
   }
 
-  .trade-shop {
-    font-size: 30px;
-    font-weight: 600;
-    color: #222;
-    display: flex;
-    align-items: center;
-
-    .trade-shop__purchase-tag {
-      display: inline-block;
-      margin-right: 8px;
-      padding: 0 8px;
-      font-size: 20px;
-      font-weight: 400;
-      line-height: 32px;
-      color: #ffffff;
-      background: #4980ff;
-      border-radius: 4px;
-    }
-
-    .icon-qianwang-01 {
-      font-size: 20px;
-      color: #222;
-      margin-left: 6px;
-    }
-  }
-
-  .trade-purchase-mode {
-    margin-top: 8px;
-    font-size: 24px;
+  .trade-purchase-tag {
+    display: inline-block;
+    margin-bottom: 16px;
+    padding: 0 8px;
+    font-size: 20px;
     font-weight: 400;
-    color: #999;
+    line-height: 32px;
+    color: #6c5ce7;
+    background: #f2f0ff;
+    border-radius: 4px;
   }
 
   .trade-no {
