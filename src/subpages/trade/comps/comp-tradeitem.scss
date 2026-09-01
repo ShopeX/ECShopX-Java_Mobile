@@ -13,13 +13,27 @@
   }
 
   .trade-no {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: 8px;
     font-size: 24px;
-    color: #333;
-  }
 
-  .trade-time {
-    font-size: 24px;
-    color: #999;
+    .trade-no__text {
+      color: #333;
+    }
+
+    .purchase-tag {
+      display: inline-block;
+      margin-left: 8px;
+      padding: 0 8px;
+      font-size: 20px;
+      font-weight: 400;
+      line-height: 32px;
+      color: #6c5ce7;
+      background: #f2f0ff;
+      border-radius: 4px;
+    }
   }
 
   .trade-state {
@@ -41,13 +55,15 @@
     justify-content: space-between;
     align-items: center;
     background-color: #f8f8f8;
-    height: 80px;
+    min-height: 80px;
     padding: 0 20px;
     margin-top: 30px;
 
     .delivery {
       font-size: 24px;
-      color: #666666;
+      color: #999;
+      flex-shrink: 0;
+      margin-right: 16px;
     }
 
     .num {
@@ -74,41 +90,19 @@
     display: flex;
     align-items: flex-start;
 
-    .sp-image {
-      border-radius: 16px;
-      overflow: hidden;
-    }
-
     .shop-name {
-      padding-left: 24px;
-      font-size: 30px;
-      color: #111;
-      font-weight: bold;
+      font-size: 24px;
+      color: #333;
+      font-weight: 400;
       display: flex;
       align-items: center;
 
-      .purchase-tag {
-        display: inline-block;
-        margin-right: 8px;
-        padding: 0 8px;
-        font-size: 20px;
-        font-weight: 400;
-        line-height: 32px;
-        color: #ffffff;
-        background: #4980ff;
-        border-radius: 4px;
-      }
-
       .icon-qianwang-01 {
         font-size: 20px;
-        color: #222;
+        color: #999;
         margin-left: 6px;
       }
     }
-  }
-
-  .purchase-mode-desc {
-    color: #999;
   }
 
   .trade-item-ft {

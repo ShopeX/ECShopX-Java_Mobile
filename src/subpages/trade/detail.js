@@ -15,7 +15,7 @@ import { ORDER_STATUS_INFO, PAYMENT_TYPE, ORDER_DADA_STATUS, SG_ROUTER_PARAMS } 
 import dayjs from 'dayjs'
 import { usePayment, useNavigation } from '@/hooks'
 import { useTranslation, $t, ti, i18n } from '@/i18n'
-import { pickBy, copyText, showToast, isArray, VERSION_STANDARD, getCurrencySymbol } from '@/utils'
+import { pickBy, copyText, showToast, isArray, getCurrencySymbol } from '@/utils'
 import S from '@/spx'
 import FloatSalesperson from '@/subpages/store/comps/float-salesperson'
 import {
@@ -331,14 +331,6 @@ function TradeDetail(props) {
     setTimeout(() => {
       Taro.eventCenter.trigger('onEventOrderStatusChange')
     }, 200)
-  }
-
-  const onViewStorePage = () => {
-    if (!VERSION_STANDARD) {
-      Taro.navigateTo({
-        url: `/subpages/store/index?id=${info.distributorId}`
-      })
-    }
   }
 
   const getTradeStatusIcon = () => {
@@ -774,25 +766,9 @@ function TradeDetail(props) {
             )
           }
           <View className='block-container'>
-            <View className='trade-shop' onClick={onViewStorePage}>
-              {employeePurchaseTag ? (
-                <Text className='trade-shop__purchase-tag'>{employeePurchaseTag}</Text>
-              ) : null}
-              {info?.distributorName}
-              {!VERSION_STANDARD && <Text className='iconfont icon-qianwang-01' />}
-            </View>
-            {info?.orderClass === 'employee_purchase' &&
-            (info?.purchaseModeDesc || isPrepaidPurchaseOrder) ? (
-              <View className='trade-purchase-mode'>
-                {info?.purchaseModeDesc || getPrepaidPaymentLabel(info)}
-              </View>
+            {employeePurchaseTag ? (
+              <View className='trade-purchase-tag'>{employeePurchaseTag}</View>
             ) : null}
-            {/* <View className='trade-no'>
-            <Text className='no'>{`订单编号: ${info?.orderId}`}</Text>
-            <View className='btn-copy' onClick={hanldeCopy.bind(this, info?.orderId)}>
-              复制
-            </View>
-          </View> */}
             <View className='trade-goods'>
               {info?.items?.map((goods, goodsIndex) => (
                 <View className='trade-goods-item' key={goodsIndex}>
@@ -973,6 +949,9 @@ function TradeDetail(props) {
               />
               <SpCell title={$t('34d31722.2240cc')} value={info?.createdTime} />
               <SpCell title={$t('34d31722.590c95')} value={tradeInfo?.payDate} />
+              {info?.distributorName ? (
+                <SpCell title={$t('a7da9234.4ca010')} value={info?.distributorName} />
+              ) : null}
               {info?.invoice && (
                 <SpCell
                   title={$t('34d31722.714483')}
