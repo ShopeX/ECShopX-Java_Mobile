@@ -15,6 +15,8 @@
     background-color: #fff;
     box-sizing: border-box;
     will-change: transform;
+    /* H5/PC 亚像素缝隙会露出右侧删除红底，用白边盖住 */
+    box-shadow: 2px 0 0 #fff;
   }
 
   &__delete {
@@ -29,6 +31,15 @@
     justify-content: center;
     background-color: #ff4d4f;
     box-sizing: border-box;
+    /* 未展开时完全透明，避免电脑端右侧露出红线 */
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.12s linear;
+
+    &--show {
+      opacity: 1;
+      pointer-events: auto;
+    }
   }
 
   &__delete-text {

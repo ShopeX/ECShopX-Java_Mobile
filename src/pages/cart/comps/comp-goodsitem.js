@@ -310,7 +310,14 @@ function CompGoodsItem(props) {
           >
             {rowBody}
           </View>
-          <View className='comp-goodsitem-swipe__delete' onClick={handleSwipeDelete}>
+          <View
+            className={
+              translateX < -0.5
+                ? 'comp-goodsitem-swipe__delete comp-goodsitem-swipe__delete--show'
+                : 'comp-goodsitem-swipe__delete'
+            }
+            onClick={handleSwipeDelete}
+          >
             <Text className='comp-goodsitem-swipe__delete-text'>{$t('fb7ff6e1.2f4aad')}</Text>
           </View>
         </View>

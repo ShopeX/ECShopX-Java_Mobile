@@ -7,8 +7,8 @@
   .sp-page__footer {
     background: transparent;
     box-shadow: none;
-    height: auto!important;
-    padding-bottom: 0!important;
+    height: auto !important;
+    padding-bottom: 0 !important;
   }
 
   .sp-page__body-children {
@@ -24,6 +24,7 @@
     width: 100%;
     box-sizing: border-box;
     padding: 52px 32px 40px;
+    background-color: #ffffff;
 
     .goods-name-wrap {
       margin-top: 0;
@@ -161,7 +162,6 @@
   }
 
   .float-container {
-
     .icon-huiyuanzhongxin,
     .icon-headphones {
       font-size: 38px;
@@ -346,7 +346,7 @@
       font-weight: 400;
       font-size: 24px;
       line-height: 32px;
-      color: #0A0A0A;
+      color: #0a0a0a;
     }
   }
 
@@ -391,12 +391,12 @@
         justify-content: flex-start;
         padding-left: 16px;
         padding-right: 8px;
-        color: #0A0A0A;
+        color: #0a0a0a;
         font-size: 26px;
       }
 
       .espier-detail-spec-sheet__value-text {
-        color: #0A0A0A;
+        color: #0a0a0a;
         max-width: 100%;
         @include text-overflow();
       }

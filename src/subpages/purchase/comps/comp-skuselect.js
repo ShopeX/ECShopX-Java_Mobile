@@ -25,7 +25,8 @@ function resolvePurchaseLimitQty(info, curItem, type) {
     purlimitByFastbuy,
     limitNum,
     nospec,
-    purchaseLimitNum
+    purchaseLimitNum,
+    specItems
   } = info
   let qty = null
   const skuLimit =
@@ -38,10 +39,10 @@ function resolvePurchaseLimitQty(info, curItem, type) {
     qty = nospec ? limitNum : skuLimit ?? limitNum
   } else if (activityType === 'group') {
     qty = 1
-  } else if (skuLimit != null) {
+  } else if (skuLimit != null && Number(skuLimit) > 0) {
     qty = skuLimit
   }
-  if (qty == null || qty === '') {
+  if (qty == null || qty === '' || Number(qty) <= 0) {
     qty = purchaseLimitNum ?? purlimitByCart ?? purlimitByFastbuy ?? limitNum
   }
   if (skuLimit == null && type == 'addcart' && purlimitByCart != null && purlimitByCart !== '') {
@@ -55,7 +56,16 @@ function resolvePurchaseLimitQty(info, curItem, type) {
   ) {
     qty = purlimitByFastbuy
   }
-  return qty != null && qty !== '' ? qty : null
+  if ((qty == null || qty === '' || Number(qty) <= 0) && Array.isArray(specItems)) {
+    for (const sku of specItems) {
+      const v = sku?.limitNum ?? sku?.limit_num
+      if (v != null && v !== '' && Number(v) > 0) {
+        qty = v
+        break
+      }
+    }
+  }
+  return qty != null && qty !== '' && Number(qty) > 0 ? qty : null
 }
 
 function resolvePurchaseLimitAmountLine(info, curItem) {
@@ -64,14 +74,26 @@ function resolvePurchaseLimitAmountLine(info, curItem) {
   if (!info.nospec && curItem != null) {
     limitFee = curItem.limitFee ?? curItem.limit_fee
   }
-  if (limitFee == null || limitFee === '') {
+  if (limitFee == null || limitFee === '' || Number(limitFee) <= 0) {
     limitFee =
       info.activityInfo?.fee?.limit_fee ??
       info.fee?.limit_fee ??
       info.activityInfo?.limit_fee ??
       info.purchaseAmountLimitFee
   }
-  if (limitFee == null || limitFee === '') return null
+  if (
+    (limitFee == null || limitFee === '' || Number(limitFee) <= 0) &&
+    Array.isArray(info.specItems)
+  ) {
+    for (const sku of info.specItems) {
+      const v = sku?.limitFee ?? sku?.limit_fee
+      if (v != null && v !== '' && Number(v) > 0) {
+        limitFee = v
+        break
+      }
+    }
+  }
+  if (limitFee == null || limitFee === '' || Number(limitFee) <= 0) return null
   const n = Number(limitFee) / 100
   if (Number.isNaN(n)) return null
   return ti('47ac6066.c8d3e2', [n.toFixed(2)])

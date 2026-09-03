@@ -10,7 +10,7 @@ import './hero-card.scss'
 
 function SpGoodsHeroCard(props) {
   useTranslation()
-  const { info = null, onClick, mode = 'aspectFill', showPrice = true } = props
+  const { info = null, onClick, mode = 'aspectFill', showPrice = true, pointMode = false } = props
 
   const handleClick = async () => {
     if (!info) return
@@ -103,6 +103,7 @@ function SpGoodsHeroCard(props) {
                   value={finalPrice}
                   style={{ marginRight: '6px' }}
                   weight={600}
+                  pointMode={pointMode}
                 />
                 {Number(info.marketPrice || 0) > 0 &&
                   Number(finalPrice || 0) < Number(info.marketPrice || 0) && (
@@ -112,6 +113,7 @@ function SpGoodsHeroCard(props) {
                       className='market-price'
                       lineThrough
                       value={info.marketPrice}
+                      pointMode={pointMode}
                     />
                   )}
                 {info.discountRate && (
@@ -133,6 +135,7 @@ function SpGoodsHeroCard(props) {
                       value={info.price}
                       style={{ marginRight: '6px' }}
                       weight={600}
+                      pointMode={pointMode}
                     />
                   </>
                 )}
@@ -157,6 +160,7 @@ SpGoodsHeroCard.defaultProps = {
   mode: 'aspectFill',
   width: 200,
   showPrice: true,
+  pointMode: false,
   onLoad: () => {}
 }
 

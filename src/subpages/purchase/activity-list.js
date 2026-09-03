@@ -11,7 +11,13 @@ import dayjs from 'dayjs'
 import api from '@/api'
 import { classNames, pickBy, VERSION_IN_PURCHASE, showToast, getDistributorId } from '@/utils'
 import { updateUserInfo } from '@/store/slices/user'
-import { updateActivityInfo, fetchCartList, purchaseClearCart, updateIsPasscodeLogin } from '@/store/slices/purchase'
+import {
+  updateActivityInfo,
+  updateCurActivityInfo,
+  fetchCartList,
+  purchaseClearCart,
+  updateIsPasscodeLogin
+} from '@/store/slices/purchase'
 import doc from '@/doc'
 import S from '@/spx'
 import { SpPage, SpNote, SpScrollView, SpImage, SpPurchaseEnterpriseBar } from '@/components'
@@ -79,7 +85,7 @@ function PurchaseActivityList() {
     if (pageIndex === 1) {
       if (VERSION_IN_PURCHASE) {
         const data = await api.purchase.getUserEnterprises({
-          disabled: 0,
+          disabled: 0
         })
         const validIdentityLen = data.filter((item) => item.disabled == 0).length
         if (!validIdentityLen) {
@@ -139,7 +145,9 @@ function PurchaseActivityList() {
       discountDescription,
       isPassphraseEnabled,
       passphraseUserVerified,
-      authType
+      authType,
+      purchaseMode,
+      purchaseModeDesc
     } = item
     try {
       const eligibility = await api.purchase.getInternalSaleEligibility({
@@ -160,6 +168,15 @@ function PurchaseActivityList() {
         priceDisplayConfig: _priceDisplayConfig,
         isDiscountDescriptionEnabled,
         discountDescription
+      })
+    )
+    // 切换活动时立刻同步 purchase_mode，避免首页商品仍按上一场活动显示/隐藏货币符号
+    dispatch(
+      updateCurActivityInfo({
+        id,
+        enterprise_id: enterpriseId,
+        purchase_mode: purchaseMode,
+        purchase_mode_desc: purchaseModeDesc
       })
     )
     // 切换活动时先清空角标，再按当前活动购物车列表同步数量
@@ -267,7 +284,11 @@ function PurchaseActivityList() {
                 return (
                   <View key={item.id} className='activity-card'>
                     <View className='activity-card__cover'>
-                      <SpImage className='activity-card__img' mode='aspectFill' src={item.list_pic} />
+                      <SpImage
+                        className='activity-card__img'
+                        mode='aspectFill'
+                        src={item.list_pic || item.pic}
+                      />
                       <View
                         className={classNames(
                           'activity-card__badge',

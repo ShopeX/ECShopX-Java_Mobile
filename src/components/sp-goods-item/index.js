@@ -2,7 +2,7 @@
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
  */
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useContext, useEffect, useRef, useState } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import Taro, { useDidShow } from '@tarojs/taro'
 import { View, Text, Image } from '@tarojs/components'
@@ -22,6 +22,8 @@ import {
 } from '@/utils'
 import { PROMOTION_TAG } from '@/consts'
 import { $t } from '@/i18n'
+import { isPurchasePrepaidPoint } from '@/subpages/purchase/utils/purchase-mode'
+import { WgtsContext } from '@/pages/home/wgts/wgts-context'
 
 import './index.scss'
 
@@ -42,7 +44,14 @@ function SpGoodsItem(props) {
   const dispatch = useDispatch()
   const { favs = [] } = useSelector((state) => state.user)
   const { priceSetting } = useSelector((state) => state.sys)
-  const [isPurchase, setIsPurchase] = useState(false)
+  const {
+    priceDisplayConfig = {},
+    purchase_share_info = {},
+    curEnterpriseId,
+    curDistributorId,
+    curActivityInfo = {}
+  } = useSelector((state) => state.purchase)
+  const [isPurchase, setIsPurchase] = useState(!!props.isPurchase)
   const { item_page } = priceSetting
   const loadingRef = useRef(false)
   const {
@@ -52,7 +61,7 @@ function SpGoodsItem(props) {
   } = item_page
   useEffect(() => {
     getIsPurchase()
-  }, [])
+  }, [props.isPurchase])
   useDidShow(() => {
     loadingRef.current = false
     getIsPurchase()
@@ -60,20 +69,19 @@ function SpGoodsItem(props) {
   const getIsPurchase = () => {
     if (loadingRef.current) return
     loadingRef.current = true
-    let isPurchase = false
+    let purchase = !!props.isPurchase || VERSION_IN_PURCHASE
     const pageRoute = $instance?.page?.route
     const pagePath = $instance?.page?.path
-    if (pageRoute || pagePath) {
+    if (!purchase && (pageRoute || pagePath)) {
       if (isWeixin) {
-        isPurchase = (pageRoute || '').includes('subpages/purchase')
+        purchase = (pageRoute || '').includes('subpages/purchase')
       } else {
-        isPurchase = (pagePath || '').includes('subpages/purchase')
+        purchase = (pagePath || '').includes('subpages/purchase')
       }
     }
-    setIsPurchase(isPurchase)
+    setIsPurchase(purchase)
   }
 
-  const { priceDisplayConfig = {} } = useSelector((state) => state.purchase)
   const { items_page = {} } = priceDisplayConfig
   const { activity_price: enPurActivityPrice = true } = items_page
   const {
@@ -92,6 +100,14 @@ function SpGoodsItem(props) {
     lazyLoad,
     pointMode = false
   } = props
+  const wgtsCtx = useContext(WgtsContext)
+  // 企业购装修 Provider 显式带 pointMode 时优先用 context（切换活动即时生效）；否则再看 props / Redux
+  const effectivePointMode =
+    wgtsCtx && Object.prototype.hasOwnProperty.call(wgtsCtx, 'pointMode')
+      ? !!wgtsCtx.pointMode
+      : Object.prototype.hasOwnProperty.call(props, 'pointMode')
+      ? !!pointMode
+      : isPurchase && isPurchasePrepaidPoint(curActivityInfo)
   const { isLogin } = useLogin()
 
   const handleFavClick = async (e) => {
@@ -122,6 +138,8 @@ function SpGoodsItem(props) {
         ...query,
         dtid: distributorId
       }
+    } else if (isPurchase && curDistributorId) {
+      query.dtid = curDistributorId
     }
     if (card_id) {
       query = {
@@ -130,6 +148,18 @@ function SpGoodsItem(props) {
         code,
         user_card_id
       }
+    }
+
+    // 企业购：进内购 PDP，并带上活动/企业，详情接口才能返回限购数量/金额
+    if (isPurchase && !point && goodsType != 'point') {
+      const activity_id = purchase_share_info?.activity_id
+      const enterprise_id = purchase_share_info?.enterprise_id || curEnterpriseId
+      if (activity_id) query.activity_id = activity_id
+      if (enterprise_id) query.enterprise_id = enterprise_id
+      Taro.navigateTo({
+        url: `/subpages/purchase/espier-detail?${qs.stringify(query)}`
+      })
+      return
     }
 
     const url = `${
@@ -221,7 +251,11 @@ function SpGoodsItem(props) {
             <View className='goods-point'>
               <SpPoint value={info.point} />
               {info.price > 0 ? <Text style='margin: 0 4px;'>+</Text> : ''}
-              {info.price > 0 ? <SpPrice primary size={32} value={info.price} /> : ''}
+              {info.price > 0 ? (
+                <SpPrice primary size={32} value={info.price} pointMode={effectivePointMode} />
+              ) : (
+                ''
+              )}
             </View>
           ) : (
             ''
@@ -269,13 +303,18 @@ function SpGoodsItem(props) {
                         <SpPrice
                           value={info.activityPrice}
                           className='act-price'
-                          pointMode={pointMode}
+                          pointMode={effectivePointMode}
                         />
-                        <SpPrice size={24} value={info.price} lineThrough pointMode={pointMode} />
+                        <SpPrice
+                          size={24}
+                          value={info.price}
+                          lineThrough
+                          pointMode={effectivePointMode}
+                        />
                       </View>
                     ) : (
                       enPurActivityPrice && (
-                        <SpPrice size={36} value={info.price} pointMode={pointMode} />
+                        <SpPrice size={36} value={info.price} pointMode={effectivePointMode} />
                       )
                     )}
                   </>
@@ -296,6 +335,7 @@ function SpGoodsItem(props) {
                       className='mkt-price'
                       lineThrough
                       value={info.marketPrice}
+                      pointMode={effectivePointMode}
                     ></SpPrice>
                   )}
               </View>

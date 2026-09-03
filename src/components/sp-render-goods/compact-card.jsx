@@ -18,6 +18,7 @@ function SpGoodsCompactCard(props) {
     top,
     showTop,
     showPrice = true,
+    pointMode = false,
     onClickGio = () => {},
     onChangeRegionauth = () => {}
   } = props
@@ -126,6 +127,7 @@ function SpGoodsCompactCard(props) {
                   value={finalPrice}
                   style={{ marginRight: '6px' }}
                   weight={600}
+                  pointMode={pointMode}
                 />
                 {Number(info.marketPrice || 0) > 0 &&
                   Number(finalPrice || 0) < Number(info.marketPrice || 0) && (
@@ -135,6 +137,7 @@ function SpGoodsCompactCard(props) {
                       className='market-price'
                       lineThrough
                       value={info.marketPrice}
+                      pointMode={pointMode}
                     />
                   )}
               </>
@@ -150,6 +153,7 @@ function SpGoodsCompactCard(props) {
                       value={info.price}
                       style={{ marginRight: '6px' }}
                       weight={600}
+                      pointMode={pointMode}
                     />
                   </>
                 )}
@@ -183,6 +187,7 @@ SpGoodsCompactCard.defaultProps = {
   top: 0,
   showTop: false,
   showPrice: true,
+  pointMode: false,
   onLoad: () => {}
 }
 

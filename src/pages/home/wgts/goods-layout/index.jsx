@@ -18,6 +18,7 @@ import './index.scss'
  * @param {Function} props.onClickItem - 商品点击回调函数
  * @param {string} props.classNamePrefix - CSS类名前缀，如 'wgt-goods', 'wgt-group' 等
  * @param {boolean} [props.showPrice=true] - 是否展示价格（积分商品时可传 false，由卡片根据 info.point 展示积分）
+ * @param {boolean} [props.pointMode=false] - 企业购预充点数：不展示货币符号
  */
 export default function GoodsLayout(props) {
   const {
@@ -27,7 +28,8 @@ export default function GoodsLayout(props) {
     goodsRightList = [],
     onClickItem,
     classNamePrefix = 'wgt-goods',
-    showPrice = true
+    showPrice = true,
+    pointMode = false
   } = props
 
   // 一列网格布局
@@ -42,6 +44,7 @@ export default function GoodsLayout(props) {
             })}
             info={item}
             showPrice={showPrice}
+            pointMode={pointMode}
             onClick={() => onClickItem(item, index + 1)}
           />
         ))}
@@ -59,6 +62,7 @@ export default function GoodsLayout(props) {
               key={`${classNamePrefix}-left-${String(item?.item_id ?? 'x')}-${index}`}
               info={item}
               showPrice={showPrice}
+              pointMode={pointMode}
               onClick={() => onClickItem(item, index + 1)}
             />
           ))}
@@ -69,6 +73,7 @@ export default function GoodsLayout(props) {
               key={`${classNamePrefix}-right-${String(item?.item_id ?? 'x')}-${index}`}
               info={item}
               showPrice={showPrice}
+              pointMode={pointMode}
               onClick={() => onClickItem(item, index + 1)}
             />
           ))}
@@ -86,6 +91,7 @@ export default function GoodsLayout(props) {
             key={`${classNamePrefix}-three-${String(item?.item_id ?? 'x')}-${index}`}
             info={item}
             showPrice={showPrice}
+            pointMode={pointMode}
             onClick={() => onClickItem(item, index + 1)}
           />
         ))}

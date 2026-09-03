@@ -3,9 +3,10 @@
  * See LICENSE file for license details.
  */
 import React, { useState, useEffect, useMemo, useContext, useCallback } from 'react'
-import Taro, { useDidShow } from '@tarojs/taro'
+import Taro, { useDidShow, useRouter } from '@tarojs/taro'
+import { useSelector } from 'react-redux'
 import { View, Text } from '@tarojs/components'
-import { SpImage, SpPoint, SpPrice } from '@/components'
+import { SpImage, SpPoint } from '@/components'
 import {
   classNames,
   styleNames,
@@ -19,6 +20,7 @@ import doc from '@/doc'
 import api from '@/api'
 import { AtIcon } from 'taro-ui'
 import { useTranslation, $t } from '@/i18n'
+import { isPurchasePrepaidPoint } from '@/subpages/purchase/utils/purchase-mode'
 import GoodsLayout from '../goods-layout'
 import { getGlobalBaseStyle } from '../helper'
 import { WgtsContext } from '../wgts-context'
@@ -31,13 +33,21 @@ export default function WgtGoods(props) {
   const [goodsLeftList, setGoodsLeftList] = useState([])
   const [goodsRightList, setGoodsRightList] = useState([])
   const [loading, setLoading] = useState(true)
+  const router = useRouter()
+  const { curActivityInfo = {} } = useSelector((state) => state.purchase)
+  const wgtsCtx = useContext(WgtsContext)
+  const { eActivityId } = wgtsCtx || {}
+  const isPurchasePage = (router?.path || '').includes('subpages/purchase')
+  // 普通首页 Provider 不带 pointMode，不会误伤；企业购首页显式传 boolean，避免切换活动时被旧 Redux 覆盖
+  const pointMode =
+    wgtsCtx && Object.prototype.hasOwnProperty.call(wgtsCtx, 'pointMode')
+      ? !!wgtsCtx.pointMode
+      : isPurchasePage && isPurchasePrepaidPoint(curActivityInfo)
 
   // 从 params 中获取配置和数据，兼容两种数据结构
   const params = info?.params || info || {}
   const base = params.base || {}
   const data = params.data || {}
-  const { eActivityId } = useContext(WgtsContext) || {}
-
   const isPointsmallItems = base.dataType === 'pointsmall_items'
 
   // 获取外层样式（包含 outerMargin 和背景配置）
@@ -229,16 +239,18 @@ export default function WgtGoods(props) {
                           className='wgt-goods__activity-item-price__unit'
                           style={{ marginLeft: '4px' }}
                         >
-                          +{getCurrencySymbol()}
+                          +{pointMode ? '' : getCurrencySymbol()}
                           {(item.price || 0).toFixed(2)}
                         </Text>
                       )}
                     </View>
                   ) : (
                     <View className='wgt-goods__activity-item-price'>
-                      <Text className='wgt-goods__activity-item-price__unit'>
-                        {getCurrencySymbol()}
-                      </Text>
+                      {!pointMode && (
+                        <Text className='wgt-goods__activity-item-price__unit'>
+                          {getCurrencySymbol()}
+                        </Text>
+                      )}
                       <Text className='wgt-goods__activity-item-price__text'>
                         {item.mainPrice ||
                           (item.activityPrice
@@ -261,6 +273,7 @@ export default function WgtGoods(props) {
             onClickItem={handleClickItem}
             classNamePrefix='wgt-goods'
             showPrice={!isPointsmallItems}
+            pointMode={pointMode}
           />
         )}
       </View>

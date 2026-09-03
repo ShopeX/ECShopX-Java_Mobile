@@ -58,6 +58,38 @@ import './espier-detail.scss'
 
 const MSpSkuSelect = React.memo(CompSkuSelect)
 
+/** 取第一个有效限购件数（忽略 null/''；0 表示不限购） */
+function pickPositiveLimitQty(...vals) {
+  for (const v of vals) {
+    if (v == null || v === '') continue
+    const n = Number(v)
+    if (!Number.isNaN(n) && n > 0) return v
+  }
+  return null
+}
+
+/** 从多规格 SKU 列表取第一条有效限购件数 */
+function pickLimitQtyFromSpecItems(specItems) {
+  if (!Array.isArray(specItems)) return null
+  for (const sku of specItems) {
+    const v = pickPositiveLimitQty(sku?.limitNum, sku?.limit_num)
+    if (v != null) return v
+  }
+  return null
+}
+
+/** 从多规格 SKU 列表取第一条有效限购金额(分) */
+function pickLimitFeeFromSpecItems(specItems) {
+  if (!Array.isArray(specItems)) return null
+  for (const sku of specItems) {
+    const v = sku?.limitFee ?? sku?.limit_fee
+    if (v == null || v === '') continue
+    const n = Number(v)
+    if (!Number.isNaN(n) && n > 0) return v
+  }
+  return null
+}
+
 /** 内购详情：限购件数（与 SKU 区、comp-skuselect 规则一致） */
 function resolvePurchaseLimitQty(info, curItem) {
   if (!info) return null
@@ -68,7 +100,8 @@ function resolvePurchaseLimitQty(info, curItem) {
     purlimitByFastbuy,
     limitNum,
     nospec,
-    purchaseLimitNum
+    purchaseLimitNum,
+    specItems
   } = info
   if (activityType === 'limited_buy' && activityInfo?.rule?.limit != null) {
     return activityInfo.rule.limit
@@ -80,14 +113,17 @@ function resolvePurchaseLimitQty(info, curItem) {
   if (activityType === 'group') return 1
   // 内购等多规格：已选 SKU 有 limit_num 时随 SKU 变化（与秒杀多规格一致）
   if (!nospec && curItem != null) {
-    const skuL = curItem.limitNum
-    if (skuL != null && skuL !== '') {
-      return skuL
-    }
+    const skuL = pickPositiveLimitQty(curItem.limitNum, curItem.limit_num)
+    if (skuL != null) return skuL
   }
-  // 内购：优先独立字段，再购物车/立即购限购，再商品 limit_num（用 ?? 避免 0 被当成空）
-  const v = purchaseLimitNum ?? purlimitByCart ?? purlimitByFastbuy ?? limitNum
-  return v != null && v !== '' ? v : null
+  // 内购：优先独立字段，再购物车/立即购限购，再商品/SKU limit_num
+  return pickPositiveLimitQty(
+    purchaseLimitNum,
+    purlimitByCart,
+    purlimitByFastbuy,
+    limitNum,
+    pickLimitQtyFromSpecItems(specItems)
+  )
 }
 
 /**
@@ -104,6 +140,9 @@ function enrichEspierPurchaseDetail(mapped, raw) {
       : Array.isArray(rawItemParams)
       ? rawItemParams
       : mapped.itemParams
+  const rawFeeLimit =
+    (typeof fee === 'object' && fee != null ? fee.limit_fee : null) ??
+    (typeof raw.fee === 'object' && raw.fee != null ? raw.fee.limit_fee : null)
   return {
     ...mapped,
     activityInfo,
@@ -114,9 +153,13 @@ function enrichEspierPurchaseDetail(mapped, raw) {
     purlimitByCart: mapped.purlimitByCart ?? raw.purchase_limit_num_by_cart,
     purlimitByFastbuy: mapped.purlimitByFastbuy ?? raw.purchase_limit_num_by_fastbuy,
     limitNum: mapped.limitNum ?? raw.limit_num,
-    /** 根级扁平限购金额(分)，接口可能只返回 limit_fee / purchase_limit_fee */
+    /** 根级扁平限购金额(分)，接口可能只返回 limit_fee / purchase_limit_fee / fee.limit_fee */
     purchaseAmountLimitFee:
-      raw.limit_fee ?? raw.purchase_limit_fee ?? raw.activity_limit_fee ?? raw.item_limit_fee
+      raw.limit_fee ??
+      raw.purchase_limit_fee ??
+      raw.activity_limit_fee ??
+      raw.item_limit_fee ??
+      rawFeeLimit
   }
 }
 
@@ -127,14 +170,15 @@ function resolvePurchaseLimitAmountLine(info, curItem, purchaseMode) {
   if (!info.nospec && curItem != null) {
     limitFee = curItem.limitFee ?? curItem.limit_fee
   }
-  if (limitFee == null || limitFee === '') {
+  if (limitFee == null || limitFee === '' || Number(limitFee) <= 0) {
     limitFee =
       info.activityInfo?.fee?.limit_fee ??
       info.fee?.limit_fee ??
       info.activityInfo?.limit_fee ??
-      info.purchaseAmountLimitFee
+      info.purchaseAmountLimitFee ??
+      pickLimitFeeFromSpecItems(info.specItems)
   }
-  if (limitFee == null || limitFee === '') return null
+  if (limitFee == null || limitFee === '' || Number(limitFee) <= 0) return null
   if (isPrepaidPoint(purchaseMode)) {
     return `商品总额不超过 ${formatPurchaseAmount(limitFee, purchaseMode)}`
   }
@@ -331,7 +375,13 @@ function EspierDetail(props) {
     if (id) {
       fetch()
     }
-  }, [id])
+  }, [
+    id,
+    activityId,
+    enterpriseId,
+    purchase_share_info?.activity_id,
+    purchase_share_info?.enterprise_id
+  ])
 
   useEffect(() => {
     let video
@@ -374,11 +424,17 @@ function EspierDetail(props) {
   }
 
   const fetch = async () => {
-    let { activity_id, enterprise_id } = purchase_share_info
+    let { activity_id, enterprise_id } = purchase_share_info || {}
 
     if (activityId && enterpriseId) {
       activity_id = activityId
       enterprise_id = enterpriseId
+    }
+    if (!activity_id) {
+      activity_id = activityId || purchase_share_info?.activity_id
+    }
+    if (!enterprise_id) {
+      enterprise_id = enterpriseId || purchase_share_info?.enterprise_id || curEnterpriseId
     }
 
     let data

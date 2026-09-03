@@ -13,6 +13,7 @@ import { pickBy, showToast, log, buildSharePath, navigateTo, getDistributorId } 
 import {
   updatePurchaseShareInfo,
   updatePersistPurchaseShareInfo,
+  updateCurActivityInfo,
   fetchCartList
 } from '@/store/slices/purchase'
 import doc from '@/doc'
@@ -86,24 +87,46 @@ function Home() {
   } = state
 
   const dispatch = useDispatch()
-  const { cartCount = 0, curDistributorId } = useSelector((state) => state.purchase)
+  const {
+    cartCount = 0,
+    curDistributorId,
+    curActivityInfo = {}
+  } = useSelector((state) => state.purchase)
+
+  // 本地 activityInfo 未拉到前，先用切换活动时写入的 curActivityInfo，避免货币符号闪一下
+  const resolvedActivityInfo = useMemo(() => {
+    const localMode = activityInfo?.purchase_mode ?? activityInfo?.purchaseMode
+    if (localMode != null && localMode !== '') return activityInfo
+    const routeActivityId = router?.params?.activity_id || purchase_share_info?.activity_id
+    const cachedId = curActivityInfo?.id
+    if (routeActivityId && cachedId != null && String(cachedId) !== String(routeActivityId)) {
+      return activityInfo
+    }
+    return curActivityInfo?.purchase_mode != null || curActivityInfo?.purchaseMode != null
+      ? curActivityInfo
+      : activityInfo
+  }, [activityInfo, curActivityInfo, router?.params?.activity_id, purchase_share_info?.activity_id])
 
   const remainingAmountText = useMemo(() => {
     const cents =
-      activityInfo?.surplus_limitfee ?? activityInfo?.left_fee ?? activityInfo?.fee?.left_fee
-    const mode = getPurchaseModeFromActivity(activityInfo)
+      resolvedActivityInfo?.surplus_limitfee ??
+      resolvedActivityInfo?.left_fee ??
+      resolvedActivityInfo?.fee?.left_fee
+    const mode = getPurchaseModeFromActivity(resolvedActivityInfo)
     return formatPurchaseAmount(cents, mode)
-  }, [activityInfo])
+  }, [resolvedActivityInfo])
 
   /** 额度抽屉：与 member / share 注释区字段一致，单位分 */
   const quotaFeeCents = useMemo(
     () => ({
-      total: activityInfo?.total_limitfee ?? activityInfo?.limit_fee,
-      used: activityInfo?.used_limitfee ?? activityInfo?.aggregate_fee,
+      total: resolvedActivityInfo?.total_limitfee ?? resolvedActivityInfo?.limit_fee,
+      used: resolvedActivityInfo?.used_limitfee ?? resolvedActivityInfo?.aggregate_fee,
       remaining:
-        activityInfo?.surplus_limitfee ?? activityInfo?.left_fee ?? activityInfo?.fee?.left_fee
+        resolvedActivityInfo?.surplus_limitfee ??
+        resolvedActivityInfo?.left_fee ??
+        resolvedActivityInfo?.fee?.left_fee
     }),
-    [activityInfo]
+    [resolvedActivityInfo]
   )
 
   useEffect(() => {
@@ -137,9 +160,9 @@ function Home() {
 
   //是否可以分享亲友
   const isPurchaseShare = useMemo(() => {
-    if (isPurchasePrepaidPoint(activityInfo)) return false
-    return !!(activityInfo?.is_employee && activityInfo?.if_relative_join)
-  }, [activityInfo])
+    if (isPurchasePrepaidPoint(resolvedActivityInfo)) return false
+    return !!(resolvedActivityInfo?.is_employee && resolvedActivityInfo?.if_relative_join)
+  }, [resolvedActivityInfo])
 
   const init = async () => {
     const context = await ensurePurchaseContext()
@@ -254,16 +277,19 @@ function Home() {
   const fetchActivity = async (context = resolvePurchaseContext()) => {
     const { activity_id, enterprise_id } = context
     if (!activity_id || !enterprise_id) {
+      dispatch(updateCurActivityInfo({}))
       return setState((draft) => {
         draft.activityInfo = {}
       })
     }
     try {
       const data = await api.purchase.getEmployeeActivitydata({ activity_id, enterprise_id })
+      dispatch(updateCurActivityInfo(data || {}))
       setState((draft) => {
         draft.activityInfo = data
       })
     } catch (e) {
+      dispatch(updateCurActivityInfo({}))
       setState((draft) => {
         draft.activityInfo = {}
       })
@@ -416,7 +442,8 @@ function Home() {
               <WgtsContext.Provider
                 value={{
                   onAddToCart,
-                  eActivityId: resolvePurchaseContext().activity_id
+                  eActivityId: resolvePurchaseContext().activity_id,
+                  pointMode: isPurchasePrepaidPoint(resolvedActivityInfo)
                 }}
               >
                 <HomeWgts wgts={filterWgts} />
@@ -460,7 +487,7 @@ function Home() {
         totalFeeCents={quotaFeeCents.total}
         usedFeeCents={quotaFeeCents.used}
         remainingFeeCents={quotaFeeCents.remaining}
-        purchaseMode={getPurchaseModeFromActivity(activityInfo)}
+        purchaseMode={getPurchaseModeFromActivity(resolvedActivityInfo)}
       />
 
       <SharePurchase
