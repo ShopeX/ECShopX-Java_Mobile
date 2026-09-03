@@ -1,6 +1,5 @@
 # FROM node:12.19.1-alpine3.12 AS builder
-# 内网 node-python3 仅有 16.16.0；与 engines/nvmrc 对齐使用 node 20.19
-FROM reg.ishopex.cn/base-images/node:20.19-alpine3.21 AS builder
+FROM reg.ishopex.cn/base-images/node-python3:16.16.0-alpine3.16 AS builder
 
 ARG CMD
 ARG APP_BASE_URL
