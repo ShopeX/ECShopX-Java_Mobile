@@ -165,7 +165,6 @@
     "swiper": "12.1.2",
     "serialize-javascript": "7.0.7",
     "esbuild": "0.21.5",
-    "esbuild-loader": "4.2.2",
-    "postcss-import": "16.1.0"
+    "esbuild-loader": "4.2.2"
   }
 }
