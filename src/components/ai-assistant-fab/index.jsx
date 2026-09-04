@@ -12,10 +12,10 @@ const AI_BASE =
   AI_BASE_RAW != null && String(AI_BASE_RAW).trim()
     ? String(AI_BASE_RAW).trim().replace(/\/+$/, '')
     : ''
-const ASSISTANT_BACKEND_URL = (
-  process.env.APP_AI_ASSISTANT_BACKEND_URL ||
-  AI_BASE
-).replace(/\/$/, '')
+const ASSISTANT_BACKEND_URL = (process.env.APP_AI_ASSISTANT_BACKEND_URL || AI_BASE).replace(
+  /\/$/,
+  ''
+)
 
 function useHideAssistantFabOnFullPage(enabled) {
   const [hidden, setHidden] = useState(false)
@@ -90,13 +90,13 @@ function snapFabPosToEdge(left, bottom, sys) {
   return clampFabPos(nextLeft, clamped.bottom, sys)
 }
 
-function buildWeappFabAvatarUrl(backendRoot, tenantId, code) {
+function buildWeappFabAvatarUrl(backendRoot, tenantAppId, code) {
   const root = String(backendRoot || '').replace(/\/$/, '')
   if (!root || !code) return ''
   const q = new URLSearchParams()
   q.set('code', code)
   q.set('slot', 'icon')
-  if (tenantId) q.set('tenant_id', String(tenantId))
+  if (tenantAppId) q.set('tenant_app_id', String(tenantAppId))
   return `${root}/api/widget/avatar-asset?${q.toString()}`
 }
 
@@ -152,11 +152,11 @@ function H5AssistantWidgetLoader() {
 
   useEffect(() => {
     const backend = ASSISTANT_BACKEND_URL
-    const tid =
-      process.env.APP_AI_TENANT_ID != null && process.env.APP_AI_TENANT_ID !== ''
-        ? String(process.env.APP_AI_TENANT_ID)
+    const tenantAppId =
+      process.env.APP_AI_TENANT_APP_ID != null && process.env.APP_AI_TENANT_APP_ID !== ''
+        ? String(process.env.APP_AI_TENANT_APP_ID)
         : ''
-    const q = tid ? `?tenant_id=${encodeURIComponent(tid)}` : ''
+    const q = tenantAppId ? `?tenant_app_id=${encodeURIComponent(tenantAppId)}` : ''
     Taro.request({
       url: `${backend}/api/widget/embed-config${q}`,
       method: 'GET',
@@ -175,7 +175,7 @@ function H5AssistantWidgetLoader() {
           setFabIconUrl('')
         } else {
           setFabBuiltinEmoji('')
-          setFabIconUrl(buildWeappFabAvatarUrl(backend, tid, code))
+          setFabIconUrl(buildWeappFabAvatarUrl(backend, tenantAppId, code))
         }
       })
       .catch(() => {})

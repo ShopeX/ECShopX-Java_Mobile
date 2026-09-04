@@ -24,7 +24,8 @@ const CONST_ENVS = {
   APP_LIVE: process.env.APP_LIVE,
   ...APP_ENVS,
   // 显式列入，保证 defineConstants 注入；否则客户端会保留 process.env.* 引用导致「process is not defined」
-  APP_DEFAULT_MEMBER_GRADE_ID: process.env.APP_DEFAULT_MEMBER_GRADE_ID || ''
+  APP_DEFAULT_MEMBER_GRADE_ID: process.env.APP_DEFAULT_MEMBER_GRADE_ID || '',
+  APP_AI_TENANT_APP_ID: process.env.APP_AI_TENANT_APP_ID || ''
 }
 
 Object.keys(CONST_ENVS).forEach((key) => {
@@ -35,10 +36,7 @@ Object.keys(CONST_ENVS).forEach((key) => {
 const IS_APP = BUILD_TARGET === 'app'
 // 是否打包成APP服务
 const IS_APP_SERVER = BUILD_APP_SERVER === 'server'
-// 宝塔等子路径部署：APP_PUBLIC_PATH=/mobile/ 、APP_ROUTER_BASENAME=/mobile
-const H5_PUBLIC_PATH =
-  process.env.APP_PUBLIC_PATH || (IS_APP ? (IS_APP_SERVER ? '/' : './') : '/')
-const H5_ROUTER_BASENAME = process.env.APP_ROUTER_BASENAME || undefined
+
 const copyPatterns = []
 const i18nResourceTransform = (content) =>
   content.toString().replace(/\.\/locales\/(zhcn|zhtw|en|ar)\.json/g, './locales/$1.js')
