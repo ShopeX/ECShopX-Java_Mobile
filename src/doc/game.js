@@ -42,14 +42,33 @@ export const GAME_BUTTON = {
   }
 }
 
+/** 活动状态：notstart | online | expire */
+export const resolveActivityStatus = (activity = {}) => {
+  const status = activity.status || activity.activity_status
+  if (status === 'notstart' || status === 'online' || status === 'expire') {
+    return status
+  }
+  const now = Math.floor(Date.now() / 1000)
+  const begin = Number(activity.begin_time) || 0
+  const end = Number(activity.end_time) || 0
+  if (begin && begin > now) return 'notstart'
+  if (end && end <= now) return 'expire'
+  return 'online'
+}
+
 // 游戏配置映射 - 扁平化activityConfig，但保留gameConfig
 export const GAME_CONFIG = {
   gameType: 'gameType',
   backgroundImage: 'backgroundImage',
+  backgroundColor: 'backgroundColor',
   gameMarginTop: 'gameMarginTop',
   recordFormConfig: ({ gameConfig }) => {
     if (!gameConfig?.recordFormConfig) return {}
     return gameConfig?.recordFormConfig
+  },
+  ruleFormConfig: ({ gameConfig }) => {
+    if (!gameConfig?.ruleFormConfig) return {}
+    return gameConfig?.ruleFormConfig
   },
   gameConfig: ({ gameConfig }) => {
     if (!gameConfig) return {}

@@ -8,10 +8,12 @@ import Taro from '@tarojs/taro'
 import { AtButton } from 'taro-ui'
 import { getGameConfig, drawPrize } from '@/api/game'
 import { GAME_TYPES } from '@/consts/game'
-import { pickBy, styleNames } from '@/utils'
-import { GAME_CONFIG } from '@/doc/game'
+import { pickBy, styleNames, showToast } from '@/utils'
+import { GAME_CONFIG, resolveActivityStatus } from '@/doc/game'
 import { SpPage } from '@/components'
 import { useTranslation, $t } from '@/i18n'
+import useLogin from '@/hooks/useLogin'
+import S from '@/spx'
 import SpWheel from './components/sp-wheel'
 import SpGrid from './components/sp-grid'
 import SpSlot from './components/sp-slot'
@@ -22,22 +24,21 @@ import './index.scss'
 
 const GameActivity = () => {
   const { i18n } = useTranslation()
+  const { isLogin } = useLogin({ autoLogin: false })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [activityConfig, setActivityConfig] = useState(null)
   const [gameType, setGameType] = useState('')
-
   const [userInfo, setUserInfo] = useState(null)
+  const [activityMeta, setActivityMeta] = useState({})
+  const [activityStatus, setActivityStatus] = useState('online')
 
-  // 抽奖结果相关状态
   const [resultVisible, setResultVisible] = useState(false)
   const [resultData, setResultData] = useState({})
-
-  // 活动规则数据
   const [rules, setRules] = useState('')
+  const [ruleVisible, setRuleVisible] = useState(false)
   const [activeId, setActiveId] = useState('')
 
-  // 是否正在抽奖中
   const isDrawing = useRef(false)
 
   useEffect(() => {
@@ -48,35 +49,53 @@ const GameActivity = () => {
     Taro.setNavigationBarTitle({ title: $t('0ca7753b.9384d6') })
   }, [i18n.language])
 
-  // 加载活动数据
+  const canDraw = activityStatus === 'online'
+
+  const ensureLogin = useCallback(() => {
+    const token = S?.getAuthToken?.()
+    if (token || isLogin) return true
+    showToast($t('c7a229df.033202'))
+    const pages = Taro.getCurrentPages?.() || []
+    const current = pages[pages.length - 1]
+    const route = current?.route ? `/${current.route}` : '/subpages/game-activity/index'
+    const params = current?.options || Taro.getCurrentInstance()?.router?.params || {}
+    const query = Object.keys(params)
+      .filter((k) => params[k] !== undefined && params[k] !== null)
+      .map((k) => `${k}=${encodeURIComponent(params[k])}`)
+      .join('&')
+    const fullPath = query ? `${route}?${query}` : route
+    setTimeout(() => {
+      Taro.navigateTo({
+        url: `/subpages/member/index?redirect=${encodeURIComponent(fullPath)}`
+      })
+    }, 400)
+    return false
+  }, [isLogin])
+
   const loadActivityData = async () => {
     setLoading(true)
     setError(null)
 
     try {
-      // 获取页面参数，只需获取游戏类型，不需要活动ID
-      const { type, id } = Taro.getCurrentInstance()?.router?.params
-
-      // 调用API获取活动配置
+      const { type, id } = Taro.getCurrentInstance()?.router?.params || {}
       const response = await getGameConfig({ id })
 
       if (response && response?.activity_template_config) {
-        // 使用doc配置处理游戏配置数据，保留gameConfig层级
-        console.log('response.data----', response)
         const processedConfig = pickBy(response.activity_template_config, GAME_CONFIG)
-        console.log('processedConfig----', processedConfig)
         const _gameType = type || processedConfig.gameType
+        const status = resolveActivityStatus(response)
 
         setActivityConfig(processedConfig)
         setGameType(_gameType)
-        setRules(response.intro)
+        setRules(response.intro || '')
         setUserInfo({
-          ...response.user_info,
+          ...(response.user_info || {}),
+          point: response.user_info?.point ?? response.user_info?.points ?? 0,
           cost_value: response.cost_value
         })
         setActiveId(response.id)
-
-        // 设置加载完成
+        setActivityMeta(response)
+        setActivityStatus(status)
         setLoading(false)
       } else {
         setError('c7a229df.2e15a2')
@@ -89,44 +108,75 @@ const GameActivity = () => {
     }
   }
 
-  // 修改抽奖结果处理函数
+  const tipForStatus = useCallback(() => {
+    if (activityStatus === 'notstart') {
+      showToast($t('c7a229df.7527b8'))
+      return
+    }
+    if (activityStatus === 'expire') {
+      showToast($t('c7a229df.cdae1c'))
+    }
+  }, [activityStatus])
+
   const handleDrawPrize = useCallback(async () => {
     if (isDrawing.current) return null
+    if (!ensureLogin()) return Promise.reject({ code: 'NEED_LOGIN' })
+    if (!canDraw) {
+      tipForStatus()
+      return Promise.reject({ code: 'ACTIVITY_NOT_DRAWABLE' })
+    }
+
     isDrawing.current = true
 
     try {
-      // 调用抽奖接口获取结果
       const response = await drawPrize(activeId)
-      console.log('handleDrawPrize--response----', response)
-      if (response) {
-        if (response.code === 0) {
-          // 抽奖成功，显示结果
-          setResultData(response)
-          return response
-        } else if (response.code === 1001) {
-          // FV不足情况
-          setResultData({
-            insufficientFV: true,
-            requiredFV: response.requiredFV,
-            currentFV: response.currentFV
-          })
-          isDrawing.current = false
-          return Promise.reject(response)
-        } else {
-          isDrawing.current = false
-          return Promise.reject(response)
+      if (response && response.code === 0) {
+        if (response.data?.remainPoints !== undefined && response.data?.remainPoints !== null) {
+          setUserInfo((prev) => ({
+            ...(prev || {}),
+            point: response.data.remainPoints
+          }))
         }
-      } else {
+        setResultData(response)
+        return response
+      }
+
+      isDrawing.current = false
+      const code = String(response?.code || '')
+      if (code === 'LUCKY_DRAW_POINT_NOT_ENOUGH') {
+        setResultData({
+          insufficientPoints: true,
+          requiredPoints: userInfo?.cost_value || activityMeta?.cost_value || 0,
+          currentPoints: userInfo?.point || 0,
+          message: response?.message
+        })
+        setResultVisible(true)
         return Promise.reject(response)
       }
+
+      if (code === 'LUCKY_DRAW_GRANT_FAILED') {
+        showToast(response?.message || $t('7b1e93f4.4dabfb'))
+        return Promise.reject(response)
+      }
+
+      showToast(response?.message || $t('7b1e93f4.15509f'))
+      return Promise.reject(response)
     } catch (err) {
       isDrawing.current = false
       console.error('抽奖请求失败:', err)
-      return Promise.reject(response)
+      showToast(err?.message || $t('7b1e93f4.15509f'))
+      return Promise.reject(err)
     }
-  }, [activeId])
+  }, [
+    activeId,
+    canDraw,
+    ensureLogin,
+    tipForStatus,
+    userInfo?.cost_value,
+    userInfo?.point,
+    activityMeta?.cost_value
+  ])
 
-  // 修改关闭结果弹窗的处理函数
   const handleCloseResult = useCallback(() => {
     setResultVisible(false)
     setResultData({})
@@ -134,22 +184,37 @@ const GameActivity = () => {
 
   const handleGameEnd = () => {
     setTimeout(() => {
-      //等待canvas绘制结束，否则游戏组件没有变成图片之前，弹框盖不住
       isDrawing.current = false
       setResultVisible(true)
     }, 600)
   }
-  // 修改渲染游戏组件函数，使用正确的回调名称
+
+  const getBtnStyle = (formConfig = {}) => {
+    const colors = formConfig?.rule || []
+    const style = {
+      'background-color': colors[0] || '#fff',
+      color: colors[1] || '#000'
+    }
+    if (formConfig?.img) {
+      style['background-image'] = `url(${formConfig.img})`
+      style['background-size'] = '100% auto'
+      style['background-repeat'] = 'no-repeat'
+    }
+    return styleNames(style)
+  }
+
   const renderGameComponent = useMemo(() => {
     if (!activityConfig || !activityConfig.gameConfig) return null
 
     const commonProps = {
       config: activityConfig.gameConfig,
-      onDrawPrize: handleDrawPrize, //这里需要考虑无法抽奖的场景，如果无法抽奖是否游戏组件需要不执行start
+      onDrawPrize: handleDrawPrize,
       isDrawing: isDrawing?.current,
+      canDraw,
+      onBlocked: tipForStatus,
       onGameEnd: handleGameEnd
     }
-    console.log('gameType----', gameType, activityConfig)
+
     switch (gameType) {
       case GAME_TYPES.WHEEL:
         return <SpWheel {...commonProps} />
@@ -164,25 +229,27 @@ const GameActivity = () => {
           </View>
         )
     }
-  }, [activityConfig?.gameConfig, gameType, activeId, i18n.language])
+  }, [activityConfig?.gameConfig, gameType, activeId, i18n.language, canDraw, handleDrawPrize, tipForStatus])
 
-  // 渲染背景样式
   const getPageStyle = () => {
+    const style = {}
     if (activityConfig?.backgroundImage) {
-      return {
-        backgroundImage: `url(${activityConfig.backgroundImage})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat'
-      }
+      style.backgroundImage = `url(${activityConfig.backgroundImage})`
+      style.backgroundSize = 'cover'
+      style.backgroundPosition = 'center'
+      style.backgroundRepeat = 'no-repeat'
+    } else if (activityConfig?.backgroundColor) {
+      style.backgroundColor = activityConfig.backgroundColor
     }
-    return {}
+    return style
   }
-  console.log('activityConfig----', activityConfig)
+
+  const ruleFormConfig = activityConfig?.ruleFormConfig || {}
+  const recordFormConfig = activityConfig?.recordFormConfig || {}
+
   return (
     <SpPage className='sp-game-activity'>
       <View className='sp-game-activity__ad-area' style={getPageStyle()}>
-        {/* 加载状态 */}
         {loading && (
           <View className='sp-game-activity__loading'>
             <View className='sp-game-activity__loading-icon'></View>
@@ -190,7 +257,6 @@ const GameActivity = () => {
           </View>
         )}
 
-        {/* 错误状态 */}
         {error && (
           <View className='sp-game-activity__error'>
             <Text className='sp-game-activity__error-text'>{$t(error)}</Text>
@@ -205,45 +271,50 @@ const GameActivity = () => {
             <View style={{ marginTop: activityConfig?.gameMarginTop || 0 }}>
               <ActiveTotalControl userInfo={userInfo} />
             </View>
-            {/* 游戏容器 */}
 
             {activityConfig && (
               <>
                 <View className='sp-game-activity__game-container'>{renderGameComponent}</View>
                 <View className='sp-game-activity__footer'>
                   <View
-                    style={styleNames({
-                      'background-color': activityConfig?.recordFormConfig?.rule?.[0] || '#fff',
-                      color: activityConfig?.recordFormConfig?.rule?.[1] || '#000',
-                      'background-image': `url(${activityConfig?.recordFormConfig?.img})`,
-                      'background-size': '100% auto',
-                      'background-repeat': 'no-repeat'
-                    })}
+                    style={getBtnStyle(ruleFormConfig)}
                     className='sp-game-activity__footer-btn'
-                    onClick={() =>
+                    onClick={() => setRuleVisible(true)}
+                  >
+                    {!ruleFormConfig?.img && $t('c7a229df.02a217')}
+                  </View>
+                  <View
+                    style={getBtnStyle(recordFormConfig)}
+                    className='sp-game-activity__footer-btn'
+                    onClick={() => {
+                      if (!ensureLogin()) return
                       Taro.navigateTo({
                         url: `/subpages/game-activity/pages/records?id=${activeId}`
                       })
-                    }
+                    }}
                   >
-                    {$t('c7a229df.8a69c2')}
+                    {!recordFormConfig?.img && $t('c7a229df.8a69c2')}
                   </View>
                 </View>
               </>
             )}
-            <SpRuleLayout rules={rules} />
+
+            <SpRuleLayout
+              rules={rules}
+              visible={ruleVisible}
+              onClose={() => setRuleVisible(false)}
+            />
           </>
         )}
 
-        {/* 抽奖结果幕帘 */}
         <SpDrawResult
           id={activeId}
           visible={resultVisible}
           onClose={handleCloseResult}
-          prizeInfo={resultData.insufficientFV ? {} : resultData}
-          insufficientFV={resultData.insufficientFV}
-          requiredFV={resultData.requiredFV}
-          currentFV={resultData.currentFV}
+          prizeInfo={resultData.insufficientPoints ? {} : resultData}
+          insufficientPoints={!!resultData.insufficientPoints}
+          requiredPoints={resultData.requiredPoints}
+          currentPoints={resultData.currentPoints}
         />
       </View>
     </SpPage>

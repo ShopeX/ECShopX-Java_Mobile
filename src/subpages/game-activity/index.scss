@@ -72,6 +72,7 @@
     width: 100%;
     display: flex;
     justify-content: center;
+    gap: 32px;
     margin-bottom: 104px;
     &-btn {
       background-color: #fff;
@@ -82,6 +83,7 @@
       width: 216px;
       height: 56px;
       line-height: 56px;
+      overflow: hidden;
     }
   }
 

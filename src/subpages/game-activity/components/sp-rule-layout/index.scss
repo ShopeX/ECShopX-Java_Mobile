@@ -3,15 +3,21 @@
  * See LICENSE file for license details.
  */
 .sp-rule-layout {
-  padding: 20px 40px;
-  width: 100%;
+  padding: 40px;
+  width: 600px;
+  max-height: 70vh;
   box-sizing: border-box;
+  background: #fff;
+  border-radius: 24px;
+  overflow-y: auto;
   &__title {
     height: 48px;
     font-family: PingFang SC, PingFang SC;
     font-weight: 500;
     font-size: 34px;
     color: #404040;
+    margin-bottom: 24px;
+    text-align: center;
   }
   &__content {
     font-weight: 400;
