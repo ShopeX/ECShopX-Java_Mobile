@@ -28,8 +28,12 @@ const SpDrawResult = ({
   useTranslation()
   const resData = prizeInfo?.data || {}
   const prizeType = resData.prizeType || resData.prize_type
-  const prizeTitle = resData.prizeTitle || resData.prize_title
-  const prizeValue = resData.prizeValue ?? resData.prize_value
+  const prizeTitle = resData.prizeTitle || resData.prize_title || ''
+  let prizeValue = resData.prizeValue ?? resData.prize_value
+  if ((prizeValue === undefined || prizeValue === null || prizeValue === '') && prizeType === 'points') {
+    const matched = String(prizeTitle).match(/(\d+)/)
+    if (matched) prizeValue = matched[1]
+  }
   const isEmptyPrize =
     resData.isWin === false || prizeType === 'thanks' || (!prizeType && !prizeTitle)
   const pointsInsufficient = insufficientPoints || insufficientFV
@@ -39,17 +43,7 @@ const SpDrawResult = ({
 
   useEffect(() => {
     if (!visible) return
-    if (isEmptyPrize && !pointsInsufficient) {
-      showModal({
-        title: $t('f326b92a.1229c3'),
-        content: $t('f326b92a.23300f'),
-        showCancel: false,
-        confirmText: $t('f326b92a.fe0337'),
-        contentAlign: 'center'
-      }).finally(() => {
-        onClose()
-      })
-    } else if (pointsInsufficient) {
+    if (pointsInsufficient) {
       showModal({
         title: $t('f326b92a.96551d'),
         content: ti('f326b92a.cfd2f6', [havePoints, needPoints]),
@@ -60,59 +54,85 @@ const SpDrawResult = ({
         onClose()
       })
     }
-  }, [visible, isEmptyPrize, pointsInsufficient, havePoints, needPoints, onClose])
+  }, [visible, pointsInsufficient, havePoints, needPoints, onClose])
 
   const isCouponPrize = prizeType === 'coupon' || prizeType === 'coupons'
   const isPointsPrize = prizeType === 'points'
 
-  const renderContent = () => {
-    if (pointsInsufficient || isEmptyPrize) return null
-    return (
-      <View className='sp-draw-result__prize'>
-        <View className='sp-draw-result__title'>{$t('f326b92a.84c17c')}</View>
-        {resData?.prizeImage && (
-          <Image className='sp-draw-result__image' src={resData?.prizeImage} mode='aspectFit' />
-        )}
-        {!isPointsPrize && (
-          <View className='sp-draw-result__prize-name'>{prizeTitle}</View>
-        )}
-        {isPointsPrize && prizeValue !== undefined && prizeValue !== null && (
-          <View className='sp-draw-result__prize-amount'>
-            {ti('f326b92a.511b20', [prizeValue])}
-          </View>
-        )}
-        <View className='sp-draw-result__message'>
-          {resData?.message || $t('f326b92a.7ba17f')}
+  const renderPrizeDetail = () => {
+    if (isPointsPrize) {
+      return (
+        <View className='sp-draw-result__prize-amount'>
+          {prizeValue !== undefined && prizeValue !== null && prizeValue !== ''
+            ? ti('f326b92a.511b20', [prizeValue])
+            : prizeTitle || ti('f326b92a.511b20', [''])}
         </View>
-        <View className='sp-draw-result-btn__wrap'>
-          <AtButton className='sp-draw-result__btn sp-draw-result__btn_left' onClick={onClose}>
-            {$t('f326b92a.5f4112')}
-          </AtButton>
-          {isCouponPrize && (
-            <AtButton
-              className='sp-draw-result__btn sp-draw-result__btn_right'
-              onClick={() => {
-                Taro.navigateTo({ url: COUPON_REWARD_PATH })
-              }}
-            >
-              {$t('f326b92a.7c271c')}
-            </AtButton>
-          )}
-        </View>
-      </View>
-    )
+      )
+    }
+    return <View className='sp-draw-result__prize-name'>{prizeTitle}</View>
   }
 
-  return (
-    <>
-      {isEmptyPrize || pointsInsufficient ? (
-        <></>
-      ) : (
-        <AtCurtain isOpened={visible} onClose={onClose}>
-          <View className='sp-draw-result'>{renderContent()}</View>
-        </AtCurtain>
+  // Figma 中间弹窗：谢谢参与 + 双按钮
+  const renderThanksContent = () => (
+    <View className='sp-draw-result__prize'>
+      <View className='sp-draw-result__title'>{$t('f326b92a.190e46')}</View>
+      <View className='sp-draw-result__message'>{$t('f326b92a.4efcb3')}</View>
+      <View className='sp-draw-result-btn__wrap'>
+        <AtButton className='sp-draw-result__btn sp-draw-result__btn_left' onClick={onClose}>
+          {$t('f326b92a.625fb2')}
+        </AtButton>
+        <AtButton className='sp-draw-result__btn sp-draw-result__btn_right' onClick={onClose}>
+          {$t('f326b92a.df4a4c')}
+        </AtButton>
+      </View>
+    </View>
+  )
+
+  const renderWinContent = () => (
+    <View className='sp-draw-result__prize'>
+      <View className='sp-draw-result__title'>{$t('f326b92a.84c17c')}</View>
+      {!!resData?.prizeImage && (
+        <Image className='sp-draw-result__image' src={resData.prizeImage} mode='aspectFit' />
       )}
-    </>
+      {renderPrizeDetail()}
+      <View className='sp-draw-result__message'>
+        {resData?.message || $t('f326b92a.7ba17f')}
+      </View>
+      <View
+        className={`sp-draw-result-btn__wrap${
+          isCouponPrize ? '' : ' sp-draw-result-btn__wrap--single'
+        }`}
+      >
+        <AtButton
+          className={`sp-draw-result__btn ${
+            isCouponPrize ? 'sp-draw-result__btn_left' : 'sp-draw-result__btn_right'
+          }`}
+          onClick={onClose}
+        >
+          {isCouponPrize ? $t('f326b92a.5f4112') : $t('f326b92a.fe0337')}
+        </AtButton>
+        {isCouponPrize && (
+          <AtButton
+            className='sp-draw-result__btn sp-draw-result__btn_right'
+            onClick={() => {
+              Taro.navigateTo({ url: COUPON_REWARD_PATH })
+            }}
+          >
+            {$t('f326b92a.7c271c')}
+          </AtButton>
+        )}
+      </View>
+    </View>
+  )
+
+  if (pointsInsufficient) return null
+
+  return (
+    <AtCurtain className='sp-draw-result-curtain' isOpened={visible} onClose={onClose}>
+      <View className='sp-draw-result'>
+        {isEmptyPrize ? renderThanksContent() : renderWinContent()}
+      </View>
+    </AtCurtain>
   )
 }
 

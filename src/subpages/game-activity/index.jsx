@@ -5,21 +5,21 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { View, Text } from '@tarojs/components'
 import Taro from '@tarojs/taro'
-import { AtButton } from 'taro-ui'
-import { getGameConfig, drawPrize } from '@/api/game'
+import { getGameConfig, drawPrize, mapDrawErrorMessage } from '@/api/game'
 import { GAME_TYPES } from '@/consts/game'
 import { pickBy, styleNames, showToast } from '@/utils'
 import { GAME_CONFIG, resolveActivityStatus } from '@/doc/game'
-import { SpPage } from '@/components'
+import { SpPage, SpLoading, SpNote, SpImage } from '@/components'
 import { useTranslation, $t } from '@/i18n'
 import useLogin from '@/hooks/useLogin'
 import S from '@/spx'
-import SpWheel from './components/sp-wheel'
+import SpTurntable from './components/sp-turntable'
 import SpGrid from './components/sp-grid'
 import SpSlot from './components/sp-slot'
 import SpRuleLayout from './components/sp-rule-layout'
 import SpDrawResult from './components/sp-draw-result'
 import ActiveTotalControl from './components/sp-active-header'
+import { resolveTurnTableProps } from './components/helper'
 import './index.scss'
 
 const GameActivity = () => {
@@ -46,8 +46,10 @@ const GameActivity = () => {
   }, [])
 
   useEffect(() => {
-    Taro.setNavigationBarTitle({ title: $t('0ca7753b.9384d6') })
-  }, [i18n.language])
+    const title =
+      activityMeta?.activity_name || activityMeta?.name || $t('0ca7753b.9384d6')
+    Taro.setNavigationBarTitle({ title })
+  }, [i18n.language, activityMeta?.activity_name, activityMeta?.name])
 
   const canDraw = activityStatus === 'online'
 
@@ -77,8 +79,9 @@ const GameActivity = () => {
     setError(null)
 
     try {
-      const { type, id } = Taro.getCurrentInstance()?.router?.params || {}
-      const response = await getGameConfig({ id })
+      const routerParams = Taro.getCurrentInstance()?.router?.params || {}
+      const { type, id } = routerParams
+      const response = await getGameConfig({ ...routerParams, id })
 
       if (response && response?.activity_template_config) {
         const processedConfig = pickBy(response.activity_template_config, GAME_CONFIG)
@@ -113,6 +116,7 @@ const GameActivity = () => {
       showToast($t('c7a229df.7527b8'))
       return
     }
+    // expire：含已结束 / 已终止
     if (activityStatus === 'expire') {
       showToast($t('c7a229df.cdae1c'))
     }
@@ -129,7 +133,8 @@ const GameActivity = () => {
     isDrawing.current = true
 
     try {
-      const response = await drawPrize(activeId)
+      const routerParams = Taro.getCurrentInstance()?.router?.params || {}
+      const response = await drawPrize(activeId, { routerParams })
       if (response && response.code === 0) {
         if (response.data?.remainPoints !== undefined && response.data?.remainPoints !== null) {
           setUserInfo((prev) => ({
@@ -154,17 +159,13 @@ const GameActivity = () => {
         return Promise.reject(response)
       }
 
-      if (code === 'LUCKY_DRAW_GRANT_FAILED') {
-        showToast(response?.message || $t('7b1e93f4.4dabfb'))
-        return Promise.reject(response)
-      }
-
-      showToast(response?.message || $t('7b1e93f4.15509f'))
+      // 含 GRANT_FAILED：提示可重试，不伪装谢谢参与
+      showToast(response?.message || mapDrawErrorMessage(response) || $t('7b1e93f4.15509f'))
       return Promise.reject(response)
     } catch (err) {
       isDrawing.current = false
       console.error('抽奖请求失败:', err)
-      showToast(err?.message || $t('7b1e93f4.15509f'))
+      showToast(mapDrawErrorMessage(err))
       return Promise.reject(err)
     }
   }, [
@@ -191,17 +192,32 @@ const GameActivity = () => {
 
   const getBtnStyle = (formConfig = {}) => {
     const colors = formConfig?.rule || []
-    const style = {
-      'background-color': colors[0] || '#fff',
-      color: colors[1] || '#000'
+    const style = {}
+    // 有按钮图时由 Image 渲染，避免中文文件名在 CSS url() 下失效
+    if (!formConfig?.img) {
+      if (colors[0]) style['background-color'] = colors[0]
+      if (colors[1]) style.color = colors[1]
     }
-    if (formConfig?.img) {
-      style['background-image'] = `url(${formConfig.img})`
-      style['background-size'] = '100% auto'
-      style['background-repeat'] = 'no-repeat'
-    }
-    return styleNames(style)
+    return Object.keys(style).length ? styleNames(style) : ''
   }
+
+  const renderFooterBtn = (formConfig, text, onClick) => (
+    <View
+      style={getBtnStyle(formConfig)}
+      className='sp-game-activity__footer-btn'
+      onClick={onClick}
+    >
+      {formConfig?.img ? (
+        <SpImage
+          className='sp-game-activity__footer-btn-img'
+          src={formConfig.img}
+          mode='widthFix'
+        />
+      ) : (
+        text
+      )}
+    </View>
+  )
 
   const renderGameComponent = useMemo(() => {
     if (!activityConfig || !activityConfig.gameConfig) return null
@@ -217,7 +233,7 @@ const GameActivity = () => {
 
     switch (gameType) {
       case GAME_TYPES.WHEEL:
-        return <SpWheel {...commonProps} />
+        return <SpTurntable {...resolveTurnTableProps(commonProps)} />
       case GAME_TYPES.GRID:
         return <SpGrid {...commonProps} />
       case GAME_TYPES.SLOT:
@@ -231,18 +247,9 @@ const GameActivity = () => {
     }
   }, [activityConfig?.gameConfig, gameType, activeId, i18n.language, canDraw, handleDrawPrize, tipForStatus])
 
-  const getPageStyle = () => {
-    const style = {}
-    if (activityConfig?.backgroundImage) {
-      style.backgroundImage = `url(${activityConfig.backgroundImage})`
-      style.backgroundSize = 'cover'
-      style.backgroundPosition = 'center'
-      style.backgroundRepeat = 'no-repeat'
-    } else if (activityConfig?.backgroundColor) {
-      style.backgroundColor = activityConfig.backgroundColor
-    }
-    return style
-  }
+  const getPageStyle = () => ({
+    backgroundColor: activityConfig?.backgroundColor || '#f5f5f5'
+  })
 
   const ruleFormConfig = activityConfig?.ruleFormConfig || {}
   const recordFormConfig = activityConfig?.recordFormConfig || {}
@@ -251,61 +258,57 @@ const GameActivity = () => {
     <SpPage className='sp-game-activity'>
       <View className='sp-game-activity__ad-area' style={getPageStyle()}>
         {loading && (
-          <View className='sp-game-activity__loading'>
-            <View className='sp-game-activity__loading-icon'></View>
-            <Text className='sp-game-activity__loading-text'>{$t('c7a229df.26b5bd')}</Text>
+          <View className='sp-game-activity__status'>
+            <SpLoading>{$t('c7a229df.26b5bd')}</SpLoading>
           </View>
         )}
 
-        {error && (
-          <View className='sp-game-activity__error'>
-            <Text className='sp-game-activity__error-text'>{$t(error)}</Text>
-            <AtButton size='normal' onClick={loadActivityData}>
+        {!loading && (error || !activityConfig) && (
+          <View className='sp-game-activity__status'>
+            <SpNote className='sp-game-activity__empty' img='empty_data.png'>
+              {$t(error || 'c7a229df.2e15a2')}
+            </SpNote>
+            <View className='sp-game-activity__retry' onClick={loadActivityData}>
               {$t('c7a229df.132c5c')}
-            </AtButton>
+            </View>
           </View>
         )}
 
-        {!loading && !error && (
-          <>
-            <View style={{ marginTop: activityConfig?.gameMarginTop || 0 }}>
-              <ActiveTotalControl userInfo={userInfo} />
-            </View>
-
-            {activityConfig && (
-              <>
-                <View className='sp-game-activity__game-container'>{renderGameComponent}</View>
-                <View className='sp-game-activity__footer'>
-                  <View
-                    style={getBtnStyle(ruleFormConfig)}
-                    className='sp-game-activity__footer-btn'
-                    onClick={() => setRuleVisible(true)}
-                  >
-                    {!ruleFormConfig?.img && $t('c7a229df.02a217')}
-                  </View>
-                  <View
-                    style={getBtnStyle(recordFormConfig)}
-                    className='sp-game-activity__footer-btn'
-                    onClick={() => {
-                      if (!ensureLogin()) return
-                      Taro.navigateTo({
-                        url: `/subpages/game-activity/pages/records?id=${activeId}`
-                      })
-                    }}
-                  >
-                    {!recordFormConfig?.img && $t('c7a229df.8a69c2')}
-                  </View>
-                </View>
-              </>
+        {!loading && !error && activityConfig && (
+          <View className='sp-game-activity__background-image-container'>
+            {!!activityConfig.backgroundImage && (
+              <SpImage
+                src={activityConfig.backgroundImage}
+                mode='aspectFill'
+                className='sp-game-activity__background-image'
+              />
             )}
+            <View className='sp-game-activity__content'>
+              <View style={{ marginTop: activityConfig?.gameMarginTop ?? 150 }}>
+                <ActiveTotalControl userInfo={userInfo} />
+              </View>
 
-            <SpRuleLayout
-              rules={rules}
-              visible={ruleVisible}
-              onClose={() => setRuleVisible(false)}
-            />
-          </>
+              <View className='sp-game-activity__game-container'>{renderGameComponent}</View>
+              <View className='sp-game-activity__footer'>
+                {renderFooterBtn(ruleFormConfig, $t('c7a229df.02a217'), () =>
+                  setRuleVisible(true)
+                )}
+                {renderFooterBtn(recordFormConfig, $t('c7a229df.8a69c2'), () => {
+                  if (!ensureLogin()) return
+                  Taro.navigateTo({
+                    url: `/subpages/game-activity/pages/records?id=${activeId}`
+                  })
+                })}
+              </View>
+            </View>
+          </View>
         )}
+
+        <SpRuleLayout
+          rules={rules}
+          visible={ruleVisible}
+          onClose={() => setRuleVisible(false)}
+        />
 
         <SpDrawResult
           id={activeId}

@@ -3,6 +3,7 @@
  * See LICENSE file for license details.
  */
 import { $t } from '@/i18n'
+import { normalizeLuckyDrawData } from '@/doc/game'
 import req from './req'
 
 const ERROR_CODE_I18N = {
@@ -12,9 +13,10 @@ const ERROR_CODE_I18N = {
   LUCKY_DRAW_TOTAL_LIMIT: '7b1e93f4.a5298f',
   LUCKY_DRAW_DAILY_LIMIT: '7b1e93f4.b40a4a',
   LUCKY_DRAW_POINT_NOT_ENOUGH: '7b1e93f4.997086',
-  LUCKY_DRAW_GRANT_FAILED: '7b1e93f4.4dabfb',
-  LUCKY_DRAW_COST_FAILED: '7b1e93f4.15509f',
-  LUCKY_DRAW_REQUEST_ID_INVALID: '7b1e93f4.15509f'
+  LUCKY_DRAW_REQUEST_ID_INVALID: '7b1e93f4.892115',
+  LUCKY_DRAW_GRANT_FAILED: '7b1e93f4.692153',
+  LUCKY_DRAW_COST_FAILED: '7b1e93f4.614d84',
+  LUCKY_DRAW_CONFIG_VERSION_CONFLICT: '7b1e93f4.a4590f'
 }
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
@@ -23,14 +25,27 @@ export function createDrawRequestId() {
   return `01J${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`
 }
 
+function pickLuckyDrawCode(...candidates) {
+  for (const value of candidates) {
+    if (value === undefined || value === null || value === '') continue
+    const text = String(value)
+    if (ERROR_CODE_I18N[text]) return text
+    const matched = text.match(/LUCKY_DRAW_[A-Z0-9_]+/)
+    if (matched && ERROR_CODE_I18N[matched[0]]) return matched[0]
+  }
+  return ''
+}
+
 function pickErrorCode(payload = {}) {
-  return (
-    payload.code ||
-    payload.error_code ||
-    payload.errorCode ||
-    payload?.data?.code ||
-    payload?.data?.error_code ||
-    ''
+  return pickLuckyDrawCode(
+    payload.code,
+    payload.error_code,
+    payload.errorCode,
+    payload?.data?.code,
+    payload?.data?.error_code,
+    payload.message,
+    payload.msg,
+    payload?.data?.message
   )
 }
 
@@ -45,7 +60,12 @@ export function mapDrawErrorMessage(errorOrPayload) {
     errorOrPayload?.data ||
     errorOrPayload ||
     {}
-  const code = String(pickErrorCode(payload) || '')
+  const code = pickLuckyDrawCode(
+    pickErrorCode(payload),
+    errorOrPayload?.code,
+    errorOrPayload?.message,
+    pickErrorMessage(payload)
+  )
   if (code && ERROR_CODE_I18N[code]) {
     return $t(ERROR_CODE_I18N[code])
   }
@@ -57,6 +77,12 @@ export function mapDrawErrorMessage(errorOrPayload) {
 export function normalizeDrawResult(raw = {}) {
   const prizeType = raw.prizeType || raw.prize_type || ''
   const prizeTitle = raw.prizeTitle || raw.prize_title || ''
+  let prizeValue = raw.prizeValue ?? raw.prize_value
+  // 接口可能只回 prizeTitle（如「10积分」），补齐 prizeValue 供结果弹窗展示
+  if ((prizeValue === undefined || prizeValue === null || prizeValue === '') && prizeType === 'points') {
+    const matched = String(prizeTitle).match(/(\d+)/)
+    if (matched) prizeValue = matched[1]
+  }
   const isWin =
     typeof raw.isWin === 'boolean'
       ? raw.isWin
@@ -78,7 +104,7 @@ export function normalizeDrawResult(raw = {}) {
         : -1,
     prizeType,
     prizeTitle,
-    prizeValue: raw.prizeValue ?? raw.prize_value,
+    prizeValue,
     prizeImage: raw.prizeImage || raw.prize_image || '',
     costPoints: raw.costPoints ?? raw.cost_points ?? raw.costPoints,
     remainPoints: raw.remainPoints ?? raw.remain_points,
@@ -86,7 +112,7 @@ export function normalizeDrawResult(raw = {}) {
     // 兼容旧结果弹窗读取结构
     prize_type: prizeType,
     prize_title: prizeTitle,
-    prize_value: raw.prizeValue ?? raw.prize_value
+    prize_value: prizeValue
   }
 }
 
@@ -125,7 +151,7 @@ export const drawPrize = async (activityId, options = {}) => {
     if (normalized.status === 'GRANT_FAILED') {
       return {
         code: 'LUCKY_DRAW_GRANT_FAILED',
-        message: $t('7b1e93f4.4dabfb'),
+        message: $t('7b1e93f4.692153'),
         data: normalized
       }
     }
@@ -138,7 +164,14 @@ export const drawPrize = async (activityId, options = {}) => {
   } catch (error) {
     const message = mapDrawErrorMessage(error)
     const payload = error?.res?.data?.data || error?.res?.data || {}
-    const code = String(pickErrorCode(payload) || error?.code || 1)
+    const code =
+      pickLuckyDrawCode(
+        pickErrorCode(payload),
+        error?.code,
+        error?.message,
+        pickErrorMessage(payload)
+      ) ||
+      String(payload.code || payload.error_code || error?.code || 1)
     return {
       code,
       message,
@@ -157,8 +190,9 @@ export const getDrawResult = (params = {}) => {
 }
 
 // 获取游戏活动配置
-export const getGameConfig = (params = {}) => {
-  return req.get('/promotion/getLuckyDrawData', params)
+export const getGameConfig = async (params = {}) => {
+  const res = await req.get('/promotion/getLuckyDrawData', params)
+  return normalizeLuckyDrawData(res || {})
 }
 
 // 获取抽奖记录

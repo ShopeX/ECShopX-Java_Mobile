@@ -4,12 +4,16 @@
  */
 import { View, Text } from '@tarojs/components'
 import Taro from '@tarojs/taro'
-import { SpImage } from '@/components'
 import { useTranslation, $t } from '@/i18n'
 import { showToast } from '@/utils'
 import './index.scss'
 
 const POINT_MORE_PATH = '/subpages/pointshop/list'
+
+const formatPoint = (point) => {
+  if (isNaN(point) || point <= 0) return 0
+  return point.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+}
 
 const ActiveTotalControl = (props) => {
   useTranslation()
@@ -27,18 +31,14 @@ const ActiveTotalControl = (props) => {
     <View className='sp-active-control'>
       <View className='sp-active-control__title'>
         <Text>{$t('a6e0e06e.89438c')}</Text>
-        <Text className='sp-active-control__title-score'>{point || 0}</Text>
+        <Text className='sp-active-control__title-score'>{formatPoint(point)}</Text>
       </View>
       <View className='sp-active-control__title-btn' onClick={handleGetMore}>
-        <SpImage
-          className='sp-active-control__title-btn-img'
-          src={`${process.env.APP_IMAGE_CDN}/fv_activity_get_more_btn.png`}
-          mode='cover'
-        />
+        <Text className='sp-active-control__title-btn-text'>{$t('a6e0e06e.f42a8f')}</Text>
       </View>
       <View className='sp-active-control__desc'>
         <Text>{$t('a6e0e06e.3b39a8')}</Text>
-        <Text style={{ marginLeft: '6rpx' }}>{cost_value}</Text>
+        <Text className='sp-active-control__desc-num'>{cost_value}</Text>
         <Text>{$t('a6e0e06e.9f68a8')}</Text>
       </View>
     </View>

@@ -2,14 +2,42 @@
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
  */
-import React, { useRef } from 'react'
+import React, { useRef, useMemo } from 'react'
 import { View } from '@tarojs/components'
 import { LuckyWheel } from '@lucky-canvas/taro/react'
+import { TURNTABLE_OUTER_SIZE } from '../helper'
 import './index.scss'
 
-const SpWheel = ({ config, onDrawPrize, onGameEnd, isDrawing, canDraw = true, onBlocked, style }) => {
+const SpWheel = ({
+  config,
+  onDrawPrize,
+  onGameEnd,
+  isDrawing,
+  canDraw = true,
+  onBlocked,
+  style
+}) => {
   const wheelRef = useRef(null)
   const resultRef = useRef(null)
+
+  const wheelConfig = useMemo(
+    () => ({
+      width: config?.width || `${TURNTABLE_OUTER_SIZE}px`,
+      height: config?.height || `${TURNTABLE_OUTER_SIZE}px`,
+      blocks: config?.blocks || [],
+      prizes: config?.prizes || [],
+      buttons: config?.buttons || [],
+      defaultConfig: {
+        gutter: 0,
+        speed: 20,
+        accelerationTime: 2500,
+        decelerationTime: 2500,
+        ...(config?.defaultConfig || {})
+      },
+      defaultStyle: config?.defaultStyle || {}
+    }),
+    [config]
+  )
 
   const resolveStopIndex = (result) => {
     const data = result?.data || {}
@@ -58,19 +86,8 @@ const SpWheel = ({ config, onDrawPrize, onGameEnd, isDrawing, canDraw = true, on
   }
 
   return (
-    <View className='sp-wheel' style={style}>
-      <LuckyWheel
-        ref={wheelRef}
-        width={config.width || '300px'}
-        height={config.height || '300px'}
-        blocks={config.blocks || []}
-        prizes={config.prizes || []}
-        buttons={config.buttons || []}
-        defaultConfig={config.defaultConfig || {}}
-        defaultStyle={config.defaultStyle || {}}
-        onStart={handleStart}
-        onEnd={handleEnd}
-      />
+    <View className='sp-wheel-container' style={style}>
+      <LuckyWheel ref={wheelRef} {...wheelConfig} onStart={handleStart} onEnd={handleEnd} />
     </View>
   )
 }
