@@ -34,9 +34,14 @@ function SelectCompany() {
   }, [i18n.language])
 
   const getEnterpriseList = async () => {
-    const data = await api.purchase.getEnterprisesList({ page: 1, pageSize: 20 })
+    const data = await api.purchase.getEnterprisesList({
+      page: 1,
+      pageSize: 20,
+      disabled: 0
+    })
+    const list = (data.list || []).filter((item) => item.disabled == 0)
     setState((draft) => {
-      draft.enterpriseList = data.list
+      draft.enterpriseList = list
     })
   }
 
