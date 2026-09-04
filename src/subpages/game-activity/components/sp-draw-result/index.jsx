@@ -10,89 +10,102 @@ import Taro from '@tarojs/taro'
 import { useTranslation, $t, ti } from '@/i18n'
 import './index.scss'
 
+const COUPON_REWARD_PATH = '/subpages/marketing/coupon'
+
 // 抽奖结果幕帘组件
 const SpDrawResult = ({
   visible,
   prizeInfo = {},
   onClose,
   id,
+  insufficientPoints = false,
   insufficientFV = false,
+  requiredPoints = 0,
   requiredFV = 0,
+  currentPoints = 0,
   currentFV = 0
 }) => {
   useTranslation()
-  // 判断是否是未中奖情况
   const resData = prizeInfo?.data || {}
-  const isEmptyPrize = resData?.prize_type === 'thanks'
+  const prizeType = resData.prizeType || resData.prize_type
+  const prizeTitle = resData.prizeTitle || resData.prize_title
+  const prizeValue = resData.prizeValue ?? resData.prize_value
+  const isEmptyPrize =
+    resData.isWin === false || prizeType === 'thanks' || (!prizeType && !prizeTitle)
+  const pointsInsufficient = insufficientPoints || insufficientFV
+  const needPoints = requiredPoints || requiredFV || 0
+  const havePoints = currentPoints || currentFV || 0
   const { showModal } = useModal()
-  useEffect(() => {
-    if (visible) {
-      if (isEmptyPrize) {
-        showModal({
-          title: $t('f326b92a.1229c3'),
-          content: $t('f326b92a.23300f'),
-          showCancel: false,
-          confirmText: $t('f326b92a.fe0337'),
-          contentAlign: 'center'
-        }).finally(() => {
-          onClose()
-        })
-      } else if (insufficientFV) {
-        showModal({
-          title: $t('f326b92a.96551d'),
-          content: ti('f326b92a.cfd2f6', [currentFV, requiredFV]),
-          showCancel: false,
-          confirmText: $t('f326b92a.fe0337'),
-          contentAlign: 'center'
-        }).finally(() => {
-          onClose()
-        })
-      }
-    }
-  }, [visible, isEmptyPrize, insufficientFV, currentFV, requiredFV, onClose])
 
-  // 渲染内容
+  useEffect(() => {
+    if (!visible) return
+    if (isEmptyPrize && !pointsInsufficient) {
+      showModal({
+        title: $t('f326b92a.1229c3'),
+        content: $t('f326b92a.23300f'),
+        showCancel: false,
+        confirmText: $t('f326b92a.fe0337'),
+        contentAlign: 'center'
+      }).finally(() => {
+        onClose()
+      })
+    } else if (pointsInsufficient) {
+      showModal({
+        title: $t('f326b92a.96551d'),
+        content: ti('f326b92a.cfd2f6', [havePoints, needPoints]),
+        showCancel: false,
+        confirmText: $t('f326b92a.fe0337'),
+        contentAlign: 'center'
+      }).finally(() => {
+        onClose()
+      })
+    }
+  }, [visible, isEmptyPrize, pointsInsufficient, havePoints, needPoints, onClose])
+
+  const isCouponPrize = prizeType === 'coupon' || prizeType === 'coupons'
+  const isPointsPrize = prizeType === 'points'
+
   const renderContent = () => {
-    if (!insufficientFV && !isEmptyPrize) {
-      // 中奖情况
-      return (
-        <View className='sp-draw-result__prize'>
-          <View className='sp-draw-result__title'>{$t('f326b92a.84c17c')}</View>
-          {resData?.prizeImage && (
-            <Image className='sp-draw-result__image' src={resData?.prizeImage} mode='aspectFit' />
-          )}
-          {resData?.prize_type != 'points' && (
-            <View className='sp-draw-result__prize-name'>{resData?.prize_title}</View>
-          )}
-          {resData?.prize_value && resData?.prize_type == 'points' && (
-            <View className='sp-draw-result__prize-amount'>
-              {ti('f326b92a.511b20', [resData?.prize_value])}
-            </View>
-          )}
-          <View className='sp-draw-result__message'>
-            {resData?.message || $t('f326b92a.7ba17f')}
+    if (pointsInsufficient || isEmptyPrize) return null
+    return (
+      <View className='sp-draw-result__prize'>
+        <View className='sp-draw-result__title'>{$t('f326b92a.84c17c')}</View>
+        {resData?.prizeImage && (
+          <Image className='sp-draw-result__image' src={resData?.prizeImage} mode='aspectFit' />
+        )}
+        {!isPointsPrize && (
+          <View className='sp-draw-result__prize-name'>{prizeTitle}</View>
+        )}
+        {isPointsPrize && prizeValue !== undefined && prizeValue !== null && (
+          <View className='sp-draw-result__prize-amount'>
+            {ti('f326b92a.511b20', [prizeValue])}
           </View>
-          <View className='sp-draw-result-btn__wrap'>
-            <AtButton className='sp-draw-result__btn sp-draw-result__btn_left' onClick={onClose}>
-              {$t('f326b92a.5f4112')}
-            </AtButton>
+        )}
+        <View className='sp-draw-result__message'>
+          {resData?.message || $t('f326b92a.7ba17f')}
+        </View>
+        <View className='sp-draw-result-btn__wrap'>
+          <AtButton className='sp-draw-result__btn sp-draw-result__btn_left' onClick={onClose}>
+            {$t('f326b92a.5f4112')}
+          </AtButton>
+          {isCouponPrize && (
             <AtButton
               className='sp-draw-result__btn sp-draw-result__btn_right'
               onClick={() => {
-                Taro.navigateTo({ url: `/subpages/game-activity/pages/records?id=${id}` })
+                Taro.navigateTo({ url: COUPON_REWARD_PATH })
               }}
             >
               {$t('f326b92a.7c271c')}
             </AtButton>
-          </View>
+          )}
         </View>
-      )
-    }
+      </View>
+    )
   }
 
   return (
     <>
-      {isEmptyPrize || insufficientFV ? (
+      {isEmptyPrize || pointsInsufficient ? (
         <></>
       ) : (
         <AtCurtain isOpened={visible} onClose={onClose}>

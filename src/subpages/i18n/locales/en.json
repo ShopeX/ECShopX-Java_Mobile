@@ -4134,5 +4134,12 @@
   "c7a229df.cdae1c": "Activity has ended",
   "c7a229df.033202": "Please log in to join the lottery",
   "c7a229df.02a217": "Activity rules",
-  "a6e0e06e.26825e": "Points entry is unavailable"
+  "a6e0e06e.26825e": "Points entry is unavailable",
+  "7b1e93f4.997086": "Insufficient points to draw",
+  "7b1e93f4.a5298f": "Activity draw limit reached",
+  "7b1e93f4.b40a4a": "Daily draw limit reached",
+  "7b1e93f4.4dabfb": "Prize grant failed, please try again later",
+  "7b1e93f4.15509f": "Draw failed, please try again later",
+  "7b1e93f4.7527b8": "Activity has not started",
+  "7b1e93f4.cdae1c": "Activity has ended"
 }
