@@ -17,6 +17,12 @@
   &-wrap {
     position: relative;
     width: 100%;
+
+    // 有 firstScreenWidth/Height 时按比例撑开，Swiper 绝对填满
+    &--ratio {
+      width: 100%;
+      height: auto;
+    }
   }
 
   // 隐藏占位：用 widthFix 按素材比例撑开容器（H5/小程序通用）
@@ -66,15 +72,21 @@
         display: block;
       }
 
-      .slider-video {
+      // Taro H5 默认 .taro-video { height: 225px }，必须盖掉才能跟容器自适应
+      .slider-video,
+      taro-video.slider-video,
+      .taro-video.slider-video {
         width: 100% !important;
         height: 100% !important;
-        display: block;
+        display: block !important;
         background-color: transparent;
+      }
 
+      .slider-video {
         // H5 内层 video 需显式 object-fit，否则竖版会被裁成横向条
         video,
-        .taro-video-video {
+        .taro-video-video,
+        .taro-video-container {
           width: 100% !important;
           height: 100% !important;
           object-fit: cover;

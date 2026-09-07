@@ -37,11 +37,15 @@ const Slider = (props) => {
     return getGlobalBaseStyle(base.outerMargin || {})
   }, [base, config.firstScreenHeight])
 
+  const configW = Number(config.firstScreenWidth) > 0 ? Number(config.firstScreenWidth) : 0
   const configH = Number(config.firstScreenHeight) > 0 ? Number(config.firstScreenHeight) : 211
+  // 装修配置了首屏宽高时优先用 aspect-ratio（H5 最稳，不依赖封面图加载）
+  const hasFirstScreenRatio = configW > 0 && Number(config.firstScreenHeight) > 0
   const firstItem = data[0]
-  // 用封面/OSS 截帧作占位图撑高：H5/小程序都按素材真实比例（含 9:16）
-  const sizerUrl =
-    firstItem?.media_type === 'video'
+  // 无首屏比例时：用封面/OSS 截帧作占位图撑高（兼容 9:16）
+  const sizerUrl = hasFirstScreenRatio
+    ? ''
+    : firstItem?.media_type === 'video'
       ? getVideoPoster(firstItem.imgUrl, firstItem.videoUrl)
       : firstItem?.imgUrl
 
@@ -253,12 +257,22 @@ const Slider = (props) => {
     <View className={classNames('wgt wgt-slider')} style={styleNames(outerStyle)}>
       <View className='wgt-slider-content'>
         <View
-          className='wgt-slider-wrap'
-          style={styleNames({
-            // 截帧失败时至少按配置高度展示；成功则 widthFix 按真实比例撑开
-            minHeight: Taro.pxTransform(configH * 2),
-            ...(sizerUrl ? {} : { height: Taro.pxTransform(configH * 2) })
+          className={classNames('wgt-slider-wrap', {
+            'wgt-slider-wrap--ratio': hasFirstScreenRatio,
+            'wgt-slider-wrap--sizer': !!sizerUrl
           })}
+          style={styleNames(
+            hasFirstScreenRatio
+              ? {
+                  // 按装修首屏宽高自适应（如 375x827），避免 H5 Video 默认 225px
+                  'aspect-ratio': `${configW} / ${Number(config.firstScreenHeight)}`
+                }
+              : {
+                  // 截帧失败时至少按配置高度展示；成功则 widthFix 按真实比例撑开
+                  'min-height': Taro.pxTransform(configH * 2),
+                  ...(sizerUrl ? {} : { height: Taro.pxTransform(configH * 2) })
+                }
+          )}
         >
           {/* 隐藏占位图按真实比例撑高（兼容 H5 / 小程序，避免 9:16 被裁成约 1/3） */}
           {sizerUrl ? (
@@ -267,7 +281,7 @@ const Slider = (props) => {
           {config && (
             <Swiper
               className={classNames('slider-img', {
-                'slider-img--fill': !!sizerUrl
+                'slider-img--fill': hasFirstScreenRatio || !!sizerUrl
               })}
               circular
               autoplay={config.autoplay !== false}
@@ -276,7 +290,7 @@ const Slider = (props) => {
               duration={300}
               onAnimationFinish={swiperChange}
               style={styleNames(
-                sizerUrl
+                hasFirstScreenRatio || sizerUrl
                   ? {}
                   : {
                       height: Taro.pxTransform(configH * 2)
