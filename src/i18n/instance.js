@@ -39,6 +39,8 @@ const STORAGE_LANG_ALIASES = {
   tw: 'zhtw',
   en: 'en',
   'en-us': 'en',
+  'en_us': 'en',
+  'en-cn': 'en',
   'en_cn': 'en',
   ar: 'ar',
   'ar-sa': 'ar'

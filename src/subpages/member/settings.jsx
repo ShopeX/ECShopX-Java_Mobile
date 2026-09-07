@@ -10,13 +10,11 @@ import { SpPage, SpCell, SpFloatLayout, SpCheckbox } from '@/components'
 import { isWeb } from '@/utils'
 import { SG_CHECK_STORE_RULE } from '@/consts'
 import { View } from '@tarojs/components'
+import { useTranslation, $t, syncI18nLanguage, normalizeStorageLang } from '@/i18n'
 import {
-  useTranslation,
-  $t,
-  syncI18nLanguage,
-  normalizeStorageLang,
-  SUPPORTED_STORAGE_LANGS
-} from '@/i18n'
+  fetchLanguageSetting,
+  markUserLanguagePreferred
+} from '@/utils/language-setting'
 import './settings.scss'
 
 const initialState = {
@@ -31,17 +29,26 @@ const Settings = () => {
   const lang =
     normalizeStorageLang(Taro.getStorageSync('lang')) ||
     normalizeStorageLang(process.env.APP_DEFAULT_LANGUAGE) ||
-    'en'
+    'zhcn'
 
   useEffect(() => {
-    setState((draft) => {
-      draft.languageList = SUPPORTED_STORAGE_LANGS.map((key) => ({
-        key,
-        name: $t(`lang.name.${key}`),
-        ischecked: key === lang
-      }))
-      draft.selectLang = lang
-    })
+    let cancelled = false
+    ;(async () => {
+      const setting = await fetchLanguageSetting()
+      if (cancelled) return
+      const enabled = setting?.enabledLanguages || []
+      setState((draft) => {
+        draft.languageList = enabled.map((item) => ({
+          key: item.storageLang,
+          name: item.name || $t(`lang.name.${item.storageLang}`),
+          ischecked: item.storageLang === lang
+        }))
+        draft.selectLang = lang
+      })
+    })()
+    return () => {
+      cancelled = true
+    }
   }, [lang, setState])
 
   useEffect(() => {
@@ -80,6 +87,7 @@ const Settings = () => {
             circle
             type='primary'
             onClick={async () => {
+              markUserLanguagePreferred(true)
               Taro.$changeLang(state.selectLang)
               await syncI18nLanguage(state.selectLang)
               Taro.setStorageSync(SG_CHECK_STORE_RULE, 0)

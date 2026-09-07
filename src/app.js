@@ -47,6 +47,7 @@ import {
   VERSION_STANDARD,
   tokenParse
 } from '@/utils'
+import { applySiteLanguageConfig } from '@/utils/language-setting'
 import { useEffectAsync } from '@/hooks'
 import { requestIntercept } from '@/plugin/requestIntercept'
 import dayjs from 'dayjs'
@@ -105,9 +106,12 @@ function App({ children }) {
     Taro.setStorageSync(SG_CHECK_STORE_RULE, 0)
 
     // Initialize RTL；首次进入时 Taro 无 lang，需写入默认语言，否则 baseinfo 等首请求不会带 country_code
+    // 站点语言配置（ECX-10023）异步拉取后会按 F-007 规则纠正
     let lang = normalizeStorageLang(Taro.getStorageSync('lang'))
     if (!lang) {
-      lang = normalizeStorageLang(process.env.APP_DEFAULT_LANGUAGE) || 'en'
+      lang =
+        normalizeStorageLang(process.env.APP_DEFAULT_LANGUAGE) ||
+        'zhcn'
     }
     Taro.setStorageSync('lang', lang)
     store.dispatch(updateLang(lang))
@@ -132,8 +136,26 @@ function App({ children }) {
       }
     }
 
+    // 应用站点已启用语言 + 默认语言（个人偏好优先）
+    applySiteLanguageConfig({ force: true })
+      .then((resolved) => {
+        if (!resolved) return
+        store.dispatch(updateLang(resolved))
+        if (isWeb) {
+          document.documentElement.dir = resolved === 'ar' ? 'rtl' : 'ltr'
+          if (resolved === 'ar') {
+            document.documentElement.classList.add('rtl-mode')
+          } else {
+            document.documentElement.classList.remove('rtl-mode')
+          }
+        }
+      })
+      .catch((err) => {
+        console.warn('[language-setting] apply on launch failed', err)
+      })
+
     Taro.eventCenter.on('languageChanged', (data) => {
-      const newLang = normalizeStorageLang(data?.lang || Taro.getStorageSync('lang')) || 'en'
+      const newLang = normalizeStorageLang(data?.lang || Taro.getStorageSync('lang')) || 'zhcn'
       Taro.setStorageSync('lang', newLang)
       store.dispatch(updateLang(newLang))
       syncI18nLanguage(newLang).catch(() => {})
@@ -180,6 +202,24 @@ function App({ children }) {
         getSystemConfig()
       }
       initCrm(params)
+
+      // 回前台时按缓存/接口纠正当前语言（ECX-10023）
+      applySiteLanguageConfig()
+        .then((resolved) => {
+          if (!resolved) return
+          store.dispatch(updateLang(resolved))
+          if (isWeb) {
+            document.documentElement.dir = resolved === 'ar' ? 'rtl' : 'ltr'
+            if (resolved === 'ar') {
+              document.documentElement.classList.add('rtl-mode')
+            } else {
+              document.documentElement.classList.remove('rtl-mode')
+            }
+          }
+        })
+        .catch((err) => {
+          console.warn('[language-setting] apply on show failed', err)
+        })
     })
   })
 

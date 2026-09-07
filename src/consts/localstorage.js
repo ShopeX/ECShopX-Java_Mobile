@@ -21,3 +21,5 @@ export const SG_GUIDE_PARAMS_EXPRESSTIME = 'guideParams_expresstime' // 店铺�
 export const SG_CHECK_STORE_RULE = 'check_store_rule' // 检查店铺进店规则
 /** 本地浏览记录（商品详情页进入时写入，挂件 history 类型读取），最多 10 条 */
 export const SG_BROWSE_HISTORY_ITEMS = 'browse_history_items'
+/** 用户是否主动选择并保存过语言（ECX-10023 个人偏好） */
+export const SG_LANG_USER_PREFERRED = 'lang_user_preferred'
