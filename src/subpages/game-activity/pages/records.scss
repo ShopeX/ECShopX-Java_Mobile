@@ -4,32 +4,48 @@
  */
 .sp-record-layout {
   padding: 20px 40px;
+  background: #fff;
 
-  &__item {
-    padding: 24px 0;
-    border-bottom: 2px solid #f0f0f0;
+  &--loading {
+    min-height: 400px;
     display: flex;
-    flex-direction: column;
+    align-items: center;
+    justify-content: center;
   }
 
-  &__prize {
+
+
+  &__item {
     display: flex;
-    justify-content: space-between;
+    flex-direction: column;
+    padding: 24px 0;
+    border-bottom: 2px solid #f0f0f0;
+
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+
+  &__info {
+    display: flex;
     align-items: center;
-    margin-bottom: 10px;
+    justify-content: space-between;
+  }
+
+  &__amount {
+    align-self: flex-end;
+    font-size: 28px;
+    color: #333;
+    font-weight: bold;
+
+    &--points {
+      color: var(--color-primary);
+    }
   }
 
   &__name {
     font-size: 28px;
     color: #333;
-  }
-
-  &__amount {
-    font-size: 28px;
-    color: #333;
-    font-weight: bold;
-    display: flex;
-    justify-content: flex-end;
   }
 
   &__time {
@@ -39,12 +55,8 @@
 
   &__empty {
     padding: 60px 0;
-    text-align: center;
-    color: #999;
     font-size: 28px;
-  }
-  &__info {
-    display: flex;
-    justify-content: space-between;
+    color: #999;
+    text-align: center;
   }
 }

@@ -7,30 +7,33 @@ import { View } from '@tarojs/components'
 import { SlotMachine } from '@lucky-canvas/taro/react'
 import './index.scss'
 
-const SpSlot = ({ config, onDrawPrize, onGameEnd, isDrawing, style }) => {
+const SpSlot = ({ config, onDrawPrize, onGameEnd, isDrawing, canDraw = true, onBlocked, style }) => {
   const slotRef = useRef(null)
 
   // 开始抽奖
   const handleStart = async () => {
     if (isDrawing || !slotRef.current) return
-
-    // 开始老虎机
-    slotRef.current.play()
+    if (!canDraw) {
+      onBlocked && onBlocked()
+      return
+    }
 
     try {
       // 调用父组件的抽奖接口获取结果
       const result = await onDrawPrize()
 
-      if (result) {
-        // 停止在指定奖品索引
-        slotRef.current.stop(result.prizeIndex)
-      } else {
-        // 抽奖失败，停止老虎机
-        slotRef.current.stop(0)
+      if (result?.code === 0) {
+        slotRef.current.play()
+        const idx =
+          typeof result?.data?.sectorIndex === 'number' && result.data.sectorIndex >= 0
+            ? result.data.sectorIndex
+            : result?.prizeIndex || 0
+        setTimeout(() => {
+          slotRef.current.stop(idx)
+        }, 500)
       }
     } catch (err) {
       console.error('抽奖出错:', err)
-      slotRef.current.stop(0)
     }
   }
 

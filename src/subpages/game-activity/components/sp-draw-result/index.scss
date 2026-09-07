@@ -4,13 +4,14 @@
  */
 .sp-draw-result {
   width: 100%;
-  padding: 60px 48px;
+  padding: 60px 48px 0;
   background-color: #fff;
-  border-radius: 24px;
+  border-radius: 36px;
   text-align: center;
   box-sizing: border-box;
+
   &__title {
-    font-size: 35px;
+    font-size: 34px;
     font-weight: 500;
     color: #1a1a1a;
     line-height: 48px;
@@ -24,21 +25,27 @@
     margin: 10px auto 20px;
   }
 
-  &__prize-name {
-    font-size: 18px;
-    color: #333;
-    margin-bottom: 10px;
+  &__prize-amount {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    font-size: 40px;
+    font-weight: 600;
+    color: var(--color-primary);
+    line-height: 56px;
+    margin-bottom: 18px;
   }
 
-  &__prize-amount {
-    font-size: 24px;
-    color: #f85f56;
-    font-weight: bold;
-    margin-bottom: 10px;
+  &__prize-name {
+    color: var(--color-primary);
+    font-size: 34px;
+    font-weight: 500;
+    margin-bottom: 18px;
   }
 
   &__message {
-    font-size: 16px;
+    font-size: 30px;
     color: #666;
     margin-bottom: 30px;
   }
@@ -55,17 +62,6 @@
     font-weight: bold;
   }
 
-  &__icon-empty {
-    width: 100px;
-    height: 100px;
-    margin: 0 auto 20px;
-    background-image: url('https://img.yzcdn.cn/vant/empty-image-default.png');
-    background-size: contain;
-    background-repeat: no-repeat;
-    background-position: center;
-  }
-
-  // 中奖、未中奖、FV不足的容器样式
   &__prize {
     display: flex;
     flex-direction: column;
@@ -76,9 +72,21 @@
   &-btn__wrap {
     display: flex;
     justify-content: space-between;
+    gap: 24px;
     width: 100%;
-    margin-top: 20px;
+    padding: 24px 0 60px;
+    box-sizing: border-box;
+
+    &--single {
+      justify-content: center;
+
+      .sp-draw-result__btn {
+        width: 100% !important;
+        max-width: 480px;
+      }
+    }
   }
+
   &__btn {
     width: 230px !important;
     height: 88px !important;
@@ -88,25 +96,30 @@
     line-height: 88px !important;
     text-align: center !important;
     box-sizing: border-box !important;
-    margin: 0px !important;
+    margin: 0 !important;
   }
+
   &__btn_left {
     border: 2px solid #ebebeb !important;
     font-size: 28px !important;
+    font-weight: 400 !important;
+    color: #666666;
+    background: #fff !important;
   }
+
   &__btn_right {
-    background: #ff3a3a !important;
+    background: var(--color-primary) !important;
     color: #ffffff !important;
+    border: none !important;
   }
 }
 
-// 覆盖AtCurtain默认样式
-.at-curtain {
-  &__body {
+.sp-draw-result-curtain {
+  .at-curtain__body {
     width: 580px !important;
   }
 
-  &__btn-close {
+  .at-curtain__btn-close {
     color: #fff !important;
     display: none !important;
   }

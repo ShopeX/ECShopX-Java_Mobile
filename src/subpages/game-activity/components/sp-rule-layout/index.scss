@@ -2,21 +2,50 @@
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
  */
+.sp-rule-layout-curtain {
+  .at-curtain__container {
+    background: transparent;
+  }
+
+  .at-curtain__body {
+    width: 580px !important;
+  }
+
+  .at-curtain__btn-close {
+    display: block !important;
+    margin-top: 32px;
+    color: #fff !important;
+  }
+}
+
 .sp-rule-layout {
-  padding: 20px 40px;
   width: 100%;
+  padding: 48px 40px 40px;
+  background-color: #fff;
+  border-radius: 24px;
   box-sizing: border-box;
+  text-align: left;
+
   &__title {
     height: 48px;
-    font-family: PingFang SC, PingFang SC;
+    line-height: 48px;
     font-weight: 500;
     font-size: 34px;
-    color: #404040;
+    color: #1a1a1a;
+    margin-bottom: 24px;
+    text-align: center;
   }
+
+  &__scroll {
+    max-height: 560px;
+    width: 100%;
+  }
+
   &__content {
     font-weight: 400;
     font-size: 26px;
-    color: #999999;
+    color: #666666;
     line-height: 44px;
+    word-break: break-word;
   }
 }

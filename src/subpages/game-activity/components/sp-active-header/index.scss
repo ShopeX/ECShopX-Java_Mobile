@@ -12,8 +12,9 @@
   background: linear-gradient(180deg, #ffffff 0%, #fff9e9 100%);
   border-radius: 24px;
   border: 1px solid #ebebeb;
-  box-sizing: border-box;
   margin-bottom: 60px;
+  z-index: 1;
+
   &__title {
     height: 48px;
     line-height: 48px;
@@ -21,24 +22,48 @@
     color: #1a1a1a;
     font-weight: 600;
     margin-bottom: 12px;
+
     &-score {
       font-size: 42px;
       color: #ffae00;
       position: relative;
-      top: 1px;
+      margin-left: 12px;
     }
+
     &-btn {
-      width: 287px;
+      width: auto;
+      min-width: 160px;
       height: 107px;
       position: absolute;
       top: 30px;
       right: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+
+      &-text {
+        min-width: 160px;
+        height: 56px;
+        line-height: 56px;
+        padding: 0 24px;
+        text-align: center;
+        border-radius: 28px;
+        font-size: 24px;
+        font-weight: 600;
+        color: #fff;
+        background: linear-gradient(90deg, #ffb020 0%, #ff8a00 100%);
+      }
     }
   }
+
   &__desc {
     font-size: 26px;
     color: #666666;
     height: 36px;
     line-height: 36px;
+
+    &-num {
+      margin: 0 6px;
+    }
   }
 }
