@@ -12,15 +12,21 @@
     box-sizing: border-box;
     padding-left: 20px;
     padding-right: 20px;
+    // H5 无微信胶囊，左侧按内容自适应，禁止再写死 240 占位
     &.is-web {
-      width: 240px !important;
+      width: auto !important;
+      min-width: 0;
+      flex-shrink: 0;
+      padding-right: 12px;
     }
-    // 附近门店：店铺名按 4 字截断，左侧自适应，搜索框缩短
+    // 附近门店：店铺名按显示宽度截断（约 4 中文 / 8 英文），搜索框缩短
     &.has-nearby {
       width: auto !important;
-      min-width: 160px;
-      max-width: 240px;
+      min-width: 0;
+      // 约 4 中文宽 + ... + 箭头
+      max-width: 200px;
       flex-shrink: 0;
+      padding-right: 8px;
     }
   }
   .title-container {
@@ -120,7 +126,7 @@
     }
   }
 
-  /* wgt-page：与 Vue 页面设置组件一致 */
+  /* wgt-page：与 Vue 页面设置组件一致；flex 兼容 H5 / 微信小程序（父级有 statusBar padding-top） */
   .wgt-page {
     box-sizing: border-box;
     position: fixed;
@@ -129,6 +135,8 @@
     top: 0;
     z-index: 1000;
     direction: ltr;
+    display: flex;
+    flex-direction: column;
 
     .title-function {
       height: 64px;
@@ -151,8 +159,13 @@
     }
 
     &-content {
-      height: 100%;
+      // 不要用 height:100%：微信里百分比高度 + 父级 padding-top 易撑破/塌缩
+      flex: 1;
+      min-height: 0;
       width: 100%;
+      box-sizing: border-box;
+      display: flex;
+      align-items: center;
       background-repeat: no-repeat;
       background-size: cover;
       background-position: 50%;
@@ -160,6 +173,9 @@
     }
 
     .header-container {
+      // 勿用 flex:1 抢宽度：小程序里会撑满整行，盖掉内联的胶囊预留 calc
+      flex: 0 1 auto;
+      min-width: 0;
       height: 100%;
       position: relative;
       display: flex;
@@ -167,9 +183,10 @@
       box-sizing: border-box;
       justify-content: flex-start;
 
-      /* Web 端：标题文字相对整栏（header-container）绝对居中，不随左侧按钮偏移 */
+      /* Web 端：无胶囊，标题相对整栏居中；左侧不按胶囊对称占位 */
       &.is-web .header-container-left {
-        min-width: 80px;
+        width: auto !important;
+        min-width: 0;
       }
       &.is-web .title-container {
         padding-left: 0;
@@ -191,9 +208,11 @@
       &.is-web .title-search {
         flex: 1;
         min-width: 0;
-        margin-left: 20px;
+        margin-left: 12px;
+        padding-right: 0;
       }
       &.is-web .search-container {
+        // H5 无胶囊，搜索可拉满剩余宽度
         max-width: none !important;
       }
       /* Web 端：标题图片整栏水平居中（用 50% + translate 保证不被左侧占位影响） */
@@ -221,6 +240,7 @@
 
           .nearby-function-text {
             font-size: 28px;
+            // JS 已按显示宽度截断，这里不再用 CSS 限宽以免英文被二次裁切
             overflow: visible;
             white-space: nowrap;
             flex-shrink: 0;
@@ -238,11 +258,15 @@
           min-width: 0;
           padding-left: 0;
           margin-left: 12px;
+          // 小程序：搜索落在胶囊预留区内，右内边距避免贴边
+          padding-right: 8px;
+          box-sizing: border-box;
+          justify-content: flex-start;
 
           .search-container {
-            // 缩短搜索框，把空间让给店铺名
+            // 在已预留胶囊的容器内拉满剩余宽度，勿再写死 max-width 导致布局怪异
             width: 100%;
-            max-width: 360px;
+            max-width: none;
           }
         }
       }
@@ -250,15 +274,16 @@
       &.is-web.has-nearby {
         .header-container-left {
           width: auto !important;
-          min-width: 160px;
-          max-width: 220px;
+          min-width: 0;
+          max-width: 200px;
         }
 
         .title-search {
           margin-left: 12px;
 
           .search-container {
-            max-width: 360px !important;
+            // H5 无胶囊，搜索占满左侧店名外的剩余宽度
+            max-width: none !important;
           }
         }
       }

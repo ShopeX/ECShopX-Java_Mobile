@@ -6,7 +6,7 @@ import React, { Component } from 'react'
 import Taro, { getCurrentInstance } from '@tarojs/taro'
 import { View, Text } from '@tarojs/components'
 import { useSelector } from 'react-redux'
-import { VERSION_PLATFORM, classNames, isWeixin, VERSION_STANDARD } from '@/utils'
+import { VERSION_PLATFORM, classNames, isWeixin, VERSION_STANDARD, truncateDisplayName } from '@/utils'
 import { useTranslation, $t } from '@/i18n'
 
 import './home-header.scss'
@@ -32,7 +32,10 @@ function WgtHomeHeader(props) {
             })
           }}
         >
-          <View className='shop-name'>{shopInfo?.name || $t('cb50ec48.0d7757')}</View>
+          <View className='shop-name'>
+            {truncateDisplayName(shopInfo?.name || shopInfo?.store_name, 4) ||
+              $t('cb50ec48.0d7757')}
+          </View>
           <Text className='iconfont icon-qianwang-01'></Text>
         </View>
       )}

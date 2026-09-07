@@ -1034,4 +1034,6 @@ export * from './limited-buy'
 
 export * from './videoPoster'
 
+export { truncateDisplayName } from './truncate-display-name'
+
 export { getCurrencySymbol, transformTextByPoint, getDtidIdUrl } from './helper'

@@ -12,10 +12,13 @@
   .left-block {
     display: flex;
     align-items: center;
-    flex: 1;
+    flex: 0 0 auto;
+    max-width: 200px;
   }
   .shop-name {
     font-size: 28px;
+    // JS 已按显示宽度截断（约 4 中文 / 8 英文）
+    max-width: none;
     @include text-overflow();
   }
   .address {
@@ -42,7 +45,7 @@
     }
   }
   .sp-search {
-    // max-width: 300px;
+    max-width: 300px;
     padding: 0;
     .sp-search-block {
       margin: 0;

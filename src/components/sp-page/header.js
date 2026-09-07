@@ -6,7 +6,7 @@ import React, { useCallback, memo } from 'react'
 import Taro, { getCurrentInstance } from '@tarojs/taro'
 import { View, Text, Button } from '@tarojs/components'
 import { SpImage } from '@/components'
-import { styleNames, classNames, VERSION_STANDARD, isWeb } from '@/utils'
+import { styleNames, classNames, VERSION_STANDARD, isWeb, truncateDisplayName } from '@/utils'
 import { VERSION_IN_PURCHASE, isGoodsShelves, linkPage } from '@/utils'
 import { useSelector } from 'react-redux'
 import { $t, useTranslation } from '@/i18n'
@@ -152,14 +152,13 @@ const CustomNavigationHeader = memo((props) => {
   }, [])
 
   const formatNearbyName = useCallback((name) => {
-    if (!name) return name
-    // 固定展示 4 个中文，超出省略（避免 CSS 宽度估算导致少显/多显）
-    return name.length > 4 ? `${name.slice(0, 4)}...` : name
+    // 中文约 4 字；英文半角 0.5，约 8 字母（同宽）
+    return truncateDisplayName(name, 4)
   }, [])
 
   const renderNearby = useCallback(() => {
     const rawName = VERSION_STANDARD
-      ? shopInfo?.name || $t('cb50ec48.0d7757')
+      ? shopInfo?.name || shopInfo?.store_name || $t('cb50ec48.0d7757')
       : nearbyText || $t('cb50ec48.e9a36d')
     return (
       <View
@@ -175,6 +174,7 @@ const CustomNavigationHeader = memo((props) => {
     handleNearbyClick,
     nearbyText,
     shopInfo?.name,
+    shopInfo?.store_name,
     pageConfig?.titleColor,
     i18n.language,
     formatNearbyName
@@ -239,13 +239,30 @@ const CustomNavigationHeader = memo((props) => {
       : null
 
   return (
-    <View className='wgt-page' style={styleNames(headerStyle())} onClick={props.onClickHeader}>
-      <View className='wgt-page-content'>
+    <View
+      className={classNames('wgt-page', { 'is-web': isWeb })}
+      style={styleNames(headerStyle())}
+      onClick={props.onClickHeader}
+    >
+      <View className={classNames('wgt-page-content', { 'is-web': isWeb, 'has-nearby': hasNearby })}>
         {customNav || (
           <View
             className={classNames('header-container', { 'has-nearby': hasNearby, 'is-web': isWeb })}
             style={styleNames({
-              width: `calc(100% - ${navigationRSpace}px)`,
+              // 小程序：宽度卡在胶囊左侧；H5 无胶囊，整行 + 右边距
+              ...(isWeb
+                ? {
+                    width: '100%',
+                    'padding-right': '20px',
+                    'box-sizing': 'border-box'
+                  }
+                : {
+                    width: `calc(100% - ${navigationRSpace || 0}px)`,
+                    'max-width': `calc(100% - ${navigationRSpace || 0}px)`,
+                    'flex-grow': '0',
+                    'flex-shrink': '1',
+                    'box-sizing': 'border-box'
+                  }),
               ...(showHeaderContent ? containerStyle() : {})
             })}
           >
@@ -256,11 +273,12 @@ const CustomNavigationHeader = memo((props) => {
                   'has-nearby': hasNearby
                 })}
                 style={styleNames(
-                  hasNearby
-                    ? {}
-                    : {
+                  // 小程序非 nearby：左侧占位与右侧胶囊对称；H5 无胶囊，不按胶囊占宽
+                  !isWeb && !hasNearby
+                    ? {
                         width: `${navigationRSpace}px`
                       }
+                    : {}
                 )}
               >
                 {/* 左侧：返回、首页、功能区三者只显示一个 */}
