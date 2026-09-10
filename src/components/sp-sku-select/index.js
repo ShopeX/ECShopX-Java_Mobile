@@ -66,6 +66,7 @@ function SpSkuSelect(props) {
     open = false,
     onClose = () => {},
     onChange = () => {},
+    onConfirm = null,
     type,
     hideInputNumber = false,
     salesman = false,
@@ -415,6 +416,32 @@ function SpSkuSelect(props) {
     })
   }
 
+  const handleCheckoutAdd = async () => {
+    const { nospec } = info || {}
+    if (!nospec && !curItem) {
+      showToast($t('46dc5ce5.4fd966'))
+      return
+    }
+    if (typeof onConfirm !== 'function') {
+      onClose()
+      return
+    }
+    setState((draft) => {
+      draft.loading = true
+    })
+    try {
+      await onConfirm({
+        item_id: curItem ? curItem.itemId : info.itemId,
+        num
+      })
+      onClose()
+    } finally {
+      setState((draft) => {
+        draft.loading = false
+      })
+    }
+  }
+
   const handleSubscribe = async () => {
     const { dtid } = $instance?.router?.params
     // console.log('onSubscribe:subscribe', subscribe)
@@ -468,6 +495,12 @@ function SpSkuSelect(props) {
       return (
         <AtButton circle loading={loading} type='primary' onClick={addToCart}>
           {btnTxt}
+        </AtButton>
+      )
+    } else if (type == 'checkoutAdd') {
+      return (
+        <AtButton circle loading={loading} type='primary' onClick={handleCheckoutAdd}>
+          加入结算
         </AtButton>
       )
     } else {

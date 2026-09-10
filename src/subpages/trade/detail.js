@@ -10,10 +10,10 @@ import api from '@/api'
 import doc from '@/doc'
 import { AtButton, AtCountdown, AtFloatLayout } from 'taro-ui'
 import { View, Text, ScrollView } from '@tarojs/components'
-import { SpPage, SpCell, SpPrice, SpTradeItem, SpImage, SpCashier } from '@/components'
+import { SpPage, SpCell, SpPrice, SpTradeItem, SpImage, SpCashier, SpRecommend } from '@/components'
 import { ORDER_STATUS_INFO, PAYMENT_TYPE, ORDER_DADA_STATUS, SG_ROUTER_PARAMS } from '@/consts'
 import dayjs from 'dayjs'
-import { usePayment, useNavigation } from '@/hooks'
+import { usePayment, useNavigation, collectMainItemIds, normalizeRecommendItems, resolveRecommendDistributorId } from '@/hooks'
 import { useTranslation, $t, ti, i18n } from '@/i18n'
 import { pickBy, copyText, showToast, isArray, getCurrencySymbol } from '@/utils'
 import S from '@/spx'
@@ -44,7 +44,8 @@ const initialState = {
   supplement: false, //待补充
   prescriptionUrl: '',
   prescriptionStatus: false,
-  openingTime: 'squareRoots'
+  openingTime: 'squareRoots',
+  recommendList: []
 }
 function TradeDetail(props) {
   useTranslation()
@@ -66,7 +67,8 @@ function TradeDetail(props) {
     supplement,
     prescriptionUrl,
     prescriptionStatus,
-    openingTime
+    openingTime,
+    recommendList
   } = state
   const { priceSetting, pointName } = useSelector((state) => state.sys)
   const { userInfo } = useSelector((state) => state.user)
@@ -150,6 +152,45 @@ function TradeDetail(props) {
         _orderInfo.prescriptionStatus == 1 &&
         isArray(_orderInfo?.diagnosisData)
     })
+    getRecommendList(_orderInfo, distributor || orderInfo)
+  }
+
+  const getRecommendList = async (orderInfo, distributor) => {
+    const mainItemIds = collectMainItemIds((orderInfo?.items || []).map((item) => item.itemId || item.item_id))
+    if (!mainItemIds.length) {
+      setState((draft) => {
+        draft.recommendList = []
+      })
+      return
+    }
+    const distributor_id = resolveRecommendDistributorId(
+      orderInfo?.distributorId || distributor?.distributor_id || distributor?.distributorId
+    )
+    if (distributor_id === null) {
+      setState((draft) => {
+        draft.recommendList = []
+      })
+      return
+    }
+    try {
+      const body = {
+        scene: 'order_detail',
+        main_item_ids: mainItemIds,
+        exclude_item_ids: mainItemIds,
+        showError: false
+      }
+      if (distributor_id !== undefined) {
+        body.distributor_id = distributor_id
+      }
+      const { items } = await api.goodsRecommend.match(body)
+      setState((draft) => {
+        draft.recommendList = normalizeRecommendItems(items)
+      })
+    } catch (e) {
+      setState((draft) => {
+        draft.recommendList = []
+      })
+    }
   }
 
   const onWebSocket = async () => {
@@ -969,6 +1010,9 @@ function TradeDetail(props) {
             </View>
           )}
           <View className='padding-view'></View>
+          {recommendList?.length > 0 && (
+            <SpRecommend className='recommend-block' info={recommendList} />
+          )}
         </ScrollView>
       )}
 

@@ -73,7 +73,7 @@ function StoreIndex() {
   useTranslation()
   const [state, setState] = useImmer(initState)
   const [likeList, setLikeList] = useImmer([])
-  const { openRecommend, colorPrimary } = useSelector((state) => state.sys)
+  const { colorPrimary } = useSelector((state) => state.sys)
   const { shopCartCount } = useSelector((state) => state.cart)
   const { setNavigationBarTitle } = useNavigation()
   const $instance = getCurrentInstance() || {}
@@ -206,14 +206,8 @@ function StoreIndex() {
   }
 
   const fetchLikeList = async () => {
-    if (openRecommend == 1) {
-      const query = {
-        page: 1,
-        pageSize: 30
-      }
-      const { list } = await api.cart.likeList(query)
-      setLikeList(list)
-    }
+    // 门店首页无主商品上下文，规则推荐不展示
+    setLikeList([])
   }
 
   useShareAppMessage((res) => {

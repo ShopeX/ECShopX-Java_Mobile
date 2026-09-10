@@ -34,7 +34,7 @@ import {
 } from '@/utils'
 import doc from '@/doc'
 import entryLaunch from '@/utils/entryLaunch'
-import { useNavigation } from '@/hooks'
+import { useNavigation, normalizeRecommendItems, resolveRecommendDistributorId } from '@/hooks'
 import { updateChooseAddress } from '@/store/slices/user'
 import { fetchCartList } from '@/store/slices/purchase'
 import { ACTIVITY_LIST } from '@/consts'
@@ -231,6 +231,7 @@ const initialState = {
   selectType: 'picker',
   curItem: null,
   recommendList: [],
+  recommendSkuInfo: null,
   activityId: '',
   enterpriseId: '',
   isParameter: false,
@@ -243,7 +244,7 @@ function EspierDetail(props) {
   const pageRef = useRef()
   const dispatch = useDispatch()
   const { userInfo, address } = useSelector((state) => state.user)
-  const { colorPrimary, openRecommend } = useSelector((state) => state.sys)
+  const { colorPrimary } = useSelector((state) => state.sys)
   const {
     purchase_share_info = {},
     curDistributorId,
@@ -276,6 +277,7 @@ function EspierDetail(props) {
     dtid,
     curItem,
     recommendList,
+    recommendSkuInfo,
     activityId,
     enterpriseId,
     isParameter,
@@ -520,19 +522,45 @@ function EspierDetail(props) {
       }
     }
 
-    if (openRecommend == 1) {
-      getRecommendList() // 猜你喜欢
-    }
+    getRecommendList(data)
   }
 
-  const getRecommendList = async () => {
-    const { list } = await api.cart.likeList({
-      page: 1,
-      pageSize: 30
-    })
-    setState((draft) => {
-      draft.recommendList = list
-    })
+  const getRecommendList = async (goodsInfo) => {
+    const mainId = Number(goodsInfo?.itemId || goodsInfo?.item_id || 0)
+    if (!mainId) {
+      setState((draft) => {
+        draft.recommendList = []
+      })
+      return
+    }
+    const distributor_id = resolveRecommendDistributorId(
+      goodsInfo?.distributorId || goodsInfo?.distributor_id
+    )
+    if (distributor_id === null) {
+      setState((draft) => {
+        draft.recommendList = []
+      })
+      return
+    }
+    try {
+      const body = {
+        scene: 'detail',
+        main_item_ids: [mainId],
+        exclude_item_ids: [mainId],
+        showError: false
+      }
+      if (distributor_id !== undefined) {
+        body.distributor_id = distributor_id
+      }
+      const { items } = await api.goodsRecommend.match(body)
+      setState((draft) => {
+        draft.recommendList = normalizeRecommendItems(items)
+      })
+    } catch (e) {
+      setState((draft) => {
+        draft.recommendList = []
+      })
+    }
   }
 
   const getMultipleImageInfo = async (imageUrls = []) => {
@@ -587,9 +615,32 @@ function EspierDetail(props) {
 
   const onChangeToolBar = (key) => {
     setState((draft) => {
+      draft.recommendSkuInfo = null
       draft.skuPanelOpen = true
       draft.selectType = key
     })
+  }
+
+  const handleRecommendAdd = async (goods) => {
+    const itemId = goods?.itemId || goods?.item_id || goods?.raw?.item_id
+    if (!itemId) return
+    Taro.showLoading({ title: '' })
+    try {
+      const itemDetail = await api.item.detail(itemId, {
+        showError: false,
+        distributor_id:
+          goods?.distributorId || goods?.distributor_id || dtid || curDistributorId || getDistributorId()
+      })
+      setState((draft) => {
+        draft.recommendSkuInfo = pickBy(itemDetail, doc.goods.GOODS_INFO)
+        draft.selectType = 'addcart'
+        draft.skuPanelOpen = true
+      })
+    } catch (e) {
+      Taro.showToast({ title: e?.message || '加购失败', icon: 'none' })
+    } finally {
+      Taro.hideLoading()
+    }
   }
 
   let sessionFrom = {}
@@ -864,7 +915,7 @@ function EspierDetail(props) {
         </View>
       )}
 
-      <SpRecommend info={recommendList} />
+      <SpRecommend info={recommendList} columns={3} showAdd onAdd={handleRecommendAdd} />
 
       {/* 组合优惠 */}
       <CompPackageList
@@ -895,12 +946,13 @@ function EspierDetail(props) {
       <MSpSkuSelect
         open={skuPanelOpen}
         type={selectType}
-        info={info}
-        selectedItem={curItem}
+        info={recommendSkuInfo || info}
+        selectedItem={recommendSkuInfo ? null : curItem}
         pointMode={isPrepaidPointMode}
         onClose={() => {
           setState((draft) => {
             draft.skuPanelOpen = false
+            draft.recommendSkuInfo = null
           })
         }}
         onChange={(skuText, curItem) => {

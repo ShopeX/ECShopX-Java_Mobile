@@ -56,7 +56,7 @@ import entryLaunch from '@/utils/entryLaunch'
 import qs from 'qs'
 import S from '@/spx'
 import { Tracker } from '@/service'
-import { useNavigation, useLogin, useLocation } from '@/hooks'
+import { useNavigation, useLogin, useLocation, normalizeRecommendItems, resolveRecommendDistributorId } from '@/hooks'
 import withPageWrapper from '@/hocs/withPageWrapper'
 import { useTranslation, $t, ti } from '@/i18n'
 import { ACTIVITY_LIST } from '@/consts'
@@ -111,6 +111,7 @@ const initialState = {
   // 多规格商品选中的规格
   curItem: null,
   recommendList: [],
+  recommendSkuInfo: null,
   isParameter: false,
   imgHeightList: [], // 用于存储banner高度
   navigateMantle: false,
@@ -125,7 +126,7 @@ function EspierDetail(props) {
   const scrollTopRef = useRef(0)
 
   const { userInfo } = useSelector((state) => state.user)
-  const { colorPrimary, openRecommend } = useSelector((state) => state.sys)
+  const { colorPrimary } = useSelector((state) => state.sys)
   const dispatch = useDispatch()
 
   const [state, setState] = useImmer(initialState)
@@ -153,6 +154,7 @@ function EspierDetail(props) {
     dtid,
     curItem,
     recommendList,
+    recommendSkuInfo,
     isParameter,
     imgHeightList,
     navigateMantle,
@@ -383,9 +385,7 @@ function EspierDetail(props) {
       }
     }
 
-    if (openRecommend == 1) {
-      getRecommendList() // 猜你喜欢
-    }
+    getRecommendList(data)
   }
   const getMultipleImageInfo = async (imageUrls = []) => {
     let windowWidth = defaultImageHeight
@@ -414,14 +414,42 @@ function EspierDetail(props) {
     return Promise.all(promises)
   }
 
-  const getRecommendList = async () => {
-    const { list } = await api.cart.likeList({
-      page: 1,
-      pageSize: 30
-    })
-    setState((draft) => {
-      draft.recommendList = list
-    })
+  const getRecommendList = async (goodsInfo) => {
+    const mainId = Number(goodsInfo?.itemId || goodsInfo?.item_id || 0)
+    if (!mainId) {
+      setState((draft) => {
+        draft.recommendList = []
+      })
+      return
+    }
+    const distributor_id = resolveRecommendDistributorId(
+      goodsInfo?.distributorId || goodsInfo?.distributor_id
+    )
+    if (distributor_id === null) {
+      setState((draft) => {
+        draft.recommendList = []
+      })
+      return
+    }
+    try {
+      const body = {
+        scene: 'detail',
+        main_item_ids: [mainId],
+        exclude_item_ids: [mainId],
+        showError: false
+      }
+      if (distributor_id !== undefined) {
+        body.distributor_id = distributor_id
+      }
+      const { items } = await api.goodsRecommend.match(body)
+      setState((draft) => {
+        draft.recommendList = normalizeRecommendItems(items)
+      })
+    } catch (e) {
+      setState((draft) => {
+        draft.recommendList = []
+      })
+    }
   }
 
   // 获取包裹
@@ -471,9 +499,31 @@ function EspierDetail(props) {
 
   const onChangeToolBar = (key) => {
     setState((draft) => {
+      draft.recommendSkuInfo = null
       draft.skuPanelOpen = true
       draft.selectType = key
     })
+  }
+
+  const handleRecommendAdd = async (goods) => {
+    const itemId = goods?.itemId || goods?.item_id || goods?.raw?.item_id
+    if (!itemId) return
+    Taro.showLoading({ title: '' })
+    try {
+      const itemDetail = await api.item.detail(itemId, {
+        showError: false,
+        distributor_id: goods?.distributorId || goods?.distributor_id || resolveDistributorId()
+      })
+      setState((draft) => {
+        draft.recommendSkuInfo = pickBy(itemDetail, doc.goods.GOODS_INFO)
+        draft.selectType = 'addcart'
+        draft.skuPanelOpen = true
+      })
+    } catch (e) {
+      showToast(e?.message || $t('71426282.4d3179'))
+    } finally {
+      Taro.hideLoading()
+    }
   }
 
   const syncNavigateMantle = (scrollTop = 0) => {
@@ -858,7 +908,7 @@ function EspierDetail(props) {
           </View>
         )}
 
-        <SpRecommend info={recommendList} />
+        <SpRecommend info={recommendList} columns={3} showAdd onAdd={handleRecommendAdd} />
       </ScrollView>
       {/* 组合优惠 */}
       <CompPackageList
@@ -889,10 +939,11 @@ function EspierDetail(props) {
       <MSpSkuSelect
         open={skuPanelOpen}
         type={selectType}
-        info={info}
+        info={recommendSkuInfo || info}
         onClose={() => {
           setState((draft) => {
             draft.skuPanelOpen = false
+            draft.recommendSkuInfo = null
           })
         }}
         refreshs={false}

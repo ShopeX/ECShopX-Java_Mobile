@@ -82,7 +82,7 @@ function Home() {
   const [likeList, setLikeList] = useImmer([])
   const pageRef = useRef()
 
-  const { openRecommend, appName, openScanQrcode, entryStoreByLBS, openWechatappLocation } =
+  const { appName, openScanQrcode, entryStoreByLBS, openWechatappLocation } =
     useSelector((state) => state.sys)
 
   const showAdv = useSelector((member) => member.user.showAdv)
@@ -275,14 +275,8 @@ function Home() {
   }
 
   const fetchLikeList = async () => {
-    if (openRecommend == 1) {
-      const query = {
-        page: 1,
-        pageSize: 30
-      }
-      const { list } = await api.cart.likeList(query)
-      setLikeList(list)
-    }
+    // 首页无主商品上下文；规则推荐依赖 main_item_ids，无则不展示
+    setLikeList([])
   }
 
   // 定位

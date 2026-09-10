@@ -64,7 +64,11 @@ export const initialState = {
   deliveryTimeList: {},
   salespersonInfo: {}, // 导购信息
   pointPayFirst: null,
-  isFirstCalc: true
+  isFirstCalc: true,
+  recommendList: [],
+  skuPanelOpen: false,
+  skuInfo: null,
+  pendingMainItemId: 0
 }
 
 export const deliveryList = [
