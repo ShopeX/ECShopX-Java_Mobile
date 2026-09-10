@@ -880,6 +880,15 @@ function EspierDetail(props) {
               itemId={info.itemId}
             ></CompEvaluation>
 
+            {/* 为你推荐：评价下方（Figma 3:195） */}
+            <SpRecommend
+              className='goods-recommend'
+              info={recommendList}
+              columns={3}
+              showAdd
+              onAdd={handleRecommendAdd}
+            />
+
             {/* 店铺 */}
             {VERSION_PLATFORM && <CompStore info={info.distributorInfo} />}
 
@@ -907,8 +916,6 @@ function EspierDetail(props) {
             </View>
           </View>
         )}
-
-        <SpRecommend info={recommendList} columns={3} showAdd onAdd={handleRecommendAdd} />
       </ScrollView>
       {/* 组合优惠 */}
       <CompPackageList

@@ -6,7 +6,7 @@ import React, { useEffect, useRef } from 'react'
 import Taro, { useRouter } from '@tarojs/taro'
 import { View } from '@tarojs/components'
 import { useSelector, useDispatch } from 'react-redux'
-import { SpPage, SpSearch, SpRecommend, SpSkuSelect } from '@/components'
+import { SpPage, SpSearch, SpSkuSelect } from '@/components'
 import api from '@/api'
 import { isWeixin, VERSION_PLATFORM, classNames, pickBy, showToast } from '@/utils'
 import entryLaunch from '@/utils/entryLaunch'
@@ -44,10 +44,8 @@ const initialState = {
 
 function NavigationIbs() {
   const [state, setState] = useImmer(initialState)
-  const [likeList, setLikeList] = useImmer([])
   const pageRef = useRef()
   const router = useRouter()
-  const { openRecommend } = useSelector((state) => state.sys)
   // const { shopInfo } = useSelector((state) => state.shop)
 
   // const showAdv = useSelector((member) => member.user.showAdv)
@@ -225,9 +223,7 @@ function NavigationIbs() {
               onAddToCart
             }}
           >
-            <HomeWgts wgts={filterWgts} copywriting={false}>
-              <SpRecommend className='recommend-block' info={likeList} />
-            </HomeWgts>
+            <HomeWgts wgts={filterWgts} copywriting={false} />
           </WgtsContext.Provider>
         )}
         {/* onAddToCart加购   classifyList销售分类数据   seletedTags商家 */}

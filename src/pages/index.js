@@ -9,7 +9,6 @@ import { useSelector, useDispatch } from 'react-redux'
 import {
   SpScreenAd,
   SpPage,
-  SpRecommend,
   SpTabbar,
   SpCouponPackage,
   SpPoweredBy,
@@ -79,7 +78,6 @@ function Home() {
   })
   const { showModal } = useModal()
   const [state, setState] = useImmer(initialState)
-  const [likeList, setLikeList] = useImmer([])
   const pageRef = useRef()
 
   const { appName, openScanQrcode, entryStoreByLBS, openWechatappLocation } =
@@ -274,11 +272,6 @@ function Home() {
     }
   }
 
-  const fetchLikeList = async () => {
-    // 首页无主商品上下文；规则推荐依赖 main_item_ids，无则不展示
-    setLikeList([])
-  }
-
   // 定位
 
   const onAddToCart = async ({ itemId, distributorId }) => {
@@ -373,10 +366,7 @@ function Home() {
                 }
               }}
             >
-              <HomeWgts wgts={filterWgts} onLoad={fetchLikeList} dtid={state.distributor_id}>
-                {/* 猜你喜欢 */}
-                <SpRecommend className='recommend-block' info={likeList} />
-              </HomeWgts>
+              <HomeWgts wgts={filterWgts} dtid={state.distributor_id} />
             </WgtsContext.Provider>
           )}
           {/* If you remove or alter Shopex brand identifiers, you must obtain a branding removal license from Shopex.  Contact us at:  http://www.shopex.cn to purchase a branding removal license. */}

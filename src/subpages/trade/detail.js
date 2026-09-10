@@ -10,12 +10,12 @@ import api from '@/api'
 import doc from '@/doc'
 import { AtButton, AtCountdown, AtFloatLayout } from 'taro-ui'
 import { View, Text, ScrollView } from '@tarojs/components'
-import { SpPage, SpCell, SpPrice, SpTradeItem, SpImage, SpCashier, SpRecommend } from '@/components'
+import { SpPage, SpCell, SpPrice, SpTradeItem, SpImage, SpCashier, SpRecommend, SpSkuSelect } from '@/components'
 import { ORDER_STATUS_INFO, PAYMENT_TYPE, ORDER_DADA_STATUS, SG_ROUTER_PARAMS } from '@/consts'
 import dayjs from 'dayjs'
 import { usePayment, useNavigation, collectMainItemIds, normalizeRecommendItems, resolveRecommendDistributorId } from '@/hooks'
 import { useTranslation, $t, ti, i18n } from '@/i18n'
-import { pickBy, copyText, showToast, isArray, getCurrencySymbol } from '@/utils'
+import { pickBy, copyText, showToast, isArray, getCurrencySymbol, getDistributorId } from '@/utils'
 import S from '@/spx'
 import FloatSalesperson from '@/subpages/store/comps/float-salesperson'
 import {
@@ -45,7 +45,9 @@ const initialState = {
   prescriptionUrl: '',
   prescriptionStatus: false,
   openingTime: 'squareRoots',
-  recommendList: []
+  recommendList: [],
+  skuPanelOpen: false,
+  skuInfo: null
 }
 function TradeDetail(props) {
   useTranslation()
@@ -68,7 +70,9 @@ function TradeDetail(props) {
     prescriptionUrl,
     prescriptionStatus,
     openingTime,
-    recommendList
+    recommendList,
+    skuPanelOpen,
+    skuInfo
   } = state
   const { priceSetting, pointName } = useSelector((state) => state.sys)
   const { userInfo } = useSelector((state) => state.user)
@@ -156,6 +160,14 @@ function TradeDetail(props) {
   }
 
   const getRecommendList = async (orderInfo, distributor) => {
+    const orderClass = orderInfo?.orderClass || orderInfo?.order_class || 'normal'
+    // 仅普通商品订单展示「为你推荐」
+    if (orderClass !== 'normal') {
+      setState((draft) => {
+        draft.recommendList = []
+      })
+      return
+    }
     const mainItemIds = collectMainItemIds((orderInfo?.items || []).map((item) => item.itemId || item.item_id))
     if (!mainItemIds.length) {
       setState((draft) => {
@@ -190,6 +202,32 @@ function TradeDetail(props) {
       setState((draft) => {
         draft.recommendList = []
       })
+    }
+  }
+
+  const handleRecommendAdd = async (goods) => {
+    const itemId = goods?.itemId || goods?.item_id || goods?.raw?.item_id
+    if (!itemId) return
+    Taro.showLoading({ title: '' })
+    try {
+      const itemDetail = await api.item.detail(itemId, {
+        showError: false,
+        distributor_id:
+          goods?.distributorId ||
+          goods?.distributor_id ||
+          info?.distributorId ||
+          distirbutorInfo?.distributor_id ||
+          distirbutorInfo?.distributorId ||
+          getDistributorId()
+      })
+      setState((draft) => {
+        draft.skuInfo = pickBy(itemDetail, doc.goods.GOODS_INFO)
+        draft.skuPanelOpen = true
+      })
+    } catch (e) {
+      showToast(e?.message || $t('71426282.4d3179'))
+    } finally {
+      Taro.hideLoading()
     }
   }
 
@@ -1010,8 +1048,15 @@ function TradeDetail(props) {
             </View>
           )}
           <View className='padding-view'></View>
+          {/* 为你推荐：订单详情双列 + 加购（Figma 42:484 / 44:628） */}
           {recommendList?.length > 0 && (
-            <SpRecommend className='recommend-block' info={recommendList} />
+            <SpRecommend
+              className='recommend-block'
+              info={recommendList}
+              columns={2}
+              showAdd
+              onAdd={handleRecommendAdd}
+            />
           )}
         </ScrollView>
       )}
@@ -1085,6 +1130,18 @@ function TradeDetail(props) {
           }}
         ></SpImage>
       </AtFloatLayout>
+
+      <SpSkuSelect
+        open={skuPanelOpen}
+        type='addcart'
+        info={skuInfo}
+        onClose={() => {
+          setState((draft) => {
+            draft.skuPanelOpen = false
+            draft.skuInfo = null
+          })
+        }}
+      />
     </SpPage>
   )
 }

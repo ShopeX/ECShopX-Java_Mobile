@@ -12,9 +12,8 @@ import qs from 'qs'
 import api from '@/api'
 import doc from '@/doc'
 import { navigateTo, pickBy, classNames } from '@/utils'
-import { collectMainItemIds, normalizeRecommendItems, resolveRecommendDistributorId } from '@/hooks'
 import { fetchCartList, deleteCartItem, updateCartItemNum, updateCount } from '@/store/slices/guide'
-import { SpPage, SpPrice, SpRecommend, SpDefault, SpCheckboxNew } from '@/components'
+import { SpPage, SpPrice, SpDefault, SpCheckboxNew } from '@/components'
 import { useTranslation, $t, ti } from '@/i18n'
 import { BaTabBar } from '@/subpages/guide/components'
 import CompGoodsItem from './comps/comp-goodsitem'
@@ -124,45 +123,6 @@ function CartIndex() {
       return acc
     }, {})
     return newList
-  }
-
-  const getRecommendList = async (cartGroups = []) => {
-    const groups = cartGroups.length ? cartGroups : validCart
-    const mainItemIds = collectMainItemIds(
-      groups.flatMap((g) => (g.list || []).map((item) => item.item_id))
-    )
-    if (!mainItemIds.length) {
-      setState((draft) => {
-        draft.recommendList = []
-      })
-      return
-    }
-    const distributor_id = resolveRecommendDistributorId()
-    if (distributor_id === null) {
-      setState((draft) => {
-        draft.recommendList = []
-      })
-      return
-    }
-    try {
-      const body = {
-        scene: 'cart',
-        main_item_ids: mainItemIds,
-        exclude_item_ids: mainItemIds,
-        showError: false
-      }
-      if (distributor_id !== undefined) {
-        body.distributor_id = distributor_id
-      }
-      const { items } = await api.goodsRecommend.match(body)
-      setState((draft) => {
-        draft.recommendList = normalizeRecommendItems(items)
-      })
-    } catch (e) {
-      setState((draft) => {
-        draft.recommendList = []
-      })
-    }
   }
 
   const onChangeGoodsIsCheck = async (item, type, checked) => {

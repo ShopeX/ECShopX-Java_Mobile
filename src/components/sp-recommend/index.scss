@@ -3,7 +3,7 @@
  * See LICENSE file for license details.
  */
 /* Figma 375 设计稿 → 项目 750 基准，尺寸 ×2
- * 详情 12:290 三列 / 购物车 64:715 双列 / 结算 26:426 横向滑动
+ * 详情 12:290 三列 / 购物车 64:715 双列 / 订单详情 42:484 双列 / 结算 26:426 横向滑动
  */
 .sp-recommend {
   background: #fff;
@@ -146,7 +146,7 @@
   &__price-block {
     display: flex;
     flex-direction: column;
-    min-height: 54px;
+    min-height: 62px;
   }
 
   &__sale-price {

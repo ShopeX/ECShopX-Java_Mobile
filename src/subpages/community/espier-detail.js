@@ -13,7 +13,6 @@ import {
   SpCell,
   SpImage,
   SpLoading,
-  SpRecommend,
   SpHtml,
   SpPage,
   SpSkuSelect,
@@ -81,7 +80,6 @@ const initialState = {
   evaluationTotal: 0,
   // 多规格商品选中的规格
   curItem: null,
-  recommendList: [],
   from: ''
 }
 
@@ -93,7 +91,7 @@ function EspierDetail(props) {
   const { getUserInfoAuth } = useLogin()
   const pageRef = useRef()
   const { userInfo } = useSelector((state) => state.user)
-  const { colorPrimary, openRecommend } = useSelector((state) => state.sys)
+  const { colorPrimary } = useSelector((state) => state.sys)
   const { setNavigationBarTitle } = useNavigation()
 
   const [state, setState] = useImmer(initialState)
@@ -119,7 +117,6 @@ function EspierDetail(props) {
     type,
     dtid,
     curItem,
-    recommendList,
     from
   } = state
 

@@ -18,7 +18,6 @@ import {
   SpCell,
   SpImage,
   SpLoading,
-  SpRecommend,
   SpHtml,
   SpPage,
   SpPoster,

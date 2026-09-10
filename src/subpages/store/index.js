@@ -17,7 +17,6 @@ import {
   SpFloatMenuItem,
   SpPage,
   SpSearch,
-  SpRecommend,
   SpSkuSelect,
   SpLogin,
   SpPoweredBy,
@@ -72,7 +71,6 @@ const initState = {
 function StoreIndex() {
   useTranslation()
   const [state, setState] = useImmer(initState)
-  const [likeList, setLikeList] = useImmer([])
   const { colorPrimary } = useSelector((state) => state.sys)
   const { shopCartCount } = useSelector((state) => state.cart)
   const { setNavigationBarTitle } = useNavigation()
@@ -203,11 +201,6 @@ function StoreIndex() {
       storeDetails: valid_cart === undefined ? '' : valid_cart[0] || {}
     }
     dispatch(updateShopCartCount(shopCats))
-  }
-
-  const fetchLikeList = async () => {
-    // 门店首页无主商品上下文，规则推荐不展示
-    setLikeList([])
   }
 
   useShareAppMessage((res) => {
@@ -453,10 +446,7 @@ function StoreIndex() {
               onAddToCart
             }}
           >
-            <HomeWgts wgts={filterWgts} dtid={distributorId} onLoad={fetchLikeList}>
-              {/* 猜你喜欢 */}
-              <SpRecommend className='recommend-block' info={likeList} />
-            </HomeWgts>
+            <HomeWgts wgts={filterWgts} dtid={distributorId} />
           </WgtsContext.Provider>
         ) : (
           <Categorys addPurchases={addPurchases} dtid={distributorId} />

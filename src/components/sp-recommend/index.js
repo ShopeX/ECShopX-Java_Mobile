@@ -75,7 +75,7 @@ export default class SpRecommend extends Component {
             </View>
           </View>
           <Text className='sp-recommend__non-member'>
-            {`非会员价 ${symbol} ${formatMoney(price)}`}
+            {`非会员价${symbol}${formatMoney(price)}`}
           </Text>
         </View>
       )
