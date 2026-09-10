@@ -66,10 +66,11 @@ class SettingIndex extends Component {
 
   handCancel = (parmas) => {
     if (parmas === 'cancel') {
-      // 确认注销账号：须走 S.logout，清掉 storage + Spx 内存 token，否则个人中心仍判已登录但 userInfo 为空
+      // 注销成功须清 token（storage + Spx 内存）并打断 refresh，否则回首页仍带旧 token 调 /member 会提示「会员信息异常」
       req.delete('/member', { is_delete: '1' }).then((res) => {
         if (res.status) {
           S.logout()
+          req.clearAuthSession()
           Taro.reLaunch({
             url: VERSION_IN_PURCHASE ? '/pages/purchase/auth' : '/pages/index'
           })

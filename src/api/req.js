@@ -187,10 +187,15 @@ class API {
     return /^http/.test(url) ? url : `${this.baseURL}${url.replace(/^\//, '')}`
   }
 
-  handleLogout() {
+  /** 清掉刷新队列与进行中的 refresh，避免登出/注销后仍回写 token */
+  clearAuthSession() {
     this.requestQueue.destroy()
     this.isRefreshingToken = false
     this.refreshTokenPromise = null
+  }
+
+  handleLogout() {
+    this.clearAuthSession()
     getS().logout()
     setTimeout(() => {
       console.log(getCurrentInstance()?.router)
@@ -366,6 +371,10 @@ class API {
             const newToken = parseRefreshTokenFromResponse(res)
             if (!newToken) {
               log.debug('[refreshToken] missing token in response headers/body', res)
+              return
+            }
+            // 刷新过程中若已 logout/注销，token 已空，禁止回写
+            if (!getS().getAuthToken()) {
               return
             }
             getS().setAuthToken(newToken)
