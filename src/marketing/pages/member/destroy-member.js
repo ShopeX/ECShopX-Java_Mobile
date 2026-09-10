@@ -10,12 +10,10 @@ import { connect } from 'react-redux'
 import { SpPage, SpCheckbox } from '@/components'
 import { $t, ti } from '@/i18n'
 import req from '@/api/req'
-import configStore from '@/store'
+import S from '@/spx'
 import { VERSION_IN_PURCHASE } from '@/utils'
 import DestoryConfirm from './comps/destory-comfirm-modal'
 import './destroy-member.scss'
-
-const { store } = configStore()
 
 class SettingIndex extends Component {
   $instance = getCurrentInstance() || {}
@@ -68,14 +66,10 @@ class SettingIndex extends Component {
 
   handCancel = (parmas) => {
     if (parmas === 'cancel') {
-      // 确认注销账号
+      // 确认注销账号：须走 S.logout，清掉 storage + Spx 内存 token，否则个人中心仍判已登录但 userInfo 为空
       req.delete('/member', { is_delete: '1' }).then((res) => {
         if (res.status) {
-          Taro.removeStorageSync('token')
-          Taro.removeStorageSync('policy_updatetime')
-          store.dispatch({
-            type: 'user/clearUserInfo'
-          })
+          S.logout()
           Taro.reLaunch({
             url: VERSION_IN_PURCHASE ? '/pages/purchase/auth' : '/pages/index'
           })

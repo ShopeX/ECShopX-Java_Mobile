@@ -45,6 +45,7 @@ export default (props = {}) => {
       return
     }
     if (!token) {
+      setIsLogin(false)
       autoLogin && !VERSION_SHUYUN && login()
     } else {
       setIsLogin(true)
@@ -57,6 +58,9 @@ export default (props = {}) => {
     const token = S?.getAuthToken()
     if (userInfo && token) {
       setIsLogin(true)
+    } else if (!token) {
+      // 注销/退出后 token 已清，同步未登录态，避免个人中心等级/登录文案空白
+      setIsLogin(false)
     }
   }, [userInfo])
 
