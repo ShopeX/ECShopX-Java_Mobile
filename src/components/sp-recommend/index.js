@@ -3,12 +3,20 @@
  * See LICENSE file for license details.
  */
 import React, { Component } from 'react'
-import { View, Image, Text } from '@tarojs/components'
-import { SpGoodsItem, SpImage } from '@/components'
+import Taro from '@tarojs/taro'
+import { View, Text, ScrollView } from '@tarojs/components'
+import { SpImage } from '@/components'
 import { $t } from '@/i18n'
-import { classNames, pickBy } from '@/utils'
+import { classNames, pickBy, getCurrencySymbol } from '@/utils'
 import doc from '@/doc'
 import './index.scss'
+
+function formatMoney(value) {
+  if (value === null || value === undefined || value === '') return ''
+  const n = Number(value)
+  if (Number.isNaN(n)) return ''
+  return n.toFixed(2)
+}
 
 export default class SpRecommend extends Component {
   static options = {
@@ -16,69 +24,156 @@ export default class SpRecommend extends Component {
   }
 
   static defaultProps = {
-    info: []
+    info: [],
+    showAdd: false,
+    onAdd: null,
+    title: '',
+    /** 列数：详情 3 列，购物车 2 列；结算页用 layout=scroll */
+    columns: 3,
+    /** grid：网格；scroll：横向滑动（结算页 Figma 26:426） */
+    layout: 'grid'
+  }
+
+  handleAdd = (goods, e) => {
+    e?.stopPropagation?.()
+    const { onAdd } = this.props
+    if (typeof onAdd === 'function') {
+      onAdd(goods)
+    }
+  }
+
+  handleClickItem = (goods) => {
+    const itemId = goods?.itemId || goods?.item_id
+    if (!itemId) return
+    const query = [`id=${itemId}`]
+    const dtid = goods?.distributorId ?? goods?.distributor_id
+    if (dtid !== undefined && dtid !== null && dtid !== '') {
+      query.push(`dtid=${dtid}`)
+    }
+    Taro.navigateTo({
+      url: `/subpages/item/espier-detail?${query.join('&')}`
+    })
+  }
+
+  renderPrice = (goods) => {
+    const price = Number(goods?.price) || 0
+    const memberPrice = Number(goods?.memberPrice)
+    const marketPrice = Number(goods?.marketPrice)
+    const hasMemberPrice = memberPrice > 0 && memberPrice < price
+    const symbol = getCurrencySymbol() || '¥'
+
+    if (hasMemberPrice) {
+      return (
+        <View className='sp-recommend__price-block'>
+          <View className='sp-recommend__member-row'>
+            <View className='sp-recommend__member-tag'>
+              <Text className='sp-recommend__member-tag-text'>{$t('d59e9e9d.8fdd6f')}</Text>
+            </View>
+            <View className='sp-recommend__sale-price'>
+              <Text className='sp-recommend__currency'>{symbol} </Text>
+              <Text className='sp-recommend__amount'>{formatMoney(memberPrice)}</Text>
+            </View>
+          </View>
+          <Text className='sp-recommend__non-member'>
+            {`非会员价${symbol}${formatMoney(price)}`}
+          </Text>
+        </View>
+      )
+    }
+
+    return (
+      <View className='sp-recommend__price-block'>
+        <View className='sp-recommend__sale-price'>
+          <Text className='sp-recommend__currency'>{symbol} </Text>
+          <Text className='sp-recommend__amount'>{formatMoney(price)}</Text>
+        </View>
+        {marketPrice > 0 && marketPrice > price && (
+          <Text className='sp-recommend__market'>{`${symbol} ${formatMoney(marketPrice)}`}</Text>
+        )}
+      </View>
+    )
+  }
+
+  renderCard = (goodsItem, index) => {
+    const { showAdd } = this.props
+    return (
+      <View
+        className='sp-recommend__card'
+        key={`sp-recommend-card__${goodsItem.itemId || index}`}
+        onClick={this.handleClickItem.bind(this, goodsItem)}
+      >
+        <View className='sp-recommend__image-wrap'>
+          <SpImage
+            className='sp-recommend__image'
+            src={goodsItem.pic}
+            mode='aspectFill'
+            style={{ width: '100%', height: '100%' }}
+          />
+        </View>
+        <View className='sp-recommend__body'>
+          <View className='sp-recommend__info'>
+            <Text className='sp-recommend__name'>{goodsItem.itemName}</Text>
+            {this.renderPrice(goodsItem)}
+          </View>
+          {showAdd && (
+            <View
+              className='sp-recommend__add-btn'
+              onClick={this.handleAdd.bind(this, goodsItem)}
+            >
+              <Text className='sp-recommend__add-btn-text'>+ 加购</Text>
+            </View>
+          )}
+        </View>
+      </View>
+    )
   }
 
   render() {
-    const { info, className } = this.props
-    if (info.length === 0) {
+    const { info, className, title, columns, layout } = this.props
+    const source = (info || []).filter((item) => {
+      const pic = item?.pics
+      if (!pic) return false
+      if (Array.isArray(pic)) return pic.length > 0 && !!pic[0]
+      return true
+    })
+    if (source.length === 0) {
       return null
     }
-    // const goods = pickBy(info, {
-    //   cross: {
-    //     key: 'origincountry_img_url',
-    //     default: []
-    //   },
-    //   pic: 'pics[0]',
-    //   itemId: 'item_id',
-    //   itemName: 'itemName',
-    //   brief: 'brief',
-    //   promotion: 'promotion_activity',
-    //   distributorId: 'distributor_id',
-    //   isPoint: 'is_point',
-    //   price: ({ act_price, member_price, price }) => {
-    //     if (act_price > 0) {
-    //       return act_price
-    //     } else if (member_price > 0) {
-    //       return member_price
-    //     } else {
-    //       return price
-    //     }
-    //   },
-    //   marketPrice: 'market_price'
-    // })
-    const goods = pickBy(info, doc.goods.ITEM_LIST_GOODS)
-    const leftList = goods.filter((item, index) => {
-      if (index % 2 == 0) {
-        return item
-      }
-    })
-    const rightList = goods.filter((item, index) => {
-      if (index % 2 == 1) {
-        return item
-      }
-    })
+    const goods = pickBy(source, doc.goods.ITEM_LIST_GOODS).map((item, index) => ({
+      ...item,
+      matchedMainItemId: source[index]?.matched_main_item_id,
+      raw: source[index]
+    }))
+    const isScroll = layout === 'scroll'
+    const cols = Number(columns) === 2 ? 2 : 3
 
     return (
-      <View className={classNames('sp-recommend', className)}>
-        <View className='sp-recommend-hd'>
-          <Text className='sp-recommend-title'>{$t('d664a513.9223a7')}</Text>
-        </View>
-        <View className='sp-recommend-bd'>
-          <View className='left-container'>
-            {leftList.map((goods, index) => (
-              <View className='goods-item-wrap' key={`goods-item-wrap__${index}`}>
-                <SpGoodsItem info={goods} />
+      <View
+        className={classNames(
+          'sp-recommend',
+          isScroll ? 'sp-recommend--scroll' : `sp-recommend--cols-${cols}`,
+          className
+        )}
+      >
+        <View className='sp-recommend__inner'>
+          <Text className='sp-recommend__title'>{title || '为你推荐'}</Text>
+          {isScroll ? (
+            <ScrollView
+              className='sp-recommend__scroll'
+              scrollX
+              enableFlex
+              enhanced
+              showScrollbar={false}
+            >
+              <View className='sp-recommend__scroll-row'>
+                {goods.map((goodsItem, index) => this.renderCard(goodsItem, index))}
               </View>
-            ))}
-          </View>
-          <View className='right-container'>
-            {rightList.map((goods, index) => (
-              <View className='goods-item-wrap' key={`goods-item-wrap__${index}`}>
-                <SpGoodsItem info={goods} />
-              </View>
-            ))}
-          </View>
+            </ScrollView>
+          ) : (
+            <View className='sp-recommend__grid'>
+              {goods.map((goodsItem, index) => this.renderCard(goodsItem, index))}
+            </View>
+          )}
         </View>
       </View>
     )

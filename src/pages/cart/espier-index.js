@@ -11,8 +11,8 @@ import { useImmer } from 'use-immer'
 import qs from 'qs'
 import api from '@/api'
 import doc from '@/doc'
-import { navigateTo, pickBy, classNames, throttle } from '@/utils'
-import { useLogin, useLocation, useDebounce } from '@/hooks'
+import { navigateTo, pickBy, classNames, throttle, getDistributorId } from '@/utils'
+import { useLogin, useLocation, useDebounce, collectMainItemIds, normalizeRecommendItems, resolveRecommendDistributorId } from '@/hooks'
 import { fetchCartList, deleteCartItem, updateCartItemNum, updateCount } from '@/store/slices/cart'
 import { updatePurchaseShareInfo, updateInviteCode } from '@/store/slices/purchase'
 import {
@@ -20,6 +20,7 @@ import {
   SpTabbar,
   SpPrice,
   SpRecommend,
+  SpSkuSelect,
   SpLogin,
   SpDefault,
   SpCheckboxNew,
@@ -37,13 +38,15 @@ import './espier-index.scss'
 // ]
 
 const initialState = {
-  recommendList: [], // 猜你喜欢
+  recommendList: [],
   current: 0, // 0:普通商品  1:跨境商品
   policyModal: false, // 隐私弹框
   cartRemind: null, //购物车提示
   footerHeight: 0,
   /** 左滑删除：当前展开删除按钮的商品 cart_id，同时只展开一行 */
-  openSwipeCartId: null
+  openSwipeCartId: null,
+  skuPanelOpen: false,
+  skuInfo: null
 }
 
 function CartIndex() {
@@ -66,7 +69,8 @@ function CartIndex() {
   const router = $instance?.router
 
   const [state, setState] = useImmer(initialState)
-  const { current, recommendList, policyModal, cartRemind, openSwipeCartId } = state
+  const { current, recommendList, policyModal, cartRemind, openSwipeCartId, skuPanelOpen, skuInfo } =
+    state
 
   const onSwipeOpenChange = (cartId) => {
     setState((draft) => {
@@ -74,7 +78,7 @@ function CartIndex() {
     })
   }
 
-  const { colorPrimary, openRecommend } = useSelector((state) => state.sys)
+  const { colorPrimary } = useSelector((state) => state.sys)
   const { validCart = [], invalidCart = [] } = useSelector((state) => state.cart)
   const { tabbar = 1 } = router?.params || {}
 
@@ -101,9 +105,6 @@ function CartIndex() {
   })
 
   const fetch = () => {
-    if (openRecommend == 1) {
-      getRecommendList() // 猜你喜欢
-    }
     if (isLogin) {
       getCartList()
     }
@@ -117,12 +118,13 @@ function CartIndex() {
       shop_id: shopInfo?.distributor_id
     }
 
-    await dispatch(fetchCartList(params))
+    const action = await dispatch(fetchCartList(params))
     await dispatch(updateCount(params))
     let cartRemindres = await api.cart.getCartRemind(params)
     setState((draft) => {
       draft.cartRemind = cartRemindres
     })
+    await getRecommendList(action?.payload?.valid_cart || [])
     Taro.hideLoading()
   }
 
@@ -199,14 +201,45 @@ function CartIndex() {
     return newList
   }
 
-  const getRecommendList = async () => {
-    const { list } = await api.cart.likeList({
-      page: 1,
-      pageSize: 1000
-    })
-    setState((draft) => {
-      draft.recommendList = list
-    })
+  const getRecommendList = async (cartGroups = []) => {
+    const groups = cartGroups.length ? cartGroups : validCart
+    const mainItemIds = collectMainItemIds(
+      groups.flatMap((g) => (g.list || []).map((item) => item.item_id))
+    )
+    if (!mainItemIds.length) {
+      setState((draft) => {
+        draft.recommendList = []
+      })
+      return
+    }
+    const distributor_id = resolveRecommendDistributorId(
+      shopInfo?.distributor_id || getDistributorId()
+    )
+    if (distributor_id === null) {
+      setState((draft) => {
+        draft.recommendList = []
+      })
+      return
+    }
+    try {
+      const body = {
+        scene: 'cart',
+        main_item_ids: mainItemIds,
+        exclude_item_ids: mainItemIds,
+        showError: false
+      }
+      if (distributor_id !== undefined) {
+        body.distributor_id = distributor_id
+      }
+      const { items } = await api.goodsRecommend.match(body)
+      setState((draft) => {
+        draft.recommendList = normalizeRecommendItems(items)
+      })
+    } catch (e) {
+      setState((draft) => {
+        draft.recommendList = []
+      })
+    }
   }
 
   // const onChangeSpTab = (current) => {
@@ -274,6 +307,30 @@ function CartIndex() {
     setState((draft) => {
       draft.policyModal = isShow
     })
+  }
+
+  const handleRecommendAdd = async (goods) => {
+    const itemId = goods?.itemId || goods?.item_id || goods?.raw?.item_id
+    if (!itemId) return
+    Taro.showLoading({ title: '' })
+    try {
+      const itemDetail = await api.item.detail(itemId, {
+        showError: false,
+        distributor_id:
+          goods?.distributorId || goods?.distributor_id || shopInfo?.distributor_id || getDistributorId()
+      })
+      setState((draft) => {
+        draft.skuInfo = pickBy(itemDetail, doc.goods.GOODS_INFO)
+        draft.skuPanelOpen = true
+      })
+    } catch (e) {
+      Taro.showToast({
+        title: e?.message || $t('71426282.4d3179'),
+        icon: 'none'
+      })
+    } finally {
+      Taro.hideLoading()
+    }
   }
 
   const handleCheckout = (item) => {
@@ -523,9 +580,31 @@ function CartIndex() {
           </SpDefault>
         )}
 
-        {/* 猜你喜欢 */}
-        <SpRecommend className='recommend-block' info={recommendList} />
+        {/* 商品推荐：购物车双列（Figma 64:715） */}
+        <SpRecommend
+          className='recommend-block'
+          info={recommendList}
+          columns={2}
+          showAdd
+          onAdd={handleRecommendAdd}
+        />
       </ScrollView>
+
+      <SpSkuSelect
+        open={skuPanelOpen}
+        type='addcart'
+        info={skuInfo}
+        onClose={() => {
+          setState((draft) => {
+            draft.skuPanelOpen = false
+            draft.skuInfo = null
+          })
+          getCartList()
+        }}
+        onSubscribe={() => {
+          getCartList()
+        }}
+      />
 
       <SpPrivacyModal open={policyModal} onCancel={onPolicyChange} onConfirm={onPolicyChange} />
     </SpPage>

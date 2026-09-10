@@ -87,6 +87,11 @@
     height: 1px;
   }
 
+  /* 为你推荐（Figma 42:484，内容区左右 12→24） */
+  .recommend-block {
+    margin-bottom: 24px;
+  }
+
   .pay-way {
     display: flex;
     &-detail {

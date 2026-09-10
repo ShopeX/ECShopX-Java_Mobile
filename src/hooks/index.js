@@ -18,6 +18,11 @@ import useLocation from './useLocation'
 import useThemsColor from './themeColor'
 import useEffectAsync from './useEffectAsync'
 import useFirstMount from './useFirstMount'
+import useProductRecommend, {
+  normalizeRecommendItems,
+  collectMainItemIds,
+  resolveRecommendDistributorId
+} from './useProductRecommend'
 
 export default {}
 
@@ -37,5 +42,9 @@ export {
   useLocation,
   useThemsColor,
   useEffectAsync,
-  useFirstMount
+  useFirstMount,
+  useProductRecommend,
+  normalizeRecommendItems,
+  collectMainItemIds,
+  resolveRecommendDistributorId
 }

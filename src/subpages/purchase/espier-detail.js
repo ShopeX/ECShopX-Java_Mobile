@@ -12,7 +12,6 @@ import {
   SpCell,
   SpImage,
   SpLoading,
-  SpRecommend,
   SpHtml,
   SpPage,
   SpPurchaseEnterpriseBar,
@@ -230,7 +229,6 @@ const initialState = {
   skuText: '',
   selectType: 'picker',
   curItem: null,
-  recommendList: [],
   activityId: '',
   enterpriseId: '',
   isParameter: false,
@@ -243,7 +241,7 @@ function EspierDetail(props) {
   const pageRef = useRef()
   const dispatch = useDispatch()
   const { userInfo, address } = useSelector((state) => state.user)
-  const { colorPrimary, openRecommend } = useSelector((state) => state.sys)
+  const { colorPrimary } = useSelector((state) => state.sys)
   const {
     purchase_share_info = {},
     curDistributorId,
@@ -275,7 +273,6 @@ function EspierDetail(props) {
     type,
     dtid,
     curItem,
-    recommendList,
     activityId,
     enterpriseId,
     isParameter,
@@ -520,19 +517,6 @@ function EspierDetail(props) {
       }
     }
 
-    if (openRecommend == 1) {
-      getRecommendList() // 猜你喜欢
-    }
-  }
-
-  const getRecommendList = async () => {
-    const { list } = await api.cart.likeList({
-      page: 1,
-      pageSize: 30
-    })
-    setState((draft) => {
-      draft.recommendList = list
-    })
   }
 
   const getMultipleImageInfo = async (imageUrls = []) => {
@@ -863,8 +847,6 @@ function EspierDetail(props) {
           </View>
         </View>
       )}
-
-      <SpRecommend info={recommendList} />
 
       {/* 组合优惠 */}
       <CompPackageList

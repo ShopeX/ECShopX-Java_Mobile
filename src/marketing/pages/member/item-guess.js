@@ -9,8 +9,6 @@ import { withTranslation } from 'react-i18next'
 import { $t } from '@/i18n'
 import { withPager, withBackToTop } from '@/hocs'
 import { BackToTop, Loading, GoodsItem, SpNavBar, SpNote } from '@/components'
-import api from '@/api'
-import { pickBy } from '@/utils'
 import './item-guess.scss'
 
 @withPager
@@ -29,34 +27,10 @@ class ItemGuess extends Component {
     this.nextPage()
   }
 
-  async fetch(params) {
-    const { page_no: page, page_size: pageSize } = params
-    const query = {
-      item_type: 'normal',
-      is_point: 'false',
-      approve_status: 'onsale,only_show',
-      page,
-      pageSize
-    }
-
-    const { list, total_count: total } = await api.cart.likeList(query)
-
-    const nList = pickBy(list, {
-      img: 'pics[0]',
-      item_id: 'item_id',
-      title: 'itemName',
-      desc: 'brief',
-      distributor_id: 'distributor_id'
-    })
-
-    this.setState({
-      list: [...this.state.list, ...nList],
-      query
-    })
-
-    return {
-      total
-    }
+  async fetch() {
+    // 规则推荐依赖主商品匹配，本页无主商品上下文，不再调用旧 likeList
+    this.setState({ list: [] })
+    return { total: 0 }
   }
 
   handleClickItem = (item) => {
@@ -83,20 +57,16 @@ class ItemGuess extends Component {
           onScroll={this.handleScroll}
           onScrollToLower={this.nextPage}
         >
-          <View className='goods-list goods-list__type-grid'>
-            {list.map((item) => {
-              return (
-                <GoodsItem
-                  key={item.item_id}
-                  info={item}
-                  onClick={() => this.handleClickItem(item)}
-                />
-              )
-            })}
+          <View className='goods-list'>
+            {list.map((item) => (
+              <View className='goods-list__item' key={item.item_id}>
+                <GoodsItem key={item.item_id} info={item} onClick={this.handleClickItem.bind(this, item)} />
+              </View>
+            ))}
           </View>
-          {page.isLoading ? <Loading>{$t('f1d3181c.bd0271')}</Loading> : null}
+          {page.isLoading && <Loading />}
           {!page.isLoading && !page.hasNext && !list.length && (
-            <SpNote img='trades_empty.png'>{$t('f1d3181c.ba1de9')}</SpNote>
+            <SpNote img='trades_empty.png'>{$t('d664a513.9223a7')}</SpNote>
           )}
         </ScrollView>
 

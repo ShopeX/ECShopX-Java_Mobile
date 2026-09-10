@@ -16,6 +16,8 @@ import {
   SpFloatLayout,
   SpNumberKeyBoard,
   SpDeliver,
+  SpRecommend,
+  SpSkuSelect,
   SpInput as AtInput
 } from '@/components'
 import { View, Text, Picker, ScrollView } from '@tarojs/components'
@@ -41,7 +43,15 @@ import {
   getDistributorId
 } from '@/utils'
 import entryLaunch from '@/utils/entryLaunch'
-import { useAsyncCallback, useLogin, usePayment, useLocation } from '@/hooks'
+import {
+  useAsyncCallback,
+  useLogin,
+  usePayment,
+  useLocation,
+  collectMainItemIds,
+  normalizeRecommendItems,
+  resolveRecommendDistributorId
+} from '@/hooks'
 import { PAYMENT_TYPE, SG_GUIDE_PARAMS } from '@/consts'
 import _cloneDeep from 'lodash/cloneDeep'
 import api from '@/api'
@@ -111,6 +121,10 @@ function CartCheckout(props) {
   const giftStoreAdjustAckKeyRef = useRef('')
   /** 结算重算序号：切换配送/地址并发时只采纳最后一次结果，避免旧请求吞掉弹窗 */
   const calcSeqRef = useRef(0)
+  /** 当前结算行快照（供 checkout-add / 加购后 getFreightFee 带 items） */
+  const checkoutLineItemsRef = useRef([])
+  const recommendAddedRef = useRef(false)
+  const pendingMainItemIdRef = useRef(0)
   const { userInfo, address } = useSelector((state) => state.user)
   const { colorPrimary, pointName } = useSelector((state) => state.sys)
   const { coupon, zitiAddress } = useSelector((state) => state.cart)
@@ -154,7 +168,10 @@ function CartCheckout(props) {
     deliveryTimeList, //自配送时间
     salespersonInfo, // 业务员信息
     pointPayFirst,
-    isFirstCalc //开启优先积分第一次需要填充积分抵扣
+    isFirstCalc, //开启优先积分第一次需要填充积分抵扣
+    recommendList,
+    skuPanelOpen,
+    skuInfo
   } = state
 
   const {
@@ -767,7 +784,7 @@ function CartCheckout(props) {
     }
   }
 
-  const calcOrder = async () => {
+  const calcOrder = async (presetOrderRes) => {
     const seq = ++calcSeqRef.current
     const isStale = () => seq !== calcSeqRef.current
     Taro.showLoading({ title: '' })
@@ -778,11 +795,13 @@ function CartCheckout(props) {
       return
     }
     console.log('-------cus_parmas------:', cus_parmas)
-    let orderRes
-    try {
-      orderRes = await api.cart.total(cus_parmas)
-    } catch (e) {
-      console.log('e:', e)
+    let orderRes = presetOrderRes
+    if (!orderRes) {
+      try {
+        orderRes = await api.cart.total(cus_parmas)
+      } catch (e) {
+        console.log('e:', e)
+      }
     }
     Taro.hideLoading()
     if (isStale()) {
@@ -1016,6 +1035,9 @@ function CartCheckout(props) {
 
     Taro.hideLoading()
     // console.log('xxx', pickBy(items, doc.checkout.CHECKOUT_GOODS_ITEM))
+    if (!Array.isArray(items)) {
+      return
+    }
     items.forEach((item) => (item['is_point'] = false))
     /* 处理限购活动，添加到对应的items里（cusActivity为自定义的字段 不是后端返回的）---开始 */
     const itmesid = items.map((el) => el.item_id)
@@ -1078,6 +1100,8 @@ function CartCheckout(props) {
         draft.pointPayFirst = Number(point_rule?.point_pay_first) > 0
       }
     })
+    checkoutLineItemsRef.current = toCheckoutLineItems(items)
+    getRecommendList(items)
     // calc.current = false
     if (extraTips) {
       Taro.showModal({
@@ -1085,6 +1109,125 @@ function CartCheckout(props) {
         confirmText: $t('edc703ce.ce2695'),
         showCancel: false
       })
+    }
+  }
+
+  const toCheckoutLineItems = (items = []) =>
+    (items || [])
+      .filter((it) => it?.item_id)
+      .map((it) => {
+        const line = {
+          item_id: Number(it.item_id),
+          num: Number(it.num) || 1
+        }
+        if (it.activity_type) {
+          line.activity_type = it.activity_type
+        }
+        return line
+      })
+
+  const getRecommendList = async (orderItems = []) => {
+    const source = orderItems.length ? orderItems : checkoutLineItemsRef.current
+    const mainItemIds = collectMainItemIds(source.map((item) => item.item_id))
+    if (!mainItemIds.length) {
+      setState((draft) => {
+        draft.recommendList = []
+      })
+      return
+    }
+    const distributor_id = resolveRecommendDistributorId(shop_id || getDistributorId())
+    if (distributor_id === null) {
+      setState((draft) => {
+        draft.recommendList = []
+      })
+      return
+    }
+    try {
+      const body = {
+        scene: 'checkout',
+        main_item_ids: mainItemIds,
+        exclude_item_ids: mainItemIds,
+        showError: false
+      }
+      if (distributor_id !== undefined) {
+        body.distributor_id = distributor_id
+      }
+      const { items } = await api.goodsRecommend.match(body)
+      setState((draft) => {
+        draft.recommendList = normalizeRecommendItems(items)
+      })
+    } catch (e) {
+      setState((draft) => {
+        draft.recommendList = []
+      })
+    }
+  }
+
+  const handleRecommendAdd = async (goods) => {
+    const itemId = goods?.itemId || goods?.item_id || goods?.raw?.item_id
+    const mainId =
+      goods?.matchedMainItemId ||
+      goods?.raw?.matched_main_item_id ||
+      checkoutLineItemsRef.current?.[0]?.item_id
+    if (!itemId) return
+    pendingMainItemIdRef.current = Number(mainId) || 0
+    Taro.showLoading({ title: '' })
+    try {
+      const itemDetail = await api.item.detail(itemId, {
+        showError: false,
+        distributor_id: shop_id || getDistributorId()
+      })
+      setState((draft) => {
+        draft.skuInfo = pickBy(itemDetail, doc.goods.GOODS_INFO)
+        draft.skuPanelOpen = true
+      })
+    } catch (e) {
+      showToast(e?.message || $t('71426282.4d3179'))
+    } finally {
+      Taro.hideLoading()
+    }
+  }
+
+  const handleCheckoutAddConfirm = async ({ item_id, num }) => {
+    const main_item_id = pendingMainItemIdRef.current
+    if (!main_item_id || !item_id) {
+      showToast($t('71426282.4d3179'))
+      return
+    }
+    const cus_parmas = await getParamsInfo()
+    const items =
+      checkoutLineItemsRef.current.length > 0
+        ? checkoutLineItemsRef.current
+        : toCheckoutLineItems(
+            detailInfo.map((it) => ({
+              item_id: it.itemId,
+              num: it.num,
+              activity_type: it.type
+            }))
+          )
+    Taro.showLoading({ title: '' })
+    try {
+      const orderRes = await api.goodsRecommend.checkoutAdd({
+        ...cus_parmas,
+        items,
+        main_item_id,
+        recommend_item_id: item_id,
+        num: num || 1,
+        showError: true
+      })
+      recommendAddedRef.current = true
+      if (Array.isArray(orderRes?.items)) {
+        checkoutLineItemsRef.current = toCheckoutLineItems(orderRes.items)
+      }
+      setState((draft) => {
+        draft.skuPanelOpen = false
+        draft.skuInfo = null
+      })
+      await calcOrder(orderRes)
+    } catch (e) {
+      showToast(e?.message || $t('71426282.4d3179'))
+    } finally {
+      Taro.hideLoading()
     }
   }
 
@@ -1193,6 +1336,10 @@ function CartCheckout(props) {
     // cus_parmas.pay_type = totalInfo.freight_type === 'point' ? 'point' : payType
     cus_parmas.pay_channel = payChannel
     // }
+    // 推荐加购后需带上结算行，避免后续 getFreightFee / 下单丢失临时加购商品
+    if (recommendAddedRef.current && checkoutLineItemsRef.current.length > 0) {
+      cus_parmas.items = checkoutLineItemsRef.current
+    }
     return cus_parmas
   }
 
@@ -1432,6 +1579,16 @@ function CartCheckout(props) {
 
         {renderGoodsComp()}
 
+        {recommendList?.length > 0 && (
+          <SpRecommend
+            className='recommend-block'
+            info={recommendList}
+            layout='scroll'
+            showAdd
+            onAdd={handleRecommendAdd}
+          />
+        )}
+
         <View className='cart-checkout__section'>
           {type !== 'limited_time_sale' &&
             type !== 'group' &&
@@ -1628,6 +1785,19 @@ function CartCheckout(props) {
             }
           })
         }}
+      />
+
+      <SpSkuSelect
+        open={skuPanelOpen}
+        type='checkoutAdd'
+        info={skuInfo}
+        onClose={() => {
+          setState((draft) => {
+            draft.skuPanelOpen = false
+            draft.skuInfo = null
+          })
+        }}
+        onConfirm={handleCheckoutAddConfirm}
       />
     </SpPage>
   )

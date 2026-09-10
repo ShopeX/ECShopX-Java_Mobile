@@ -275,7 +275,12 @@ class API {
       config.url = addQuery(config.url, qs.stringify(config.data))
       delete config.data
     } else {
-      config.data = qs.stringify(config.data)
+      const contentType = header['content-type'] || header['Content-Type'] || ''
+      if (String(contentType).includes('application/json')) {
+        config.data = typeof config.data === 'string' ? config.data : JSON.stringify(query)
+      } else {
+        config.data = qs.stringify(config.data)
+      }
     }
 
     const { showError } = query

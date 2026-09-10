@@ -148,6 +148,10 @@
         line-height: 34px;
       }
     }
+    /* 为你推荐卡片：与评价等区块对齐（Figma 3:195，375 间距 ×2） */
+    .goods-recommend {
+      margin: 24px 24px 0;
+    }
     .goods-desc {
       margin: 24px 0;
       padding-bottom: 24px;

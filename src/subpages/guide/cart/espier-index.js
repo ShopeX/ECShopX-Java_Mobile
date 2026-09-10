@@ -13,7 +13,7 @@ import api from '@/api'
 import doc from '@/doc'
 import { navigateTo, pickBy, classNames } from '@/utils'
 import { fetchCartList, deleteCartItem, updateCartItemNum, updateCount } from '@/store/slices/guide'
-import { SpPage, SpPrice, SpRecommend, SpDefault, SpCheckboxNew } from '@/components'
+import { SpPage, SpPrice, SpDefault, SpCheckboxNew } from '@/components'
 import { useTranslation, $t, ti } from '@/i18n'
 import { BaTabBar } from '@/subpages/guide/components'
 import CompGoodsItem from './comps/comp-goodsitem'
@@ -123,16 +123,6 @@ function CartIndex() {
       return acc
     }, {})
     return newList
-  }
-
-  const getRecommendList = async () => {
-    const { list } = await api.cart.likeList({
-      page: 1,
-      pageSize: 1000
-    })
-    setState((draft) => {
-      draft.recommendList = list
-    })
   }
 
   const onChangeGoodsIsCheck = async (item, type, checked) => {
