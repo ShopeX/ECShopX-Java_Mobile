@@ -160,14 +160,6 @@ function TradeDetail(props) {
   }
 
   const getRecommendList = async (orderInfo, distributor) => {
-    const orderClass = orderInfo?.orderClass || orderInfo?.order_class || 'normal'
-    // 仅普通商品订单展示「为你推荐」
-    if (orderClass !== 'normal') {
-      setState((draft) => {
-        draft.recommendList = []
-      })
-      return
-    }
     const mainItemIds = collectMainItemIds((orderInfo?.items || []).map((item) => item.itemId || item.item_id))
     if (!mainItemIds.length) {
       setState((draft) => {
