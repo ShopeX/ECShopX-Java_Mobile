@@ -245,9 +245,10 @@ const config = {
       // mode: 'browser'
       // mode: 'hash',
       mode: IS_APP ? (IS_APP_SERVER ? 'browser' : 'hash') : 'browser',
-      // browser 模式下把首页映射到 `/`，避免 navigateTo('/') / 根地址回跳失败
+      // browser 模式下把首页映射到 `/`，同时保留原路径，避免直接访问 /pages/index 白屏
+      // 见 https://github.com/NervJS/taro/issues/14437
       customRoutes: {
-        '/pages/index': '/'
+        '/pages/index': ['/', '/pages/index']
       },
       ...(H5_ROUTER_BASENAME ? { basename: H5_ROUTER_BASENAME } : {})
     },
