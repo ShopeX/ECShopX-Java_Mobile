@@ -1,0 +1,696 @@
+/**
+ * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
+ * See LICENSE file for license details.
+ */
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import Taro from '@tarojs/taro'
+import { View, Text } from '@tarojs/components'
+import { useImmer } from 'use-immer'
+import dayjs from 'dayjs'
+import { SpPage, SpFloatLayout, SpLoading, SpNote, SpImage } from '@/components'
+import { classNames, isWeixin, showToast } from '@/utils'
+import useLogin from '@/hooks/useLogin'
+import S from '@/spx'
+import {
+  getSignPage,
+  submitSign,
+  getSignMonthRecords,
+  updateSignRemind,
+  USE_SIGN_MOCK
+} from '@/api/sign'
+import './index.scss'
+
+const TIER_STATUS_TEXT = {
+  granted: '已领取',
+  claimable: '领取奖励',
+  pending: '待领取',
+  failed: '发放失败'
+}
+
+const initialState = {
+  loading: true,
+  pageReady: false,
+  submitting: false,
+  monthTitle: '',
+  cumulativeDays: 0,
+  todaySigned: false,
+  remindEnabled: false,
+  rules: '',
+  weekDays: [],
+  activity: null,
+  successOpen: false,
+  successRewards: [],
+  recordOpen: false,
+  rulesOpen: false,
+  recordMonth: '',
+  recordCells: [],
+  recordLoading: false
+}
+
+function SignInPage() {
+  const { isLogin } = useLogin({ autoLogin: false })
+  const [state, setState] = useImmer(initialState)
+  const submittingRef = useRef(false)
+
+  const {
+    loading,
+    pageReady,
+    submitting,
+    monthTitle,
+    cumulativeDays,
+    todaySigned,
+    remindEnabled,
+    rules,
+    weekDays,
+    activity,
+    successOpen,
+    successRewards,
+    recordOpen,
+    rulesOpen,
+    recordMonth,
+    recordCells,
+    recordLoading
+  } = state
+
+  const ensureLogin = useCallback(() => {
+    const token = S?.getAuthToken?.()
+    if (token || isLogin) return true
+    showToast('请先登录')
+    const pages = Taro.getCurrentPages?.() || []
+    const current = pages[pages.length - 1]
+    const route = current?.route ? `/${current.route}` : '/subpages/member/sign-in/index'
+    const params = current?.options || Taro.getCurrentInstance()?.router?.params || {}
+    const query = Object.keys(params)
+      .filter((k) => params[k] !== undefined && params[k] !== null)
+      .map((k) => `${k}=${encodeURIComponent(params[k])}`)
+      .join('&')
+    const fullPath = query ? `${route}?${query}` : route
+    setTimeout(() => {
+      Taro.navigateTo({
+        url: `/subpages/member/index?redirect=${encodeURIComponent(fullPath)}`
+      })
+    }, 400)
+    return false
+  }, [isLogin])
+
+  const loadPage = useCallback(async () => {
+    setState((draft) => {
+      draft.loading = true
+    })
+    try {
+      const data = await getSignPage()
+      setState((draft) => {
+        draft.monthTitle = data.monthTitle || ''
+        draft.cumulativeDays = data.cumulativeDays || 0
+        draft.todaySigned = !!data.todaySigned
+        draft.remindEnabled = !!data.remindEnabled
+        draft.rules = data.rules || ''
+        draft.weekDays = data.weekDays || []
+        draft.activity = data.activity || null
+        draft.pageReady = true
+        draft.loading = false
+      })
+    } catch (e) {
+      console.error(e)
+      setState((draft) => {
+        draft.loading = false
+        draft.pageReady = false
+      })
+      showToast('加载失败，请重试')
+    }
+  }, [setState])
+
+  useEffect(() => {
+    Taro.setNavigationBarTitle({ title: '签到领福利' })
+    if (!ensureLogin()) {
+      setState((draft) => {
+        draft.loading = false
+      })
+      return
+    }
+    loadPage()
+  }, [])
+
+  useEffect(() => {
+    if (isLogin && !pageReady && !loading) {
+      loadPage()
+    }
+  }, [isLogin])
+
+  const signDisabled = useMemo(() => {
+    return !pageReady || loading || submitting || todaySigned
+  }, [pageReady, loading, submitting, todaySigned])
+
+  const handleSign = async () => {
+    if (signDisabled || submittingRef.current) return
+    if (!ensureLogin()) return
+    submittingRef.current = true
+    setState((draft) => {
+      draft.submitting = true
+    })
+    try {
+      const result = await submitSign()
+      await loadPage()
+      setState((draft) => {
+        draft.successRewards = result.rewards || []
+        draft.successOpen = true
+        draft.submitting = false
+      })
+    } catch (e) {
+      console.error(e)
+      setState((draft) => {
+        draft.submitting = false
+      })
+      showToast(e?.message || e?.errMsg || '签到失败，请重试')
+    } finally {
+      submittingRef.current = false
+    }
+  }
+
+  const requestSubscribe = () =>
+    new Promise((resolve) => {
+      if (!isWeixin || !Taro.requestSubscribeMessage) {
+        resolve(false)
+        return
+      }
+      // 模板 ID 联调时由后端下发；此处仅演示授权交互
+      Taro.requestSubscribeMessage({
+        tmplIds: [],
+        complete: (res) => {
+          const accepted = Object.values(res || {}).some((v) => v === 'accept')
+          resolve(accepted)
+        },
+        fail: () => resolve(false)
+      })
+    })
+
+  const handleToggleRemind = async () => {
+    if (!ensureLogin()) return
+    if (remindEnabled) {
+      try {
+        await updateSignRemind({ enabled: false })
+        setState((draft) => {
+          draft.remindEnabled = false
+        })
+        showToast('已关闭签到提醒')
+      } catch (e) {
+        showToast('设置失败')
+      }
+      return
+    }
+    if (!isWeixin && !USE_SIGN_MOCK) {
+      showToast('当前环境不支持消息提醒')
+      return
+    }
+    let ok = true
+    if (isWeixin && !USE_SIGN_MOCK) {
+      ok = await requestSubscribe()
+    }
+    if (!ok) {
+      showToast('需要授权后才能开启提醒')
+      setState((draft) => {
+        draft.remindEnabled = false
+      })
+      return
+    }
+    try {
+      await updateSignRemind({ enabled: true })
+      setState((draft) => {
+        draft.remindEnabled = true
+      })
+      showToast('已开启签到提醒')
+    } catch (e) {
+      showToast('设置失败')
+    }
+  }
+
+  const openMonthRecords = async (month) => {
+    const target = month || dayjs().format('YYYY-MM')
+    setState((draft) => {
+      draft.recordOpen = true
+      draft.recordMonth = target
+      draft.recordLoading = true
+    })
+    try {
+      const res = await getSignMonthRecords({ month: target })
+      setState((draft) => {
+        draft.recordCells = res.list || []
+        draft.recordLoading = false
+      })
+    } catch (e) {
+      setState((draft) => {
+        draft.recordLoading = false
+        draft.recordCells = []
+      })
+      showToast('加载签到记录失败')
+    }
+  }
+
+  const isMultiRewardModal = useMemo(() => {
+    const list = successRewards || []
+    if (list.some((item) => item.type === 'coupon')) return true
+    return list.length > 1
+  }, [successRewards])
+
+  const closeSuccessModal = () => {
+    setState((draft) => {
+      draft.successOpen = false
+    })
+  }
+
+  const handleViewRewards = () => {
+    closeSuccessModal()
+    Taro.navigateTo({
+      url: '/subpages/member/sign-in/reward-records'
+    })
+  }
+
+  const shiftRecordMonth = (delta) => {
+    const next = dayjs(`${recordMonth}-01`).add(delta, 'month').format('YYYY-MM')
+    openMonthRecords(next)
+  }
+
+  const renderDayCard = (day) => {
+    let body = null
+    if (day.signed) {
+      body = (
+        <>
+          <SpImage
+            className='sign-in__day-check'
+            src='sign-check_circle.png'
+            width={40}
+            height={40}
+            mode='aspectFit'
+          />
+          <Text className='sign-in__day-points'>
+            {day.points > 0 ? `+${day.points}` : '已签'}
+          </Text>
+        </>
+      )
+    } else if (day.missed) {
+      body = (
+        <>
+          <SpImage
+            className='sign-in__day-miss-icon'
+            src='sign-nocheck_circle.png'
+            width={42}
+            height={42}
+            mode='aspectFit'
+          />
+          <Text className='sign-in__day-miss-text'>漏签</Text>
+        </>
+      )
+    } else {
+      body = (
+        <>
+          <SpImage
+            className='sign-in__day-coin'
+            src='sign-jifen.png'
+            width={40}
+            height={40}
+            mode='aspectFit'
+          />
+          <Text className='sign-in__day-points'>
+            {day.points > 0 ? `+${day.points}` : ''}
+          </Text>
+        </>
+      )
+    }
+    return (
+      <View key={day.date} className='sign-in__day'>
+        <Text className='sign-in__day-weekday'>{day.weekday}</Text>
+        <View
+          className={classNames('sign-in__day-card', {
+            'is-signed': day.signed,
+            'is-missed': day.missed,
+            'is-today': day.isToday && !day.signed
+          })}
+        >
+          {body}
+        </View>
+        <Text
+          className={classNames('sign-in__day-date', {
+            'is-secondary': !day.isToday && !day.signed && !day.missed
+          })}
+        >
+          {day.isToday ? '今日' : `${dayjs(day.date).date()}日`}
+        </Text>
+      </View>
+    )
+  }
+
+  const resolveTierStatus = (tier) => {
+    if (tier.status === 'granted') return 'granted'
+    if (tier.status === 'failed') return 'failed'
+    const days = activity?.cumulativeDays ?? cumulativeDays
+    if (days >= tier.daysRequired) return 'claimable'
+    return 'pending'
+  }
+
+  const renderTierStatus = (tier) => {
+    const status = resolveTierStatus(tier)
+    const text = TIER_STATUS_TEXT[status] || '待领取'
+    return (
+      <View
+        className={classNames('sign-in__tier-btn', {
+          'is-granted': status === 'granted',
+          'is-claimable': status === 'claimable',
+          'is-pending': status === 'pending',
+          'is-failed': status === 'failed'
+        })}
+      >
+        <Text className='sign-in__tier-btn-text'>{text}</Text>
+      </View>
+    )
+  }
+
+  if (loading && !pageReady) {
+    return (
+      <SpPage className='sign-in' title='签到领福利'>
+        <SpLoading />
+      </SpPage>
+    )
+  }
+
+  return (
+    <SpPage className='sign-in' title='签到领福利'>
+      <View className='sign-in__body'>
+        <View className='sign-in__card sign-in__card--daily'>
+          <View className='sign-in__daily-hd'>
+            <View className='sign-in__daily-title-wrap'>
+              <Text className='sign-in__daily-title'>{monthTitle || '签到'}</Text>
+              <View className='sign-in__daily-sub'>
+                <Text className='sign-in__daily-sub-label'>已累计签到</Text>
+                <Text className='sign-in__daily-sub-num'>{cumulativeDays}</Text>
+                <Text className='sign-in__daily-sub-label'>天</Text>
+              </View>
+            </View>
+            <View
+              className={classNames('sign-in__remind', { 'is-on': remindEnabled })}
+              onClick={handleToggleRemind}
+            >
+              <Text className='iconfont icon-notifications_active sign-in__remind-icon' />
+              <Text className='sign-in__remind-text'>签到提醒</Text>
+            </View>
+          </View>
+
+          <View className='sign-in__week'>{weekDays.map(renderDayCard)}</View>
+
+          <View className='sign-in__action'>
+            <View
+              className={classNames('sign-in__sign-btn', { 'is-disabled': signDisabled })}
+              onClick={handleSign}
+            >
+              <Text className='sign-in__sign-btn-text'>
+                {todaySigned ? '今日已签到' : submitting ? '签到中...' : '立即签到'}
+              </Text>
+            </View>
+          </View>
+
+          <View className='sign-in__links'>
+            <Text className='sign-in__link' onClick={() => openMonthRecords()}>
+              签到记录
+            </Text>
+            <View className='sign-in__link-divider' />
+            <Text
+              className='sign-in__link'
+              onClick={() =>
+                setState((draft) => {
+                  draft.rulesOpen = true
+                })
+              }
+            >
+              签到玩法
+            </Text>
+          </View>
+        </View>
+
+        {activity ? (
+          <View className='sign-in__card sign-in__card--activity'>
+            <View className='sign-in__activity-hd'>
+              <View className='sign-in__activity-titles'>
+                <Text className='sign-in__activity-name'>{activity.name}</Text>
+                <Text className='sign-in__activity-time'>
+                  有效时间：{activity.startAt} - {activity.endAt}
+                </Text>
+              </View>
+              <View
+                className='sign-in__activity-record'
+                onClick={() => {
+                  Taro.navigateTo({
+                    url: '/subpages/member/sign-in/reward-records'
+                  })
+                }}
+              >
+                <Text className='sign-in__activity-record-text'>领奖记录</Text>
+                <Text className='iconfont icon-arrowRight sign-in__chevron' />
+              </View>
+            </View>
+
+            <View className='sign-in__tiers'>
+              {(activity.tiers || []).map((tier) => (
+                <View key={tier.id} className='sign-in__tier'>
+                  <View className='sign-in__tier-left'>
+                    <Text className='sign-in__tier-days'>满{tier.daysRequired}天</Text>
+                    <View className='sign-in__tier-rewards'>
+                      {(tier.rewards || []).map((reward, idx) => (
+                        <View key={`${tier.id}-${idx}`} className='sign-in__tier-reward'>
+                          <SpImage
+                            className='sign-in__tier-reward-icon'
+                            src={
+                              reward.type === 'coupon' ? 'sign-coupon.png' : 'sign-jifen.png'
+                            }
+                            width={30}
+                            height={30}
+                            mode='aspectFit'
+                          />
+                          {reward.type === 'point' ? (
+                            <>
+                              <Text className='sign-in__tier-reward-name'>积分</Text>
+                              <Text className='sign-in__tier-reward-amount'>
+                                +{reward.amount}
+                              </Text>
+                            </>
+                          ) : (
+                            <Text className='sign-in__tier-reward-name'>{reward.name}</Text>
+                          )}
+                        </View>
+                      ))}
+                    </View>
+                  </View>
+                  {renderTierStatus(tier)}
+                </View>
+              ))}
+            </View>
+          </View>
+        ) : null}
+      </View>
+
+      {/* 签到成功 / 奖励已发放 */}
+      {successOpen ? (
+        <View className='sign-in-modal'>
+          <View className='sign-in-modal__mask' onClick={closeSuccessModal} />
+          <View
+            className={classNames('sign-in-modal__panel', {
+              'is-multi': isMultiRewardModal
+            })}
+          >
+            <View className='sign-in-modal__content'>
+              <View className='sign-in-modal__hd'>
+                <Text
+                  className='iconfont icon-guanbi sign-in-modal__close'
+                  onClick={closeSuccessModal}
+                />
+                <Text className='sign-in-modal__title'>
+                  {isMultiRewardModal ? '奖励已发放' : '签到成功'}
+                </Text>
+              </View>
+              {!isMultiRewardModal ? (
+                <Text className='sign-in-modal__sub'>今日获得奖励</Text>
+              ) : null}
+              <View
+                className={classNames('sign-in-modal__rewards', {
+                  'is-multi': isMultiRewardModal
+                })}
+              >
+                {(successRewards || []).length === 0 ? (
+                  <View className='sign-in-modal__reward is-stack'>
+                    <SpImage
+                      className='sign-in-modal__reward-icon is-lg'
+                      src='sign-jifen.png'
+                      width={120}
+                      height={120}
+                      mode='aspectFit'
+                    />
+                    <View className='sign-in-modal__reward-point is-stack'>
+                      <Text className='sign-in-modal__reward-label is-lg'>积分</Text>
+                      <Text className='sign-in-modal__reward-num is-lg'>+0</Text>
+                    </View>
+                  </View>
+                ) : (
+                  successRewards.map((item, idx) => (
+                    <View
+                      key={idx}
+                      className={classNames('sign-in-modal__reward', {
+                        'is-stack': !isMultiRewardModal,
+                        'is-row': isMultiRewardModal
+                      })}
+                    >
+                      <SpImage
+                        className={classNames('sign-in-modal__reward-icon', {
+                          'is-lg': !isMultiRewardModal,
+                          'is-sm': isMultiRewardModal
+                        })}
+                        src={item.type === 'coupon' ? 'sign-coupon.png' : 'sign-jifen.png'}
+                        width={isMultiRewardModal ? 60 : 120}
+                        height={isMultiRewardModal ? 60 : 120}
+                        mode='aspectFit'
+                      />
+                      {item.type === 'point' ? (
+                        <View
+                          className={classNames('sign-in-modal__reward-point', {
+                            'is-stack': !isMultiRewardModal
+                          })}
+                        >
+                          <Text
+                            className={classNames('sign-in-modal__reward-label', {
+                              'is-lg': !isMultiRewardModal,
+                              'is-sm': isMultiRewardModal
+                            })}
+                          >
+                            积分
+                          </Text>
+                          <Text
+                            className={classNames('sign-in-modal__reward-num', {
+                              'is-lg': !isMultiRewardModal,
+                              'is-sm': isMultiRewardModal
+                            })}
+                          >
+                            +{item.amount}
+                          </Text>
+                        </View>
+                      ) : (
+                        <Text
+                          className={classNames('sign-in-modal__reward-name', {
+                            'is-sm': isMultiRewardModal
+                          })}
+                        >
+                          {item.name}
+                        </Text>
+                      )}
+                    </View>
+                  ))
+                )}
+              </View>
+            </View>
+            {isMultiRewardModal ? (
+              <View className='sign-in-modal__footer'>
+                <View className='sign-in-modal__btn' onClick={handleViewRewards}>
+                  <Text className='sign-in-modal__btn-text'>查看奖励</Text>
+                </View>
+              </View>
+            ) : null}
+          </View>
+        </View>
+      ) : null}
+
+      <SpFloatLayout
+        className='sign-in-record-layout'
+        title='签到记录'
+        open={recordOpen}
+        onClose={() =>
+          setState((draft) => {
+            draft.recordOpen = false
+          })
+        }
+      >
+        <View className='sign-in-record'>
+          <View className='sign-in-record__month'>
+            <Text
+              className='at-icon at-icon-chevron-left sign-in-record__nav'
+              onClick={() => shiftRecordMonth(-1)}
+            />
+            <Text className='sign-in-record__month-text'>
+              {recordMonth ? `${Number(recordMonth.split('-')[1])}月` : ''}
+            </Text>
+            <Text
+              className='at-icon at-icon-chevron-right sign-in-record__nav'
+              onClick={() => shiftRecordMonth(1)}
+            />
+          </View>
+          <View className='sign-in-record__weekdays'>
+            {['一', '二', '三', '四', '五', '六', '日'].map((w) => (
+              <Text key={w} className='sign-in-record__weekday'>
+                {w}
+              </Text>
+            ))}
+          </View>
+          {recordLoading ? (
+            <SpLoading />
+          ) : recordCells.length === 0 ? (
+            <SpNote title='暂无签到记录' />
+          ) : (
+            <View className='sign-in-record__grid'>
+              {recordCells.map((cell, idx) => (
+                <View
+                  key={idx}
+                  className={classNames('sign-in-record__cell', {
+                    'is-signed': cell.inMonth && cell.signed,
+                    'is-empty': !cell.inMonth
+                  })}
+                >
+                  {cell.inMonth ? (
+                    <>
+                      <Text
+                        className={classNames('sign-in-record__day', {
+                          'is-signed': cell.signed,
+                          'is-muted': !cell.signed
+                        })}
+                      >
+                        {cell.day}
+                      </Text>
+                      {cell.signed ? (
+                        <View className='sign-in-record__signed'>
+                          <SpImage
+                            className='sign-in-record__check'
+                            src='sign-check_circle.png'
+                            width={40}
+                            height={40}
+                            mode='aspectFit'
+                          />
+                          <Text
+                            className={classNames('sign-in-record__tip', {
+                              'is-points': cell.points > 0
+                            })}
+                          >
+                            {cell.points > 0 ? `+${cell.points}` : '已签'}
+                          </Text>
+                        </View>
+                      ) : null}
+                    </>
+                  ) : null}
+                </View>
+              ))}
+            </View>
+          )}
+        </View>
+      </SpFloatLayout>
+
+      <SpFloatLayout
+        title='签到玩法'
+        open={rulesOpen}
+        onClose={() =>
+          setState((draft) => {
+            draft.rulesOpen = false
+          })
+        }
+      >
+        <View className='sign-in-rules'>
+          <Text className='sign-in-rules__text'>{rules || '暂无说明'}</Text>
+        </View>
+      </SpFloatLayout>
+    </SpPage>
+  )
+}
+
+export default SignInPage

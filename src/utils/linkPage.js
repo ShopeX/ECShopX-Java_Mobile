@@ -340,6 +340,10 @@ const memberSetting = {
   itemList: {
     title: '商品列表',
     path: '/subpages/item/list'
+  },
+  memberSign: {
+    title: '签到页',
+    path: '/subpages/member/sign-in/index'
   }
 }
 
