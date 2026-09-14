@@ -276,6 +276,7 @@ const SpTurntable = (props) => {
                 {!!item.img && (
                   <View className='drawtable-img'>
                     <Image
+                      className='drawtable-img__pic'
                       src={item.img}
                       mode='aspectFit'
                       style={{ width: '100%', height: '100%' }}

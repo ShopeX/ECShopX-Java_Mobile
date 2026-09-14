@@ -78,16 +78,47 @@
 
   .drawtable-img {
     position: absolute;
-    left: calc(50% - 100px / 2);
+    left: 50%;
     top: 70px;
     width: 100px;
     height: 100px;
+    margin-left: -50px;
+    overflow: hidden;
+    box-sizing: border-box;
 
+    /* H5：压住 taro-image-core 默认 320×240，以及 aspectFit 的 absolute + transform */
+    /*  #ifdef  h5  */
+    taro-image-core,
+    .taro-img {
+      width: 100% !important;
+      height: 100% !important;
+      display: block !important;
+      position: relative !important;
+      overflow: hidden;
+    }
+
+    .taro-img__mode-aspectfit,
     img {
-      display: inline-block;
+      position: static !important;
+      top: auto !important;
+      left: auto !important;
+      transform: none !important;
+      max-width: 100% !important;
+      max-height: 100% !important;
+      width: 100% !important;
+      height: 100% !important;
+      object-fit: contain;
+      display: block;
+    }
+    /*  #endif  */
+
+    /*  #ifndef  h5  */
+    img {
+      display: block;
       width: 100%;
       height: 100%;
     }
+    /*  #endif  */
   }
 
   .turntable {
