@@ -22,18 +22,22 @@ const SpTurntable = (props) => {
   const [rotateTransition, setRotateTransition] = useState('')
 
   const turntableDomRef = useRef(null)
+  const initKeyRef = useRef('')
 
   const prizeData = props.prizeData || []
+  const prizeNum = prizeData.length
+  // 仅扇区数量/配色/尺寸变化时重绘，避免父组件每次 render 都 init 导致错位
+  const sectorKey = prizeData.map((p) => `${p.background || ''}`).join('|')
+  const initKey = `${prizeNum}_${props.width}_${props.height}_${sectorKey}`
 
   const getRotateAngle = (index) => {
-    const angle = (360 / prizeData.length) * index + 180 / prizeData.length
+    const angle = (360 / prizeNum) * index + 180 / prizeNum
     return {
       transform: `rotate(${angle}deg)`
     }
   }
 
   const init = async () => {
-    const prizeNum = prizeData.length
     if (!prizeNum) return
     const canvas = await new Promise((resolve) => {
       Taro.createSelectorQuery()
@@ -59,6 +63,7 @@ const SpTurntable = (props) => {
     const canvasW = parseInt(props.width, 10)
     const canvasH = parseInt(props.height, 10)
 
+    // 与佛罗伦萨一致：微信端坐标系旋转后再画扇区
     if (isWeixin) {
       ctx.translate(0, canvasH)
       ctx.rotate((-90 * Math.PI) / 180)
@@ -70,8 +75,13 @@ const SpTurntable = (props) => {
       const startAngle = index * baseAngle
       const endAngle = (index + 1) * baseAngle
       ctx.beginPath()
-      ctx.moveTo(canvasW / 2, canvasH / 2)
-      ctx.arc(canvasW / 2, canvasH / 2, canvasH / 2, startAngle, endAngle, false)
+      if (isWeixin) {
+        ctx.moveTo(canvasW / 2, canvasH / 2)
+        ctx.arc(canvasW / 2, canvasH / 2, canvasH / 2, startAngle, endAngle, false)
+      } else {
+        ctx.moveTo(canvasW / 2, canvasH / 2)
+        ctx.arc(canvasW / 2, canvasH / 2, canvasH / 2, startAngle, endAngle, false)
+      }
       ctx.fillStyle = prizeData[index].background || 'transparent'
       ctx.fill()
     }
@@ -92,8 +102,8 @@ const SpTurntable = (props) => {
         },
         Taro.getCurrentInstance().page
       )
-      turntableBkg =
-        `data:image/png;base64,` + Taro.getFileSystemManager().readFileSync(tempFilePath, 'base64')
+      // 小程序优先用本地临时路径；CSS backgroundImage + transform 容易脱层
+      turntableBkg = tempFilePath
     } catch (e) {
       try {
         turntableBkg = canvas.toDataURL?.('image/png') || ''
@@ -113,7 +123,6 @@ const SpTurntable = (props) => {
 
   const resolvePrizeIndexFromResult = (result) => {
     const data = result?.data || {}
-    const prizeNum = prizeData.length || 0
     if (!prizeNum) return -1
 
     const maybeIndex = Number(data.index ?? data.sectorIndex)
@@ -140,7 +149,6 @@ const SpTurntable = (props) => {
 
   const rotate = (index, isThanks = false) => {
     let targetAngle
-    const prizeNum = prizeData.length
     const anglePerPrize = 360 / prizeNum
 
     if (isThanks || index === -1) {
@@ -149,6 +157,7 @@ const SpTurntable = (props) => {
       targetAngle = anglePerPrize / 2 + anglePerPrize * index
     }
 
+    // 与佛罗伦萨同一套起步公式
     const rotateAngleValue =
       startRotateDegree +
       props.turnsNumber * 360 +
@@ -157,9 +166,14 @@ const SpTurntable = (props) => {
       (startRotateDegree % 360)
 
     setStartRotateDegree(rotateAngleValue)
-    setRotateAngle(`rotate(${rotateAngleValue}deg)`)
     setRotateTransition(`transform ${props.turnsTime}s cubic-bezier(0.250, 0.460, 0.455, 0.995)`)
+    setRotateAngle(`rotate(${rotateAngleValue}deg)`)
     setTimeout(() => {
+      // 动画结束后归一化，防止度数过大；先清 transition 避免回弹
+      const normalized = ((rotateAngleValue % 360) + 360) % 360
+      setRotateTransition('none')
+      setRotateAngle(`rotate(${normalized}deg)`)
+      setStartRotateDegree(normalized)
       props.onGameEnd?.()
       setLock(false)
     }, props.turnsTime * 1000 + 500)
@@ -191,12 +205,13 @@ const SpTurntable = (props) => {
   }
 
   useEffect(() => {
-    if (prizeData.length > 0 && props.width && props.height) {
-      init()
-    }
-  }, [prizeData, props.width, props.height])
+    if (!prizeNum || !props.width || !props.height) return
+    if (initKeyRef.current === initKey) return
+    initKeyRef.current = initKey
+    init()
+  }, [initKey, prizeNum, props.width, props.height])
 
-  if (!props || !prizeData.length) {
+  if (!props || !prizeNum) {
     return null
   }
 
@@ -235,15 +250,19 @@ const SpTurntable = (props) => {
         <View
           className='turntable'
           style={{
-            transform: rotateAngle,
-            transition: rotateTransition,
-            backgroundImage: state.tempFilePath ? `url(${state.tempFilePath})` : undefined,
-            backgroundSize: '100% 100%',
-            backgroundRepeat: 'no-repeat',
-            borderRadius: '50%',
-            overflow: 'hidden'
+            transform: rotateAngle || undefined,
+            transition: rotateTransition || undefined,
+            transformOrigin: 'center center'
           }}
         >
+          {/* 扇区底图用 Image，避免 background-image + transform 在微信脱层 */}
+          {!!state.tempFilePath && (
+            <Image
+              className='turntable__sectors'
+              src={state.tempFilePath}
+              mode='aspectFit'
+            />
+          )}
           <Canvas
             id='turntable-canvas'
             type='2d'
@@ -268,7 +287,7 @@ const SpTurntable = (props) => {
           </View>
           <View className='dividers'>
             {prizeData.map((item, index) => {
-              const dividerAngle = (360 / prizeData.length) * index
+              const dividerAngle = (360 / prizeNum) * index
               return (
                 <View
                   key={`divider-${index}`}
@@ -282,7 +301,6 @@ const SpTurntable = (props) => {
           </View>
         </View>
       </View>
-      {/* 指针相对外框 335 居中，避免内层 overflow/transform 导致偏移 */}
       <View
         className={classNames('pointer', { 'pointer--fallback': !hasPointerImg })}
         onClick={startTurns}
