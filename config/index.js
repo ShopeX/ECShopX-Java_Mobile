@@ -43,7 +43,7 @@ const H5_ROUTER_BASENAME = process.env.APP_ROUTER_BASENAME || undefined
 
 const copyPatterns = []
 const i18nResourceTransform = (content) =>
-  content.toString().replace(/\.\/locales\/(zhcn|zhtw|en|ar)\.json/g, './locales/$1.js')
+  content.toString().replace(/\.\/locales\/(zhcn|zhtw|en|ar|ja|ru)\.json/g, './locales/$1.js')
 const i18nLocaleTransform = (content) => `module.exports = ${content.toString()}\n`
 
 if (process.env.TARO_ENV == 'h5') {
@@ -58,7 +58,7 @@ if (process.env.TARO_ENV == 'weapp') {
     to: `${DIST_PATH}/subpages/i18n/resources.js`,
     transform: i18nResourceTransform
   })
-  ;['zhcn', 'zhtw', 'en', 'ar'].forEach((lang) => {
+  ;['zhcn', 'zhtw', 'en', 'ar', 'ja', 'ru'].forEach((lang) => {
     copyPatterns.push({
       from: `src/subpages/i18n/locales/${lang}.json`,
       to: `${DIST_PATH}/subpages/i18n/locales/${lang}.js`,
