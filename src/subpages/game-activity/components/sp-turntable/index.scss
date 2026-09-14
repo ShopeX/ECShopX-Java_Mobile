@@ -135,6 +135,34 @@
       display: block;
       z-index: 0;
       pointer-events: none;
+      box-sizing: border-box;
+      overflow: hidden;
+
+      /* H5：压住 taro-image-core 默认 320×240 / aspectFit absolute，避免扇区色图不铺满 */
+      /*  #ifdef  h5  */
+      taro-image-core,
+      .taro-img {
+        width: 100% !important;
+        height: 100% !important;
+        display: block !important;
+        position: relative !important;
+        overflow: hidden;
+      }
+
+      .taro-img__mode-aspectfit,
+      img {
+        position: static !important;
+        top: auto !important;
+        left: auto !important;
+        transform: none !important;
+        max-width: 100% !important;
+        max-height: 100% !important;
+        width: 100% !important;
+        height: 100% !important;
+        object-fit: contain;
+        display: block;
+      }
+      /*  #endif  */
     }
   }
 

@@ -2,13 +2,26 @@
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
  */
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import Taro from '@tarojs/taro'
 import { View, Canvas, Image, Text } from '@tarojs/components'
-import { isWeixin, styleNames, classNames } from '@/utils'
+import { isWeb, styleNames, classNames } from '@/utils'
 import { useImmer } from 'use-immer'
 import { TURNTABLE_OUTER_SIZE } from '../helper'
 import './index.scss'
+
+/** H5 用 conic-gradient 画扇区色（避开 canvas type=2d 节点拿不到的问题） */
+const buildSectorConicGradient = (prizes = []) => {
+  const n = prizes.length
+  if (!n) return ''
+  const step = 360 / n
+  const stops = prizes.map((p, i) => {
+    const color = p.background || '#f9e3bb'
+    return `${color} ${i * step}deg ${(i + 1) * step}deg`
+  })
+  // 从 12 点方向起，与奖品文案 / 分割线对齐
+  return `conic-gradient(from 0deg, ${stops.join(', ')})`
+}
 
 const SpTurntable = (props) => {
   const [state, setState] = useImmer({
@@ -30,6 +43,11 @@ const SpTurntable = (props) => {
   const sectorKey = prizeData.map((p) => `${p.background || ''}`).join('|')
   const initKey = `${prizeNum}_${props.width}_${props.height}_${sectorKey}`
 
+  const h5SectorBackground = useMemo(
+    () => (isWeb ? buildSectorConicGradient(prizeData) : ''),
+    [prizeData, sectorKey]
+  )
+
   const getRotateAngle = (index) => {
     const angle = (360 / prizeNum) * index + 180 / prizeNum
     return {
@@ -38,7 +56,12 @@ const SpTurntable = (props) => {
   }
 
   const init = async () => {
-    if (!prizeNum) return
+    // H5 走 CSS conic-gradient，不依赖 canvas 导出
+    if (isWeb || !prizeNum) return
+    const canvasW = parseInt(props.width, 10)
+    const canvasH = parseInt(props.height, 10)
+    if (!canvasW || !canvasH) return
+
     const canvas = await new Promise((resolve) => {
       Taro.createSelectorQuery()
         .select('#turntable-canvas')
@@ -51,8 +74,10 @@ const SpTurntable = (props) => {
           const node = res[0].node
           const ctx = node.getContext('2d')
           const dpr = Taro.getSystemInfoSync().pixelRatio || 1
-          node.width = res[0].width * dpr
-          node.height = res[0].height * dpr
+          const w = res[0].width || canvasW
+          const h = res[0].height || canvasH
+          node.width = w * dpr
+          node.height = h * dpr
           ctx.scale(dpr, dpr)
           resolve(node)
         })
@@ -60,29 +85,19 @@ const SpTurntable = (props) => {
 
     if (!canvas) return
     const ctx = canvas.getContext('2d')
-    const canvasW = parseInt(props.width, 10)
-    const canvasH = parseInt(props.height, 10)
 
-    // 与佛罗伦萨一致：微信端坐标系旋转后再画扇区
-    if (isWeixin) {
-      ctx.translate(0, canvasH)
-      ctx.rotate((-90 * Math.PI) / 180)
-    }
+    // 与奖品文案对齐：从 12 点方向起画
+    ctx.translate(0, canvasH)
+    ctx.rotate((-90 * Math.PI) / 180)
 
     const baseAngle = (Math.PI * 2) / prizeNum
-
     for (let index = 0; index < prizeNum; index++) {
       const startAngle = index * baseAngle
       const endAngle = (index + 1) * baseAngle
       ctx.beginPath()
-      if (isWeixin) {
-        ctx.moveTo(canvasW / 2, canvasH / 2)
-        ctx.arc(canvasW / 2, canvasH / 2, canvasH / 2, startAngle, endAngle, false)
-      } else {
-        ctx.moveTo(canvasW / 2, canvasH / 2)
-        ctx.arc(canvasW / 2, canvasH / 2, canvasH / 2, startAngle, endAngle, false)
-      }
-      ctx.fillStyle = prizeData[index].background || 'transparent'
+      ctx.moveTo(canvasW / 2, canvasH / 2)
+      ctx.arc(canvasW / 2, canvasH / 2, canvasH / 2, startAngle, endAngle, false)
+      ctx.fillStyle = prizeData[index].background || '#f9e3bb'
       ctx.fill()
     }
 
@@ -205,6 +220,7 @@ const SpTurntable = (props) => {
   }
 
   useEffect(() => {
+    if (isWeb) return
     if (!prizeNum || !props.width || !props.height) return
     if (initKeyRef.current === initKey) return
     initKeyRef.current = initKey
@@ -252,22 +268,30 @@ const SpTurntable = (props) => {
           style={{
             transform: rotateAngle || undefined,
             transition: rotateTransition || undefined,
-            transformOrigin: 'center center'
+            transformOrigin: 'center center',
+            ...(isWeb && h5SectorBackground
+              ? {
+                  background: h5SectorBackground,
+                  borderRadius: '50%'
+                }
+              : {})
           }}
         >
-          {/* 扇区底图用 Image，避免 background-image + transform 在微信脱层 */}
-          {!!state.tempFilePath && (
+          {/* 微信：扇区底图用 Image，避免 background-image + transform 脱层 */}
+          {!isWeb && !!state.tempFilePath && (
             <Image
               className='turntable__sectors'
               src={state.tempFilePath}
               mode='aspectFit'
             />
           )}
-          <Canvas
-            id='turntable-canvas'
-            type='2d'
-            style='width: 100%; height: 100%; transform: translate(-200%, -200%);position: absolute;left: 0;top: 0;'
-          />
+          {!isWeb && (
+            <Canvas
+              id='turntable-canvas'
+              type='2d'
+              style='width: 100%; height: 100%; transform: translate(-200%, -200%);position: absolute;left: 0;top: 0;'
+            />
+          )}
 
           <View className='prize'>
             {prizeData.map((item, index) => (
