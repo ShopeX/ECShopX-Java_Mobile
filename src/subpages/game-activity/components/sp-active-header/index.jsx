@@ -33,9 +33,9 @@ const ActiveTotalControl = (props) => {
         <Text>{$t('a6e0e06e.89438c')}</Text>
         <Text className='sp-active-control__title-score'>{formatPoint(point)}</Text>
       </View>
-      <View className='sp-active-control__title-btn' onClick={handleGetMore}>
+      {/* <View className='sp-active-control__title-btn' onClick={handleGetMore}>
         <Text className='sp-active-control__title-btn-text'>{$t('a6e0e06e.f42a8f')}</Text>
-      </View>
+      </View> */}
       <View className='sp-active-control__desc'>
         <Text>{$t('a6e0e06e.3b39a8')}</Text>
         <Text className='sp-active-control__desc-num'>{cost_value}</Text>
