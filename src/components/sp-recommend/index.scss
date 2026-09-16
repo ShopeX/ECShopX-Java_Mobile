@@ -92,6 +92,7 @@
     overflow: hidden;
     background: #f5f5f5;
     position: relative;
+    border-radius: 12px 12px 0 0;
 
     .sp-image,
     .sp-recommend__image {
@@ -105,6 +106,37 @@
     image {
       width: 100% !important;
       height: 100% !important;
+    }
+  }
+
+  /* 已售罄蒙层（设计稿 113 / radius 6 → ×2） */
+  &__soldout-mask {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 12px 12px 0 0;
+  }
+
+  &__soldout-text {
+    background-color: rgba(0, 0, 0, 0.5);
+    border-radius: 50%;
+    padding: 10px;
+    width: fit-content;
+    aspect-ratio: 1 / 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    text {
+      font-size: 22px;
+      color: #fff;
     }
   }
 

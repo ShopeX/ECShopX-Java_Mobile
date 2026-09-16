@@ -96,6 +96,7 @@ export default class SpRecommend extends Component {
 
   renderCard = (goodsItem, index) => {
     const { showAdd } = this.props
+    const soldOut = Number(goodsItem?.store) <= 0
     return (
       <View
         className='sp-recommend__card'
@@ -109,20 +110,27 @@ export default class SpRecommend extends Component {
             mode='aspectFill'
             style={{ width: '100%', height: '100%' }}
           />
+          {soldOut ? (
+            <View className='sp-recommend__soldout-mask'>
+              <View className='sp-recommend__soldout-text'>
+                <Text>{$t('8a5d1351.b12876')}</Text>
+              </View>
+            </View>
+          ) : null}
         </View>
         <View className='sp-recommend__body'>
           <View className='sp-recommend__info'>
             <Text className='sp-recommend__name'>{goodsItem.itemName}</Text>
             {this.renderPrice(goodsItem)}
           </View>
-          {showAdd && (
+          {showAdd && !soldOut ? (
             <View
               className='sp-recommend__add-btn'
               onClick={this.handleAdd.bind(this, goodsItem)}
             >
               <Text className='sp-recommend__add-btn-text'>+ 加购</Text>
             </View>
-          )}
+          ) : null}
         </View>
       </View>
     )
