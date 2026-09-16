@@ -10,7 +10,9 @@ const i18n = {
   },
   en: 'English',
   zhtw: '繁體中文',
-  ar: 'العربية'
+  ar: 'العربية',
+  ja: '日本語',
+  ru: 'Русский'
 }
 
 export default i18n

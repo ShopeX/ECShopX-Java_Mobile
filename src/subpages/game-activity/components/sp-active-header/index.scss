@@ -8,12 +8,24 @@
   box-sizing: border-box;
   padding-top: 36px;
   padding-left: 30px;
+  padding-right: 24px;
   position: relative;
   background: linear-gradient(180deg, #ffffff 0%, #fff9e9 100%);
   border-radius: 24px;
   border: 1px solid #ebebeb;
   margin-bottom: 60px;
   z-index: 1;
+
+  &--guest {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+  }
+
+  &__guest-main {
+    flex: 1;
+    min-width: 0;
+  }
 
   &__title {
     height: 48px;
@@ -28,15 +40,19 @@
       color: #ffae00;
       position: relative;
       margin-left: 12px;
+
+      &.is-guest {
+        font-size: 30px;
+        font-weight: 500;
+        color: #999;
+      }
     }
 
     &-btn {
       width: auto;
       min-width: 160px;
       height: 107px;
-      position: absolute;
-      top: 30px;
-      right: 24px;
+      flex-shrink: 0;
       display: flex;
       align-items: center;
       justify-content: flex-end;

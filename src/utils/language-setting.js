@@ -34,7 +34,14 @@ const API_CODE_TO_STORAGE = {
   en: 'en',
   ar: 'ar',
   'ar-SA': 'ar',
-  'ar-sa': 'ar'
+  'ar-sa': 'ar',
+  ja: 'ja',
+  'ja-JP': 'ja',
+  'ja-jp': 'ja',
+  jp: 'ja',
+  ru: 'ru',
+  'ru-RU': 'ru',
+  'ru-ru': 'ru'
 }
 
 function mapApiCodeToStorage(code) {

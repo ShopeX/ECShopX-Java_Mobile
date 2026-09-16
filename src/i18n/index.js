@@ -25,7 +25,7 @@ export {
 export { useTranslation, Trans } from 'react-i18next'
 
 /**
- * 当前存储侧语言码（zhcn | zhtw | en | ar）
+ * 当前存储侧语言码（zhcn | zhtw | en | ar | ja | ru）
  */
 export function getLocale() {
   const lng = i18n.resolvedLanguage || i18n.language || 'en'
@@ -38,6 +38,15 @@ export function getLocale() {
   }
   if (lower.startsWith('zh')) {
     return 'zhcn'
+  }
+  if (lower.startsWith('ja') || lower === 'jp') {
+    return 'ja'
+  }
+  if (lower.startsWith('ru')) {
+    return 'ru'
+  }
+  if (lower.startsWith('ar')) {
+    return 'ar'
   }
   return 'en'
 }
