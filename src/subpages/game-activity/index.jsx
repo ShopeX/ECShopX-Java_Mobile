@@ -7,9 +7,9 @@ import { View, Text } from '@tarojs/components'
 import Taro from '@tarojs/taro'
 import { getGameConfig, drawPrize, mapDrawErrorMessage } from '@/api/game'
 import { GAME_TYPES } from '@/consts/game'
-import { pickBy, styleNames, showToast } from '@/utils'
+import { pickBy, styleNames, showToast, isWeb } from '@/utils'
 import { GAME_CONFIG, resolveActivityStatus } from '@/doc/game'
-import { SpPage, SpLoading, SpNote, SpImage } from '@/components'
+import { SpPage, SpLoading, SpNote, SpImage, SpLogin } from '@/components'
 import { useTranslation, $t } from '@/i18n'
 import useLogin from '@/hooks/useLogin'
 import S from '@/spx'
@@ -38,8 +38,10 @@ const GameActivity = () => {
   const [rules, setRules] = useState('')
   const [ruleVisible, setRuleVisible] = useState(false)
   const [activeId, setActiveId] = useState('')
+  const [showLoginModal, setShowLoginModal] = useState(false)
 
   const isDrawing = useRef(false)
+  const loginRef = useRef(null)
 
   useEffect(() => {
     loadActivityData()
@@ -53,10 +55,7 @@ const GameActivity = () => {
 
   const canDraw = activityStatus === 'online'
 
-  const ensureLogin = useCallback(() => {
-    const token = S?.getAuthToken?.()
-    if (token || isLogin) return true
-    showToast($t('c7a229df.033202'))
+  const buildCurrentPath = useCallback(() => {
     const pages = Taro.getCurrentPages?.() || []
     const current = pages[pages.length - 1]
     const route = current?.route ? `/${current.route}` : '/subpages/game-activity/index'
@@ -65,14 +64,30 @@ const GameActivity = () => {
       .filter((k) => params[k] !== undefined && params[k] !== null)
       .map((k) => `${k}=${encodeURIComponent(params[k])}`)
       .join('&')
-    const fullPath = query ? `${route}?${query}` : route
-    setTimeout(() => {
+    return query ? `${route}?${query}` : route
+  }, [])
+
+  const ensureLogin = useCallback(() => {
+    const token = S?.getAuthToken?.()
+    if (token || isLogin) return true
+    // H5 无登录弹层，走授权页并带回当前抽奖页
+    if (isWeb) {
+      const fullPath = buildCurrentPath()
       Taro.navigateTo({
-        url: `/subpages/member/index?redirect=${encodeURIComponent(fullPath)}`
+        url: `/subpages/auth/login?redirect=${encodeURIComponent(fullPath)}`
       })
-    }, 400)
+      return false
+    }
+    // 小程序：弹登录窗，不跳个人中心
+    setShowLoginModal(true)
+    loginRef.current?.handleToLogin?.()
     return false
-  }, [isLogin])
+  }, [isLogin, buildCurrentPath])
+
+  const onLoginSuccess = useCallback(() => {
+    setShowLoginModal(false)
+    loadActivityData()
+  }, [])
 
   const loadActivityData = async () => {
     setLoading(true)
@@ -285,7 +300,11 @@ const GameActivity = () => {
             )}
             <View className='sp-game-activity__content'>
               <View style={{ marginTop: activityConfig?.gameMarginTop ?? 150 }}>
-                <ActiveTotalControl userInfo={userInfo} />
+                <ActiveTotalControl
+                  userInfo={userInfo}
+                  isLogin={!!(S?.getAuthToken?.() || isLogin)}
+                  onLogin={ensureLogin}
+                />
               </View>
 
               <View className='sp-game-activity__game-container'>{renderGameComponent}</View>
@@ -318,6 +337,13 @@ const GameActivity = () => {
           insufficientPoints={!!resultData.insufficientPoints}
           requiredPoints={resultData.requiredPoints}
           currentPoints={resultData.currentPoints}
+        />
+
+        <SpLogin
+          ref={loginRef}
+          visible={showLoginModal}
+          onChange={onLoginSuccess}
+          onClose={() => setShowLoginModal(false)}
         />
       </View>
     </SpPage>
