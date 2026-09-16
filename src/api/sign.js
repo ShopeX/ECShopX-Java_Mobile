@@ -2,7 +2,7 @@
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
  *
- * 联调前使用本地 mock；接口就绪后将 USE_SIGN_MOCK 设为 false，并改用真实路径。
+ * 契约：/promotion/member-signin/*（VshopAPI 会员签到）
  */
 import dayjs from 'dayjs'
 import { pickBy } from '@/utils'
@@ -10,347 +10,307 @@ import {
   SIGN_PAGE_MAPPING,
   SIGN_RESULT_MAPPING,
   SIGN_MONTH_DAY_MAPPING,
-  SIGN_REWARD_RECORD_MAPPING
+  SIGN_REWARD_RECORD_MAPPING,
+  mapRewardItemType,
+  mapTierStatus,
+  formatSignTime
 } from '@/doc/sign'
 import req from './req'
 
-/** 联调开关：true=本地 mock，false=走真实接口 */
-export const USE_SIGN_MOCK = true
-
 const WEEKDAY_LABELS = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
-const WEEKDAY_POINTS = [1, 1, 1, 1, 1, 5, 5]
+const BASE = '/promotion/member-signin'
 
-let mockState = {
-  todaySigned: false,
-  remindEnabled: false,
-  // mock：累计 6，签到一次到 7 天可预览「券+积分」弹窗
-  cumulativeDays: 6,
-  signedDates: {},
-  rewardRecords: [
-    {
-      id: 'r1',
-      title: '累计签到满3天',
-      created_at: '2025-06-18 18:09:56',
-      rewards: [
-        { type: 'point', name: '积分', amount: 500 },
-        { type: 'coupon', name: '满500减60元券', amount: 0 }
-      ]
-    },
-    {
-      id: 'r2',
-      title: '签到',
-      created_at: '2025-06-18 18:09:56',
-      rewards: [{ type: 'point', name: '积分', amount: 10 }]
-    },
-    {
-      id: 'r3',
-      title: '签到',
-      created_at: '2025-06-17 09:12:01',
-      rewards: [{ type: 'point', name: '积分', amount: 10 }]
-    }
-  ]
-}
-
-function shanghaiNow() {
-  // 业务归属统一按北京时间；dayjs 无插件时用本地偏移近似，联调以服务端为准
-  return dayjs()
-}
-
-function startOfWeekMonday(d) {
-  const day = d.day() // 0=Sun
-  const diff = day === 0 ? -6 : 1 - day
-  return d.add(diff, 'day').startOf('day')
-}
-
-function buildWeekDays(todaySigned) {
-  const today = shanghaiNow().startOf('day')
-  const monday = startOfWeekMonday(today)
-  const todayIndex = today.diff(monday, 'day')
-  const signedSet = { ...mockState.signedDates }
-
-  // 演示数据：今天之前尽量「已签 + 漏签」各至少一天，方便预览漏签样式
-  for (let i = 0; i < todayIndex; i++) {
-    const key = monday.add(i, 'day').format('YYYY-MM-DD')
-    if (signedSet[key] !== undefined) continue
-    // 昨天漏签，更早的已签
-    if (i === todayIndex - 1) {
-      signedSet[key] = null
-    } else {
-      signedSet[key] = { seq: i + 1, points: WEEKDAY_POINTS[i] }
+/** 兼容 { data } 二次包裹与直出 payload */
+function unwrap(res) {
+  if (!res || typeof res !== 'object') return {}
+  if (res.data && typeof res.data === 'object' && !Array.isArray(res.data)) {
+    const inner = res.data
+    if (
+      inner.days ||
+      inner.list ||
+      inner.activity !== undefined ||
+      inner.signed_today !== undefined ||
+      inner.enabled !== undefined ||
+      inner.progress_count !== undefined ||
+      inner.week_start ||
+      inner.month
+    ) {
+      return inner
     }
   }
+  return res
+}
 
-  // 周一/周二时本周过去日不足：强制「周一已签、周二漏签」便于预览
-  if (todayIndex < 2) {
-    const monKey = monday.format('YYYY-MM-DD')
-    const tueKey = monday.add(1, 'day').format('YYYY-MM-DD')
-    if (todayIndex === 0) {
-      // 今天周一：仍展示周二为漏签样例（仅 mock）
-      if (signedSet[tueKey] === undefined) signedSet[tueKey] = null
-    } else {
-      // 今天周二：周一漏签
-      if (signedSet[monKey] === undefined) signedSet[monKey] = null
-    }
+function formatTs(ts) {
+  if (ts == null || ts === '') return ''
+  const n = Number(ts)
+  if (!Number.isNaN(n) && n > 0) {
+    const ms = n < 1e12 ? n * 1000 : n
+    return dayjs(ms).format('YYYY.MM.DD')
   }
+  return String(ts)
+}
 
-  const days = []
-  for (let i = 0; i < 7; i++) {
-    const date = monday.add(i, 'day')
-    const key = date.format('YYYY-MM-DD')
-    const isToday = date.isSame(today, 'day')
-    const isPast = date.isBefore(today, 'day')
-    const record = signedSet[key]
-    const hasSignedRecord = !!(record && typeof record === 'object')
-    let signed = isToday ? todaySigned || hasSignedRecord : hasSignedRecord
-    // 过去未签，或 mock 强制漏签占位（record === null）
-    let missed = (isPast && !hasSignedRecord) || (!isToday && record === null && !hasSignedRecord)
-    if (signed) missed = false
-
-    days.push({
-      date: key,
-      weekday: WEEKDAY_LABELS[i],
-      is_today: isToday,
-      signed,
-      missed,
-      points: WEEKDAY_POINTS[i],
-      activity_seq: signed && record && record.seq != null ? record.seq : null
+function mapTierFromApi(tier = {}) {
+  const rewards = []
+  if (tier.points_reward) {
+    rewards.push({
+      type: 'point',
+      name: '积分',
+      amount: Number(tier.points_reward)
     })
   }
-  return days
-}
-
-function buildActivity() {
-  const days = mockState.cumulativeDays
+  if (tier.coupon_summary && (tier.coupon_summary.title || tier.coupon_summary.id)) {
+    rewards.push({
+      type: 'coupon',
+      name: tier.coupon_summary.title || '优惠券',
+      amount: 0
+    })
+  }
   return {
-    id: 'act-1',
-    name: '累计签到奖励',
-    start_at: '2026.09.08',
-    end_at: '2026.09.22',
-    cumulative_days: days,
-    tiers: [
-      {
-        id: 't3',
-        days_required: 3,
-        status: days >= 3 ? 'granted' : 'pending',
-        rewards: [{ type: 'point', name: '积分', amount: 100 }]
-      },
-      {
-        id: 't7',
-        days_required: 7,
-        status: days >= 7 ? 'granted' : 'pending',
-        rewards: [
-          { type: 'coupon', name: '立减5元券', amount: 0 },
-          { type: 'point', name: '积分', amount: 200 }
-        ]
-      },
-      {
-        id: 't15',
-        days_required: 15,
-        status: days >= 15 ? 'granted' : 'pending',
-        rewards: [
-          { type: 'coupon', name: '满500减60元券', amount: 0 },
-          { type: 'point', name: '积分', amount: 300 }
-        ]
-      },
-      {
-        id: 't30',
-        days_required: 30,
-        status: days >= 30 ? 'granted' : 'pending',
-        rewards: [{ type: 'coupon', name: '立减50元券', amount: 0 }]
-      }
-    ]
+    id: String(tier.tier_count ?? ''),
+    days_required: Number(tier.tier_count || 0),
+    status: mapTierStatus(tier.status),
+    rewards
   }
 }
 
-function mockDelay(ms = 280) {
-  return new Promise((resolve) => setTimeout(resolve, ms))
+function composePagePayload(calendar = {}, progress = {}, reminder = {}) {
+  const today = dayjs().startOf('day')
+  const activityRaw = progress.activity
+  const weekDays = (calendar.days || []).map((day) => {
+    const date = day.date ? dayjs(day.date) : null
+    const isToday = date ? date.isSame(today, 'day') : false
+    const isPast = date ? date.isBefore(today, 'day') : false
+    const wd = Number(day.weekday || 0)
+    return {
+      date: day.date,
+      weekday: WEEKDAY_LABELS[wd - 1] || '',
+      is_today: isToday,
+      signed: !!day.signed,
+      missed: !day.signed && isPast,
+      points: day.daily_points != null ? Number(day.daily_points) : 0,
+      activity_seq: day.activity_seq != null ? Number(day.activity_seq) : null,
+      display: day.display || null
+    }
+  })
+
+  return {
+    month_title: `${today.month() + 1}月签到`,
+    cumulative_days: Number(
+      progress.progress_count ?? activityRaw?.progress_count ?? 0
+    ),
+    today_signed: !!calendar.signed_today,
+    remind_enabled: !!reminder.enabled,
+    rules: '',
+    week_days: weekDays,
+    activity: activityRaw
+      ? {
+          id: activityRaw.id,
+          name: activityRaw.name,
+          start_at: formatTs(activityRaw.begin_time),
+          end_at: formatTs(activityRaw.end_time),
+          cumulative_days: Number(activityRaw.progress_count || 0),
+          tiers: (activityRaw.tiers || []).map(mapTierFromApi)
+        }
+      : null
+  }
 }
 
-function buildPagePayload() {
-  const now = shanghaiNow()
-  return {
-    month_title: `${now.month() + 1}月签到`,
-    cumulative_days: mockState.cumulativeDays,
-    today_signed: mockState.todaySigned,
-    remind_enabled: mockState.remindEnabled,
-    rules:
-      '1. 每日签到可获得对应星期积分；\n2. 活动期内累计签到可领取阶梯奖励；\n3. 漏签不重置累计次数，活动结束后不再累计。',
-    week_days: buildWeekDays(mockState.todaySigned),
-    activity: buildActivity()
+function mapSignResult(data = {}) {
+  const rewards = []
+  if (data.daily_points > 0) {
+    rewards.push({
+      type: 'point',
+      name: '积分',
+      amount: Number(data.daily_points),
+      status: 'granted'
+    })
   }
+  ;(data.new_grants || []).forEach((grant) => {
+    ;(grant.reward_items || []).forEach((item) => {
+      rewards.push({
+        type: mapRewardItemType(item.type),
+        name: item.title || (mapRewardItemType(item.type) === 'point' ? '积分' : '优惠券'),
+        amount: item.amount != null ? Number(item.amount) : 0,
+        status: 'granted'
+      })
+    })
+  })
+  return pickBy(
+    {
+      daily_points: data.daily_points,
+      activity_seq: data.activity?.progress_count,
+      rewards
+    },
+    SIGN_RESULT_MAPPING
+  )
+}
+
+function buildMonthCells(month, days = []) {
+  const dayMap = {}
+  days.forEach((d) => {
+    if (d?.date) dayMap[d.date] = d
+  })
+  const start = dayjs(`${month}-01`)
+  const daysInMonth = start.daysInMonth()
+  const startWeekday = start.day() === 0 ? 6 : start.day() - 1
+  const cells = []
+  for (let i = 0; i < startWeekday; i++) {
+    cells.push({
+      day: 0,
+      date: '',
+      signed: false,
+      points: 0,
+      is_future: false,
+      in_month: false,
+      display: null,
+      day_status: ''
+    })
+  }
+  for (let d = 1; d <= daysInMonth; d++) {
+    const date = start.date(d).format('YYYY-MM-DD')
+    const raw = dayMap[date] || {}
+    const status = raw.day_status || ''
+    const signed = !!raw.signed || status === 'signed'
+    cells.push({
+      day: d,
+      date,
+      signed,
+      points: raw.daily_points != null ? Number(raw.daily_points) : 0,
+      is_future: status === 'future',
+      in_month: true,
+      display: raw.display || null,
+      day_status: status
+    })
+  }
+  return cells
+}
+
+function pickApiErrorMessage(error) {
+  const body = error?.res?.data
+  return (
+    body?.data?.message ||
+    body?.msg ||
+    body?.message ||
+    error?.message ||
+    ''
+  )
 }
 
 /** 签到页聚合：周历 + 活动进度 + 提醒状态 */
 export async function getSignPage(params = {}) {
-  if (USE_SIGN_MOCK) {
-    await mockDelay()
-    return pickBy(buildPagePayload(), SIGN_PAGE_MAPPING)
-  }
-  const data = await req.get('/wxapp/member/sign/page', params)
-  return pickBy(data || {}, SIGN_PAGE_MAPPING)
+  const [calendarRes, progressRes, reminderRes] = await Promise.all([
+    req.get(`${BASE}/calendar`, params),
+    req.get(`${BASE}/activity/progress`),
+    req.get(`${BASE}/reminder`, { showError: false }).catch(() => null)
+  ])
+  const payload = composePagePayload(
+    unwrap(calendarRes),
+    unwrap(progressRes),
+    unwrap(reminderRes)
+  )
+  return pickBy(payload, SIGN_PAGE_MAPPING)
 }
 
 /** 提交签到 */
 export async function submitSign(data = {}) {
-  if (USE_SIGN_MOCK) {
-    await mockDelay(400)
-    if (mockState.todaySigned) {
-      const err = new Error('今日已签到')
-      err.code = 'ALREADY_SIGNED'
-      throw err
-    }
-    const today = shanghaiNow()
-    const weekdayIndex = (() => {
-      const d = today.day()
-      return d === 0 ? 6 : d - 1
-    })()
-    const dailyPoints = WEEKDAY_POINTS[weekdayIndex]
-    mockState.todaySigned = true
-    mockState.cumulativeDays += 1
-    const key = today.format('YYYY-MM-DD')
-    mockState.signedDates[key] = {
-      seq: mockState.cumulativeDays,
-      points: dailyPoints
-    }
-    const rewards = []
-    if (dailyPoints > 0) {
-      rewards.push({ type: 'point', name: '积分', amount: dailyPoints, status: 'granted' })
-      mockState.rewardRecords.unshift({
-        id: `daily-${Date.now()}`,
-        title: '签到',
-        created_at: today.format('YYYY-MM-DD HH:mm:ss'),
-        rewards: [{ type: 'point', name: '积分', amount: dailyPoints }]
-      })
-    }
-    const activity = buildActivity()
-    activity.tiers.forEach((tier) => {
-      if (tier.status === 'granted' && tier.days_required === mockState.cumulativeDays) {
-        rewards.push(
-          ...tier.rewards.map((r) => ({
-            ...r,
-            status: 'granted'
-          }))
-        )
-        mockState.rewardRecords.unshift({
-          id: `tier-${tier.id}-${Date.now()}`,
-          title: `累计签到满${tier.days_required}天`,
-          created_at: today.format('YYYY-MM-DD HH:mm:ss'),
-          rewards: tier.rewards
-        })
-      }
-    })
-    return pickBy(
-      {
-        daily_points: dailyPoints,
-        activity_seq: mockState.cumulativeDays,
-        rewards
-      },
-      SIGN_RESULT_MAPPING
-    )
+  try {
+    const res = await req.post(`${BASE}/sign`, { ...data, showError: false })
+    return mapSignResult(unwrap(res))
+  } catch (error) {
+    const status = error?.res?.statusCode
+    const message = pickApiErrorMessage(error) || '签到失败，请重试'
+    const err = new Error(message)
+    err.res = error?.res
+    err.code = status === 409 ? 'ALREADY_SIGNED' : error?.code || status
+    throw err
   }
-  const res = await req.post('/wxapp/member/sign', data)
-  return pickBy(res || {}, SIGN_RESULT_MAPPING)
 }
 
 /** 按月查询签到记录 */
 export async function getSignMonthRecords(params = {}) {
-  const month = params.month || shanghaiNow().format('YYYY-MM')
-  if (USE_SIGN_MOCK) {
-    await mockDelay()
-    const start = dayjs(`${month}-01`)
-    const daysInMonth = start.daysInMonth()
-    const today = shanghaiNow().startOf('day')
-    // 对齐周一开头：补齐上月末
-    const startWeekday = start.day() === 0 ? 6 : start.day() - 1
-    // 演示：本月部分日期已签（含积分 / 已签文案），贴近设计稿 1:303
-    const demoSigned = {}
-    if (month === today.format('YYYY-MM')) {
-      const seedSigned = (offset, points, seq) => {
-        const date = today.subtract(offset, 'day')
-        if (date.format('YYYY-MM') !== month) return
-        demoSigned[date.format('YYYY-MM-DD')] = { points, seq }
-      }
-      // 有积分
-      seedSigned(1, 1, 1)
-      seedSigned(2, 1, 2)
-      seedSigned(3, 5, 3)
-      seedSigned(5, 1, 4)
-      seedSigned(6, 1, 5)
-      seedSigned(7, 10, 6)
-      // 「已签」无积分展示
-      seedSigned(8, 0, 7)
-      seedSigned(10, 0, 8)
-      seedSigned(11, 0, 9)
-      seedSigned(12, 0, 10)
-    }
-    const cells = []
-    for (let i = 0; i < startWeekday; i++) {
-      cells.push({
-        day: 0,
-        date: '',
-        signed: false,
-        points: 0,
-        is_future: false,
-        in_month: false
-      })
-    }
-    for (let d = 1; d <= daysInMonth; d++) {
-      const date = start.date(d)
-      const key = date.format('YYYY-MM-DD')
-      const isFuture = date.isAfter(today, 'day')
-      const record = mockState.signedDates[key] || demoSigned[key]
-      const hasSignedRecord = !!(record && typeof record === 'object')
-      const isToday = date.isSame(today, 'day')
-      const signed = isToday
-        ? mockState.todaySigned || hasSignedRecord
-        : hasSignedRecord && !isFuture
-      cells.push({
-        day: d,
-        date: key,
-        signed: !!signed && !isFuture,
-        points: signed
-          ? record?.points != null
-            ? record.points
-            : WEEKDAY_POINTS[(date.day() + 6) % 7]
-          : 0,
-        is_future: isFuture,
-        in_month: true
-      })
-    }
-    return {
-      month,
-      list: cells.map((item) => pickBy(item, SIGN_MONTH_DAY_MAPPING))
-    }
-  }
-  const data = await req.get('/wxapp/member/sign/month', params)
+  const month = params.month || dayjs().format('YYYY-MM')
+  const data = unwrap(await req.get(`${BASE}/records`, { month }))
+  const list = buildMonthCells(data.month || month, data.days || [])
   return {
-    month: data?.month || month,
-    list: (data?.list || []).map((item) => pickBy(item, SIGN_MONTH_DAY_MAPPING))
+    month: data.month || month,
+    list: list.map((item) => pickBy(item, SIGN_MONTH_DAY_MAPPING))
   }
 }
 
 /** 领奖记录 */
 export async function getSignRewardRecords(params = {}) {
-  if (USE_SIGN_MOCK) {
-    await mockDelay()
-    return {
-      list: mockState.rewardRecords.map((item) => pickBy(item, SIGN_REWARD_RECORD_MAPPING))
-    }
-  }
-  const data = await req.get('/wxapp/member/sign/reward-records', params)
+  const data = unwrap(
+    await req.get(`${BASE}/rewards`, {
+      page: params.page || 1,
+      page_size: params.pageSize || params.page_size || 20,
+      activity_id: params.activityId || params.activity_id
+    })
+  )
   return {
-    list: (data?.list || []).map((item) => pickBy(item, SIGN_REWARD_RECORD_MAPPING))
+    list: (data.list || []).map((item) =>
+      pickBy(
+        {
+          id: item.id,
+          title: item.title,
+          created_at: formatSignTime(item.created),
+          rewards: (item.reward_items || []).map((r) => ({
+            type: mapRewardItemType(r.type),
+            name: r.title || (mapRewardItemType(r.type) === 'point' ? '积分' : '优惠券'),
+            amount: r.amount != null ? Number(r.amount) : 0
+          }))
+        },
+        SIGN_REWARD_RECORD_MAPPING
+      )
+    ),
+    totalCount: Number(data.total_count || 0),
+    page: Number(data.page || 1),
+    pageSize: Number(data.page_size || 20)
   }
 }
 
-/** 漏签提醒开关 */
+/** 漏签提醒状态 */
+export async function getSignReminder() {
+  const data = unwrap(await req.get(`${BASE}/reminder`))
+  return {
+    remindEnabled: !!data.enabled,
+    subscribeAccepted: !!data.subscribe_accepted
+  }
+}
+
+/**
+ * 漏签提醒开关
+ * @param {{ enabled: boolean, accepted?: boolean, templateId?: string }} payload
+ */
 export async function updateSignRemind(payload = {}) {
   const enabled = !!payload.enabled
-  if (USE_SIGN_MOCK) {
-    await mockDelay(200)
-    mockState.remindEnabled = enabled
-    return { remind_enabled: mockState.remindEnabled }
+  // 开启且已获订阅授权：先回写 subscribe-callback
+  if (enabled && payload.accepted) {
+    await req
+      .post(`${BASE}/reminder/subscribe-callback`, {
+        accepted: true,
+        template_id: payload.templateId || payload.template_id || '',
+        showError: false
+      })
+      .catch(() => null)
   }
-  const data = await req.post('/wxapp/member/sign/remind', payload)
-  return { remind_enabled: !!(data?.remind_enabled ?? enabled) }
+  try {
+    const data = unwrap(
+      await req.put(`${BASE}/reminder`, {
+        enabled,
+        showError: false
+      })
+    )
+    return {
+      remindEnabled: !!(data.enabled ?? enabled),
+      subscribeAccepted: !!data.subscribe_accepted
+    }
+  } catch (error) {
+    const message = pickApiErrorMessage(error) || '设置失败'
+    const err = new Error(message)
+    err.res = error?.res
+    err.code = error?.res?.statusCode
+    throw err
+  }
 }

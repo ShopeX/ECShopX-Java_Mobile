@@ -42,24 +42,6 @@
     line-height: 1.2;
   }
 
-  &__daily-sub {
-    display: flex;
-    align-items: baseline;
-    gap: 6px;
-    margin-top: 10px;
-  }
-
-  &__daily-sub-label {
-    font-size: 26px;
-    color: #666;
-  }
-
-  &__daily-sub-num {
-    font-size: 30px;
-    font-weight: 700;
-    color: #ddb63a;
-  }
-
   &__remind {
     display: flex;
     align-items: center;
@@ -116,6 +98,7 @@
     justify-content: center;
     gap: 6px;
     box-sizing: border-box;
+    padding: 16px 6px;
 
     &.is-signed {
       background: #f2f2f2;
@@ -141,6 +124,22 @@
     font-size: 20px;
     color: #ddb63a;
     font-weight: 500;
+  }
+
+  &__day-status {
+    font-size: 20px;
+    color: #999;
+  }
+
+  &__day-pending-icon {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+  }
+
+  &__day-pending-text {
+    font-size: 20px;
+    color: #ccc;
   }
 
   &__day-miss-icon {
@@ -170,7 +169,7 @@
   }
 
   &__action {
-    padding: 30px 134px;
+    padding: 18px 134px;
   }
 
   &__sign-btn {
@@ -180,6 +179,11 @@
     display: flex;
     align-items: center;
     justify-content: center;
+
+    &.is-signed {
+      background: rgba(0, 0, 0, 0.3);
+      opacity: 1;
+    }
 
     &.is-disabled {
       opacity: 0.45;
@@ -216,36 +220,48 @@
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
+    width: 100%;
+    padding: 6px 0;
+    box-sizing: border-box;
+  }
+
+  &__activity-titles {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
   }
 
   &__activity-name {
     font-size: 28px;
     font-weight: 500;
-    color: #222;
+    color: #1a1a1a;
   }
 
   &__activity-time {
-    margin-top: 16px;
     font-size: 24px;
     color: #999;
     display: block;
   }
 
-  &__activity-record {
+  &__activity-days {
     display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 12px 18px;
+    align-items: baseline;
+    gap: 6px;
+    flex-shrink: 0;
+    margin-left: 16px;
   }
 
-  &__activity-record-text {
-    font-size: 20px;
-    color: #999;
+  &__activity-days-label {
+    font-size: 26px;
+    color: #666;
   }
 
-  &__chevron {
-    font-size: 20px;
-    color: #999;
+  &__activity-days-num {
+    font-size: 30px;
+    font-weight: 700;
+    color: #ddb63a;
   }
 
   &__tier {
@@ -303,7 +319,7 @@
   &__tier-reward-amount {
     font-size: 22px;
     font-weight: 500;
-    color: #ddb63a;
+    color: #1a1a1a;
   }
 
   &__tier-btn {

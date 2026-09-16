@@ -15,8 +15,7 @@ import {
   getSignPage,
   submitSign,
   getSignMonthRecords,
-  updateSignRemind,
-  USE_SIGN_MOCK
+  updateSignRemind
 } from '@/api/sign'
 import './index.scss'
 
@@ -173,7 +172,7 @@ function SignInPage() {
         resolve(false)
         return
       }
-      // 模板 ID 联调时由后端下发；此处仅演示授权交互
+      // 模板 ID 由后端下发后再填入 tmplIds
       Taro.requestSubscribeMessage({
         tmplIds: [],
         complete: (res) => {
@@ -194,18 +193,15 @@ function SignInPage() {
         })
         showToast('已关闭签到提醒')
       } catch (e) {
-        showToast('设置失败')
+        showToast(e?.message || '设置失败')
       }
       return
     }
-    if (!isWeixin && !USE_SIGN_MOCK) {
+    if (!isWeixin) {
       showToast('当前环境不支持消息提醒')
       return
     }
-    let ok = true
-    if (isWeixin && !USE_SIGN_MOCK) {
-      ok = await requestSubscribe()
-    }
+    const ok = await requestSubscribe()
     if (!ok) {
       showToast('需要授权后才能开启提醒')
       setState((draft) => {
@@ -214,13 +210,13 @@ function SignInPage() {
       return
     }
     try {
-      await updateSignRemind({ enabled: true })
+      const res = await updateSignRemind({ enabled: true, accepted: true })
       setState((draft) => {
-        draft.remindEnabled = true
+        draft.remindEnabled = !!res.remindEnabled
       })
       showToast('已开启签到提醒')
     } catch (e) {
-      showToast('设置失败')
+      showToast(e?.message || '设置失败')
     }
   }
 
@@ -270,9 +266,40 @@ function SignInPage() {
     openMonthRecords(next)
   }
 
+  // 周历无任何日常积分 → 未设置日常签到奖励（Figma 1:1097）
+  const hasDailyReward = weekDays.some((d) => Number(d.points) > 0)
+
   const renderDayCard = (day) => {
     let body = null
-    if (day.signed) {
+    if (!hasDailyReward) {
+      if (day.signed) {
+        body = (
+          <>
+            <SpImage
+              className='sign-in__day-check'
+              src='sign-check_circle.png'
+              width={40}
+              height={40}
+              mode='aspectFit'
+            />
+            <Text className='sign-in__day-status'>已签</Text>
+          </>
+        )
+      } else {
+        body = (
+          <>
+            <SpImage
+              className='sign-in__day-pending-icon'
+              src='sign-nocheck_circle.png'
+              width={40}
+              height={40}
+              mode='aspectFit'
+            />
+            <Text className='sign-in__day-pending-text'>待签</Text>
+          </>
+        )
+      }
+    } else if (day.signed) {
       body = (
         <>
           <SpImage
@@ -283,7 +310,7 @@ function SignInPage() {
             mode='aspectFit'
           />
           <Text className='sign-in__day-points'>
-            {day.points > 0 ? `+${day.points}` : '已签'}
+            {day.display || (day.points > 0 ? `+${day.points}` : '已签')}
           </Text>
         </>
       )
@@ -316,21 +343,23 @@ function SignInPage() {
         </>
       )
     }
+    const showMissedStyle = hasDailyReward && day.missed
     return (
       <View key={day.date} className='sign-in__day'>
         <Text className='sign-in__day-weekday'>{day.weekday}</Text>
         <View
           className={classNames('sign-in__day-card', {
             'is-signed': day.signed,
-            'is-missed': day.missed,
-            'is-today': day.isToday && !day.signed
+            'is-missed': showMissedStyle,
+            'is-today': day.isToday && !day.signed,
+            'is-pending': !hasDailyReward && !day.signed
           })}
         >
           {body}
         </View>
         <Text
           className={classNames('sign-in__day-date', {
-            'is-secondary': !day.isToday && !day.signed && !day.missed
+            'is-secondary': !day.isToday && !day.signed && !showMissedStyle
           })}
         >
           {day.isToday ? '今日' : `${dayjs(day.date).date()}日`}
@@ -377,14 +406,7 @@ function SignInPage() {
       <View className='sign-in__body'>
         <View className='sign-in__card sign-in__card--daily'>
           <View className='sign-in__daily-hd'>
-            <View className='sign-in__daily-title-wrap'>
-              <Text className='sign-in__daily-title'>{monthTitle || '签到'}</Text>
-              <View className='sign-in__daily-sub'>
-                <Text className='sign-in__daily-sub-label'>已累计签到</Text>
-                <Text className='sign-in__daily-sub-num'>{cumulativeDays}</Text>
-                <Text className='sign-in__daily-sub-label'>天</Text>
-              </View>
-            </View>
+            <Text className='sign-in__daily-title'>{monthTitle || '签到'}</Text>
             <View
               className={classNames('sign-in__remind', { 'is-on': remindEnabled })}
               onClick={handleToggleRemind}
@@ -398,11 +420,14 @@ function SignInPage() {
 
           <View className='sign-in__action'>
             <View
-              className={classNames('sign-in__sign-btn', { 'is-disabled': signDisabled })}
+              className={classNames('sign-in__sign-btn', {
+                'is-signed': todaySigned,
+                'is-disabled': signDisabled && !todaySigned
+              })}
               onClick={handleSign}
             >
               <Text className='sign-in__sign-btn-text'>
-                {todaySigned ? '今日已签到' : submitting ? '签到中...' : '立即签到'}
+                {todaySigned ? '已签到' : submitting ? '签到中...' : '立即签到'}
               </Text>
             </View>
           </View>
@@ -410,6 +435,17 @@ function SignInPage() {
           <View className='sign-in__links'>
             <Text className='sign-in__link' onClick={() => openMonthRecords()}>
               签到记录
+            </Text>
+            <View className='sign-in__link-divider' />
+            <Text
+              className='sign-in__link'
+              onClick={() => {
+                Taro.navigateTo({
+                  url: '/subpages/member/sign-in/reward-records'
+                })
+              }}
+            >
+              领奖记录
             </Text>
             <View className='sign-in__link-divider' />
             <Text
@@ -429,21 +465,19 @@ function SignInPage() {
           <View className='sign-in__card sign-in__card--activity'>
             <View className='sign-in__activity-hd'>
               <View className='sign-in__activity-titles'>
-                <Text className='sign-in__activity-name'>{activity.name}</Text>
+                <Text className='sign-in__activity-name'>
+                  {activity.name || '累计签到奖励'}
+                </Text>
                 <Text className='sign-in__activity-time'>
-                  有效时间：{activity.startAt} - {activity.endAt}
+                  活动时间：{activity.startAt} - {activity.endAt}
                 </Text>
               </View>
-              <View
-                className='sign-in__activity-record'
-                onClick={() => {
-                  Taro.navigateTo({
-                    url: '/subpages/member/sign-in/reward-records'
-                  })
-                }}
-              >
-                <Text className='sign-in__activity-record-text'>领奖记录</Text>
-                <Text className='iconfont icon-arrowRight sign-in__chevron' />
+              <View className='sign-in__activity-days'>
+                <Text className='sign-in__activity-days-label'>已累计签到</Text>
+                <Text className='sign-in__activity-days-num'>
+                  {activity.cumulativeDays ?? cumulativeDays}
+                </Text>
+                <Text className='sign-in__activity-days-label'>天</Text>
               </View>
             </View>
 
@@ -663,7 +697,8 @@ function SignInPage() {
                               'is-points': cell.points > 0
                             })}
                           >
-                            {cell.points > 0 ? `+${cell.points}` : '已签'}
+                            {cell.display ||
+                              (cell.points > 0 ? `+${cell.points}` : '已签')}
                           </Text>
                         </View>
                       ) : null}
