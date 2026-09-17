@@ -650,7 +650,7 @@ function NearbyList() {
                       <Text className='action-text'>{$t('9e660622.e7880f')}</Text>
                     </View>
                   )}
-                  {item.show_salesperson !== '0' && (
+                  {item.show_salesperson !='0' && (
                     <View className='action-btn-item' onClick={(e) => handleConsult(e, item)}>
                       <Text className='iconfont icon-zixun action-icon'></Text>
                       <Text className='action-text'>{$t('9e660622.9405c8')}</Text>
