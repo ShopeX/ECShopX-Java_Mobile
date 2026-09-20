@@ -13,9 +13,22 @@ import { SG_ROUTER_PARAMS, SG_GUIDE_PARAMS } from '@/consts/localstorage'
 
 import MapLoader from '@/utils/lbs'
 import S from '@/spx'
-import { $t } from '@/i18n'
+import { $t, syncI18nLanguage, normalizeStorageLang } from '@/i18n'
 
 const { store } = configStore()
+
+/** 弹窗前确保 i18n 资源已加载，避免 $t 因 exists=false 返回空串导致空白弹窗 */
+async function ensureI18nReady() {
+  const lang =
+    normalizeStorageLang(Taro.getStorageSync('lang')) ||
+    normalizeStorageLang(process.env.APP_DEFAULT_LANGUAGE) ||
+    'zhcn'
+  try {
+    await syncI18nLanguage(lang)
+  } catch (e) {
+    // 加载失败时下方 showModal 使用中文兜底
+  }
+}
 
 // 经纬度逆地理缓存：同一位置在有效期内不重复请求 getAreaByJwd（避免每次返回首页都调接口）
 const LNGLAT_CACHE_TTL_MS = 5 * 60 * 1000 // 5 分钟
@@ -462,10 +475,14 @@ class EntryLaunch {
             }
             if (callback) callback(res)
           },
-          fail: () => {
+          fail: async () => {
+            // 曾拒绝定位时 authorize 会立刻 fail；冷启动/最近使用进入时语言包可能尚未就绪
+            await ensureI18nReady()
             Taro.showModal({
-              title: $t('61e2d21a.02d981'),
-              content: $t('9a2a8fcc.4681f3'),
+              title: $t('61e2d21a.02d981') || '提示',
+              content: $t('9a2a8fcc.4681f3') || '请打开定位权限',
+              cancelText: $t('61e2d21a.625fb2') || '取消',
+              confirmText: $t('61e2d21a.e83a25') || '确定',
               success: async (resConfirm) => {
                 if (resConfirm.confirm) {
                   await Taro.openSetting()
@@ -482,7 +499,10 @@ class EntryLaunch {
                     }
                     if (callback) callback(res)
                   } else {
-                    Taro.showToast({ title: $t('9a2a8fcc.e9a580'), icon: 'none' })
+                    Taro.showToast({
+                      title: $t('9a2a8fcc.e9a580') || '获取定位权限失败',
+                      icon: 'none'
+                    })
                   }
                 } else {
                   if (callback) callback(false)
