@@ -20,7 +20,7 @@ const ORDER_ITEM_TYPE_KEY = {
 }
 
 function SpGoodsCell(props) {
-  const { info, isPurchase = false, onSelectSku } = props
+  const { info, isPurchase = false, onSelectSku, onRemove } = props
   const { userInfo = {}, vipInfo = {} } = useSelector((state) => state.user)
   const { priceDisplayConfig = {} } = useSelector((state) => state.purchase)
   const { checkout_page = {} } = priceDisplayConfig
@@ -31,6 +31,11 @@ function SpGoodsCell(props) {
 
   const handleClick = () => {
     onSelectSku && onSelectSku(info)
+  }
+
+  const handleRemove = (e) => {
+    e?.stopPropagation?.()
+    onRemove && onRemove(info)
   }
 
   const { price, activityPrice, memberPrice, packagePrice, curItem, point, isPoint, cusActivity } =
@@ -84,6 +89,11 @@ function SpGoodsCell(props) {
             )}
             {info.itemName}
           </View>
+          {onRemove && (
+            <Text className='goods-remove' onClick={handleRemove}>
+              删除
+            </Text>
+          )}
         </View>
         <View className='item-bd'>
           <View>
