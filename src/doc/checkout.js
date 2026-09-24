@@ -33,7 +33,9 @@ export const CHECKOUT_GOODS_ITEM = {
   cusActivity: 'cusActivity',
   isPrescription: 'is_prescription',
   medicineData: 'medicine_data',
-  isMedicine: 'is_medicine'
+  isMedicine: 'is_medicine',
+  /** 结算页推荐加购商品（getFreightFee items[].is_recommend） */
+  isRecommend: 'is_recommend'
 }
 
 export const INVOICE_TITLE = {

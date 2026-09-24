@@ -121,10 +121,10 @@ function CartCheckout(props) {
   const giftStoreAdjustAckKeyRef = useRef('')
   /** 结算重算序号：切换配送/地址并发时只采纳最后一次结果，避免旧请求吞掉弹窗 */
   const calcSeqRef = useRef(0)
-  /** 当前结算行快照（供 checkout-add / 加购后 getFreightFee 带 items） */
+  /** 当前结算行快照（供推荐 match 等） */
   const checkoutLineItemsRef = useRef([])
-  const recommendAddedRef = useRef(false)
-  const pendingMainItemIdRef = useRef(0)
+  /** 结算页推荐加购：getFreightFee 传 recommend_item_id:[{item_id,num}] */
+  const recommendItemsRef = useRef([])
   const { userInfo, address } = useSelector((state) => state.user)
   const { colorPrimary, pointName } = useSelector((state) => state.sys)
   const { coupon, zitiAddress } = useSelector((state) => state.cart)
@@ -1060,7 +1060,10 @@ function CartCheckout(props) {
     setState((draft) => {
       draft.detailInfo = pickBy(items, doc.checkout.CHECKOUT_GOODS_ITEM)
       draft.totalInfo = total_info
-      draft.paramsInfo = { ...paramsInfo, ...cus_parmas }
+      // 不把推荐加购参数写入 paramsInfo，否则删除后仍会从残留字段带回
+      const { recommend_item_id: _omitRecommend, ...paramsToStore } = cus_parmas || {}
+      draft.paramsInfo = { ...paramsInfo, ...paramsToStore }
+      delete draft.paramsInfo.recommend_item_id
       draft.pointInfo = point_info
       draft.deliveryTimeList = deliveryTimeList
       draft.openStreet = openStreet
@@ -1100,6 +1103,7 @@ function CartCheckout(props) {
         draft.pointPayFirst = Number(point_rule?.point_pay_first) > 0
       }
     })
+    syncRecommendItemsFromOrder(items)
     checkoutLineItemsRef.current = toCheckoutLineItems(items)
     getRecommendList(items)
     // calc.current = false
@@ -1146,7 +1150,6 @@ function CartCheckout(props) {
       const body = {
         scene: 'checkout',
         main_item_ids: mainItemIds,
-        exclude_item_ids: mainItemIds,
         showError: false
       }
       if (distributor_id !== undefined) {
@@ -1163,14 +1166,32 @@ function CartCheckout(props) {
     }
   }
 
+  const upsertRecommendItem = (item_id, num = 1) => {
+    const id = Number(item_id)
+    const addNum = Number(num) || 1
+    if (!(id > 0) || addNum <= 0) return []
+    const list = [...recommendItemsRef.current]
+    const idx = list.findIndex((it) => Number(it.item_id) === id)
+    if (idx >= 0) {
+      list[idx] = { item_id: id, num: Number(list[idx].num) + addNum }
+    } else {
+      list.push({ item_id: id, num: addNum })
+    }
+    recommendItemsRef.current = list
+    return list
+  }
+
+  /** 接口已无 is_recommend 行时清空；有则保留本地请求用的 item_id（可能与展示 id 不同） */
+  const syncRecommendItemsFromOrder = (items = []) => {
+    const hasRecommend = (items || []).some((it) => it?.is_recommend)
+    if (!hasRecommend) {
+      recommendItemsRef.current = []
+    }
+  }
+
   const handleRecommendAdd = async (goods) => {
     const itemId = goods?.itemId || goods?.item_id || goods?.raw?.item_id
-    const mainId =
-      goods?.matchedMainItemId ||
-      goods?.raw?.matched_main_item_id ||
-      checkoutLineItemsRef.current?.[0]?.item_id
     if (!itemId) return
-    pendingMainItemIdRef.current = Number(mainId) || 0
     Taro.showLoading({ title: '' })
     try {
       const itemDetail = await api.item.detail(itemId, {
@@ -1189,46 +1210,48 @@ function CartCheckout(props) {
   }
 
   const handleCheckoutAddConfirm = async ({ item_id, num }) => {
-    const main_item_id = pendingMainItemIdRef.current
-    if (!main_item_id || !item_id) {
+    if (!item_id) {
       showToast($t('71426282.4d3179'))
       return
     }
-    const cus_parmas = await getParamsInfo()
-    const items =
-      checkoutLineItemsRef.current.length > 0
-        ? checkoutLineItemsRef.current
-        : toCheckoutLineItems(
-            detailInfo.map((it) => ({
-              item_id: it.itemId,
-              num: it.num,
-              activity_type: it.type
-            }))
-          )
-    Taro.showLoading({ title: '' })
-    try {
-      const orderRes = await api.goodsRecommend.checkoutAdd({
-        ...cus_parmas,
-        items,
-        main_item_id,
-        recommend_item_id: item_id,
-        num: num || 1,
-        showError: true
-      })
-      recommendAddedRef.current = true
-      if (Array.isArray(orderRes?.items)) {
-        checkoutLineItemsRef.current = toCheckoutLineItems(orderRes.items)
-      }
-      setState((draft) => {
-        draft.skuPanelOpen = false
-        draft.skuInfo = null
-      })
-      await calcOrder(orderRes)
-    } catch (e) {
-      showToast(e?.message || $t('71426282.4d3179'))
-    } finally {
-      Taro.hideLoading()
+    upsertRecommendItem(item_id, num || 1)
+    setState((draft) => {
+      draft.skuPanelOpen = false
+      draft.skuInfo = null
+    })
+    await calcOrder()
+  }
+
+  /**
+   * 删除只认结算列表里的 is_recommend 行：点哪条就去掉哪条。
+   * 不依赖「加购时写入的 item_id」（后端可能返回成另一个 SKU id）。
+   */
+  const handleRecommendItemRemove = async (itemIdOrInfo) => {
+    if (!itemIdOrInfo || (typeof itemIdOrInfo === 'object' && !itemIdOrInfo.isRecommend)) {
+      return
     }
+    const deletedId =
+      typeof itemIdOrInfo === 'object'
+        ? itemIdOrInfo.itemId || itemIdOrInfo.item_id
+        : itemIdOrInfo
+    if (!deletedId) return
+
+    const recommendLines = (detailInfo || []).filter((it) => it.isRecommend)
+    // 当前只有一条推荐加购：点删除 = 取消全部推荐加购（请求里不再带 recommend_item_id）
+    if (recommendLines.length <= 1) {
+      recommendItemsRef.current = []
+    } else {
+      // 多条：按剩余 is_recommend 行重建下次请求参数
+      recommendItemsRef.current = recommendLines
+        .filter(
+          (it) => Number(it.itemId) !== Number(deletedId) && String(it.itemId) !== String(deletedId)
+        )
+        .map((it) => ({
+          item_id: Number(it.itemId),
+          num: Number(it.num) || 1
+        }))
+    }
+    await calcOrder()
   }
 
   const getParamsInfo = async (submitLoading = false) => {
@@ -1336,9 +1359,13 @@ function CartCheckout(props) {
     // cus_parmas.pay_type = totalInfo.freight_type === 'point' ? 'point' : payType
     cus_parmas.pay_channel = payChannel
     // }
-    // 推荐加购后需带上结算行，避免后续 getFreightFee / 下单丢失临时加购商品
-    if (recommendAddedRef.current && checkoutLineItemsRef.current.length > 0) {
-      cus_parmas.items = checkoutLineItemsRef.current
+    // 结算页推荐加购：以 recommendItemsRef 为准，避免 paramsInfo 残留旧值
+    delete cus_parmas.recommend_item_id
+    if (recommendItemsRef.current.length > 0) {
+      cus_parmas.recommend_item_id = recommendItemsRef.current.map((it) => ({
+        item_id: it.item_id,
+        num: it.num
+      }))
     }
     return cus_parmas
   }
@@ -1461,7 +1488,10 @@ function CartCheckout(props) {
             <View className='goods-list'>
               {detailInfo.map((item, idx) => (
                 <View className='sp-order-item__wrap' key={idx}>
-                  <SpGoodsCell info={item} />
+                  <SpGoodsCell
+                    info={item}
+                    onRemove={item.isRecommend ? handleRecommendItemRemove : undefined}
+                  />
                 </View>
               ))}
             </View>

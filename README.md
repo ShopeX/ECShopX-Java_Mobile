@@ -6,10 +6,10 @@
 Node.js (current LTS) and npm are required to run the project. To be sure about the version compatibility you can enable Node's corepack.
 
 ### System Requirements
-Required Node.js Version: 16.16.0. If your current version differs, follow the steps below to switch
+Required Node.js Version: 20.19.0. If your current version differs, follow the steps below to switch
 ```
-nvm install 16.16.0 
-nvm use 16.16.0
+nvm install 20.19.0 
+nvm use 20.19.0
 ```
 
 ### Installation

@@ -225,7 +225,6 @@ function CartIndex() {
       const body = {
         scene: 'cart',
         main_item_ids: mainItemIds,
-        exclude_item_ids: mainItemIds,
         showError: false
       }
       if (distributor_id !== undefined) {

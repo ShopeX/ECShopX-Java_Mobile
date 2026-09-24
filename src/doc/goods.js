@@ -231,7 +231,11 @@ export const GOODS_INFO = {
   point: 'point',
   isPoint: 'is_point',
   price: ({ price }) => price / 100, // 销售价
-  activityPrice: ({ activity_price }) => activity_price / 100, // 秒杀价、内购价
+  // null/缺省不能当 0，否则 SpGoodsPrice 会展示活动价 ¥0.00
+  activityPrice: ({ activity_price }) =>
+    activity_price === undefined || activity_price === null || activity_price === ''
+      ? NaN
+      : Number(activity_price) / 100,
   marketPrice: ({ market_price }) => market_price / 100, // 原价
   memberPrice: ({ member_price }) => member_price / 100, // 当前会员等级价
   vipPrice: ({ vip_price }) => vip_price / 100, // vip价格
@@ -340,7 +344,10 @@ export const GOODS_INFO = {
       point: 'point',
       isPoint: () => is_point,
       price: ({ price }) => price / 100, // 销售价
-      activityPrice: ({ activity_price }) => activity_price / 100, // 秒杀价
+      activityPrice: ({ activity_price }) =>
+        activity_price === undefined || activity_price === null || activity_price === ''
+          ? NaN
+          : Number(activity_price) / 100,
       marketPrice: ({ market_price }) => market_price / 100, // 原价
       memberPrice: ({ member_price }) => member_price / 100, // 当前会员等级价
       vipPrice: ({ vip_price }) => vip_price / 100, // vip价格

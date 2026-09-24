@@ -34,7 +34,8 @@ import {
   entryLaunch,
   getDistributorId,
   VERSION_STANDARD,
-  isWeb
+  isWeb,
+  isWeixin
 } from '@/utils'
 import { useTranslation, $t, ti } from '@/i18n'
 import './index.scss'
@@ -56,7 +57,9 @@ const initialState = {
   skuText: '',
   num: 1,
   loading: false,
-  minNum: 1
+  minNum: 1,
+  subscribed: false,
+  subscribeLoading: false
 }
 const $instance = Taro.getCurrentInstance()
 
@@ -72,13 +75,22 @@ function SpSkuSelect(props) {
     salesman = false,
     onSubscribe = () => {}
   } = props
+  useTranslation()
   // const [state, setState] = useImmer(initialState)
   const [state, setState] = useAsyncCallback(initialState)
-  const { selection, disabledSet, curItem, skuText, num, loading, minNum } = state
+  const { selection, disabledSet, curItem, skuText, num, loading, minNum, subscribed, subscribeLoading } =
+    state
   const { customerLnformation } = useSelector((state) => state.cart)
   const { shopInfo } = useSelector((state) => state.shop)
   const dispatch = useDispatch()
   const skuDictRef = useRef({})
+
+  const resolveItemId = () => (curItem ? curItem.itemId : info?.itemId)
+  const resolveDtid = () => {
+    const { dtid } = $instance?.router?.params || {}
+    return dtid || getDistributorId() || info?.distributorId
+  }
+  const isNoStore = !!(info?.nospec ? info.store <= 0 : curItem && curItem.store <= 0)
 
   useEffect(() => {
     if (info && !info.nospec) {
@@ -93,12 +105,35 @@ function SpSkuSelect(props) {
       })
     }
 
-    // return () => {
-    //   setState((draft) => {
-    //     draft.num = 1
-    //   })
-    // }
+    setState((draft) => {
+      draft.subscribed = !!info?.subscribe
+    })
   }, [info])
+
+  // 小程序：无库存 SKU 查询是否已订阅到货通知
+  useEffect(() => {
+    if (!open || isWeb || !isNoStore) return
+    const itemId = resolveItemId()
+    if (!itemId) return
+    let cancelled = false
+    ;(async () => {
+      try {
+        const { user_id: isSub = false } = await api.user.isSubscribeGoods(itemId, {
+          distributor_id: resolveDtid()
+        })
+        if (!cancelled) {
+          setState((draft) => {
+            draft.subscribed = !!isSub
+          })
+        }
+      } catch (e) {
+        // ignore
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [open, isNoStore, curItem?.itemId, info?.itemId])
 
   // useEffect(() => {
   //   if (!open) {
@@ -443,47 +478,78 @@ function SpSkuSelect(props) {
   }
 
   const handleSubscribe = async () => {
-    const { dtid } = $instance?.router?.params
-    // console.log('onSubscribe:subscribe', subscribe)
-
     if (isWeb) {
       showToast($t('21544271.a793a0'))
       return
     }
+    if (subscribed || subscribeLoading) return
 
-    await api.user.subscribeGoods(curItem ? curItem.itemId : info.itemId, {
-      distributor_id: dtid
+    const itemId = resolveItemId()
+    if (!itemId) return
+
+    setState((draft) => {
+      draft.subscribeLoading = true
     })
-    const { template_id } = await api.user.newWxaMsgTmpl({
-      temp_name: 'yykweishop',
-      source_type: 'goods'
-    })
-    Taro.requestSubscribeMessage({
-      tmplIds: template_id,
-      success: () => {
-        showToast($t('21544271.9f91d7'))
-        onSubscribe()
-      },
-      fail: () => {
-        onSubscribe()
+    try {
+      await api.user.subscribeGoods(itemId, {
+        distributor_id: resolveDtid()
+      })
+      if (isWeixin) {
+        const { template_id } = await api.user.newWxaMsgTmpl({
+          temp_name: 'yykweishop',
+          source_type: 'goods'
+        })
+        await new Promise((resolve) => {
+          Taro.requestSubscribeMessage({
+            tmplIds: template_id,
+            complete: () => resolve()
+          })
+        })
       }
-    })
+      setState((draft) => {
+        draft.subscribed = true
+      })
+      showToast($t('21544271.9f91d7'))
+      onSubscribe()
+    } catch (e) {
+      showToast(e?.message || $t('21544271.a793a0'))
+    } finally {
+      setState((draft) => {
+        draft.subscribeLoading = false
+      })
+    }
   }
 
   const renderFooter = () => {
-    console.log('curItem111:', curItem)
     let btnTxt = ''
     Object.keys(BUY_TOOL_BTNS()).forEach((key) => {
       if (BUY_TOOL_BTNS()[key].key == type) {
         btnTxt = BUY_TOOL_BTNS()[key].title
       }
     })
-    const isNoStore = info.nospec ? info.store <= 0 : curItem?.store <= 0
     if (isNoStore) {
+      // H5：与 Web 一致，无货/暂无库存（不可订阅）
+      if (isWeb) {
+        return (
+          <AtButton circle type='primary' disabled>
+            {BUY_TOOL_BTNS().NO_STORE.title}
+          </AtButton>
+        )
+      }
+      // 小程序：到货通知，支持订阅消息
+      if (subscribed) {
+        return (
+          <AtButton circle type='primary' disabled>
+            {BUY_TOOL_BTNS().SUBSCRIBE.title}
+          </AtButton>
+        )
+      }
       return (
-        <AtButton circle type='primary' onClick={handleSubscribe}>
-          {BUY_TOOL_BTNS().NOTICE.title}
-        </AtButton>
+        <SpLogin onChange={handleSubscribe}>
+          <AtButton circle type='primary' loading={subscribeLoading}>
+            {BUY_TOOL_BTNS().NOTICE.title}
+          </AtButton>
+        </SpLogin>
       )
     } else if (type == 'picker') {
       return (
@@ -615,6 +681,9 @@ function SpSkuSelect(props) {
               {ti('a8427e1f.e203b0', [curItem ? curItem.store : info.store])}
             </View>
           )}
+          {isNoStore && isWeb ? (
+            <View className='goods-sku-nostore-tip'>{$t('a8427e1f.729a55ce')}</View>
+          ) : null}
         </View>
       </View>
       <View className='sku-list'>

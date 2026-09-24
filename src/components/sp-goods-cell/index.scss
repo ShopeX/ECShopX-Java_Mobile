@@ -9,8 +9,15 @@
   }
   .goods-item-bd {
     flex: 1;
+    min-width: 0;
+    .item-hd {
+      display: flex;
+      align-items: flex-start;
+      width: 100%;
+    }
     .goods-title {
-      max-width: 400px;
+      flex: 1;
+      min-width: 0;
       @include multi-ellipsis(2);
       .prescription-drug {
         font-size: 24px;
@@ -21,6 +28,14 @@
         line-height: 34px;
         margin-right: 8px;
       }
+    }
+    .goods-remove {
+      flex-shrink: 0;
+      margin-left: 16px;
+      font-size: 22px;
+      color: #3296fa;
+      line-height: 28px;
+      white-space: nowrap;
     }
     .item-bd {
       // height: 70px;
