@@ -31,10 +31,12 @@ function SpGoodsPrice(props) {
   }
   const { price, memberPrice, marketPrice, activityPrice, vipPrice, svipPrice, isPoint, point } =
     info
+  // activity_price 为 null 时映射成 0，不能当有效活动价
+  const hasActivityPrice = !isNaN(activityPrice) && Number(activityPrice) > 0
 
   return (
     <View className={classNames('sp-goods-price')}>
-      {!isNaN(activityPrice) && (
+      {hasActivityPrice && (
         <View className='activity'>
           {/* 内购 && !enPurActivityPrice 不展示,其他情况都展示 */}
           {!(isPurchase && !enPurActivityPrice) ? (
@@ -50,7 +52,7 @@ function SpGoodsPrice(props) {
           )}
         </View>
       )}
-      {isNaN(activityPrice) && (
+      {!hasActivityPrice && (
         <View>
           <View className='goods-price'>
             {info.memberPrice < info.price && enMemberPrice && isLogin && (

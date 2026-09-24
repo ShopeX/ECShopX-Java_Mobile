@@ -90,9 +90,9 @@ function SpGoodsCell(props) {
             {info.itemName}
           </View>
           {onRemove && (
-            <Text className='goods-remove' onClick={handleRemove}>
+            <View className='goods-remove' onClick={handleRemove}>
               删除
-            </Text>
+            </View>
           )}
         </View>
         <View className='item-bd'>

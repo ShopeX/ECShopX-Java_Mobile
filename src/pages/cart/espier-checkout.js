@@ -1103,6 +1103,7 @@ function CartCheckout(props) {
         draft.pointPayFirst = Number(point_rule?.point_pay_first) > 0
       }
     })
+    syncRecommendItemsFromOrder(items)
     checkoutLineItemsRef.current = toCheckoutLineItems(items)
     getRecommendList(items)
     // calc.current = false
@@ -1180,11 +1181,12 @@ function CartCheckout(props) {
     return list
   }
 
-  const removeRecommendItem = (item_id) => {
-    const id = Number(item_id)
-    const list = recommendItemsRef.current.filter((it) => Number(it.item_id) !== id)
-    recommendItemsRef.current = list
-    return list
+  /** 接口已无 is_recommend 行时清空；有则保留本地请求用的 item_id（可能与展示 id 不同） */
+  const syncRecommendItemsFromOrder = (items = []) => {
+    const hasRecommend = (items || []).some((it) => it?.is_recommend)
+    if (!hasRecommend) {
+      recommendItemsRef.current = []
+    }
   }
 
   const handleRecommendAdd = async (goods) => {
@@ -1220,8 +1222,35 @@ function CartCheckout(props) {
     await calcOrder()
   }
 
-  const handleRecommendItemRemove = async (itemId) => {
-    removeRecommendItem(itemId)
+  /**
+   * 删除只认结算列表里的 is_recommend 行：点哪条就去掉哪条。
+   * 不依赖「加购时写入的 item_id」（后端可能返回成另一个 SKU id）。
+   */
+  const handleRecommendItemRemove = async (itemIdOrInfo) => {
+    if (!itemIdOrInfo || (typeof itemIdOrInfo === 'object' && !itemIdOrInfo.isRecommend)) {
+      return
+    }
+    const deletedId =
+      typeof itemIdOrInfo === 'object'
+        ? itemIdOrInfo.itemId || itemIdOrInfo.item_id
+        : itemIdOrInfo
+    if (!deletedId) return
+
+    const recommendLines = (detailInfo || []).filter((it) => it.isRecommend)
+    // 当前只有一条推荐加购：点删除 = 取消全部推荐加购（请求里不再带 recommend_item_id）
+    if (recommendLines.length <= 1) {
+      recommendItemsRef.current = []
+    } else {
+      // 多条：按剩余 is_recommend 行重建下次请求参数
+      recommendItemsRef.current = recommendLines
+        .filter(
+          (it) => Number(it.itemId) !== Number(deletedId) && String(it.itemId) !== String(deletedId)
+        )
+        .map((it) => ({
+          item_id: Number(it.itemId),
+          num: Number(it.num) || 1
+        }))
+    }
     await calcOrder()
   }
 
@@ -1461,11 +1490,7 @@ function CartCheckout(props) {
                 <View className='sp-order-item__wrap' key={idx}>
                   <SpGoodsCell
                     info={item}
-                    onRemove={
-                      item.isRecommend
-                        ? () => handleRecommendItemRemove(item.itemId)
-                        : undefined
-                    }
+                    onRemove={item.isRecommend ? handleRecommendItemRemove : undefined}
                   />
                 </View>
               ))}
