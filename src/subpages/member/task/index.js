@@ -1,0 +1,120 @@
+/**
+ * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
+ * See LICENSE file for license details.
+ *
+ * 任务中心 — Figma 1300:13737（ECX-10436 / F-069）
+ */
+import React from 'react'
+import { useSelector } from 'react-redux'
+import { useImmer } from 'use-immer'
+import Taro, { useDidShow } from '@tarojs/taro'
+import { View, Text } from '@tarojs/components'
+import { SpPage, SpNote } from '@/components'
+import SpImage from '@/components/sp-image'
+import api from '@/api'
+import doc from '@/subpages/doc'
+import { pickBy, thousandthFormat } from '@/utils'
+import { useTranslation, $t } from '@/i18n'
+import TaskItem from './comps/task-item'
+import { goComplete } from './goComplete'
+import './index.scss'
+
+const initialState = {
+  point: 0,
+  list: [],
+  loading: true
+}
+
+function TaskCenter() {
+  useTranslation()
+  const [state, setState] = useImmer(initialState)
+  const { point, list, loading } = state
+  const userInfo = useSelector((s) => s.user?.userInfo)
+
+  useDidShow(() => {
+    fetchCenter()
+  })
+
+  const fetchCenter = async () => {
+    setState((draft) => {
+      draft.loading = true
+    })
+    try {
+      // mock 阶段可预览 UI；正式接口未登录时由后端/现有登录流处理
+      const res = await api.task.getCenterList()
+      const nList = pickBy(res.list || [], doc.task.TASK_ITEM)
+      setState((draft) => {
+        draft.point = thousandthFormat(res.point || 0)
+        draft.list = nList
+        draft.loading = false
+      })
+    } catch (e) {
+      setState((draft) => {
+        draft.loading = false
+        draft.list = []
+      })
+    }
+  }
+
+  const onGoRules = () => {
+    Taro.navigateTo({ url: '/subpages/member/task/rules' })
+  }
+
+  const onGoHistory = () => {
+    Taro.navigateTo({ url: '/subpages/member/task/history' })
+  }
+
+  const onAction = async (item) => {
+    if (!userInfo?.user_id) {
+      Taro.showToast({ title: $t('4062a4c0.8d2433'), icon: 'none' })
+      return
+    }
+    await goComplete(item)
+  }
+
+  return (
+    <SpPage className='page-task-center' title={$t('4062a4c0.2488f5')} scrollToTopBtn immersive>
+      <View className='page-task-center__hero'>
+        <SpImage src='menber_task_bg.png' mode='aspectFit' />
+   
+        <View className='page-task-center__rules-entry' onClick={onGoRules}>
+          <SpImage className='page-task-center__rules-icon' src='menber_task_info_outline.png' mode='aspectFit' />
+          <Text className='page-task-center__rules-txt'>{$t('4062a4c0.b0fae0')}</Text>
+        </View>
+      </View>
+
+      <View className='page-task-center__panel'>
+        <View className='page-task-center__point-bar'>
+          <View className='page-task-center__point-left'>
+            <Text className='page-task-center__point-label'>{$t('4062a4c0.89438c')}</Text>
+            <Text className='page-task-center__point-num'>{point}</Text>
+          </View>
+          <View className='page-task-center__history-entry' onClick={onGoHistory}>
+            <Text className='page-task-center__history-txt'>{$t('4062a4c0.d00ae1')}</Text>
+            <SpImage
+              className='page-task-center__history-chevron'
+              src='icon-chevron.svg'
+              mode='aspectFit'
+            />
+          </View>
+        </View>
+
+        {!loading && list.length === 0 && (
+          <View className='page-task-center__empty'>
+            <SpNote>{$t('4062a4c0.0589e5')}</SpNote>
+          </View>
+        )}
+
+        {list.map((item) => (
+          <TaskItem key={item.taskId} item={item} onAction={onAction} />
+        ))}
+      </View>
+    </SpPage>
+  )
+}
+
+TaskCenter.options = {
+  addGlobalClass: true
+}
+
+export default TaskCenter

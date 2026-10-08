@@ -1,0 +1,193 @@
+/**
+ * 任务列表项 — Figma 1300:13737（375 设计稿 ×2）
+ */
+.comp-task-item {
+  display: flex;
+  align-items: flex-start;
+  padding: 24px 24px 36px;
+  background: #fff;
+  box-sizing: border-box;
+
+  &__main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: flex-start;
+  }
+
+  &__icon-wrap {
+    flex-shrink: 0;
+    width: 84px;
+    height: 84px;
+    border-radius: 16px;
+    background: #f2f3f5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &__icon {
+    width: 60px;
+    height: 60px;
+  }
+
+  &__body {
+    flex: 1;
+    min-width: 0;
+    margin-left: 0;
+    padding-left: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  &__title {
+    padding: 0 36px 0 12px;
+    font-size: 28px;
+    font-weight: 500;
+    color: #222;
+    line-height: 42px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__rewards {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 20px;
+    padding: 0 24px 0 8px;
+    min-height: 40px;
+  }
+
+  &__reward {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  &__reward-icon {
+    width: 30px;
+    height: 30px;
+    flex-shrink: 0;
+  }
+
+  &__reward-txt {
+    font-size: 20px;
+    font-weight: 500;
+    color: #000;
+    line-height: 1.2;
+  }
+
+  &__desc-wrap {
+    padding: 0 24px 0 12px;
+  }
+
+  &__desc {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    font-size: 22px;
+    color: #999;
+    line-height: 1.45;
+    word-break: break-all;
+
+    &.is-expanded {
+      -webkit-line-clamp: 10;
+    }
+  }
+
+  &__expand {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    margin-top: 4px;
+  }
+
+  &__expand-txt {
+    font-size: 20px;
+    color: #999;
+    line-height: 24px;
+  }
+
+  &__expand-icon {
+    width: 24px;
+    height: 24px;
+    margin-left: 0;
+  }
+
+  &__action {
+    flex-shrink: 0;
+    width: 140px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    margin-left: 8px;
+  }
+
+  &__btn {
+    width: 100%;
+    min-height: 52px;
+    border-radius: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 8px;
+    box-sizing: border-box;
+    border: 2px solid transparent;
+
+    &.is-primary {
+      background: #1a1a1a;
+      border-color: rgba(0, 0, 0, 0.1);
+
+      .comp-task-item__btn-txt {
+        color: #fff;
+      }
+    }
+
+    &.is-done {
+      background: transparent;
+      border-color: #DBC03C;
+
+      .comp-task-item__btn-txt {
+        color: #DBC03C;
+      }
+    }
+
+    &.is-outline {
+      background: transparent;
+      border-color: #303133;
+
+      .comp-task-item__btn-txt {
+        color: #303133;
+      }
+    }
+
+    &.is-disabled {
+      background: transparent;
+      border-color: #E0E0E0;
+
+      .comp-task-item__btn-txt {
+        color: #999999;
+      }
+    }
+  }
+
+  &__btn-txt {
+    font-size: 24px;
+    font-weight: 500;
+    line-height: 1.2;
+    text-align: center;
+  }
+
+  &__sub {
+    width: 100%;
+    font-size: 20px;
+    color: #999;
+    text-align: center;
+    line-height: 1.2;
+  }
+}

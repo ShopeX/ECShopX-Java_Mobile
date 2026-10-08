@@ -117,7 +117,10 @@ const config = {
         'member-level', // 会员等级
         'user-info', // 个人信息
         'settings', // 设置
-        'qrcode' // 会员码
+        'qrcode', // 会员码
+        'task/index', // 任务中心
+        'task/history', // 历史参与任务
+        'task/rules' // 任务规则
       ]
     },
     {
