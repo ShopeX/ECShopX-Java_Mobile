@@ -1524,7 +1524,7 @@ function CartCheckout(props) {
 
   return (
     <SpPage ref={pageRef} className='page-cart-checkout' renderFooter={renderFooter()}>
-      <ScrollView className='scroll-view-container' scrollY>
+      <View className='scroll-view-container' >
         {isObjectsValue(shoppingGuideData) && (
           <View className='shopping-guide__header'>
             {ti('edc703ce.a4919d', [shoppingGuideData.store_name, shoppingGuideData.name])}
@@ -1765,7 +1765,7 @@ function CartCheckout(props) {
         {!totalInfo?.prescription_status == 0 && (
           <View className='cart-checkout__title'>{$t('71426282.417975')}</View>
         )}
-      </ScrollView>
+      </View>
       <CompPointUse
         isOpened={isPointOpenModal}
         info={pointInfo}
