@@ -82,7 +82,12 @@ function composePagePayload(calendar = {}, progress = {}, reminder = {}) {
     const date = day.date ? dayjs(day.date) : null
     const isToday = date ? date.isSame(today, 'day') : false
     const isPast = date ? date.isBefore(today, 'day') : false
-    const wd = Number(day.weekday || 0)
+    // 契约可不返回 weekday：用日期推算 1=Mon … 7=Sun
+    let wd = Number(day.weekday || 0)
+    if (!wd && date) {
+      const d = date.day()
+      wd = d === 0 ? 7 : d
+    }
     return {
       date: day.date,
       weekday: WEEKDAY_LABELS[wd - 1] || '',
@@ -102,7 +107,8 @@ function composePagePayload(calendar = {}, progress = {}, reminder = {}) {
     ),
     today_signed: !!calendar.signed_today,
     remind_enabled: !!reminder.enabled,
-    rules: '',
+    // calendar.rule_desc 为 HTML
+    rules: calendar.rule_desc || '',
     week_days: weekDays,
     activity: activityRaw
       ? {

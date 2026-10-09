@@ -686,10 +686,21 @@
 .sign-in-rules {
   padding: 24px 48px 80px;
 
+  &__scroll {
+    max-height: 70vh;
+  }
+
   &__text {
     font-size: 28px;
     color: #666;
     line-height: 44px;
     white-space: pre-wrap;
+  }
+
+  &__html {
+    font-size: 28px;
+    color: #666;
+    line-height: 44px;
+    word-break: break-word;
   }
 }

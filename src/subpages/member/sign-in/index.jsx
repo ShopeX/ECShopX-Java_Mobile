@@ -4,13 +4,14 @@
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Taro from '@tarojs/taro'
-import { View, Text } from '@tarojs/components'
+import { View, Text, RichText, ScrollView } from '@tarojs/components'
 import { useImmer } from 'use-immer'
 import dayjs from 'dayjs'
 import { SpPage, SpFloatLayout, SpLoading, SpNote, SpImage } from '@/components'
-import { classNames, isWeixin, showToast } from '@/utils'
+import { classNames, isWeixin, showToast, isWeb, isAlipay, htmlStringToNodeArray } from '@/utils'
 import useLogin from '@/hooks/useLogin'
 import S from '@/spx'
+import { useTranslation, $t, ti } from '@/i18n'
 import {
   getSignPage,
   submitSign,
@@ -19,12 +20,22 @@ import {
 } from '@/api/sign'
 import './index.scss'
 
-const TIER_STATUS_TEXT = {
-  granted: '已领取',
-  claimable: '领取奖励',
-  pending: '待领取',
-  failed: '发放失败'
+const TIER_STATUS_KEYS = {
+  granted: '2de1ca1c.0b7e8d',
+  claimable: '2de1ca1c.baa612',
+  pending: '2de1ca1c.26a7c3',
+  failed: '2de1ca1c.9338d5'
 }
+
+const WEEKDAY_KEYS = [
+  '2de1ca1c.7941da',
+  '2de1ca1c.2d8be2',
+  '2de1ca1c.e662ff',
+  '2de1ca1c.21716c',
+  '2de1ca1c.1fcc29',
+  '2de1ca1c.61b453',
+  '2de1ca1c.3edddd'
+]
 
 const initialState = {
   loading: true,
@@ -46,7 +57,16 @@ const initialState = {
   recordLoading: false
 }
 
+function formatWeekdayLabel(dateStr) {
+  if (!dateStr) return ''
+  // dayjs: 0=Sun … 6=Sat → 展示一～日（周一为首）
+  const d = dayjs(dateStr).day()
+  const idx = d === 0 ? 6 : d - 1
+  return $t(WEEKDAY_KEYS[idx])
+}
+
 function SignInPage() {
+  const { i18n } = useTranslation()
   const { isLogin } = useLogin({ autoLogin: false })
   const [state, setState] = useImmer(initialState)
   const submittingRef = useRef(false)
@@ -74,7 +94,7 @@ function SignInPage() {
   const ensureLogin = useCallback(() => {
     const token = S?.getAuthToken?.()
     if (token || isLogin) return true
-    showToast('请先登录')
+    showToast($t('2de1ca1c.8d2433'))
     const pages = Taro.getCurrentPages?.() || []
     const current = pages[pages.length - 1]
     const route = current?.route ? `/${current.route}` : '/subpages/member/sign-in/index'
@@ -115,12 +135,15 @@ function SignInPage() {
         draft.loading = false
         draft.pageReady = false
       })
-      showToast('加载失败，请重试')
+      showToast($t('2de1ca1c.b377b8'))
     }
   }, [setState])
 
   useEffect(() => {
-    Taro.setNavigationBarTitle({ title: '签到领福利' })
+    Taro.setNavigationBarTitle({ title: $t('2de1ca1c.f80c5e') })
+  }, [i18n.language])
+
+  useEffect(() => {
     if (!ensureLogin()) {
       setState((draft) => {
         draft.loading = false
@@ -160,7 +183,7 @@ function SignInPage() {
       setState((draft) => {
         draft.submitting = false
       })
-      showToast(e?.message || e?.errMsg || '签到失败，请重试')
+      showToast(e?.message || e?.errMsg || $t('2de1ca1c.2c2242'))
     } finally {
       submittingRef.current = false
     }
@@ -191,19 +214,19 @@ function SignInPage() {
         setState((draft) => {
           draft.remindEnabled = false
         })
-        showToast('已关闭签到提醒')
+        showToast($t('2de1ca1c.f3ac27'))
       } catch (e) {
-        showToast(e?.message || '设置失败')
+        showToast(e?.message || $t('2de1ca1c.9f9603'))
       }
       return
     }
     if (!isWeixin) {
-      showToast('当前环境不支持消息提醒')
+      showToast($t('2de1ca1c.624a34'))
       return
     }
     const ok = await requestSubscribe()
     if (!ok) {
-      showToast('需要授权后才能开启提醒')
+      showToast($t('2de1ca1c.088efa'))
       setState((draft) => {
         draft.remindEnabled = false
       })
@@ -214,9 +237,9 @@ function SignInPage() {
       setState((draft) => {
         draft.remindEnabled = !!res.remindEnabled
       })
-      showToast('已开启签到提醒')
+      showToast($t('2de1ca1c.12de04'))
     } catch (e) {
-      showToast(e?.message || '设置失败')
+      showToast(e?.message || $t('2de1ca1c.9f9603'))
     }
   }
 
@@ -238,7 +261,7 @@ function SignInPage() {
         draft.recordLoading = false
         draft.recordCells = []
       })
-      showToast('加载签到记录失败')
+      showToast($t('2de1ca1c.59a838'))
     }
   }
 
@@ -247,6 +270,18 @@ function SignInPage() {
     if (list.some((item) => item.type === 'coupon')) return true
     return list.length > 1
   }, [successRewards])
+
+  // calendar.rule_desc 为 HTML
+  const rulesHtml = useMemo(() => {
+    if (!rules) return ''
+    let html = String(rules)
+      .replace(/\s+style="[^"]*"/g, '')
+      .replace(/<img/g, '<img style="width:100%;height:auto;display: block;"')
+    if (isAlipay) {
+      html = htmlStringToNodeArray(html)
+    }
+    return html
+  }, [rules])
 
   const closeSuccessModal = () => {
     setState((draft) => {
@@ -282,7 +317,7 @@ function SignInPage() {
               height={40}
               mode='aspectFit'
             />
-            <Text className='sign-in__day-status'>已签</Text>
+            <Text className='sign-in__day-status'>{$t('2de1ca1c.c76659')}</Text>
           </>
         )
       } else {
@@ -295,7 +330,7 @@ function SignInPage() {
               height={40}
               mode='aspectFit'
             />
-            <Text className='sign-in__day-pending-text'>待签</Text>
+            <Text className='sign-in__day-pending-text'>{$t('2de1ca1c.df8169')}</Text>
           </>
         )
       }
@@ -310,7 +345,7 @@ function SignInPage() {
             mode='aspectFit'
           />
           <Text className='sign-in__day-points'>
-            {day.display || (day.points > 0 ? `+${day.points}` : '已签')}
+            {day.display || (day.points > 0 ? `+${day.points}` : $t('2de1ca1c.c76659'))}
           </Text>
         </>
       )
@@ -324,7 +359,7 @@ function SignInPage() {
             height={42}
             mode='aspectFit'
           />
-          <Text className='sign-in__day-miss-text'>漏签</Text>
+          <Text className='sign-in__day-miss-text'>{$t('2de1ca1c.62ef53')}</Text>
         </>
       )
     } else {
@@ -346,7 +381,7 @@ function SignInPage() {
     const showMissedStyle = hasDailyReward && day.missed
     return (
       <View key={day.date} className='sign-in__day'>
-        <Text className='sign-in__day-weekday'>{day.weekday}</Text>
+        <Text className='sign-in__day-weekday'>{formatWeekdayLabel(day.date)}</Text>
         <View
           className={classNames('sign-in__day-card', {
             'is-signed': day.signed,
@@ -362,7 +397,7 @@ function SignInPage() {
             'is-secondary': !day.isToday && !day.signed && !showMissedStyle
           })}
         >
-          {day.isToday ? '今日' : `${dayjs(day.date).date()}日`}
+          {day.isToday ? $t('2de1ca1c.296304') : ti('2de1ca1c.916985', [dayjs(day.date).date()])}
         </Text>
       </View>
     )
@@ -378,7 +413,7 @@ function SignInPage() {
 
   const renderTierStatus = (tier) => {
     const status = resolveTierStatus(tier)
-    const text = TIER_STATUS_TEXT[status] || '待领取'
+    const text = $t(TIER_STATUS_KEYS[status] || TIER_STATUS_KEYS.pending)
     return (
       <View
         className={classNames('sign-in__tier-btn', {
@@ -393,26 +428,28 @@ function SignInPage() {
     )
   }
 
+  const pageTitle = $t('2de1ca1c.f80c5e')
+
   if (loading && !pageReady) {
     return (
-      <SpPage className='sign-in' title='签到领福利'>
+      <SpPage className='sign-in' title={pageTitle}>
         <SpLoading />
       </SpPage>
     )
   }
 
   return (
-    <SpPage className='sign-in' title='签到领福利'>
+    <SpPage className='sign-in' title={pageTitle}>
       <View className='sign-in__body'>
         <View className='sign-in__card sign-in__card--daily'>
           <View className='sign-in__daily-hd'>
-            <Text className='sign-in__daily-title'>{monthTitle || '签到'}</Text>
+            <Text className='sign-in__daily-title'>{monthTitle || $t('2de1ca1c.c9da9b')}</Text>
             <View
               className={classNames('sign-in__remind', { 'is-on': remindEnabled })}
               onClick={handleToggleRemind}
             >
               <Text className='iconfont icon-notifications_active sign-in__remind-icon' />
-              <Text className='sign-in__remind-text'>签到提醒</Text>
+              <Text className='sign-in__remind-text'>{$t('2de1ca1c.57b79e')}</Text>
             </View>
           </View>
 
@@ -427,14 +464,18 @@ function SignInPage() {
               onClick={handleSign}
             >
               <Text className='sign-in__sign-btn-text'>
-                {todaySigned ? '已签到' : submitting ? '签到中...' : '立即签到'}
+                {todaySigned
+                  ? $t('2de1ca1c.e81a9d')
+                  : submitting
+                    ? $t('2de1ca1c.a34422')
+                    : $t('2de1ca1c.bb5cc4')}
               </Text>
             </View>
           </View>
 
           <View className='sign-in__links'>
             <Text className='sign-in__link' onClick={() => openMonthRecords()}>
-              签到记录
+              {$t('2de1ca1c.bc6ad0')}
             </Text>
             <View className='sign-in__link-divider' />
             <Text
@@ -445,7 +486,7 @@ function SignInPage() {
                 })
               }}
             >
-              领奖记录
+              {$t('2de1ca1c.a3985b')}
             </Text>
             <View className='sign-in__link-divider' />
             <Text
@@ -456,7 +497,7 @@ function SignInPage() {
                 })
               }
             >
-              签到玩法
+              {$t('2de1ca1c.b2f04f')}
             </Text>
           </View>
         </View>
@@ -466,18 +507,18 @@ function SignInPage() {
             <View className='sign-in__activity-hd'>
               <View className='sign-in__activity-titles'>
                 <Text className='sign-in__activity-name'>
-                  {activity.name || '累计签到奖励'}
+                  {activity.name || $t('2de1ca1c.db4c5c')}
                 </Text>
                 <Text className='sign-in__activity-time'>
-                  活动时间：{activity.startAt} - {activity.endAt}
+                  {ti('2de1ca1c.b5e0b5', [activity.startAt, activity.endAt])}
                 </Text>
               </View>
               <View className='sign-in__activity-days'>
-                <Text className='sign-in__activity-days-label'>已累计签到</Text>
+                <Text className='sign-in__activity-days-label'>{$t('2de1ca1c.a27142')}</Text>
                 <Text className='sign-in__activity-days-num'>
                   {activity.cumulativeDays ?? cumulativeDays}
                 </Text>
-                <Text className='sign-in__activity-days-label'>天</Text>
+                <Text className='sign-in__activity-days-label'>{$t('2de1ca1c.249aba')}</Text>
               </View>
             </View>
 
@@ -485,7 +526,9 @@ function SignInPage() {
               {(activity.tiers || []).map((tier) => (
                 <View key={tier.id} className='sign-in__tier'>
                   <View className='sign-in__tier-left'>
-                    <Text className='sign-in__tier-days'>满{tier.daysRequired}天</Text>
+                    <Text className='sign-in__tier-days'>
+                      {ti('2de1ca1c.4efb30', [tier.daysRequired])}
+                    </Text>
                     <View className='sign-in__tier-rewards'>
                       {(tier.rewards || []).map((reward, idx) => (
                         <View key={`${tier.id}-${idx}`} className='sign-in__tier-reward'>
@@ -500,7 +543,9 @@ function SignInPage() {
                           />
                           {reward.type === 'point' ? (
                             <>
-                              <Text className='sign-in__tier-reward-name'>积分</Text>
+                              <Text className='sign-in__tier-reward-name'>
+                                {$t('2de1ca1c.9f68a8')}
+                              </Text>
                               <Text className='sign-in__tier-reward-amount'>
                                 +{reward.amount}
                               </Text>
@@ -536,11 +581,11 @@ function SignInPage() {
                   onClick={closeSuccessModal}
                 />
                 <Text className='sign-in-modal__title'>
-                  {isMultiRewardModal ? '奖励已发放' : '签到成功'}
+                  {isMultiRewardModal ? $t('2de1ca1c.1a325c') : $t('2de1ca1c.fd44c8')}
                 </Text>
               </View>
               {!isMultiRewardModal ? (
-                <Text className='sign-in-modal__sub'>今日获得奖励</Text>
+                <Text className='sign-in-modal__sub'>{$t('2de1ca1c.ed9727')}</Text>
               ) : null}
               <View
                 className={classNames('sign-in-modal__rewards', {
@@ -557,7 +602,9 @@ function SignInPage() {
                       mode='aspectFit'
                     />
                     <View className='sign-in-modal__reward-point is-stack'>
-                      <Text className='sign-in-modal__reward-label is-lg'>积分</Text>
+                      <Text className='sign-in-modal__reward-label is-lg'>
+                        {$t('2de1ca1c.9f68a8')}
+                      </Text>
                       <Text className='sign-in-modal__reward-num is-lg'>+0</Text>
                     </View>
                   </View>
@@ -592,7 +639,7 @@ function SignInPage() {
                               'is-sm': isMultiRewardModal
                             })}
                           >
-                            积分
+                            {$t('2de1ca1c.9f68a8')}
                           </Text>
                           <Text
                             className={classNames('sign-in-modal__reward-num', {
@@ -620,7 +667,7 @@ function SignInPage() {
             {isMultiRewardModal ? (
               <View className='sign-in-modal__footer'>
                 <View className='sign-in-modal__btn' onClick={handleViewRewards}>
-                  <Text className='sign-in-modal__btn-text'>查看奖励</Text>
+                  <Text className='sign-in-modal__btn-text'>{$t('2de1ca1c.7c271c')}</Text>
                 </View>
               </View>
             ) : null}
@@ -630,7 +677,7 @@ function SignInPage() {
 
       <SpFloatLayout
         className='sign-in-record-layout'
-        title='签到记录'
+        title={$t('2de1ca1c.bc6ad0')}
         open={recordOpen}
         onClose={() =>
           setState((draft) => {
@@ -645,7 +692,9 @@ function SignInPage() {
               onClick={() => shiftRecordMonth(-1)}
             />
             <Text className='sign-in-record__month-text'>
-              {recordMonth ? `${Number(recordMonth.split('-')[1])}月` : ''}
+              {recordMonth
+                ? ti('2de1ca1c.f63e95', [Number(recordMonth.split('-')[1])])
+                : ''}
             </Text>
             <Text
               className='at-icon at-icon-chevron-right sign-in-record__nav'
@@ -653,16 +702,16 @@ function SignInPage() {
             />
           </View>
           <View className='sign-in-record__weekdays'>
-            {['一', '二', '三', '四', '五', '六', '日'].map((w) => (
-              <Text key={w} className='sign-in-record__weekday'>
-                {w}
+            {WEEKDAY_KEYS.map((key) => (
+              <Text key={key} className='sign-in-record__weekday'>
+                {$t(key)}
               </Text>
             ))}
           </View>
           {recordLoading ? (
             <SpLoading />
           ) : recordCells.length === 0 ? (
-            <SpNote title='暂无签到记录' />
+            <SpNote title={$t('2de1ca1c.216dc3')} />
           ) : (
             <View className='sign-in-record__grid'>
               {recordCells.map((cell, idx) => (
@@ -698,7 +747,7 @@ function SignInPage() {
                             })}
                           >
                             {cell.display ||
-                              (cell.points > 0 ? `+${cell.points}` : '已签')}
+                              (cell.points > 0 ? `+${cell.points}` : $t('2de1ca1c.c76659'))}
                           </Text>
                         </View>
                       ) : null}
@@ -712,7 +761,7 @@ function SignInPage() {
       </SpFloatLayout>
 
       <SpFloatLayout
-        title='签到玩法'
+        title={$t('2de1ca1c.b2f04f')}
         open={rulesOpen}
         onClose={() =>
           setState((draft) => {
@@ -721,7 +770,20 @@ function SignInPage() {
         }
       >
         <View className='sign-in-rules'>
-          <Text className='sign-in-rules__text'>{rules || '暂无说明'}</Text>
+          {!rules ? (
+            <Text className='sign-in-rules__text'>{$t('2de1ca1c.67a219')}</Text>
+          ) : (
+            <ScrollView className='sign-in-rules__scroll' scrollY>
+              {isWeb && (
+                <View
+                  className='sign-in-rules__html'
+                  dangerouslySetInnerHTML={{ __html: rulesHtml }}
+                />
+              )}
+              {!isWeb && !isAlipay && <mp-html content={rulesHtml} />}
+              {isAlipay && <RichText nodes={rulesHtml} />}
+            </ScrollView>
+          )}
         </View>
       </SpFloatLayout>
     </SpPage>
