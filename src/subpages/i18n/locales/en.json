@@ -4210,5 +4210,9 @@
   "2de1ca1c.61b453": "Sat",
   "2de1ca1c.3edddd": "Sun",
   "2de1ca1c.216dc3": "No check-in records",
-  "2de1ca1c.67a219": "No description"
+  "2de1ca1c.67a219": "No description",
+  "b15d8784.a3985b": "Reward records",
+  "b15d8784.58c56e": "No reward records",
+  "b15d8784.866b79": "Load failed",
+  "b15d8784.0123c2": "Points +${0}"
 }

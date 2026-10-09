@@ -2,7 +2,7 @@
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
  *
- * 设计稿宽度 375，开发按设计值 ×2 落地。
+ * 领奖记录 — Figma 290:13807（375 设计稿 ×2）
  */
 .sign-reward-records {
   min-height: 100vh;
@@ -13,6 +13,7 @@
     display: flex;
     flex-direction: column;
     gap: 20px;
+    box-sizing: border-box;
   }
 
   &__card {
@@ -21,7 +22,8 @@
     padding: 32px;
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
+    align-items: center;
+    box-sizing: border-box;
   }
 
   &__left {
@@ -36,11 +38,13 @@
     font-size: 28px;
     font-weight: 500;
     color: #616672;
+    line-height: 1.2;
   }
 
   &__time {
     font-size: 24px;
     color: #999;
+    line-height: 1.2;
   }
 
   &__right {
@@ -55,6 +59,7 @@
   &__reward {
     display: flex;
     align-items: center;
+    justify-content: flex-end;
     gap: 12px;
   }
 
@@ -66,11 +71,17 @@
 
   &__reward-text {
     font-size: 24px;
+    font-weight: 400;
     color: rgba(0, 0, 0, 0.9);
+    line-height: 1.2;
   }
 
   &__chevron {
-    font-size: 20px;
+    width: 6px;
+    height: 12px;
+    font-size: 12px;
+    line-height: 12px;
     color: #999;
+    flex-shrink: 0;
   }
 }

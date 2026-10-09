@@ -4,11 +4,11 @@
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Taro from '@tarojs/taro'
-import { View, Text, RichText, ScrollView } from '@tarojs/components'
+import { View, Text, ScrollView } from '@tarojs/components'
 import { useImmer } from 'use-immer'
 import dayjs from 'dayjs'
-import { SpPage, SpFloatLayout, SpLoading, SpNote, SpImage } from '@/components'
-import { classNames, isWeixin, showToast, isWeb, isAlipay, htmlStringToNodeArray } from '@/utils'
+import { SpPage, SpFloatLayout, SpLoading, SpNote, SpImage, SpHtml } from '@/components'
+import { classNames, isWeixin, showToast } from '@/utils'
 import useLogin from '@/hooks/useLogin'
 import S from '@/spx'
 import { useTranslation, $t, ti } from '@/i18n'
@@ -270,18 +270,6 @@ function SignInPage() {
     if (list.some((item) => item.type === 'coupon')) return true
     return list.length > 1
   }, [successRewards])
-
-  // calendar.rule_desc 为 HTML
-  const rulesHtml = useMemo(() => {
-    if (!rules) return ''
-    let html = String(rules)
-      .replace(/\s+style="[^"]*"/g, '')
-      .replace(/<img/g, '<img style="width:100%;height:auto;display: block;"')
-    if (isAlipay) {
-      html = htmlStringToNodeArray(html)
-    }
-    return html
-  }, [rules])
 
   const closeSuccessModal = () => {
     setState((draft) => {
@@ -774,14 +762,9 @@ function SignInPage() {
             <Text className='sign-in-rules__text'>{$t('2de1ca1c.67a219')}</Text>
           ) : (
             <ScrollView className='sign-in-rules__scroll' scrollY>
-              {isWeb && (
-                <View
-                  className='sign-in-rules__html'
-                  dangerouslySetInnerHTML={{ __html: rulesHtml }}
-                />
-              )}
-              {!isWeb && !isAlipay && <mp-html content={rulesHtml} />}
-              {isAlipay && <RichText nodes={rulesHtml} />}
+              <View className='sign-in-rules__html'>
+                <SpHtml content={rules} />
+              </View>
             </ScrollView>
           )}
         </View>
