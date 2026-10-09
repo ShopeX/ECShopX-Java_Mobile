@@ -11,6 +11,7 @@ import { SpPage, SpFloatLayout, SpLoading, SpNote, SpImage, SpHtml } from '@/com
 import { classNames, isWeixin, showToast } from '@/utils'
 import useLogin from '@/hooks/useLogin'
 import S from '@/spx'
+import api from '@/api'
 import { useTranslation, $t, ti } from '@/i18n'
 import {
   getSignPage,
@@ -19,6 +20,12 @@ import {
   updateSignRemind
 } from '@/api/sign'
 import './index.scss'
+
+function normalizeTmplIds(templateId) {
+  if (Array.isArray(templateId)) return templateId.filter(Boolean)
+  if (templateId) return [templateId]
+  return []
+}
 
 const TIER_STATUS_KEYS = {
   granted: '2de1ca1c.0b7e8d',
@@ -45,6 +52,8 @@ const initialState = {
   cumulativeDays: 0,
   todaySigned: false,
   remindEnabled: false,
+  subscribeAccepted: false,
+  remindTmplIds: [],
   rules: '',
   weekDays: [],
   activity: null,
@@ -79,6 +88,8 @@ function SignInPage() {
     cumulativeDays,
     todaySigned,
     remindEnabled,
+    subscribeAccepted,
+    remindTmplIds,
     rules,
     weekDays,
     activity,
@@ -112,17 +123,44 @@ function SignInPage() {
     return false
   }, [isLogin])
 
+  const loadRemindTemplate = useCallback(async () => {
+    if (!isWeixin) {
+      setState((draft) => {
+        draft.remindTmplIds = []
+      })
+      return []
+    }
+    try {
+      const { template_id } = await api.user.newWxaMsgTmpl({
+        temp_name: 'yykweishop',
+        source_type: 'member_signin'
+      })
+      const ids = normalizeTmplIds(template_id)
+      setState((draft) => {
+        draft.remindTmplIds = ids
+      })
+      return ids
+    } catch (e) {
+      console.error(e)
+      setState((draft) => {
+        draft.remindTmplIds = []
+      })
+      return []
+    }
+  }, [setState])
+
   const loadPage = useCallback(async () => {
     setState((draft) => {
       draft.loading = true
     })
     try {
-      const data = await getSignPage()
+      const [data] = await Promise.all([getSignPage(), loadRemindTemplate()])
       setState((draft) => {
         draft.monthTitle = data.monthTitle || ''
         draft.cumulativeDays = data.cumulativeDays || 0
         draft.todaySigned = !!data.todaySigned
         draft.remindEnabled = !!data.remindEnabled
+        draft.subscribeAccepted = !!data.subscribeAccepted
         draft.rules = data.rules || ''
         draft.weekDays = data.weekDays || []
         draft.activity = data.activity || null
@@ -137,7 +175,7 @@ function SignInPage() {
       })
       showToast($t('2de1ca1c.b377b8'))
     }
-  }, [setState])
+  }, [setState, loadRemindTemplate])
 
   useEffect(() => {
     Taro.setNavigationBarTitle({ title: $t('2de1ca1c.f80c5e') })
@@ -189,15 +227,14 @@ function SignInPage() {
     }
   }
 
-  const requestSubscribe = () =>
+  const requestSubscribe = (tmplIds) =>
     new Promise((resolve) => {
-      if (!isWeixin || !Taro.requestSubscribeMessage) {
+      if (!isWeixin || !Taro.requestSubscribeMessage || !tmplIds?.length) {
         resolve(false)
         return
       }
-      // 模板 ID 由后端下发后再填入 tmplIds
       Taro.requestSubscribeMessage({
-        tmplIds: [],
+        tmplIds,
         complete: (res) => {
           const accepted = Object.values(res || {}).some((v) => v === 'accept')
           resolve(accepted)
@@ -208,11 +245,15 @@ function SignInPage() {
 
   const handleToggleRemind = async () => {
     if (!ensureLogin()) return
+    if (!remindTmplIds.length) return
+
+    // 已开启 → 关闭开关
     if (remindEnabled) {
       try {
-        await updateSignRemind({ enabled: false })
+        const res = await updateSignRemind({ enabled: false })
         setState((draft) => {
-          draft.remindEnabled = false
+          draft.remindEnabled = !!res.remindEnabled
+          draft.subscribeAccepted = !!res.subscribeAccepted
         })
         showToast($t('2de1ca1c.f3ac27'))
       } catch (e) {
@@ -220,28 +261,41 @@ function SignInPage() {
       }
       return
     }
-    if (!isWeixin) {
-      showToast($t('2de1ca1c.624a34'))
-      return
+
+    // 未完成微信订阅授权 → 先拉起订阅面板，再回写 subscribe-callback
+    let tmplIds = remindTmplIds
+    let newlyAccepted = false
+    if (!subscribeAccepted) {
+      tmplIds = tmplIds.length ? tmplIds : await loadRemindTemplate()
+      if (!tmplIds.length) {
+        showToast($t('2de1ca1c.624a34'))
+        return
+      }
+      newlyAccepted = await requestSubscribe(tmplIds)
+      if (!newlyAccepted) {
+        showToast($t('2de1ca1c.088efa'))
+        return
+      }
     }
-    const ok = await requestSubscribe()
-    if (!ok) {
-      showToast($t('2de1ca1c.088efa'))
-      setState((draft) => {
-        draft.remindEnabled = false
-      })
-      return
-    }
+
     try {
-      const res = await updateSignRemind({ enabled: true, accepted: true })
+      const res = await updateSignRemind({
+        enabled: true,
+        accepted: newlyAccepted,
+        templateId: newlyAccepted ? tmplIds[0] || '' : ''
+      })
       setState((draft) => {
         draft.remindEnabled = !!res.remindEnabled
+        draft.subscribeAccepted = !!res.subscribeAccepted
       })
       showToast($t('2de1ca1c.12de04'))
     } catch (e) {
       showToast(e?.message || $t('2de1ca1c.9f9603'))
     }
   }
+
+  const showRemindBtn = isWeixin && remindTmplIds.length > 0
+  const remindBtnText = remindEnabled ? $t('2de1ca1c.d81371') : $t('2de1ca1c.57b79e')
 
   const openMonthRecords = async (month) => {
     const target = month || dayjs().format('YYYY-MM')
@@ -432,13 +486,15 @@ function SignInPage() {
         <View className='sign-in__card sign-in__card--daily'>
           <View className='sign-in__daily-hd'>
             <Text className='sign-in__daily-title'>{monthTitle || $t('2de1ca1c.c9da9b')}</Text>
-            <View
-              className={classNames('sign-in__remind', { 'is-on': remindEnabled })}
-              onClick={handleToggleRemind}
-            >
-              <Text className='iconfont icon-notifications_active sign-in__remind-icon' />
-              <Text className='sign-in__remind-text'>{$t('2de1ca1c.57b79e')}</Text>
-            </View>
+            {showRemindBtn && (
+              <View
+                className={classNames('sign-in__remind', { 'is-on': remindEnabled })}
+                onClick={handleToggleRemind}
+              >
+                <Text className='iconfont icon-notifications_active sign-in__remind-icon' />
+                <Text className='sign-in__remind-text'>{remindBtnText}</Text>
+              </View>
+            )}
           </View>
 
           <View className='sign-in__week'>{weekDays.map(renderDayCard)}</View>
@@ -494,9 +550,7 @@ function SignInPage() {
           <View className='sign-in__card sign-in__card--activity'>
             <View className='sign-in__activity-hd'>
               <View className='sign-in__activity-titles'>
-                <Text className='sign-in__activity-name'>
-                  {activity.name || $t('2de1ca1c.db4c5c')}
-                </Text>
+                <Text className='sign-in__activity-name'>{$t('2de1ca1c.db4c5c')}</Text>
                 <Text className='sign-in__activity-time'>
                   {ti('2de1ca1c.b5e0b5', [activity.startAt, activity.endAt])}
                 </Text>

@@ -82,6 +82,7 @@ export const SIGN_PAGE_MAPPING = {
   cumulativeDays: ({ cumulative_days }) => Number(cumulative_days || 0),
   todaySigned: 'today_signed',
   remindEnabled: 'remind_enabled',
+  subscribeAccepted: 'subscribe_accepted',
   rules: 'rules',
   weekDays: ({ week_days = [] }) =>
     (week_days || []).map((day) => ({
