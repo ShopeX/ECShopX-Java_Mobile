@@ -284,7 +284,7 @@ const memberSetting = {
     path: '/subpages/marketing/coupon-center'
   },
   my_coupon: {
-    title: '我的优惠券',
+    title: $t('ece5ca3e.8e76d7'),
     path: '/subpages/marketing/coupon'
   },
   my_collect: {
@@ -338,8 +338,12 @@ const memberSetting = {
     path: '/subpages/member/settings'
   },
   itemList: {
-    title: '商品列表',
+    title: $t('ece5ca3e.437974'),
     path: '/subpages/item/list'
+  },
+  memberSign: {
+    title: $t('ece5ca3e.6ac9a7'),
+    path: '/subpages/member/sign-in/index'
   }
 }
 
