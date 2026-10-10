@@ -352,14 +352,7 @@ function StoreIndex() {
         })
       }}
       renderFloat={
-        <View>
-          <SpFloatMenuItem
-            onClick={() => {
-              Taro.navigateTo({ url: '/subpages/member/index' })
-            }}
-          >
-            <Text className='iconfont icon-huiyuanzhongxin'></Text>
-          </SpFloatMenuItem>
+        <>
           <SpFloatMenuItem
             onClick={() => {
               Taro.navigateTo({ url: '/pages/cart/espier-index' })
@@ -367,7 +360,14 @@ function StoreIndex() {
           >
             <Text className='iconfont icon-gouwuche'></Text>
           </SpFloatMenuItem>
-        </View>
+          <SpFloatMenuItem
+            onClick={() => {
+              Taro.navigateTo({ url: '/subpages/member/index' })
+            }}
+          >
+            <Text className='iconfont icon-huiyuanzhongxin'></Text>
+          </SpFloatMenuItem>
+        </>
       }
       renderFooter={<CompTab popFrame={popFrame} />}
     >
