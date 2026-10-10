@@ -65,7 +65,9 @@ const initState = {
   /** 页面滚动超过 20px 时搜索条白底 */
   searchSolidBg: false,
   /** 自定义导航高度，沉浸式时用于顶起搜索/头图内容 */
-  navbarHeight: 0
+  navbarHeight: 0,
+  /** 切换到分类 Tab 时滚到吸顶区 */
+  scrollIntoView: ''
 }
 
 function StoreIndex() {
@@ -89,7 +91,8 @@ function StoreIndex() {
     selectType,
     open,
     searchSolidBg,
-    navbarHeight
+    navbarHeight,
+    scrollIntoView
   } = state
 
   const dispatch = useDispatch()
@@ -214,6 +217,8 @@ function StoreIndex() {
   const tabbarSwitching = (val) => {
     setState((draft) => {
       draft.productSwitching = val
+      // 进入分类：滚到 Tab 吸顶，避免头图占屏显得「下面很怪」
+      draft.scrollIntoView = val ? '' : 'store-index-tabs'
     })
   }
 
@@ -327,7 +332,18 @@ function StoreIndex() {
     filterWgts = wgts
     searchComp = null
   }
-  // const fixedTop = searchComp && searchComp.config.fixTop
+
+  // 分类双栏面板高度：视口 - 吸顶偏移 - Tab 条 - 底部结算栏
+  const { windowWidth, windowHeight } = Taro.getWindowInfo()
+  const px = (design) => (design * windowWidth) / 750
+  const searchBarH = searchComp ? px(120) : 0
+  const stickyTop = (navbarHeight || 0) + searchBarH
+  const tabsH = px(98)
+  const footerH = px(160)
+  const categoryPanelHeight = Math.max(
+    px(720),
+    Math.floor(windowHeight - stickyTop - tabsH - footerH)
+  )
 
   return (
     <SpPage
@@ -373,8 +389,10 @@ function StoreIndex() {
     >
       <ScrollView
         scrollY
-        className='search-scroll'
-        style={{ height: `100%` }}
+        className='page-store-index__scroll'
+        style={{ height: '100%' }}
+        scrollIntoView={scrollIntoView}
+        scrollWithAnimation
         onScroll={(e) => {
           const st = e?.detail?.scrollTop ?? 0
           setState((draft) => {
@@ -384,13 +402,12 @@ function StoreIndex() {
       >
         {searchComp && (
           <View
-            className={classNames('search', {
-              'search--solid': searchSolidBg
+            className={classNames('page-store-index__search', {
+              'page-store-index__search--solid': searchSolidBg
             })}
             style={navbarHeight ? { top: `${navbarHeight}px` } : undefined}
           >
             <SpSearch
-              // isFixTop={searchComp?.config?.fixTop}
               info={searchComp}
               onClick={() => {
                 Taro.navigateTo({
@@ -401,18 +418,18 @@ function StoreIndex() {
           </View>
         )}
 
-        <View className={searchComp ? 'header-block' : 'header-block-pad'}>
+        <View className='page-store-index__header'>
           {/* widthFix：按原图比例完整展示，高度随图片自适应 */}
           {storeInfo?.banner ? (
             <SpImage
-              className='store-banner'
+              className='page-store-index__banner'
               src={storeInfo.banner}
               mode='widthFix'
               width={750}
             />
           ) : (
             <View
-              className='store-banner store-banner--empty'
+              className='page-store-index__banner page-store-index__banner--empty'
               style={navbarHeight ? { paddingTop: `${navbarHeight}px` } : undefined}
             />
           )}
@@ -420,20 +437,25 @@ function StoreIndex() {
         </View>
 
         <View
-          className='switchs'
+          id='store-index-tabs'
+          className='page-store-index__tabs'
           style={{
-            background: `${pageData?.base?.pageBackgroundColor || '#fff'}`,
-            top: `0px`
+            background: pageData?.base?.pageBackgroundColor || '#fff',
+            top: `${stickyTop}px`
           }}
         >
           <Text
-            className={classNames(productSwitching ? 'switchings' : 'switching')}
+            className={classNames('page-store-index__tab', {
+              'page-store-index__tab--active': productSwitching
+            })}
             onClick={() => tabbarSwitching(true)}
           >
             {$t('17670153.db1c89')}
           </Text>
           <Text
-            className={classNames('switched', productSwitching ? 'switching' : 'switchings')}
+            className={classNames('page-store-index__tab', {
+              'page-store-index__tab--active': !productSwitching
+            })}
             onClick={() => tabbarSwitching(false)}
           >
             {$t('17670153.c3ece5')}
@@ -449,42 +471,48 @@ function StoreIndex() {
             <HomeWgts wgts={filterWgts} dtid={distributorId} />
           </WgtsContext.Provider>
         ) : (
-          <Categorys addPurchases={addPurchases} dtid={distributorId} />
+          <Categorys
+            addPurchases={addPurchases}
+            dtid={distributorId}
+            panelHeight={categoryPanelHeight}
+          />
         )}
-        <View className='sp-page__powered-by w-full'>
-          <SpPoweredBy />
-        </View>
-        {/* Sku选择器 */}
-        <MSpSkuSelect
-          open={skuPanelOpen}
-          type={selectType}
-          info={info}
-          onClose={() => {
-            setState((draft) => {
-              draft.skuPanelOpen = false
-            })
-          }}
-          onChange={(skuText, curItem) => {
-            setState((draft) => {
-              draft.skuText = skuText
-              draft.curItem = curItem
-            })
-          }}
-        />
-
-        {/* 购物车弹框 */}
-        <CompAddCart
-          open={open}
-          onMaskCloses={() =>
-            setState((draft) => {
-              draft.open = false
-            })
-          }
-          parameter={parameter}
-        />
-
-        <SpLogin ref={loginRef} />
+        {productSwitching && (
+          <View className='sp-page__powered-by w-full'>
+            <SpPoweredBy />
+          </View>
+        )}
       </ScrollView>
+
+      {/* 弹层必须放在 ScrollView 外，否则 fixed 会被滚动容器困住，压不过底部结算栏 */}
+      <MSpSkuSelect
+        open={skuPanelOpen}
+        type={selectType}
+        info={info}
+        onClose={() => {
+          setState((draft) => {
+            draft.skuPanelOpen = false
+          })
+        }}
+        onChange={(skuText, curItem) => {
+          setState((draft) => {
+            draft.skuText = skuText
+            draft.curItem = curItem
+          })
+        }}
+      />
+
+      <CompAddCart
+        open={open}
+        onMaskCloses={() =>
+          setState((draft) => {
+            draft.open = false
+          })
+        }
+        parameter={parameter}
+      />
+
+      <SpLogin ref={loginRef} />
     </SpPage>
   )
 }

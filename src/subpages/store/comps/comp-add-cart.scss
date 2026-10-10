@@ -78,50 +78,89 @@
     height: 484px;
 
     &-list {
-      padding: 0 16px;
+      padding: 24px 16px;
       display: flex;
-      height: 160px;
+      align-items: flex-start;
+      box-sizing: border-box;
+      min-height: 160px;
+      height: auto;
       border-bottom: 1px solid #e5e5e5;
+
       .sp-checkbox-new {
         margin-left: 4px;
+        margin-top: 40px;
+        flex-shrink: 0;
       }
+
       &-details {
         display: flex;
-        align-items: center;
+        align-items: flex-start;
+        flex: 1;
+        min-width: 0;
+        box-sizing: border-box;
+
         &-img {
           width: 110px;
           height: 110px;
           margin-right: 18px;
+          flex-shrink: 0;
+          border-radius: 8px;
+          overflow: hidden;
         }
+
         &-text {
-          width: 510px;
+          flex: 1;
+          min-width: 0;
           font-family: PingFangSC, PingFang SC;
+          box-sizing: border-box;
+
           .name {
             font-weight: 400;
             font-size: 28px;
             color: #222222;
-            line-height: 28px;
+            line-height: 40px;
+            /* 标题最多两行 */
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 2;
+            overflow: hidden;
+            word-break: break-all;
           }
+
+          /* 规格独立一行，最多两行省略，不再与价格同层叠压 */
+          .details-name-ml {
+            margin-top: 8px;
+            font-weight: 400;
+            font-size: 24px;
+            color: #999999;
+            line-height: 34px;
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 2;
+            overflow: hidden;
+            word-break: break-all;
+          }
+
           .addition-and-subtraction {
             display: flex;
+            align-items: center;
             justify-content: space-between;
             width: 100%;
-            .details-name {
-              &-ml {
-                height: 26px;
-                margin: 10px 0;
-                font-weight: 400;
-                font-size: 26px;
-                color: #999999;
-                line-height: 26px;
-              }
+            margin-top: 16px;
+            box-sizing: border-box;
+
+            .market-price {
+              flex: 1;
+              min-width: 0;
             }
+
             &-btn {
-              margin-top: 30px;
+              flex-shrink: 0;
               width: 126px;
               display: flex;
               justify-content: space-between;
-              align-items: flex-end;
+              align-items: center;
+
               .iconfont {
                 color: var(--color-primary);
                 font-size: 36px;
