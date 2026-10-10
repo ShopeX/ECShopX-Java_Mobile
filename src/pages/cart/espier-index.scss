@@ -40,6 +40,11 @@
       padding: 6px 12px;
     }
   }
+  .valid-cart-block {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
   .recommend-icon {
     width: auto;
     height: 50px;
