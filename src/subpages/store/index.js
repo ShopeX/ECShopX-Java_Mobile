@@ -368,21 +368,22 @@ function StoreIndex() {
         })
       }}
       renderFloat={
-        <>
+        <>      
+         <SpFloatMenuItem
+           onClick={() => {
+            Taro.navigateTo({ url: '/subpages/member/index' })
+          }}
+         >
+          <SpImage src='icon-huiyuanzhongxin.svg' mode='widthFix' width={40} height={40} className='member-icon' />
+        </SpFloatMenuItem>
           <SpFloatMenuItem
             onClick={() => {
               Taro.navigateTo({ url: '/pages/cart/espier-index' })
             }}
           >
-            <Text className='iconfont icon-gouwuche'></Text>
+            <SpImage src='icon-gouwuche.svg' mode='widthFix' width={40} height={40} className='cart-icon' />
           </SpFloatMenuItem>
-          <SpFloatMenuItem
-            onClick={() => {
-              Taro.navigateTo({ url: '/subpages/member/index' })
-            }}
-          >
-            <Text className='iconfont icon-huiyuanzhongxin'></Text>
-          </SpFloatMenuItem>
+
         </>
       }
       renderFooter={<CompTab popFrame={popFrame} />}
