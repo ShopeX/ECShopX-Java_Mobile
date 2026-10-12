@@ -25,7 +25,9 @@
 
   /* 门店内弹层保证盖过结算栏 */
   .sp-float-layout,
-  .sp-sku-select {
+  .sp-sku-select,
+  .page-store-index__float-layers .sp-float-layout,
+  .page-store-index__float-layers .sp-sku-select {
     z-index: 1200;
   }
 

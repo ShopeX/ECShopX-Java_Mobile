@@ -45,6 +45,7 @@ const initialState = {
   cumulativeDays: 0,
   todaySigned: false,
   remindEnabled: false,
+  subscribeAccepted: false,
   rules: '',
   weekDays: [],
   activity: null,
@@ -78,7 +79,7 @@ function SignInPage() {
     monthTitle,
     cumulativeDays,
     todaySigned,
-    remindEnabled,
+    subscribeAccepted,
     rules,
     weekDays,
     activity,
@@ -123,6 +124,7 @@ function SignInPage() {
         draft.cumulativeDays = data.cumulativeDays || 0
         draft.todaySigned = !!data.todaySigned
         draft.remindEnabled = !!data.remindEnabled
+        draft.subscribeAccepted = !!data.subscribeAccepted
         draft.rules = data.rules || ''
         draft.weekDays = data.weekDays || []
         draft.activity = data.activity || null
@@ -208,11 +210,13 @@ function SignInPage() {
 
   const handleToggleRemind = async () => {
     if (!ensureLogin()) return
-    if (remindEnabled) {
+    // 已订阅态以 subscribe_accepted 为准
+    if (subscribeAccepted) {
       try {
-        await updateSignRemind({ enabled: false })
+        const res = await updateSignRemind({ enabled: false })
         setState((draft) => {
-          draft.remindEnabled = false
+          draft.remindEnabled = !!res.remindEnabled
+          draft.subscribeAccepted = !!res.subscribeAccepted
         })
         showToast($t('2de1ca1c.f3ac27'))
       } catch (e) {
@@ -228,7 +232,7 @@ function SignInPage() {
     if (!ok) {
       showToast($t('2de1ca1c.088efa'))
       setState((draft) => {
-        draft.remindEnabled = false
+        draft.subscribeAccepted = false
       })
       return
     }
@@ -236,6 +240,7 @@ function SignInPage() {
       const res = await updateSignRemind({ enabled: true, accepted: true })
       setState((draft) => {
         draft.remindEnabled = !!res.remindEnabled
+        draft.subscribeAccepted = !!res.subscribeAccepted
       })
       showToast($t('2de1ca1c.12de04'))
     } catch (e) {
@@ -445,7 +450,7 @@ function SignInPage() {
           <View className='sign-in__daily-hd'>
             <Text className='sign-in__daily-title'>{monthTitle || $t('2de1ca1c.c9da9b')}</Text>
             <View
-              className={classNames('sign-in__remind', { 'is-on': remindEnabled })}
+              className={classNames('sign-in__remind', { 'is-on': subscribeAccepted })}
               onClick={handleToggleRemind}
             >
               <Text className='iconfont icon-notifications_active sign-in__remind-icon' />

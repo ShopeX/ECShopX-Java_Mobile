@@ -107,6 +107,7 @@ function composePagePayload(calendar = {}, progress = {}, reminder = {}) {
     ),
     today_signed: !!calendar.signed_today,
     remind_enabled: !!reminder.enabled,
+    subscribe_accepted: !!reminder.subscribe_accepted,
     // calendar.rule_desc 为 HTML
     rules: calendar.rule_desc || '',
     week_days: weekDays,
