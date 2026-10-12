@@ -75,28 +75,30 @@
     }
   }
   .tabulation {
-    height: 484px;
+    /* 单行商品 168，露出 3 个：168 * 3 +border 1 */
+    height: 507px;
 
     &-list {
       padding: 24px 16px;
       display: flex;
-      align-items: flex-start;
+      align-items: center;
       box-sizing: border-box;
-      min-height: 160px;
-      height: auto;
+      height: 168px;
+      overflow: hidden;
       border-bottom: 1px solid #e5e5e5;
 
       .sp-checkbox-new {
         margin-left: 4px;
-        margin-top: 40px;
+        margin-top: 0;
         flex-shrink: 0;
       }
 
       &-details {
         display: flex;
-        align-items: flex-start;
+        align-items: center;
         flex: 1;
         min-width: 0;
+        height: 100%;
         box-sizing: border-box;
 
         &-img {
@@ -111,6 +113,10 @@
         &-text {
           flex: 1;
           min-width: 0;
+          height: 110px;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
           font-family: PingFangSC, PingFang SC;
           box-sizing: border-box;
 
@@ -119,24 +125,23 @@
             font-size: 28px;
             color: #222222;
             line-height: 40px;
-            /* 标题最多两行 */
             display: -webkit-box;
             -webkit-box-orient: vertical;
-            -webkit-line-clamp: 2;
+            -webkit-line-clamp: 1;
             overflow: hidden;
             word-break: break-all;
           }
 
-          /* 规格独立一行，最多两行省略，不再与价格同层叠压 */
+          /* 规格单行省略，保证三行商品高度稳定 */
           .details-name-ml {
-            margin-top: 8px;
+            margin-top: 0;
             font-weight: 400;
             font-size: 24px;
             color: #999999;
             line-height: 34px;
             display: -webkit-box;
             -webkit-box-orient: vertical;
-            -webkit-line-clamp: 2;
+            -webkit-line-clamp: 1;
             overflow: hidden;
             word-break: break-all;
           }
@@ -146,7 +151,7 @@
             align-items: center;
             justify-content: space-between;
             width: 100%;
-            margin-top: 16px;
+            margin-top: 0;
             box-sizing: border-box;
 
             .market-price {
