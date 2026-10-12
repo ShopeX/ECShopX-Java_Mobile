@@ -8,6 +8,7 @@ import { View, Text } from '@tarojs/components'
 import { useImmer } from 'use-immer'
 import { SpPage, SpLoading, SpNote, SpImage } from '@/components'
 import { showToast } from '@/utils'
+import { useTranslation, $t, ti } from '@/i18n'
 import { getSignRewardRecords } from '@/api/sign'
 import './reward-records.scss'
 
@@ -17,11 +18,15 @@ const initialState = {
 }
 
 function SignRewardRecords() {
+  const { i18n } = useTranslation()
   const [state, setState] = useImmer(initialState)
   const { loading, list } = state
 
   useEffect(() => {
-    Taro.setNavigationBarTitle({ title: '领奖记录' })
+    Taro.setNavigationBarTitle({ title: $t('b15d8784.a3985b') })
+  }, [i18n.language])
+
+  useEffect(() => {
     ;(async () => {
       try {
         const res = await getSignRewardRecords()
@@ -33,17 +38,17 @@ function SignRewardRecords() {
         setState((draft) => {
           draft.loading = false
         })
-        showToast('加载失败')
+        showToast($t('b15d8784.866b79'))
       }
     })()
   }, [setState])
 
   return (
-    <SpPage className='sign-reward-records' title='领奖记录'>
+    <SpPage className='sign-reward-records' title={$t('b15d8784.a3985b')}>
       {loading ? (
         <SpLoading />
       ) : list.length === 0 ? (
-        <SpNote title='暂无领奖记录' />
+        <SpNote title={$t('b15d8784.58c56e')} />
       ) : (
         <View className='sign-reward-records__list'>
           {list.map((item) => (
@@ -64,10 +69,15 @@ function SignRewardRecords() {
                     />
                     <Text className='sign-reward-records__reward-text'>
                       {reward.type === 'point'
-                        ? `积分+${reward.amount}`
+                        ? ti('b15d8784.0123c2', [reward.amount])
                         : reward.name}
                     </Text>
-                    <Text className='iconfont icon-arrowRight sign-reward-records__chevron' />
+                    <SpImage
+                      className='sign-reward-records__icon'
+                      src='member_sign_in.svg'
+                      width={6}
+                      height={12}
+                    />
                   </View>
                 ))}
               </View>

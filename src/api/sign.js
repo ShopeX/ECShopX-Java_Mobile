@@ -52,19 +52,20 @@ function formatTs(ts) {
 }
 
 function mapTierFromApi(tier = {}) {
+  // 展示顺序对齐设计稿：优惠券在上、积分在下
   const rewards = []
-  if (tier.points_reward) {
-    rewards.push({
-      type: 'point',
-      name: '积分',
-      amount: Number(tier.points_reward)
-    })
-  }
   if (tier.coupon_summary && (tier.coupon_summary.title || tier.coupon_summary.id)) {
     rewards.push({
       type: 'coupon',
       name: tier.coupon_summary.title || '优惠券',
       amount: 0
+    })
+  }
+  if (tier.points_reward) {
+    rewards.push({
+      type: 'point',
+      name: '积分',
+      amount: Number(tier.points_reward)
     })
   }
   return {

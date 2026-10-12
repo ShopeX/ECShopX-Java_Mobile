@@ -21,10 +21,12 @@
     overflow: hidden;
 
     &--activity {
+      // Figma 1:998：padding 18×12、radius 12、gap 10（本页按 ×2）
       padding: 36px 24px;
       display: flex;
       flex-direction: column;
       gap: 20px;
+      box-sizing: border-box;
     }
   }
 
@@ -236,13 +238,15 @@
   &__activity-name {
     font-size: 28px;
     font-weight: 500;
-    color: #1a1a1a;
+    color: #000;
+    line-height: 1.2;
   }
 
   &__activity-time {
     font-size: 24px;
     color: #999;
     display: block;
+    line-height: 1.2;
   }
 
   &__activity-days {
@@ -251,17 +255,24 @@
     gap: 6px;
     flex-shrink: 0;
     margin-left: 16px;
+    padding-top: 2px;
   }
 
   &__activity-days-label {
     font-size: 26px;
     color: #666;
+    line-height: 1.2;
   }
 
   &__activity-days-num {
     font-size: 30px;
     font-weight: 700;
     color: #ddb63a;
+    line-height: 1.2;
+  }
+
+  &__tiers {
+    width: 100%;
   }
 
   &__tier {
@@ -270,6 +281,7 @@
     justify-content: space-between;
     padding: 20px 0;
     border-bottom: 2px solid #f2f2f2;
+    box-sizing: border-box;
 
     &:last-child {
       border-bottom: none;
@@ -290,6 +302,7 @@
     color: #666;
     width: 94px;
     flex-shrink: 0;
+    line-height: 1.2;
   }
 
   &__tier-rewards {
@@ -314,12 +327,14 @@
     font-size: 22px;
     font-weight: 500;
     color: #222;
+    line-height: 1.2;
   }
 
   &__tier-reward-amount {
     font-size: 22px;
     font-weight: 500;
-    color: #1a1a1a;
+    color: #000;
+    line-height: 1.2;
   }
 
   &__tier-btn {
@@ -352,6 +367,7 @@
     font-size: 22px;
     color: #fff;
     line-height: 48px;
+    white-space: nowrap;
   }
 }
 
