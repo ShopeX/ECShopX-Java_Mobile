@@ -40,11 +40,14 @@ function TaskCenter() {
       draft.loading = true
     })
     try {
-      // mock 阶段可预览 UI；正式接口未登录时由后端/现有登录流处理
-      const res = await api.task.getCenterList()
-      const nList = pickBy(res.list || [], doc.task.TASK_ITEM)
+      // 列表契约无积分字段，积分取会员资产
+      const [res, assets] = await Promise.all([
+        api.task.getCenterList(),
+        api.member.memberAssets().catch(() => null)
+      ])
+      const nList = pickBy(res?.list || [], doc.task.TASK_ITEM)
       setState((draft) => {
-        draft.point = thousandthFormat(res.point || 0)
+        draft.point = thousandthFormat(assets?.point ?? res?.point ?? 0)
         draft.list = nList
         draft.loading = false
       })

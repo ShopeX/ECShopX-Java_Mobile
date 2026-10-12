@@ -25,6 +25,7 @@ const STATUS_META = {
   [TASK_STATUS.todo]: { key: '04a63642.05b0a1', kind: 'primary' },
   [TASK_STATUS.pending_reward]: { key: '04a63642.e466af', kind: 'outline' },
   [TASK_STATUS.rewarded]: { key: '04a63642.23ac56', kind: 'done' },
+  [TASK_STATUS.reward_failed]: { key: '04a63642.274500', kind: 'disabled' },
   [TASK_STATUS.signed]: { key: '04a63642.e81a9d', kind: 'done' },
   [TASK_STATUS.not_achieved]: { key: '04a63642.274500', kind: 'disabled' }
 }
