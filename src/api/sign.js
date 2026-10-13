@@ -31,6 +31,7 @@ function unwrap(res) {
       inner.activity !== undefined ||
       inner.signed_today !== undefined ||
       inner.enabled !== undefined ||
+      inner.subscribed !== undefined ||
       inner.progress_count !== undefined ||
       inner.week_start ||
       inner.month
@@ -107,8 +108,8 @@ function composePagePayload(calendar = {}, progress = {}, reminder = {}) {
       progress.progress_count ?? activityRaw?.progress_count ?? 0
     ),
     today_signed: !!calendar.signed_today,
-    remind_enabled: !!reminder.enabled,
-    subscribe_accepted: !!reminder.subscribe_accepted,
+    // 按钮展示态：subscribed true →「已订阅」
+    subscribed: !!reminder.subscribed,
     // calendar.rule_desc 为 HTML
     rules: calendar.rule_desc || '',
     week_days: weekDays,
@@ -282,37 +283,25 @@ export async function getSignRewardRecords(params = {}) {
 export async function getSignReminder() {
   const data = unwrap(await req.get(`${BASE}/reminder`))
   return {
-    remindEnabled: !!data.enabled,
-    subscribeAccepted: !!data.subscribe_accepted
+    subscribed: !!data.subscribed
   }
 }
 
 /**
- * 漏签提醒开关
- * @param {{ enabled: boolean, accepted?: boolean, templateId?: string }} payload
+ * 订阅授权成功后回写（不支持取消订阅）
+ * @param {{ templateId?: string, template_id?: string }} payload
  */
-export async function updateSignRemind(payload = {}) {
-  const enabled = !!payload.enabled
-  // 开启且已获订阅授权：先回写 subscribe-callback
-  if (enabled && payload.accepted) {
-    await req
-      .post(`${BASE}/reminder/subscribe-callback`, {
+export async function subscribeSignRemind(payload = {}) {
+  try {
+    const data = unwrap(
+      await req.post(`${BASE}/reminder/subscribe-callback`, {
         accepted: true,
         template_id: payload.templateId || payload.template_id || '',
         showError: false
       })
-      .catch(() => null)
-  }
-  try {
-    const data = unwrap(
-      await req.put(`${BASE}/reminder`, {
-        enabled,
-        showError: false
-      })
     )
     return {
-      remindEnabled: !!(data.enabled ?? enabled),
-      subscribeAccepted: !!data.subscribe_accepted
+      subscribed: !!(data.subscribed ?? true)
     }
   } catch (error) {
     const message = pickApiErrorMessage(error) || '设置失败'

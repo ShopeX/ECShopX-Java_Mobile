@@ -17,7 +17,7 @@ import {
   getSignPage,
   submitSign,
   getSignMonthRecords,
-  updateSignRemind
+  subscribeSignRemind
 } from '@/api/sign'
 import './index.scss'
 
@@ -51,8 +51,7 @@ const initialState = {
   monthTitle: '',
   cumulativeDays: 0,
   todaySigned: false,
-  remindEnabled: false,
-  subscribeAccepted: false,
+  subscribed: false,
   remindTmplIds: [],
   rules: '',
   weekDays: [],
@@ -87,7 +86,7 @@ function SignInPage() {
     monthTitle,
     cumulativeDays,
     todaySigned,
-    subscribeAccepted,
+    subscribed,
     remindTmplIds,
     rules,
     weekDays,
@@ -158,8 +157,7 @@ function SignInPage() {
         draft.monthTitle = data.monthTitle || ''
         draft.cumulativeDays = data.cumulativeDays || 0
         draft.todaySigned = !!data.todaySigned
-        draft.remindEnabled = !!data.remindEnabled
-        draft.subscribeAccepted = !!data.subscribeAccepted
+        draft.subscribed = !!data.subscribed
         draft.rules = data.rules || ''
         draft.weekDays = data.weekDays || []
         draft.activity = data.activity || null
@@ -242,48 +240,27 @@ function SignInPage() {
       })
     })
 
-  const handleToggleRemind = async () => {
+  // 不支持取消订阅：已订阅仅展示；未订阅才弹授权并回写 subscribe-callback
+  const handleSubscribeRemind = async () => {
     if (!ensureLogin()) return
+    if (subscribed) return
     if (!remindTmplIds.length) return
 
-    // 已订阅态以 subscribe_accepted 为准 → 关闭
-    if (subscribeAccepted) {
-      try {
-        const res = await updateSignRemind({ enabled: false })
-        setState((draft) => {
-          draft.remindEnabled = !!res.remindEnabled
-          draft.subscribeAccepted = !!res.subscribeAccepted
-        })
-        showToast($t('2de1ca1c.f3ac27'))
-      } catch (e) {
-        showToast(e?.message || $t('2de1ca1c.9f9603'))
-      }
-      return
-    }
-
-    // 未完成微信订阅授权 → 先拉起订阅面板，再回写 subscribe-callback
-    let tmplIds = remindTmplIds
-    let newlyAccepted = false
-    tmplIds = tmplIds.length ? tmplIds : await loadRemindTemplate()
+    let tmplIds = remindTmplIds.length ? remindTmplIds : await loadRemindTemplate()
     if (!tmplIds.length) {
       showToast($t('2de1ca1c.624a34'))
       return
     }
-    newlyAccepted = await requestSubscribe(tmplIds)
-    if (!newlyAccepted) {
+    const accepted = await requestSubscribe(tmplIds)
+    if (!accepted) {
       showToast($t('2de1ca1c.088efa'))
       return
     }
 
     try {
-      const res = await updateSignRemind({
-        enabled: true,
-        accepted: newlyAccepted,
-        templateId: newlyAccepted ? tmplIds[0] || '' : ''
-      })
+      const res = await subscribeSignRemind({ templateId: tmplIds[0] || '' })
       setState((draft) => {
-        draft.remindEnabled = !!res.remindEnabled
-        draft.subscribeAccepted = !!res.subscribeAccepted
+        draft.subscribed = !!res.subscribed
       })
       showToast($t('2de1ca1c.12de04'))
     } catch (e) {
@@ -292,7 +269,7 @@ function SignInPage() {
   }
 
   const showRemindBtn = isWeixin && remindTmplIds.length > 0
-  const remindBtnText = subscribeAccepted ? $t('2de1ca1c.d81371') : $t('2de1ca1c.57b79e')
+  const remindBtnText = subscribed ? $t('2de1ca1c.d81371') : $t('2de1ca1c.57b79e')
 
   const openMonthRecords = async (month) => {
     const target = month || dayjs().format('YYYY-MM')
@@ -485,8 +462,8 @@ function SignInPage() {
             <Text className='sign-in__daily-title'>{monthTitle || $t('2de1ca1c.c9da9b')}</Text>
             {showRemindBtn && (
               <View
-                className={classNames('sign-in__remind', { 'is-on': subscribeAccepted })}
-                onClick={handleToggleRemind}
+                className={classNames('sign-in__remind', { 'is-on': subscribed })}
+                onClick={handleSubscribeRemind}
               >
                 <Text className='iconfont icon-notifications_active sign-in__remind-icon' />
                 <Text className='sign-in__remind-text'>{remindBtnText}</Text>
