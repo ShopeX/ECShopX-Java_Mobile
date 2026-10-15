@@ -2,12 +2,12 @@
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
  *
- * 历史参与任务 — Figma 1381:11753（ECX-10436 / F-069）
+ * 历史参与任务 — Figma 1381:11753（ECX-10434 participations）
  */
 import React, { useEffect } from 'react'
 import { useImmer } from 'use-immer'
 import Taro, { useDidShow } from '@tarojs/taro'
-import { View, Text, Image } from '@tarojs/components'
+import { View, Text } from '@tarojs/components'
 import { SpPage, SpNote, SpImage } from '@/components'
 import api from '@/api'
 import doc from '@/subpages/doc'
@@ -39,7 +39,7 @@ function TaskHistory() {
       draft.loading = true
     })
     try {
-      const res = await api.task.getHistoryList()
+      const res = await api.task.getHistoryList({ page_no: 1, page_size: 50 })
       setState((draft) => {
         draft.list = pickBy(res.list || [], doc.task.HISTORY_ITEM)
         draft.loading = false
@@ -47,6 +47,7 @@ function TaskHistory() {
     } catch (e) {
       setState((draft) => {
         draft.loading = false
+        draft.list = []
       })
     }
   }
@@ -61,8 +62,19 @@ function TaskHistory() {
       <View className='page-task-history__list'>
         {list.map((item) => {
           const pending = item.rewardStatus === TASK_STATUS.pending_reward
+          const failed = item.rewardStatus === TASK_STATUS.reward_failed
+          const statusText =
+            item.grantStatusText ||
+            (pending
+              ? $t('885f128b.e466af')
+              : failed
+                ? $t('885f128b.1a325c')
+                : $t('885f128b.1a325c'))
           return (
-            <View className='page-task-history__item' key={`${item.taskId}_${item.finishedAt}`}>
+            <View
+              className='page-task-history__item'
+              key={`${item.completionId || item.taskId}_${item.finishedAt}`}
+            >
               <View className='page-task-history__row-top'>
                 <Text className='page-task-history__name'>{item.name}</Text>
                 <Text className='page-task-history__time'>{item.finishedAt}</Text>
@@ -90,7 +102,7 @@ function TaskHistory() {
                     'is-pending': pending
                   })}
                 >
-                  {pending ? $t('885f128b.e466af') : $t('885f128b.1a325c')}
+                  {statusText}
                 </Text>
               </View>
             </View>

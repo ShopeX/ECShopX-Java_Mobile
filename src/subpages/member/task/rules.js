@@ -2,17 +2,19 @@
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
  *
- * 任务规则 — Figma 1300:13548（ECX-10436 / F-069）
+ * 任务规则 — Figma 1300:13548
+ * 无独立 API：展示列表项 task_rule（经页面参数 / 缓存传入）
  */
 import React, { useEffect } from 'react'
 import { useImmer } from 'use-immer'
-import Taro from '@tarojs/taro'
+import Taro, { getCurrentInstance } from '@tarojs/taro'
 import { View, ScrollView, RichText, Text } from '@tarojs/components'
 import { SpPage } from '@/components'
-import api from '@/api'
 import { isWeb, isAlipay, htmlStringToNodeArray } from '@/utils'
 import { useTranslation, $t } from '@/i18n'
 import './rules.scss'
+
+const TASK_RULE_STORAGE_KEY = 'MEMBER_TASK_RULE_HTML'
 
 const initialState = {
   content: ''
@@ -28,21 +30,19 @@ function TaskRules() {
   }, [i18n.language])
 
   useEffect(() => {
-    fetchRules()
-  }, [])
-
-  const fetchRules = async () => {
+    const params = getCurrentInstance()?.router?.params || {}
+    let html = ''
     try {
-      const res = await api.task.getRules()
-      setState((draft) => {
-        draft.content = res.content || ''
-      })
+      html = params.content
+        ? decodeURIComponent(params.content)
+        : Taro.getStorageSync(TASK_RULE_STORAGE_KEY) || ''
     } catch (e) {
-      setState((draft) => {
-        draft.content = ''
-      })
+      html = Taro.getStorageSync(TASK_RULE_STORAGE_KEY) || ''
     }
-  }
+    setState((draft) => {
+      draft.content = html || ''
+    })
+  }, [setState])
 
   let _content = (content || '')
     .replace(/\s+style="[^"]*"/g, '')
@@ -67,6 +67,8 @@ function TaskRules() {
     </SpPage>
   )
 }
+
+TaskRules.STORAGE_KEY = TASK_RULE_STORAGE_KEY
 
 TaskRules.options = {
   addGlobalClass: true

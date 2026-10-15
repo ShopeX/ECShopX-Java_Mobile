@@ -47,9 +47,11 @@ export async function goComplete(task) {
       return
     case 'invite_register':
     case 'share_order':
-      // 分享卡片配置挂在 task.share，具体分享面板由 10428 接入
-      if (jumpUrl) {
-        await safeNavigate(appendTaskId(jumpUrl, task.taskId))
+      // 分享三件套：share_cover / share_title / share_jump_page → task.share
+      if (jumpUrl || task.share?.path) {
+        await safeNavigate(
+          appendTaskId(jumpUrl || task.share.path, task.taskId)
+        )
         return
       }
       Taro.showToast({ title: task.share?.title || 'share', icon: 'none' })

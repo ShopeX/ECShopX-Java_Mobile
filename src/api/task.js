@@ -3,8 +3,11 @@
  * See LICENSE file for license details.
  *
  * 会员任务（VshopAPI · promotion/member-tasks）
- * - GET  /promotion/member-tasks                 任务列表 ECX-10434
- * - POST /promotion/member-tasks/browse-report   浏览上报 ECX-10467
+ * - GET  /promotion/member-tasks                   任务中心列表 ECX-10434
+ * - POST /promotion/member-tasks/browse-report     浏览上报 ECX-10467
+ * - GET  /promotion/member-tasks/participations    历史参与分页 ECX-10434
+ *
+ * 任务规则专页无独立 API，用列表项 task_rule。
  */
 import req from './req'
 
@@ -23,14 +26,15 @@ export function browseReport(params = {}) {
   return req.post(`${BASE}/browse-report`, params)
 }
 
-/** 历史参与任务（若后端暂未提供则请求失败由页面兜底） */
+/**
+ * 历史参与任务（分页）
+ * @param {{ page_no?: number, page_size?: number }} params
+ */
 export function getHistoryList(params = {}) {
-  return req.get(`${BASE}/history`, params)
-}
-
-/** 任务规则文案 */
-export function getRules(params = {}) {
-  return req.get(`${BASE}/rules`, params)
+  return req.get(`${BASE}/participations`, {
+    page_no: params.page_no ?? params.pageNo ?? 1,
+    page_size: params.page_size ?? params.pageSize ?? 20
+  })
 }
 
 /**

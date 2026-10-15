@@ -60,6 +60,16 @@ function TaskCenter() {
   }
 
   const onGoRules = () => {
+    // 规则无独立 API：汇总当前列表 task_rule 供规则页展示
+    const html = (list || [])
+      .map((item) => item.taskRule || item.desc || '')
+      .filter(Boolean)
+      .join('')
+    try {
+      Taro.setStorageSync('MEMBER_TASK_RULE_HTML', html)
+    } catch (e) {
+      // ignore
+    }
     Taro.navigateTo({ url: '/subpages/member/task/rules' })
   }
 
