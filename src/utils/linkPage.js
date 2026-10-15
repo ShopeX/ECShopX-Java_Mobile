@@ -186,7 +186,8 @@ function linkPage(data) {
         })
         return
       }
-      if (id === 'officialArtical') {
+      // 兼容后端下发的 official / officialArtical / officialArticle
+      if (id === 'official' || id === 'officialArtical' || id === 'officialArticle') {
         wx.openOfficialAccountArticle({
           url: officialArticleLink,
           success: (res) => {
