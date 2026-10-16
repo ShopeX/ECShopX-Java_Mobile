@@ -1,0 +1,722 @@
+/**
+ * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
+ * See LICENSE file for license details.
+ *
+ * 设计稿宽度 375，开发按设计值 ×2 落地。
+ */
+.sign-in {
+  min-height: 100vh;
+  background: #f5f5f5;
+
+  &__body {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  &__card {
+    background: #fff;
+    border-radius: 24px;
+    overflow: hidden;
+
+    &--activity {
+      // Figma 1:998：padding 18×12、radius 12、gap 10（本页按 ×2）
+      padding: 36px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      box-sizing: border-box;
+    }
+  }
+
+  &__daily-hd {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: 36px 24px 18px;
+  }
+
+  &__daily-title {
+    font-size: 34px;
+    font-weight: 700;
+    color: #222;
+    line-height: 1.2;
+  }
+
+  &__remind {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 12px;
+    border-radius: 8px;
+    background: #1a1a1a;
+
+    &.is-on {
+      background: #1a1a1a;
+      opacity: 0.85;
+    }
+  }
+
+  &__remind-icon {
+    font-size: 32px;
+    color: #fff;
+  }
+
+  &__remind-text {
+    font-size: 24px;
+    color: #fff;
+    font-weight: 500;
+  }
+
+  &__week {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    padding: 24px 26px;
+  }
+
+  &__day {
+    width: 86px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+
+  &__day-weekday {
+    font-size: 24px;
+    color: #999;
+  }
+
+  &__day-card {
+    width: 100%;
+    height: 102px;
+    border-radius: 8px;
+    border: 2px solid #999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    box-sizing: border-box;
+    padding: 16px 6px;
+
+    &.is-signed {
+      background: #f2f2f2;
+      border-color: transparent;
+    }
+
+    &.is-missed {
+      border-color: #e0e0e0;
+    }
+
+    &.is-today {
+      border-color: #999;
+    }
+  }
+
+  &__day-check {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+  }
+
+  &__day-points {
+    font-size: 20px;
+    color: #ddb63a;
+    font-weight: 500;
+  }
+
+  &__day-status {
+    font-size: 20px;
+    color: #999;
+  }
+
+  &__day-pending-icon {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+  }
+
+  &__day-pending-text {
+    font-size: 20px;
+    color: #ccc;
+  }
+
+  &__day-miss-icon {
+    width: 42px;
+    height: 42px;
+    flex-shrink: 0;
+  }
+
+  &__day-miss-text {
+    font-size: 20px;
+    color: #999;
+  }
+
+  &__day-coin {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+  }
+
+  &__day-date {
+    font-size: 20px;
+    color: #222;
+
+    &.is-secondary {
+      color: #616672;
+    }
+  }
+
+  &__action {
+    padding: 18px 134px;
+  }
+
+  &__sign-btn {
+    height: 88px;
+    border-radius: 999px;
+    background: #1a1a1a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &.is-signed {
+      background: rgba(0, 0, 0, 0.3);
+      opacity: 1;
+    }
+
+    &.is-disabled {
+      opacity: 0.45;
+    }
+  }
+
+  &__sign-btn-text {
+    font-size: 32px;
+    font-weight: 500;
+    color: #fff;
+    line-height: 48px;
+  }
+
+  &__links {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    padding: 12px 0 36px;
+  }
+
+  &__link {
+    font-size: 24px;
+    color: #999;
+  }
+
+  &__link-divider {
+    width: 2px;
+    height: 24px;
+    background: #e0e0e0;
+  }
+
+  &__activity-hd {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    width: 100%;
+    padding: 6px 0;
+    box-sizing: border-box;
+  }
+
+  &__activity-titles {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  &__activity-name {
+    font-size: 28px;
+    font-weight: 500;
+    color: #000;
+    line-height: 1.2;
+  }
+
+  &__activity-time {
+    font-size: 24px;
+    color: #999;
+    display: block;
+    line-height: 1.2;
+  }
+
+  &__activity-days {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    flex-shrink: 0;
+    margin-left: 16px;
+    padding-top: 2px;
+  }
+
+  &__activity-days-label {
+    font-size: 26px;
+    color: #666;
+    line-height: 1.2;
+  }
+
+  &__activity-days-num {
+    font-size: 30px;
+    font-weight: 700;
+    color: #ddb63a;
+    line-height: 1.2;
+  }
+
+  &__tiers {
+    width: 100%;
+  }
+
+  &__tier {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 0;
+    border-bottom: 2px solid #f2f2f2;
+    box-sizing: border-box;
+
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+
+  &__tier-left {
+    display: flex;
+    align-items: center;
+    gap: 30px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__tier-days {
+    font-size: 24px;
+    font-weight: 500;
+    color: #666;
+    width: 94px;
+    flex-shrink: 0;
+    line-height: 1.2;
+  }
+
+  &__tier-rewards {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  &__tier-reward {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  &__tier-reward-icon {
+    width: 30px;
+    height: 30px;
+    flex-shrink: 0;
+  }
+
+  &__tier-reward-name {
+    font-size: 22px;
+    font-weight: 500;
+    color: #222;
+    line-height: 1.2;
+  }
+
+  &__tier-reward-amount {
+    font-size: 22px;
+    font-weight: 500;
+    color: #000;
+    line-height: 1.2;
+  }
+
+  &__tier-btn {
+    flex-shrink: 0;
+    padding: 0 24px;
+    height: 48px;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #ddb63a;
+
+    &.is-granted,
+    &.is-failed {
+      background: #e0e0e0;
+    }
+
+    &.is-claimable {
+      background: #ddb63a;
+      opacity: 1;
+    }
+
+    &.is-pending {
+      background: #ddb63a;
+      opacity: 0.5;
+    }
+  }
+
+  &__tier-btn-text {
+    font-size: 22px;
+    color: #fff;
+    line-height: 48px;
+    white-space: nowrap;
+  }
+}
+
+.sign-in-modal {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &__mask {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+  }
+
+  &__panel {
+    position: relative;
+    width: 580px;
+    background: #fff;
+    border-radius: 36px;
+    z-index: 1;
+    overflow: hidden;
+
+    &.is-multi {
+      .sign-in-modal__content {
+        padding-bottom: 18px;
+      }
+    }
+  }
+
+  &__content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px 48px 48px;
+    box-sizing: border-box;
+  }
+
+  &__hd {
+    position: relative;
+    width: 580px;
+    height: 88px;
+    flex-shrink: 0;
+  }
+
+  &__close {
+    position: absolute;
+    right: 20px;
+    top: 0;
+    font-size: 40px;
+    color: #999;
+    z-index: 2;
+  }
+
+  &__title {
+    display: block;
+    text-align: center;
+    font-size: 34px;
+    font-weight: 500;
+    color: #222;
+    padding-top: 40px;
+  }
+
+  &__sub {
+    display: block;
+    width: 484px;
+    text-align: center;
+    font-size: 24px;
+    color: #999;
+    margin-top: 18px;
+  }
+
+  &__rewards {
+    margin-top: 18px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    align-items: center;
+
+    &.is-multi {
+      gap: 18px;
+    }
+  }
+
+  &__reward {
+    width: 484px;
+    box-sizing: border-box;
+    background: #f2f2f2;
+
+    &.is-stack {
+      padding: 24px 48px;
+      border-radius: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+
+    &.is-row {
+      padding: 24px 48px;
+      border-radius: 16px;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 12px;
+    }
+  }
+
+  &__reward-icon {
+    flex-shrink: 0;
+
+    &.is-lg {
+      width: 120px;
+      height: 120px;
+    }
+
+    &.is-sm {
+      width: 60px;
+      height: 60px;
+    }
+  }
+
+  &__reward-point {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    &.is-stack {
+      justify-content: center;
+    }
+  }
+
+  &__reward-label {
+    font-weight: 500;
+    color: #1a1a1a;
+
+    &.is-lg {
+      font-size: 30px;
+    }
+
+    &.is-sm {
+      font-size: 26px;
+    }
+  }
+
+  &__reward-num {
+    font-weight: 500;
+    color: #1a1a1a;
+
+    &.is-lg {
+      font-size: 42px;
+    }
+
+    &.is-sm {
+      font-size: 36px;
+    }
+  }
+
+  &__reward-name {
+    font-weight: 500;
+    color: #1a1a1a;
+
+    &.is-sm {
+      font-size: 26px;
+    }
+  }
+
+  &__footer {
+    display: flex;
+    justify-content: center;
+    padding: 0 112px 60px;
+  }
+
+  &__btn {
+    flex: 1;
+    height: 88px;
+    border-radius: 999px;
+    background: #1a1a1a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &__btn-text {
+    font-size: 28px;
+    font-weight: 500;
+    color: #fff;
+    line-height: 40px;
+  }
+}
+
+.sign-in-record-layout {
+  .sp-float-layout__body {
+    border-radius: 24px 24px 0 0;
+  }
+
+  .sp-float-layout-hd {
+    height: 88px;
+    line-height: 88px;
+    background: #fff;
+    border-bottom: 1px solid #e0e0e0;
+
+    .layout-title {
+      font-size: 34px;
+      font-weight: 500;
+      color: #222;
+    }
+  }
+
+  .icon-guanbi {
+    top: 26px;
+    right: 30px;
+    font-size: 36px;
+    color: #999;
+  }
+
+  .sp-float-layout-bd {
+    padding: 0;
+    max-height: 1160px;
+    background: #fff;
+  }
+}
+
+.sign-in-record {
+  padding: 0 0 48px;
+  background: #fff;
+
+  &__month {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 36px 60px 18px;
+  }
+
+  &__month-text {
+    font-size: 32px;
+    font-weight: 500;
+    color: #1a1a1a;
+  }
+
+  &__nav {
+    font-size: 48px;
+    color: #666;
+    width: 48px;
+    height: 48px;
+    line-height: 48px;
+    text-align: center;
+  }
+
+  &__weekdays {
+    display: flex;
+    padding: 24px 36px;
+  }
+
+  &__weekday {
+    flex: 1;
+    text-align: center;
+    font-size: 24px;
+    color: #999;
+  }
+
+  &__grid {
+    display: flex;
+    flex-wrap: wrap;
+    padding: 0 36px;
+  }
+
+  &__cell {
+    width: 14.28%;
+    height: 146px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 16px;
+    box-sizing: border-box;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+    gap: 6px;
+
+    &.is-signed {
+      background: #f2f2f2;
+    }
+
+    &.is-empty {
+      border-top-color: transparent;
+    }
+  }
+
+  &__day {
+    font-size: 28px;
+    font-weight: 500;
+    color: #222;
+    line-height: 1.2;
+
+    &.is-muted {
+      font-weight: 400;
+      color: #999;
+    }
+  }
+
+  &__signed {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+
+  &__check {
+    width: 40px;
+    height: 40px;
+  }
+
+  &__tip {
+    font-size: 22px;
+    font-weight: 500;
+    color: #999;
+    line-height: 24px;
+
+    &.is-points {
+      font-size: 24px;
+      color: #ddb63a;
+    }
+  }
+}
+
+.sign-in-rules {
+  padding: 24px 48px 80px;
+
+  &__scroll {
+    max-height: 70vh;
+  }
+
+  &__text {
+    font-size: 28px;
+    color: #666;
+    line-height: 44px;
+    white-space: pre-wrap;
+  }
+
+  &__html {
+    font-size: 28px;
+    color: #666;
+    line-height: 44px;
+    word-break: break-word;
+  }
+}

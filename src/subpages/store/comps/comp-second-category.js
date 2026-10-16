@@ -13,7 +13,13 @@ function compSecondCategory(props) {
 
   return (
     <View className='comp-second-category'>
-      <ScrollView className='comp-second-category-scroll' scrollY>
+      <ScrollView
+        className='comp-second-category-scroll'
+        scrollY
+        style={{ height: '100%' }}
+        enhanced
+        showScrollbar={false}
+      >
         {list.map((el, elidx) => (
           <View
             className={`comp-second-category-scroll-item ${elidx == cusIndex ? 'active' : ''}`}

@@ -2,15 +2,15 @@
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
  */
-import React, { useRef, useEffect } from 'react'
-import Taro, { getCurrentInstance } from '@tarojs/taro'
-import { View, Image } from '@tarojs/components'
+import React, { useEffect, useCallback } from 'react'
+import Taro from '@tarojs/taro'
+import { View, Image, ScrollView } from '@tarojs/components'
 import { useImmer } from 'use-immer'
-import { SpScrollView } from '@/components'
+import { SpNote, SpLoading } from '@/components'
 import api from '@/api'
 import doc from '@/doc'
-import { useDebounce, useNavigation } from '@/hooks'
-import { pickBy, classNames, styleNames, showToast } from '@/utils'
+import { useDebounce, usePage } from '@/hooks'
+import { pickBy, styleNames, showToast, classNames } from '@/utils'
 import { useTranslation, $t, ti, i18n } from '@/i18n'
 import CompFirstCategory from './comps/comp-first-category'
 import CompSecondCategory from './comps/comp-second-category'
@@ -35,10 +35,7 @@ const initialState = {
 
 function StoreItemList(props) {
   useTranslation()
-  const { setNavigationBarTitle } = useNavigation()
-  const $instance = getCurrentInstance() || {}
   const [state, setState] = useImmer(initialState)
-  // const { purchase_share_info = {} } = useSelector((state) => state.purchase)
   const {
     keywords,
     cusIndex,
@@ -54,23 +51,55 @@ function StoreItemList(props) {
     thirdList
   } = state
 
-  const { addPurchases = () => {}, dtid } = props
+  const { addPurchases = () => {}, dtid, panelHeight } = props
 
-  const goodsRef = useRef()
+  const fetch = useCallback(
+    async ({ pageIndex, pageSize }) => {
+      const params = {
+        page: pageIndex,
+        pageSize,
+        keywords: keywords,
+        approve_status: 'onsale,only_show',
+        item_type: 'normal',
+        is_point: 'false',
+        distributor_id: dtid,
+        goodsSort,
+        v_store: cusIndex
+      }
+      if (is_main_category === true) {
+        params.main_category = cat_id
+      } else {
+        params.category_id = cat_id
+      }
+
+      const { list: _list, total_count } = await api.item.search(params)
+      const n_list = pickBy(_list, doc.goods.ITEM_LIST_GOODS)
+
+      setState((draft) => {
+        draft.allList = pageIndex == 1 ? n_list : [...draft.allList, ...n_list]
+      })
+
+      return { total: total_count }
+    },
+    [keywords, dtid, goodsSort, cusIndex, is_main_category, cat_id]
+  )
+
+  const { page, getTotal, nextPage, resetPage } = usePage({
+    fetch,
+    auto: false,
+    pageSize: 10
+  })
+
   useEffect(() => {
     getCategoryList()
   }, [])
 
   useEffect(() => {
-    const syncTitle = () => setNavigationBarTitle($t('4e79525a.c3ece5'))
-    syncTitle()
-    i18n.on('languageChanged', syncTitle)
-    return () => i18n.off('languageChanged', syncTitle)
-  }, [setNavigationBarTitle])
-
-  useEffect(() => {
     if (cat_id) {
-      goodsRef?.current.reset()
+      setState((draft) => {
+        draft.allList = []
+      })
+      resetPage()
       changeList()
     }
   }, [cat_id, i18n.language])
@@ -105,37 +134,6 @@ function StoreItemList(props) {
       draft.cat_id = currentList[0].id
       draft.is_main_category = currentList[0]?.is_main_category === true
     })
-  }
-
-  const fetch = async ({ pageIndex, pageSize }) => {
-    const { dis_id = null } = $instance?.router?.params
-    const params = {
-      page: pageIndex,
-      pageSize,
-      keywords: keywords,
-      approve_status: 'onsale,only_show',
-      item_type: 'normal',
-      is_point: 'false',
-      distributor_id: dtid,
-      // distributor_id: dis_id || Taro.getStorageSync('distributor_id'),
-      goodsSort,
-      v_store: cusIndex
-    }
-    if (is_main_category === true) {
-      params.main_category = cat_id
-    } else {
-      params.category_id = cat_id
-    }
-
-    const { list: _list, total_count } = await api.item.search(params)
-
-    let n_list = pickBy(_list, doc.goods.ITEM_LIST_GOODS)
-
-    setState((draft) => {
-      draft.allList = pageIndex == 1 ? n_list : [...allList, ...n_list]
-    })
-
-    return { total: total_count }
   }
 
   const handleClickStore = (item) => {
@@ -193,12 +191,10 @@ function StoreItemList(props) {
     })
   }, 200)
 
-  const onSelectClick = () => {
-    setState((draft) => {
-      draft.cusIndex = cusIndex === 1 ? 0 : 1
-      draft.allList = []
-    })
-    goodsRef?.current.reset()
+  const onScrollToLower = () => {
+    if (page.hasMore && !page.loading) {
+      nextPage()
+    }
   }
 
   const shoppingCart = async (item, e) => {
@@ -256,32 +252,30 @@ function StoreItemList(props) {
     })
   }
 
+  const panelStyle = panelHeight
+    ? styleNames({ height: `${panelHeight}px` })
+    : styleNames({ height: '70vh' })
+
   return (
-    <View scrollToTopBtn className={classNames('page-category-item-list')}>
-      <View className='page-category-item-list-head'>
-        <View className='category-search'></View>
+    <View className='store-category' style={panelStyle}>
+      <View className='store-category__nav'>
         <CompFirstCategory
           cusIndex={categoryFirstIndex}
           list={seriesList}
           onClick={onFirstCategoryClick}
         />
       </View>
-      <View className='page-category-item-list-container'>
-        <View className='left-container'>
+      <View className='store-category__body'>
+        <View catchMove className='store-category__side'>
           <CompSecondCategory
             cusIndex={categorySecondIndex}
             list={secondList}
             onClick={onSecondCategoryClick}
           />
         </View>
-        <View
-          className='right-container'
-          style={styleNames({
-            paddingTop: thirdList.length > 0 && '40px'
-          })}
-        >
+        <View className='store-category__main'>
           {thirdList.length > 0 && (
-            <View className='right-container-fixed'>
+            <View className='store-category__filters'>
               <CompThirdCategory
                 cusIndex={categoryThirdIndex}
                 list={thirdList}
@@ -290,16 +284,24 @@ function StoreItemList(props) {
               />
             </View>
           )}
-          <View className='goods-list goods-list__type-list'>
-            <SpScrollView
-              className='page-category-item-list-scroll'
+          {/* catchMove：阻止外层门店 ScrollView 抢手势，保证右侧可滑 */}
+          <View catchMove className='store-category__goods goods-list__type-list'>
+            <ScrollView
+              className='store-category__scroll'
               scrollY
-              ref={goodsRef}
-              fetch={fetch}
-              auto={false}
+              enhanced
+              showScrollbar={false}
+              lowerThreshold={80}
+              onScrollToLower={onScrollToLower}
+              style={{ height: '100%' }}
             >
               {allList.map((item, index) => (
-                <View className='goods-item-wrap' key={`goods-item-l__${index}`}>
+                <View
+                  className={classNames('store-category__goods-item', {
+                    'store-category__goods-item--has-add': item.activity_store > 0
+                  })}
+                  key={`goods-item-l__${index}`}
+                >
                   <GoodsItem
                     onStoreClick={handleClickStore}
                     onAddToCart={addPurchase}
@@ -307,17 +309,28 @@ function StoreItemList(props) {
                     info={item}
                   />
                   {item.activity_store > 0 && (
-                    <View className='goods-add' onClick={shoppingCart.bind(this, item)}>
+                    <View
+                      className='store-category__add'
+                      onClick={(e) => shoppingCart(item, e)}
+                    >
                       <Image
                         src='https://shangpai-pic.fn-mart.com/miniprograme/gwcsmall.png'
                         className='ckeck2'
                       />
-                      {/* <View className='at-icon at-icon-add'></View> */}
                     </View>
                   )}
                 </View>
               ))}
-            </SpScrollView>
+              <View className='store-category__footer'>
+                {page.hasMore && <SpLoading>{$t('eb9a3a24.bd0271')}</SpLoading>}
+                {!page.hasMore && getTotal() == 0 && (
+                  <SpNote img='empty_activity.png' title={$t('eb9a3a24.f1f45e')} />
+                )}
+                {!page.loading && !page.hasMore && getTotal() > 0 && (
+                  <SpNote className='no-more' title={$t('eb9a3a24.a25652')} />
+                )}
+              </View>
+            </ScrollView>
           </View>
         </View>
       </View>

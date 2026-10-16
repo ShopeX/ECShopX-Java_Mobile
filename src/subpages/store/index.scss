@@ -3,101 +3,154 @@
  * See LICENSE file for license details.
  */
 
-.sp-page.ipx .sp-page__footer {
-  height: 160px !important;
-}
+/* 门店首页：设计稿原始 px，不做 /2 */
 
-
-
-.sale-price {
-  .sp-price__symbol {
-    color: var(--color-primary);
-    font-size: 28px;
-  }
-
-  .sp-price__int {
-    color: var(--color-primary);
-    font-size: 42px;
-  }
-
+@mixin store-price-accent($weight: 600) {
+  .sp-price__symbol,
+  .sp-price__int,
   .sp-price__decimal {
-    color: var(--color-primary);
-    font-size: 28px;
+    color: #e50113;
+    font-weight: $weight;
   }
 }
 
 .page-store-index {
-  .sp-page__body-children {
-    height: 100%;
-
-    .search-scroll {
-      height: 100%;
-    }
+  /* 结算栏内容区偏高，覆盖默认 footer 高度 */
+  .sp-page__footer {
+    height: 160px !important;
+    /* 低于 sp-float-layout(1000)，避免挡住 SKU / 购物车弹层 */
+    z-index: 400;
+    @include store-price-accent;
   }
 
-  .search {
-    width: 100%;
+  /* 门店内弹层保证盖过结算栏 */
+  .sp-float-layout,
+  .sp-sku-select,
+  .page-store-index__float-layers .sp-float-layout,
+  .page-store-index__float-layers .sp-sku-select {
+    z-index: 1200;
+  }
+
+  .sp-page__body-children {
+    height: 100%;
+  }
+
+  /* 主滚动区 */
+  &__scroll {
+    height: 100%;
+    box-sizing: border-box;
+  }
+
+  /* 固定搜索：沉浸式叠在头图上，滚动后白底 */
+  &__search {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
-    z-index: 2;
+    z-index: 100;
+    width: 100%;
     height: 120px;
-    transition: background-color 0.2s ease;
-    background: transparent !important;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    background: transparent;
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+
+    .sp-search {
+      width: 100%;
+      padding: 0 24px;
+      box-sizing: border-box;
+    }
 
     &--solid {
-      background: #fff !important;
-      box-shadow: 0 5px 5px rgba(0, 0, 0, 0.1) !important;
+      background: #fff;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 
-      .sp-search {
-        padding: 0 15px;
-
-        &-block {
-          border: 1PX solid #000;
-          box-sizing: border-box;
-        }
+      .sp-search-block {
+        /* prettier-ignore */
+        border: 1PX solid #000;
+        box-sizing: border-box;
       }
     }
   }
 
-  .sp-search {
-    width: 100%;
-    padding: 0 15px;
-  }
-
-  .header-block,
-  .header-block-pad {
+  /* 头图 + 店铺信息卡 */
+  &__header {
     position: relative;
+    width: 100%;
+  }
 
-    .store-banner {
+  &__banner {
+    display: block;
+    width: 100%;
+    vertical-align: top;
+
+    &--empty {
       width: 100%;
-      display: block;
-      vertical-align: top;
-
-      &--empty {
-        width: 100%;
-        height: 150px;
-        background: #f5f5f5;
-      }
-    }
-
-    // 店铺信息卡叠在 banner 底部，保留原圆角压图效果
-    .comp-shop-brand {
-      position: relative;
-      z-index: 1;
-      margin-top: -48px;
+      height: 280px;
+      background: #f5f5f5;
+      box-sizing: border-box;
     }
   }
 
-  .icon-huiyuanzhongxin {
-    font-size: 38px;
+  /* 店铺卡上压 banner，保留圆角压图 */
+  &__header .comp-shop-brand {
+    position: relative;
+    z-index: 1;
+    margin-top: -48px;
   }
 
-  .icon-gouwuche {
-    font-size: 38px;
+  /* 首页 / 全部 切换 */
+  &__tabs {
+    position: sticky;
+    z-index: 90;
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
+    padding: 24px;
+    background: #fff;
   }
 
+  &__tab {
+    font-family: PingFangSC, PingFang SC, sans-serif;
+    font-size: 36px;
+    font-weight: 500;
+    line-height: 50px;
+    color: #444;
+    box-sizing: border-box;
+
+    & + & {
+      margin-left: 60px;
+    }
+
+    &--active {
+      font-weight: 600;
+      color: #222;
+      border-bottom: 8px solid var(--color-primary);
+    }
+  }
+
+  /* 右侧浮动入口图标 */
+  .float-container {
+    .icon-gouwuche,
+    .icon-huiyuanzhongxin {
+      font-size: 38px;
+    }
+
+    .cart-icon {
+      width: 40px;
+      height: 40px;
+      color: #fff;
+    }
+
+    .member-icon {
+      width: 40px;
+      height: 40px;
+      color: #fff;
+    }
+  }
+
+  /* 导航栏标题区（自定义导航内） */
   .title-container {
     justify-content: flex-start !important;
 
@@ -107,80 +160,22 @@
     }
   }
 
-  .switchs {
-    position: sticky;
-    z-index: 99;
-    height: 50px;
-    font-family: PingFangSC, PingFang SC;
-    font-weight: 600;
-    font-size: 36px;
-    color: #222222;
-    line-height: 50px;
-    padding: 20px 24px;
-
-    .switching {
-      font-weight: 500;
-      // font-size: 28px;
-      color: #444444;
-    }
-
-    .switchings {
-      border-bottom: 8px solid var(--color-primary);
-    }
-
-    .switched {
-      margin-left: 60px;
-    }
-  }
-
-  .cart-layout {
-    .sp-price__symbol {
-      color: #e50113;
-      font-size: 28px;
-    }
-
-    .sp-price__int {
-      color: #e50113;
-      font-size: 42px;
-    }
-
-    .sp-price__decimal {
-      color: #e50113;
-      font-size: 28px;
-    }
-  }
-
-  .sp-page__footer {
-    .sp-price__symbol {
-      color: #e50113;
-      font-weight: 600;
-    }
-
-    .sp-price__int {
-      color: #e50113;
-      font-weight: 600;
-    }
-
-    .sp-price__decimal {
-      color: #e50113;
-      font-weight: 600;
-    }
-  }
-
+  /* 购物车 / 结算价格强调色 */
+  .cart-layout,
   .comp-shop-brand-cart {
-    .sp-price__symbol {
-      color: #e50113;
-      font-weight: 600;
+    @include store-price-accent;
+  }
+
+  .sale-price {
+    .sp-price__symbol,
+    .sp-price__decimal {
+      color: var(--color-primary);
+      font-size: 28px;
     }
 
     .sp-price__int {
-      color: #e50113;
-      font-weight: 600;
-    }
-
-    .sp-price__decimal {
-      color: #e50113;
-      font-weight: 600;
+      color: var(--color-primary);
+      font-size: 42px;
     }
   }
 }

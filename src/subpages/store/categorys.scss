@@ -1,283 +1,318 @@
 /**
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
+ * 门店「商品分类」：双栏定高面板（顶部分类 / 左侧二级 / 右侧商品）
+ * 设计稿原始 px，不做 /2
  */
-.page-category-item-list {
-  box-sizing: border-box;
+
+.store-category {
+  display: flex;
+  flex-direction: column;
   width: 100%;
-  height: 100%;
-  background: #ffffff;
+  box-sizing: border-box;
+  background: #f7f8fa;
+  overflow: hidden;
 
-  .sp-category-search .search-wrap-input {
-    border: 1rpx var(--color-primary) solid;
+  /* 一级分类横滑 */
+  &__nav {
+    flex-shrink: 0;
+    background: #fff;
+    border-bottom: 1px solid #f0f0f0;
   }
 
-  .sp-category-search .search-wrap-input .at-icon {
-    color: #999999;
+  /* 左栏 + 右栏 */
+  &__body {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    width: 100%;
+    box-sizing: border-box;
+    background: #fff;
   }
 
-  .comp-first-category .sp-select-box {
-    border-radius: 0 0 20px 20px;
+  &__side {
+    width: 176px;
+    flex-shrink: 0;
+    height: 100%;
+    background: #f7f8fa;
+    box-sizing: border-box;
+    overflow: hidden;
+    /* 左侧独立滚动，避免被外层抢走 */
   }
 
-  .sp-price__symbol {
-    color: var(--color-primary) !important;
+  &__main {
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    background: #fff;
   }
 
-  .sp-price__int {
-    color: var(--color-primary) !important;
+  &__filters {
+    flex-shrink: 0;
+    width: 100%;
+    background: #fff;
+    border-bottom: 1px solid #f5f5f5;
   }
+
+  &__goods {
+    /* flex 子项可滚动：height:0 + flex:1 才能算出真实高度 */
+    flex: 1;
+    min-height: 0;
+    height: 0;
+    width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+
+  &__scroll {
+    height: 100% !important;
+    width: 100%;
+    box-sizing: border-box;
+
+    .sp-note__text {
+      font-size: 24px;
+      margin-top: 0;
+    }
+  }
+
+  &__footer {
+    min-height: 80px;
+    padding: 16px 0 32px;
+    box-sizing: border-box;
+  }
+
+  &__goods-item {
+    position: relative;
+    border-bottom: 1px solid #f5f5f5;
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    /* 有角标加购时：隐藏行内购物车，价格区让出右侧空间 */
+    &--has-add {
+      .icon-gouwuche2 {
+        display: none;
+      }
+
+      .gd-price {
+        padding-right: 56px;
+        box-sizing: border-box;
+      }
+    }
+  }
+
+  &__add {
+    position: absolute;
+    right: 20px;
+    bottom: 28px;
+    z-index: 2;
+    width: 56px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    image,
+    .ckeck2 {
+      width: 44px;
+      height: 44px;
+    }
+  }
+
+  .sp-price__symbol,
+  .sp-price__int,
   .sp-price__decimal {
     color: var(--color-primary) !important;
   }
 
-  .category-search {
-    display: flex;
-    align-items: center;
-    padding-right: 24px;
-
-    .type {
-      width: 108px;
-      line-height: 58px;
-      height: 60px;
-      background: #fcd700;
-      border-radius: 30px;
-      text-align: center;
-      box-sizing: border-box;
-      border: 1px solid transparent;
-
-      .text {
-        font-size: 24px;
-        font-weight: 400;
-        color: #000000;
-      }
-    }
-
-    .disable {
-      background-color: #fff;
-      border-color: #999999;
-
-      .text {
-        font-size: 24px;
-        font-weight: 400;
-        color: #999999;
-      }
-    }
+  .at-divider__content {
+    background-color: #fff;
   }
 
-  .sp-category-search {
-    padding: 16px 24px;
-    width: auto;
-    flex: 1;
-  }
-
-  .sp-page__footer {
-    height: fit-content;
-  }
-
-  &-head {
-    // position: fixed;
-    // top: 0;
-    // left: 0;
-    // z-index: 887;
-    // width: 100%;
-    // height: 242px;
-    // box-sizing: border-box;
-    // background: #fff;
-  }
-
-  &-container {
-    display: flex;
-    // padding-top: 250px;
-    // position: fixed;
-    left: 0;
-    top: 242px;
-    width: 100%;
-    height: 80%;
+  /* —— 覆盖子组件：一级横滑（圆图 + 选中胶囊） —— */
+  .comp-first-category {
     background: #fff;
-    display: flex;
+    align-items: center;
 
-    .left-container {
-      width: 200px;
-      // height: 1070px;
-      text-align: center;
-      background: #f5f5f5;
-      box-sizing: border-box;
-      overflow-y: auto;
-      // padding-bottom: 90px;
+    &-content {
+      padding: 20px 0 16px;
+    }
 
-      &::-webkit-scrollbar {
-        display: none;
-        width: 0px !important;
+    &-scroll-item {
+      width: auto;
+      min-width: 128px;
+      padding: 0 12px;
+      background: transparent;
+
+      &:first-child {
+        padding-left: 24px;
       }
-    }
-
-    .right-container {
-      flex: 1;
-      flex-shrink: 0;
-      position: relative;
-      height: 1070px;
-    }
-
-    .right-container-fixed {
-      position: absolute;
-      left: 0;
-      top: 0;
-      // height: 15%;
-      height: 90px;
-      width: 100%;
-      background: #fff;
-      z-index: 887;
-
-      .goods-list__tabs,
-      .filter-bar__item-text {
-        height: 60px;
-        line-height: 60px;
-        font-size: 22px;
-      }
-    }
-  }
-
-  &-scroll {
-    overflow-x: scroll;
-    height: 100%;
-
-    .sp-note__text {
-      font-size: 24px;
-      margin-top: 0px;
-    }
-
-    // &::-webkit-scrollbar {
-    //   display: none;
-    //   width: 0px !important;
-    // }
-  }
-
-  .goods-list {
-    height: 100%;
-    width: 100%;
-
-    &-tabs {
-      position: absolute;
-      top: 100px;
-      left: 16px;
-      border-radius: 35rpx;
-      background: #f5f5f5;
-      width: fit-content;
-      width: -webkit-fit-content;
-      width: -moz-fit-content;
-
-      &-item {
-        display: inline-block;
-        width: 105rpx;
-        height: 70rpx;
-        box-sizing: border-box;
-        text-align: center;
-        line-height: 70rpx;
-
-        .goods-list-tabs-goods-desc {
-          color: #999999;
-        }
-      }
-
-      .active {
-        background: var(--color-primary);
-        border-radius: 35rpx;
-
-        .goods-list-tabs-goods-desc {
-          color: #000;
-        }
-      }
-    }
-
-    // &__tabs {
-    //   .active-bar {
-    //     height: 0px;
-    //     width: 0px;
-    //   }
-
-    //   .filter-bar__item-text {
-
-    //     &::after,
-    //     &::before {
-    //       color: var(--color-primary);
-    //     }
-    //   }
-    // }
-
-    .goods-item-wrap {
-      /* prettier-ignore */
-      // border-bottom: 1PX solid #f1f1f1;
-      position: relative;
 
       &:last-child {
-        border: none;
+        padding-right: 72px;
+      }
+    }
+
+    &-goods-imgbox {
+      width: 96px;
+      height: 96px;
+      border: 4px solid #f0f0f0;
+      background: #fafafa;
+
+      text {
+        font-size: 20px;
+        color: #bbb;
+        line-height: 88px;
+      }
+    }
+
+    &-goods-desc {
+      max-width: 120px;
+      margin: 12px auto 0;
+      padding: 4px 12px;
+      font-size: 22px;
+      line-height: 32px;
+      color: #666;
+      border-radius: 24px;
+      background: transparent;
+    }
+
+    .active {
+      .comp-first-category-goods-imgbox {
+        border-color: var(--color-primary);
       }
 
-      .goods-add {
-        position: absolute;
-        width: 56px;
-        height: 56px;
-        line-height: 56px;
-        text-align: center;
-        // background: #FCD700;
-        border-radius: 28px;
-        bottom: 24px;
-        right: 24px;
-        z-index: 1;
-
-        image {
-          width: 40px;
-          height: 40px;
-        }
-
-        // .at-icon-add {
-        //   color: #000000;
-        //   font-size: 26px;
-        // }
+      .comp-first-category-goods-desc {
+        width: auto;
+        max-width: 120px;
+        margin: 12px auto 0;
+        background: var(--color-primary);
+        color: #fff;
+        font-weight: 500;
       }
+    }
+
+    &-filter {
+      width: 64px;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-shadow: -8px 0 16px rgba(0, 0, 0, 0.04);
+      background: linear-gradient(90deg, rgba(255, 255, 255, 0.85) 0%, #fff 40%);
+
+      text {
+        font-size: 20px;
+        line-height: 28px;
+        color: #666;
+      }
+    }
+
+    .sp-select-box {
+      border-radius: 0 0 24px 24px;
+      padding-top: 24px;
+      background: #fff;
     }
   }
 
-  .goods-list__type-list {
-    /*  #ifdef  h5  */
-    .taro-img {
+  /* —— 左侧二级：灰底 + 选中白底描边条 —— */
+  .comp-second-category {
+    height: 100%;
+
+    &-scroll {
       height: 100%;
     }
 
-    /*  #endif  */
-    .goods-item__hd {
-      .sp-image {
-        width: 160px;
-        height: 160px;
-        position: static;
-      }
+    &-scroll-item {
+      position: relative;
+      width: 100%;
+      display: block;
+      background: transparent;
     }
 
-    .sp-category-goods-item {
-      border-radius: 16px;
-      display: flex;
-      padding: 24px 0px;
-      padding-left: 15px;
-
-      .goods-item__hd {
-        padding: 0px;
-      }
+    &-goods-desc {
+      position: relative;
+      width: 100%;
+      padding: 32px 16px;
+      font-size: 26px;
+      line-height: 36px;
+      color: #666;
+      background: transparent;
+      text-align: center;
     }
 
-    .goods-item__bd {
-      flex: 1;
-      // display: flex;
-      // flex-direction: column;
-      // justify-content: space-between;
+    .active {
+      background: #fff;
 
-      .goods-title {
-        padding: 0px;
+      .comp-second-category-goods-desc {
+        background: #fff;
+        color: #222;
+        font-weight: 600;
+
+        &::before {
+          content: '';
+          position: absolute;
+          left: 0;
+          top: 50%;
+          transform: translateY(-50%);
+          width: 6px;
+          height: 28px;
+          border-radius: 0 6px 6px 0;
+          background: var(--color-primary);
+        }
       }
     }
   }
 
-  .at-divider__content {
-    background-color: #fff;
+  /* —— 三级胶囊筛选 —— */
+  .comp-third-category {
+    height: 88px;
+    padding-right: 56px;
+    align-items: center;
+
+    &-filter {
+      height: 88px;
+      box-shadow: -8px 0 16px rgba(0, 0, 0, 0.04);
+    }
+
+    &-scroll-item {
+      margin-right: 16px;
+
+      &:first-child {
+        margin-left: 20px;
+      }
+    }
+
+    &-goods-desc {
+      width: auto;
+      min-width: 112px;
+      max-width: 200px;
+      padding: 0 24px;
+      margin-top: 0;
+      line-height: 56px;
+      font-size: 24px;
+      color: #666;
+      background: #f5f5f5;
+      border-radius: 28px;
+    }
+
+    .active .comp-third-category-goods-desc {
+      background: rgba(0, 0, 0, 0.04);
+      color: var(--color-primary);
+      font-weight: 600;
+      border: 1px solid var(--color-primary);
+      line-height: 54px;
+      box-sizing: border-box;
+    }
+
+    .icon-arrowDown {
+      font-size: 24px;
+      color: #999;
+    }
   }
 }

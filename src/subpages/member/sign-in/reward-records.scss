@@ -1,0 +1,87 @@
+/**
+ * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
+ * See LICENSE file for license details.
+ *
+ * 领奖记录 — Figma 290:13807（375 设计稿 ×2）
+ */
+.sign-reward-records {
+  min-height: 100vh;
+  background: #f5f5f5;
+
+  &__list {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    box-sizing: border-box;
+  }
+
+  &__card {
+    background: #fff;
+    border-radius: 20px;
+    padding: 32px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-sizing: border-box;
+  }
+
+  &__left {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  &__title {
+    font-size: 28px;
+    font-weight: 500;
+    color: #616672;
+    line-height: 1.2;
+  }
+
+  &__time {
+    font-size: 24px;
+    color: #999;
+    line-height: 1.2;
+  }
+
+  &__right {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    align-items: flex-end;
+    flex-shrink: 0;
+    margin-left: 24px;
+  }
+
+  &__reward {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+  }
+
+  &__icon {
+    width: 30px;
+    height: 30px;
+    flex-shrink: 0;
+  }
+
+  &__reward-text {
+    font-size: 24px;
+    font-weight: 400;
+    color: rgba(0, 0, 0, 0.9);
+    line-height: 1.2;
+  }
+
+  &__chevron {
+    width: 6px;
+    height: 12px;
+    font-size: 12px;
+    line-height: 12px;
+    color: #999;
+    flex-shrink: 0;
+  }
+}

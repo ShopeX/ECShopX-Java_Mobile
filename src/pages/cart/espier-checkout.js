@@ -10,17 +10,14 @@ import {
   SpPage,
   SpPrice,
   SpCell,
-  SpOrderItem,
   SpCashier,
   SpGoodsCell,
-  SpFloatLayout,
-  SpNumberKeyBoard,
   SpDeliver,
   SpRecommend,
   SpSkuSelect,
   SpInput as AtInput
 } from '@/components'
-import { View, Text, Picker, ScrollView } from '@tarojs/components'
+import { View, Text, Picker } from '@tarojs/components'
 import { changeCoupon, changeZitiAddress } from '@/store/slices/cart'
 import { updateChooseAddress } from '@/store/slices/user'
 import { changeZitiStore } from '@/store/slices/shop'
@@ -29,11 +26,8 @@ import {
   isWeixin,
   pickBy,
   authSetting,
-  merchantIsvaild,
   showToast,
   isWeb,
-  redirectUrl,
-  isAPP,
   isWxWeb,
   log,
   isEmpty,
@@ -61,9 +55,7 @@ import S from '@/spx'
 import { useTranslation, $t, ti } from '@/i18n'
 
 import { initialState } from './const'
-import CompDeliver from './comps/comp-deliver'
 import CompSelectPackage from './comps/comp-selectpackage'
-import CompPaymentPicker from './comps/comp-paymentpicker'
 import CompPointUse from './comps/comp-pointuse'
 
 import './espier-checkout.scss'
@@ -250,12 +242,8 @@ function CartCheckout(props) {
   }, [payType, point_use, address, coupon, zitiAddress, receiptType, paramsInfo.invoice_content])
 
   useEffect(() => {
-    if (isPackageOpend || openCashier || isPointOpenModal) {
       pageRef.current.pageLock()
-    } else {
-      pageRef.current.pageUnLock()
-    }
-  }, [isPackageOpend, openCashier, isPointOpenModal])
+  }, [])
 
   // 是否需要包装
   const getTradeSetting = async () => {
@@ -1524,7 +1512,7 @@ function CartCheckout(props) {
 
   return (
     <SpPage ref={pageRef} className='page-cart-checkout' renderFooter={renderFooter()}>
-      <ScrollView className='scroll-view-container' scrollY>
+      <View className='scroll-view-container' >
         {isObjectsValue(shoppingGuideData) && (
           <View className='shopping-guide__header'>
             {ti('edc703ce.a4919d', [shoppingGuideData.store_name, shoppingGuideData.name])}
@@ -1765,7 +1753,7 @@ function CartCheckout(props) {
         {!totalInfo?.prescription_status == 0 && (
           <View className='cart-checkout__title'>{$t('71426282.417975')}</View>
         )}
-      </ScrollView>
+      </View>
       <CompPointUse
         isOpened={isPointOpenModal}
         info={pointInfo}

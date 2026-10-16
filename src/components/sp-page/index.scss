@@ -114,11 +114,9 @@
     align-items: center;
     flex-direction: column;
     box-sizing: border-box;
-    /* 禁止 CSS 穿透：样式隔离，避免页面/父级样式影响浮层内容 */
+    /* 禁止页面滚动抢手势，便于上下拖拽 */
     touch-action: none;
-    box-sizing: border-box;
-    /* 禁止 CSS 穿透：样式隔离，避免页面/父级样式影响浮层内容 */
-    touch-action: none;
+    will-change: bottom;
 
     .icon-zhiding {
       font-size: 34px;
@@ -323,7 +321,7 @@
           border-radius: 8px;
           overflow: hidden;
           position: relative;
-          border: 1px solid #e0e0e0;
+          border: 1PX solid #e0e0e0;
           background-color: #fff;
           height: 64px;
 

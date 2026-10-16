@@ -48,6 +48,249 @@ import SpAiAssistantFab from '@/components/sp-ai-assistant-fab'
 import CustomNavigationHeader from './header'
 import './index.scss'
 
+const FLOAT_MOVE_THRESHOLD = 5
+const FLOAT_EDGE_PAD = 8
+const FLOAT_BOTTOM_DESIGN = 350
+
+const designToPx = (designPx, windowWidth) => (designPx * windowWidth) / 750
+
+/** 浮动菜单独立组件：拖拽 state 不拖累整页 SpPage 重渲染 */
+const SpPageFloat = memo(function SpPageFloat({
+  renderFloat,
+  scrollToTopBtn,
+  showToTop,
+  onScrollToTop,
+  customNavigation,
+  gNavbarH,
+  isTabBarPage,
+  hasFooter,
+  footerHeight,
+  pageInstanceRef
+}) {
+  const [floatBottom, setFloatBottom] = useState(() => {
+    try {
+      return designToPx(FLOAT_BOTTOM_DESIGN, Taro.getWindowInfo().windowWidth)
+    } catch (e) {
+      return 175
+    }
+  })
+  const floatBottomRef = useRef(floatBottom)
+  const floatHeightRef = useRef(120)
+  const floatSuppressTapRef = useRef(false)
+  const rafRef = useRef(0)
+  const boundsCacheRef = useRef(null)
+  const floatDragRef = useRef({
+    active: false,
+    moved: false,
+    startY: 0,
+    origBottom: 0,
+    minBottom: 0,
+    maxBottom: Infinity
+  })
+
+  useEffect(() => {
+    // footer / 导航变化后失效缓存，下次拖拽再量
+    boundsCacheRef.current = null
+  }, [customNavigation, gNavbarH, isTabBarPage, hasFooter, footerHeight])
+
+  useEffect(() => {
+    return () => {
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current)
+        rafRef.current = 0
+      }
+    }
+  }, [])
+
+  const calcFloatTopReserved = useCallback(() => {
+    return customNavigation && gNavbarH > 0 ? gNavbarH + FLOAT_EDGE_PAD : FLOAT_EDGE_PAD
+  }, [customNavigation, gNavbarH])
+
+  const calcFloatBottomReserved = useCallback(() => {
+    const { windowWidth, safeAreaInsets } = Taro.getWindowInfo()
+    const safeBottom = safeAreaInsets?.bottom || 0
+    if (hasFooter) {
+      const designH =
+        Math.max(footerHeight || DEFAULT_FOOTER_HEIGHT, 160) +
+        (isIphoneX() ? DEFAULT_SAFE_AREA_HEIGHT : 0)
+      return designToPx(designH, windowWidth) + FLOAT_EDGE_PAD
+    }
+    if (isTabBarPage) {
+      return 50 + safeBottom + FLOAT_EDGE_PAD
+    }
+    return FLOAT_EDGE_PAD + safeBottom
+  }, [hasFooter, footerHeight, isTabBarPage])
+
+  const paintedBottomRef = useRef(floatBottom)
+
+  const applyFloatBottom = useCallback((next) => {
+    if (next === paintedBottomRef.current) return
+    floatBottomRef.current = next
+    paintedBottomRef.current = next
+    setFloatBottom(next)
+  }, [])
+
+  const scheduleFloatBottom = useCallback((next) => {
+    floatBottomRef.current = next
+    if (rafRef.current) return
+    rafRef.current = requestAnimationFrame(() => {
+      rafRef.current = 0
+      const v = floatBottomRef.current
+      if (v === paintedBottomRef.current) return
+      paintedBottomRef.current = v
+      setFloatBottom(v)
+    })
+  }, [])
+
+  const onScrollToTopClick = useCallback(() => {
+    if (floatSuppressTapRef.current) return
+    onScrollToTop && onScrollToTop()
+    Taro.pageScrollTo({
+      scrollTop: 0,
+      duration: 300
+    })
+  }, [onScrollToTop])
+
+  const onFloatTouchStart = useCallback(
+    (e) => {
+      const t = e.touches?.[0]
+      if (!t) return
+      const { windowHeight } = Taro.getWindowInfo()
+      const cached = boundsCacheRef.current
+      const minBottom = cached?.minBottom ?? calcFloatBottomReserved()
+      const maxBottom =
+        cached?.maxBottom ??
+        Math.max(minBottom, windowHeight - calcFloatTopReserved() - floatHeightRef.current)
+      floatDragRef.current = {
+        active: true,
+        moved: false,
+        startY: t.clientY,
+        origBottom: floatBottomRef.current,
+        minBottom,
+        maxBottom
+      }
+
+      // 有缓存则跳过测量，降低每次按下的查询开销
+      if (cached) return
+
+      // 用 SpPage 实例作查询作用域，才能同时量到 float 与同级 footer
+      let query = Taro.createSelectorQuery()
+      try {
+        const scope = pageInstanceRef?.current
+        if (scope) {
+          query = Taro.createSelectorQuery().in(scope)
+        }
+      } catch (err) {
+        query = Taro.createSelectorQuery()
+      }
+      query
+        .select('#sp-page-float')
+        .boundingClientRect()
+        .select('#sp-page-footer')
+        .boundingClientRect()
+        .select('.sp-page__footer')
+        .boundingClientRect()
+        .exec((res) => {
+          const floatRect = res?.[0]
+          const footerRect =
+            res?.[1]?.height > 0 ? res[1] : res?.[2]?.height > 0 ? res[2] : null
+          if (floatRect?.height) {
+            floatHeightRef.current = floatRect.height
+          }
+          const wh = Taro.getWindowInfo().windowHeight
+          const topReserved = calcFloatTopReserved()
+          let nextMin = calcFloatBottomReserved()
+          if (footerRect && typeof footerRect.top === 'number') {
+            nextMin = Math.max(nextMin, wh - footerRect.top + FLOAT_EDGE_PAD)
+          }
+          const nextMax = Math.max(
+            nextMin,
+            wh - topReserved - (floatHeightRef.current || 120)
+          )
+          boundsCacheRef.current = { minBottom: nextMin, maxBottom: nextMax }
+          floatDragRef.current.minBottom = nextMin
+          floatDragRef.current.maxBottom = nextMax
+          const cur = floatBottomRef.current
+          const clamped = Math.min(nextMax, Math.max(nextMin, cur))
+          if (clamped !== cur) {
+            applyFloatBottom(clamped)
+          }
+        })
+    },
+    [applyFloatBottom, calcFloatBottomReserved, calcFloatTopReserved, pageInstanceRef]
+  )
+
+  const onFloatTouchMove = useCallback(
+    (e) => {
+      const drag = floatDragRef.current
+      if (!drag.active) return
+      const t = e.touches?.[0]
+      if (!t) return
+      const dy = t.clientY - drag.startY
+      if (Math.abs(dy) > FLOAT_MOVE_THRESHOLD) {
+        drag.moved = true
+      }
+      const next = Math.min(
+        drag.maxBottom,
+        Math.max(drag.minBottom, drag.origBottom - dy)
+      )
+      scheduleFloatBottom(next)
+    },
+    [scheduleFloatBottom]
+  )
+
+  const onFloatTouchEnd = useCallback(() => {
+    const drag = floatDragRef.current
+    if (!drag.active) return
+    if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current)
+      rafRef.current = 0
+    }
+    const v = floatBottomRef.current
+    if (v !== paintedBottomRef.current) {
+      paintedBottomRef.current = v
+      setFloatBottom(v)
+    }
+    if (drag.moved) {
+      floatSuppressTapRef.current = true
+      setTimeout(() => {
+        floatSuppressTapRef.current = false
+      }, 400)
+    }
+    drag.active = false
+    drag.moved = false
+  }, [])
+
+  const onFloatClickCapture = useCallback((e) => {
+    if (!floatSuppressTapRef.current) return
+    e.stopPropagation?.()
+    e.preventDefault?.()
+  }, [])
+
+  return (
+    <View
+      id='sp-page-float'
+      className='float-container'
+      style={styleNames({
+        bottom: `${floatBottom}px`
+      })}
+      catchMove
+      onTouchStart={onFloatTouchStart}
+      onTouchMove={onFloatTouchMove}
+      onTouchEnd={onFloatTouchEnd}
+      onTouchCancel={onFloatTouchEnd}
+      onClickCapture={onFloatClickCapture}
+    >
+      {renderFloat}
+      {scrollToTopBtn && showToTop && (
+        <SpFloatMenuItem onClick={onScrollToTopClick}>
+          <Text className='iconfont icon-zhiding'></Text>
+        </SpFloatMenuItem>
+      )}
+    </View>
+  )
+})
+
 const initialState = {
   bodyHeight: 0,
   btnReturn: false,
@@ -271,15 +514,6 @@ const SpPage = memo(
       setIsPageVisible(false) // 页面隐藏时设置为false
     })
 
-    // 回到顶部
-    const scrollToTop = useCallback(() => {
-      props.onScrollToTop && props.onScrollToTop()
-      Taro.pageScrollTo({
-        scrollTop: 0,
-        duration: 300
-      })
-    }, [])
-
     usePageScroll((res) => {
       if (!state.lock) {
         scrollTopRef.current = res.scrollTop
@@ -419,6 +653,7 @@ const SpPage = memo(
         )}
         {props.renderFooter && (
           <View
+            id='sp-page-footer'
             key={lang}
             className='sp-page__footer'
             style={styleNames({
@@ -432,16 +667,20 @@ const SpPage = memo(
             <context.Provider value={{}}>{props.renderFooter}</context.Provider>
           </View>
         )}
-        {/* 浮动 */}
+        {/* 浮动：独立组件承载拖拽 state，避免整页重渲染 */}
         {!props.isDefault && (
-          <View className='float-container'>
-            {props.renderFloat}
-            {props.scrollToTopBtn && showToTop && (
-              <SpFloatMenuItem onClick={scrollToTop}>
-                <Text className='iconfont icon-zhiding'></Text>
-              </SpFloatMenuItem>
-            )}
-          </View>
+          <SpPageFloat
+            renderFloat={props.renderFloat}
+            scrollToTopBtn={props.scrollToTopBtn}
+            showToTop={showToTop}
+            onScrollToTop={props.onScrollToTop}
+            customNavigation={state.customNavigation}
+            gNavbarH={state.gNavbarH}
+            isTabBarPage={state.isTabBarPage}
+            hasFooter={!!props.renderFooter}
+            footerHeight={props.footerHeight}
+            pageInstanceRef={instanceRef}
+          />
         )}
         <CookieConsent />
         {/* 全局企微导购联系弹框（与 FloatSalesperson 一致，如热区/分类页点击企微导购服务时弹出） */}

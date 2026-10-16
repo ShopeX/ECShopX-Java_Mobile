@@ -117,7 +117,9 @@ const config = {
         'member-level', // 会员等级
         'user-info', // 个人信息
         'settings', // 设置
-        'qrcode' // 会员码
+        'qrcode', // 会员码
+        'sign-in/index', // 会员签到
+        'sign-in/reward-records' // 签到领奖记录
       ]
     },
     {
