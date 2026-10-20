@@ -77,7 +77,8 @@ function PurchaseCheckout(props) {
     priceDisplayConfig = {}
   } = useSelector((state) => state.purchase)
   const { checkout_page = {} } = priceDisplayConfig
-  const { activity_price: enPurCheckoutActivityPrice } = checkout_page
+  // 价格展示配置可能未下发（如扫码/分享直接进入内购商城时未写入配置），默认展示内购价，与购物车/详情页保持一致
+  const { activity_price: enPurCheckoutActivityPrice = true } = checkout_page
 
   const {
     detailInfo,
@@ -725,6 +726,8 @@ function PurchaseCheckout(props) {
             unit='cent'
             className='page-espier-checkout__toolbar-price'
             value={totalInfo.total_fee}
+            size={40}
+            weight={600}
             pointMode={isPrepaidPointMode}
           />
         </View>
@@ -812,6 +815,7 @@ function PurchaseCheckout(props) {
                           <SpPrice
                             className='page-espier-checkout__goods-price-current'
                             value={item.price}
+                            weight={600}
                             pointMode={isPrepaidPointMode}
                           />
                           {Number(item.salePrice) > 0 ? (
@@ -819,6 +823,7 @@ function PurchaseCheckout(props) {
                               className='page-espier-checkout__goods-price-through'
                               value={item.salePrice}
                               size={24}
+                              weight={400}
                               lineThrough
                               pointMode={isPrepaidPointMode}
                             />
@@ -832,6 +837,7 @@ function PurchaseCheckout(props) {
                               ? item.salePrice
                               : item.price
                           }
+                          weight={600}
                           pointMode={isPrepaidPointMode}
                         />
                       )}
