@@ -68,6 +68,13 @@
     .sp-recommend__scroll {
       width: 100%;
       white-space: nowrap;
+      overflow-x: auto;
+      overflow-y: hidden;
+      -webkit-overflow-scrolling: touch;
+      /* 只认横向手势，竖滑交给外层 sp-page__body-content */
+      touch-action: pan-x;
+      overscroll-behavior-x: contain;
+      overscroll-behavior-y: none;
     }
 
     .sp-recommend__scroll-row {

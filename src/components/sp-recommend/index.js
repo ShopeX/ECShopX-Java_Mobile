@@ -7,7 +7,7 @@ import Taro from '@tarojs/taro'
 import { View, Text, ScrollView } from '@tarojs/components'
 import { SpImage } from '@/components'
 import { $t } from '@/i18n'
-import { classNames, pickBy, getCurrencySymbol } from '@/utils'
+import { classNames, pickBy, getCurrencySymbol, isWeb } from '@/utils'
 import doc from '@/doc'
 import './index.scss'
 
@@ -166,17 +166,28 @@ export default class SpRecommend extends Component {
         <View className='sp-recommend__inner'>
           <Text className='sp-recommend__title'>{title || '为你推荐'}</Text>
           {isScroll ? (
-            <ScrollView
-              className='sp-recommend__scroll'
-              scrollX
-              enableFlex
-              enhanced
-              showScrollbar={false}
-            >
-              <View className='sp-recommend__scroll-row'>
-                {goods.map((goodsItem, index) => this.renderCard(goodsItem, index))}
+            // H5：用 View + touch-action:pan-x，避免横向区抢走竖向滚动
+            // 小程序：ScrollView 去掉 enhanced，减少嵌套滚动抢手势
+            isWeb ? (
+              <View className='sp-recommend__scroll'>
+                <View className='sp-recommend__scroll-row'>
+                  {goods.map((goodsItem, index) => this.renderCard(goodsItem, index))}
+                </View>
               </View>
-            </ScrollView>
+            ) : (
+              <ScrollView
+                className='sp-recommend__scroll'
+                scrollX
+                enableFlex
+                bounces={false}
+                showScrollbar={false}
+                enhanced={false}
+              >
+                <View className='sp-recommend__scroll-row'>
+                  {goods.map((goodsItem, index) => this.renderCard(goodsItem, index))}
+                </View>
+              </ScrollView>
+            )
           ) : (
             <View className='sp-recommend__grid'>
               {goods.map((goodsItem, index) => this.renderCard(goodsItem, index))}
