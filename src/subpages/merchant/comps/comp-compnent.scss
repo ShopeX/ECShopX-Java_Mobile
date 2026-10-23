@@ -33,8 +33,8 @@ $left-button-border-color: rgba(88, 88, 88, 0.4);
 .comps-radio {
   box-sizing: border-box;
   border: 1PX solid #dddddd;
-  width: 26px;
-  height: 26px;
+  width: 32px;
+  height: 32px;
   background: #ffffff;
   border-radius: 50%;
   display: flex;
@@ -46,7 +46,7 @@ $left-button-border-color: rgba(88, 88, 88, 0.4);
     border-color: var(--color-primary);
     .icon-gou {
       color: white;
-      font-size: 20px;
+      font-size: 22px;
     }
   }
 }

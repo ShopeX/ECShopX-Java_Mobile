@@ -15,7 +15,7 @@ import reject from 'lodash/reject'
 const getToken = (params, uploadOptions = {}) => {
   const { useMallToken, useMerchantUpload, ...tokenQueryExtra } = uploadOptions
   const mergedParams = { ...params, ...tokenQueryExtra }
-  // 商家入驻：/merchant/espier/image_upload_token + 商家 JWT
+  // 商家入驻与商城统一会员 JWT；仅显式 useMerchantUpload 时走商家上传凭证接口
   const path = useMerchantUpload
     ? 'merchant/espier/image_upload_token'
     : 'espier/image_upload_token'

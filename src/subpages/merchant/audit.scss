@@ -160,6 +160,7 @@ $prefixCls: 'page-merchant-audit';
     left: 0;
     right: 0;
     bottom: 0;
+    z-index: $z-index-level-5;
     padding: 0 50px 60px;
   }
 }

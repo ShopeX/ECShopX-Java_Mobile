@@ -24,9 +24,12 @@ export function getStep(params) {
   return req.get('/merchant/settlementapply/step', params)
 }
 
-//保存信息
+const JSON_HEADER = { 'content-type': 'application/json' }
+
+// 分步保存：step1/2/3 均为 application/json（见 Apifox 97847741）
 export function save(params) {
-  return req.post(`/merchant/settlementapply/${params.step}`, params)
+  const { step, ...body } = params
+  return req.post(`/merchant/settlementapply/${step}`, body, { header: JSON_HEADER })
 }
 
 //获取基础设置

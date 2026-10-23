@@ -4,8 +4,8 @@
  */
 import Taro from '@tarojs/taro'
 import { $t } from '@/i18n'
-import { isWeixin, isAlipay, log, isGoodsShelves, showToast, isMerchantModule } from '@/utils'
-import { SG_TOKEN, SG_USER_INFO, MERCHANT_TOKEN } from '@/consts/localstorage'
+import { isWeixin, isAlipay, log, isGoodsShelves, showToast } from '@/utils'
+import { SG_TOKEN, SG_USER_INFO } from '@/consts/localstorage'
 import dayjs from 'dayjs'
 import configStore from '@/store'
 // 按需加载 api，避免 spx→api→req→spx 循环依赖导致冷启动时 S 为 undefined
@@ -24,15 +24,6 @@ export class Spx {
   }
 
   getAuthToken() {
-    if (isMerchantModule()) {
-      const cached = this.get(MERCHANT_TOKEN)
-      if (cached) return cached
-      const authToken = Taro.getStorageSync(MERCHANT_TOKEN)
-      if (authToken) {
-        this.set(MERCHANT_TOKEN, authToken)
-      }
-      return authToken
-    }
     const cached = this.get(SG_TOKEN)
     if (cached) return cached
     const authToken = Taro.getStorageSync(SG_TOKEN)
@@ -43,13 +34,8 @@ export class Spx {
   }
 
   setAuthToken(token) {
-    if (isMerchantModule()) {
-      this.set(MERCHANT_TOKEN, token)
-      Taro.setStorageSync(MERCHANT_TOKEN, token)
-    } else {
-      this.set(SG_TOKEN, token)
-      Taro.setStorageSync(SG_TOKEN, token)
-    }
+    this.set(SG_TOKEN, token)
+    Taro.setStorageSync(SG_TOKEN, token)
     Taro.eventCenter.trigger('ecshopx-auth-changed')
   }
 
@@ -60,17 +46,12 @@ export class Spx {
   }
 
   logout() {
-    if (isMerchantModule()) {
-      Taro.removeStorageSync(MERCHANT_TOKEN)
-      this.delete(MERCHANT_TOKEN, true)
-    } else {
-      Taro.removeStorageSync(SG_TOKEN)
-      Taro.removeStorageSync(SG_USER_INFO)
-      store.dispatch({
-        type: 'user/clearUserInfo'
-      })
-      this.delete(SG_TOKEN, true)
-    }
+    Taro.removeStorageSync(SG_TOKEN)
+    Taro.removeStorageSync(SG_USER_INFO)
+    store.dispatch({
+      type: 'user/clearUserInfo'
+    })
+    this.delete(SG_TOKEN, true)
     Taro.eventCenter.trigger('ecshopx-auth-changed')
   }
 

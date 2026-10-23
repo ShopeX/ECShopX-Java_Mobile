@@ -5,9 +5,9 @@
 import { createSlice } from '@reduxjs/toolkit'
 
 const initialState = {
-  //商户类型
-  merchantType: {},
-  //经营范围
+  // 商户类型：多选管理分类（仅 2/3 级）[{ category_id, level, name }]
+  merchantType: [],
+  //经营范围（已废弃，保留字段避免旧引用报错）
   businessScope: {},
   //银行
   bank: { name: '' }
@@ -18,7 +18,7 @@ const merchantSlice = createSlice({
   initialState,
   reducers: {
     updateMerchantType: (state, { payload }) => {
-      state.merchantType = payload
+      state.merchantType = Array.isArray(payload) ? payload : []
     },
     updateBusinessScope: (state, { payload }) => {
       state.businessScope = payload

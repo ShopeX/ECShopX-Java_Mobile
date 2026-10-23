@@ -65,7 +65,12 @@ const Cell = (props) => {
     onClick = () => {},
     noselect = false,
     value,
-    disabled = false
+    disabled = false,
+    // true：不在 Cell 内渲染地址弹层（避免 ScrollView + transform 导致 fixed 错位）
+    externalAddress = false,
+    onOpenAddress = () => {},
+    /** row：左右结构；vertical：label 在上、输入框在下（商家入驻申请按 Figma） */
+    layout = 'row'
   } = props
   const [isSpAddressOpened, setIsSpAddressOpened] = useState(false)
   const [addressText, setAddressText] = useState(null)
@@ -85,6 +90,15 @@ const Cell = (props) => {
       selectValue.map((d) => d.label),
       selectValue.map((d) => d.id)
     )
+  }
+
+  const handleOpenAddress = () => {
+    if (disabled) return
+    if (externalAddress) {
+      onOpenAddress()
+      return
+    }
+    setIsSpAddressOpened((v) => !v)
   }
 
   const renderSelectorContent = mode === 'selector' && !noselect && (
@@ -116,48 +130,31 @@ const Cell = (props) => {
     </View>
   )
   const renderAreaContent = mode === 'area' && (
-    // <SpPickerAddress
-    //   value={value}
-    //   onChange={onChange}
-    // />233
     <>
       <Text
         className={`area-text ${value && value.length != 0 ? '' : 'placeholder-class'}`}
-        // placeholderClass='placeholder-class'
-        onClick={() => {
-          setIsSpAddressOpened(!isSpAddressOpened)
-        }}
+        onClick={handleOpenAddress}
       >
-        {/* {addressText} */}
         {value && value.length != 0 ? value.join('/') : placeholder}
       </Text>
-      <SpAddress
-        isOpened={isSpAddressOpened}
-        onClose={() => setIsSpAddressOpened(!isSpAddressOpened)}
-        onChange={onPickerChange}
-      />
+      {!externalAddress && (
+        <SpAddress
+          isOpened={isSpAddressOpened}
+          onClose={() => setIsSpAddressOpened(false)}
+          onChange={onPickerChange}
+        />
+      )}
     </>
-    // <Picker
-    //   mode='multiSelector'
-    //   range={areaList}
-    //   onChange={onChange}
-    //   onColumnChange={onColumnChange}
-    // >
-    //   {selectArea.length === 0 ? (
-    //     <View className='comps-cell_selector'>
-    //       <Text className='text'>请选择</Text>
-    //       <Text className='icon icon-qianwang-01'></Text>
-    //     </View>
-    //   ) : (
-    //     <View className='comps-cell_selector'>
-    //       {`${selectArea[0]},${selectArea[1]},${selectArea[2]}`}
-    //     </View>
-    //   )}
-    // </Picker>
   )
 
   return (
-    <View className={classNames('comps-cell', className, { disabled, noselect })}>
+    <View
+      className={classNames('comps-cell', className, {
+        disabled,
+        noselect,
+        'is-vertical': layout === 'vertical'
+      })}
+    >
       {required && <Text className='comps-cell-required'>*</Text>}
       <View
         className={classNames('comps-cell_title', { 'is-show': onlyShow })}
@@ -240,9 +237,9 @@ const NavBar = (props) => {
     }
     S?.logout()
     onLogout?.()
-    // eslint-disable-next-line
+    // 与商城统一登录态，退出后回会员中心
     Taro.redirectTo({
-      url: '/subpages/merchant/login'
+      url: '/subpages/member/index'
     })
   }
 

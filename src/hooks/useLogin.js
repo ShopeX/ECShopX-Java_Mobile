@@ -17,8 +17,7 @@ import {
   isAlipay,
   alipayAutoLogin,
   getDistributorId,
-  VERSION_SHUYUN,
-  isMerchantModule
+  VERSION_SHUYUN
 } from '@/utils'
 import S from '@/spx'
 import { $t } from '@/i18n'
@@ -39,11 +38,6 @@ export default (props = {}) => {
     // 判断是否为企微环境
     const isQywx = typeof wx !== 'undefined' && wx.qy
     const token = S?.getAuthToken()
-    // 商家入驻 token 与消费者 /member 不通，禁止拉取会员信息，避免 401 触发登出
-    if (isMerchantModule()) {
-      if (token) setIsLogin(true)
-      return
-    }
     if (!token) {
       setIsLogin(false)
       autoLogin && !VERSION_SHUYUN && login()
@@ -152,7 +146,6 @@ export default (props = {}) => {
   }
 
   const getUserInfo = async (refresh) => {
-    if (isMerchantModule()) return
     if (!userInfo || refresh) {
       let params = {}
       const activity_id = S?.get(INVITE_ACTIVITY_ID, true)

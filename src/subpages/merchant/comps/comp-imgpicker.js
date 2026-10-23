@@ -19,8 +19,8 @@ function SpImagePicker(props) {
     children,
     uploadSuccess,
     value,
-    /** 商家入驻：走 merchant/espier/image_upload_token + 商家 JWT */
-    useMerchantUpload = true
+    /** 与商城统一：默认 espier/image_upload_token + 会员 JWT */
+    useMerchantUpload = false
   } = props
 
   const [imgUrl, setImgUrl] = useState('')

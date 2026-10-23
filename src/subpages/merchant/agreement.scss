@@ -8,7 +8,7 @@ $prefixCls: 'page-merchant-agreement';
   background-color: white;
 
   &-content {
-    @include page-scroll(90px, 0);
+    @include page-scroll(0, 0);
     background: #fff;
 
     .title {

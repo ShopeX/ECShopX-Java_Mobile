@@ -10,17 +10,19 @@ $prefixCls: 'page-merchant-apply';
   box-sizing: border-box;
 
   .apply-scroll {
-    @include page-scroll(100px+40px+90px, $bottom-height);
+    // 仅步骤条高度，返回统一走底部「返回上一步」
+    @include page-scroll(100px, $bottom-height);
   }
 
   &-content {
-    padding: 40px 16px;
+    padding: 32px;
 
     .card {
       background: #ffffff;
       border-radius: 16px;
       overflow: hidden;
-      padding: 0 16px;
+      padding: 0px 32px;
+      box-sizing: border-box;
 
       .comps-cell {
         &:not(:last-child) {
@@ -54,6 +56,46 @@ $prefixCls: 'page-merchant-apply';
         margin-left: 12px;
       }
     }
+
+    .agreement-panel {
+      margin-top: 24px;
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 24px 16px;
+      box-sizing: border-box;
+
+      &__title {
+        font-size: 28px;
+        font-weight: 600;
+        color: #1a1a1a;
+        margin-bottom: 16px;
+      }
+
+      &__desc {
+        font-size: 24px;
+        color: #666666;
+        line-height: 1.6;
+        margin-bottom: 20px;
+      }
+
+      &__agree {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+
+        &-text {
+          font-size: 24px;
+          color: #333333;
+          margin-left: 12px;
+        }
+
+        &-link {
+          font-size: 24px;
+          color: #333333;
+          text-decoration: underline;
+        }
+      }
+    }
   }
 
   .apply-bottom {
@@ -61,21 +103,215 @@ $prefixCls: 'page-merchant-apply';
     bottom: 0;
     left: 0;
     right: 0;
+    z-index: $z-index-level-5;
     height: $bottom-height;
     background-color: white;
     display: flex;
     align-items: center;
-    justify-content: space-between;
     padding: 0 20px;
+    box-sizing: border-box;
 
-    &-text {
-      color: var(--color-primary);
-      margin-left: 44px;
+    &-back {
+      box-sizing: border-box;
+      flex: 1 1 0;
+      width: 0;
+      height: 80px;
+      margin-right: 20px;
+      border-radius: 40px;
+      border: 1PX solid rgba(88, 88, 88, 0.4);
+      color: rgba(88, 88, 88, 1);
+      font-size: 28px;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     &-button {
-      flex-shrink: 0;
-      width: 458px;
+      flex: 1 1 0;
+      width: 0;
+      box-sizing: border-box;
+    }
+
+    // 第一步只有「下一步」，占满整行
+    &:not(.has-back) &-button {
+      flex: none;
+      width: 100%;
+    }
+  }
+}
+
+// ---------- 按 Figma 对齐：单页分组长表单 / 纵向 Cell / 只读预览 ----------
+.page-merchant-apply {
+  .form-vertical {
+    // 左右内边距由 .card 统一提供
+    padding: 24px 0;
+  }
+
+  .form-section {
+    background: #ffffff;
+    margin-bottom: 16px;
+
+    &__title {
+      font-size: 30px;
+      font-weight: 600;
+      color: #1a1a1a;
+      line-height: 1.4;
+      padding: 24px 0 8px;
+    }
+  }
+
+  .form-tip {
+    font-size: 22px;
+    color: #999999;
+    line-height: 1.5;
+    margin-top: 12px;
+  }
+
+  // MCell 纵向：label 在上、方角描边输入框在下
+  .comps-cell.is-vertical {
+    display: block;
+    height: auto;
+    padding: 24px 0 0;
+
+    .comps-cell-required {
+      top: 26px;
+      font-size: 28px;
+    }
+
+    .comps-cell_title {
+      width: 100%;
+      padding-left: 16px;
+      font-size: 28px;
+      color: #1a1a1a;
+      line-height: 1.5;
+    }
+
+    .comps-cell_flex {
+      display: block;
+      margin-top: 12px;
+    }
+
+    .comps-cell_input {
+      width: 100%;
+      margin-right: 0;
+      height: 88px;
+      box-sizing: border-box;
+      border: 1PX solid #dddddd;
+      border-radius: 0;
+      padding: 0 20px;
+      display: flex;
+      align-items: center;
+      text-align: left;
+
+      .input {
+        text-align: left;
+      }
+    }
+
+    .comps-cell_selector {
+      height: 88px;
+      box-sizing: border-box;
+      border: 1PX solid #dddddd;
+      border-radius: 0;
+      padding: 0 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .comps-cell_radio {
+      height: 88px;
+      display: flex;
+      align-items: center;
+    }
+
+    .area-text {
+      display: block;
+      height: 88px;
+      line-height: 88px;
+      border: 1PX solid #dddddd;
+      border-radius: 0;
+      padding: 0 20px;
+      box-sizing: border-box;
+    }
+  }
+
+  // 第 3 步只读预览
+  .form-preview {
+    .preview-text {
+      padding: 14px 0;
+
+      &__label {
+        font-size: 24px;
+        color: #999999;
+        line-height: 1.5;
+      }
+
+      &__value {
+        font-size: 28px;
+        color: #1a1a1a;
+        line-height: 1.5;
+        margin-top: 4px;
+        word-break: break-all;
+      }
+    }
+
+    .preview-row {
+      display: flex;
+
+      &__item {
+        flex: 1 1 0;
+        min-width: 0;
+      }
+    }
+
+    .preview-image {
+      padding: 14px 0;
+
+      &__label {
+        font-size: 24px;
+        color: #999999;
+        line-height: 1.5;
+      }
+
+      &__box {
+        margin-top: 12px;
+        width: 320px;
+        height: 200px;
+        border: 1PX solid #eeeeee;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      &__img {
+        width: 100%;
+        height: 100%;
+      }
+
+      &__empty {
+        font-size: 28px;
+        color: #cccccc;
+      }
+
+      &__sub {
+        margin-top: 8px;
+        font-size: 22px;
+        color: #999999;
+      }
+    }
+  }
+
+  // 底部按钮：圆角，主按钮深色
+  .apply-bottom {
+    &-back {
+      border-radius: 40px;
+    }
+
+    &-button {
+      border-radius: 40px;
+      background-color: #1a1a1a;
     }
   }
 }

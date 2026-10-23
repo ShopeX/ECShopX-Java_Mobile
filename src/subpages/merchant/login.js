@@ -2,143 +2,30 @@
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
  */
+import { useEffect } from 'react'
 import Taro from '@tarojs/taro'
-import { useEffect, useState } from 'react'
-import { Text, View } from '@tarojs/components'
-import { classNames, validate, showToast } from '@/utils'
-import { SpImage, SpPage } from '@/components'
-import api from '@/api'
+import { View } from '@tarojs/components'
+import { SpPage, SpLoading } from '@/components'
 import * as merchantApi from '@/api/merchant'
 import S from '@/spx'
-import { useTranslation, $t } from '@/i18n'
-import { MButton, MInput, MRadio } from './comps'
-import { navigateToAgreement } from './util'
-import { useTimer } from './hook'
-import './login.scss'
 
+const APPLY_PATH = '/subpages/merchant/apply'
+const AUDIT_PATH = '/subpages/merchant/audit'
+const MALL_LOGIN_PATH = '/subpages/member/index'
+
+/**
+ * 兼容旧入口：商家入驻不再独立登录，统一走商城会员 JWT。
+ * 未登录 → 会员中心（带 redirect）；已登录 → 按 step 进 apply / audit
+ */
 const Login = () => {
-  const { i18n } = useTranslation()
-  const [form, setForm] = useState({ mobile: '', vcode: '', tcode: '' })
-
-  const [imgCodeInfo, setImgCodeInfo] = useState({})
-
-  const [agree, setAgree] = useState(false)
-
   useEffect(() => {
-    Taro.setNavigationBarTitle({ title: $t('4289b966.6e75c6') })
-  }, [i18n.language])
-
-  const phonePrefix = (value) => {
-    if (value) {
-      return <Text className='iconfont icon-a-shoujihaoshouji'></Text>
-    } else {
-      return (
-        <SpImage
-          src='phone_icon.png'
-          className='phone-icon'
-          width={44}
-          mode='widthFix'
-          lazyLoad={false}
-        />
-      )
-    }
-  }
-
-  const tcodePrefix = (value) => {
-    if (value) {
-      return <Text className='iconfont icon-tuxingyanzhengma-01-copy'></Text>
-    } else {
-      return (
-        <SpImage
-          src='tcode_icon.png'
-          className='tcode-icon'
-          width={44}
-          mode='widthFix'
-          lazyLoad={false}
-        />
-      )
-    }
-  }
-
-  const codePrefix = (value) => {
-    if (value) {
-      return <Text className='iconfont icon-yanzhengma'></Text>
-    } else {
-      return (
-        <SpImage
-          src='vcode_icon.png'
-          className='code-icon'
-          width={44}
-          mode='widthFix'
-          lazyLoad={false}
-        />
-      )
-    }
-  }
-
-  const [time, startTime] = useTimer()
-
-  const handleGetCode = async () => {
-    if (!validate.isRequired(form.tcode)) {
-      showToast($t('3ca883d0.e70066'))
-      return
-    }
-    if (time !== null) {
-      // showToast('验证码已发送，请稍后')
-      return
-    }
-    if (!validate.isMobileNum(form.mobile)) {
-      showToast($t('7187dbd0.a32ab5'))
-      return
-    }
-    const query = {
-      type: 'merchant_login',
-      mobile: form.mobile,
-      yzm: form.tcode,
-      token: imgCodeInfo.imageToken
-    }
-    try {
-      await api.user.regSmsCode(query)
-      showToast($t('e1d26b67.9db9a7'))
-      startTime()
-    } catch (error) {
-      getImageCode()
-    }
-  }
-
-  const handleChange = (key) => (val) => {
-    setForm({
-      ...form,
-      [key]: val
-    })
-  }
-
-  const handleLogin = async () => {
-    if (!validate.isRequired(form.mobile)) {
-      showToast($t('4289b966.c36b0b'))
-      return
-    }
-    if (!validate.isMobileNum(form.mobile)) {
-      showToast($t('7187dbd0.a32ab5'))
-      return
-    }
-    if (!validate.isRequired(form.tcode)) {
-      showToast($t('4289b966.c3d869'))
-      return
-    }
-    if (!validate.isRequired(form.vcode)) {
-      showToast($t('4289b966.d76109'))
-      return
-    }
-    if (!agree) {
-      showToast($t('4289b966.29c1bc'))
-      return
-    }
-    try {
-      const { token } = await merchantApi.login({ mobile: form.mobile, vcode: form.vcode })
-      if (!token) return
-      S?.setAuthToken(token)
-      // 未入驻或接口异常时按第一步处理，避免停留在登录页
+    const bootstrap = async () => {
+      if (!S?.getAuthToken()) {
+        Taro.redirectTo({
+          url: `${MALL_LOGIN_PATH}?redirect_url=${encodeURIComponent(APPLY_PATH)}`
+        })
+        return
+      }
       let step = 1
       try {
         const res = await merchantApi.getStep()
@@ -146,95 +33,17 @@ const Login = () => {
       } catch (e) {
         step = 1
       }
-      // 已提交全部资料 → 审核页；其余进入申请页
-      if (step === 4) {
-        Taro.redirectTo({
-          url: '/subpages/merchant/audit'
-        })
-      } else {
-        Taro.redirectTo({
-          url: '/subpages/merchant/apply'
-        })
-      }
-    } catch (e) {
-      console.log(e)
+      Taro.redirectTo({
+        url: step === 4 ? AUDIT_PATH : APPLY_PATH
+      })
     }
-  }
-
-  const getImageCode = async () => {
-    const query = {
-      type: 'merchant_login'
-    }
-    try {
-      const img_res = await api.user.regImg(query)
-      setImgCodeInfo(img_res)
-    } catch (error) {
-      console.log(error)
-    }
-  }
-
-  const handleClickImageCode = () => {
-    getImageCode()
-  }
-
-  useEffect(() => {
-    getImageCode()
+    bootstrap()
   }, [])
 
-  const tcodeSuffix = (
-    <SpImage
-      src={imgCodeInfo.imageData}
-      className='tcode-img'
-      onClick={handleClickImageCode}
-      lazyLoad={false}
-    />
-  )
-
-  const codeSuffix = (
-    <View
-      className={classNames('code-suffix', { 'timing': time !== null })}
-      onClick={handleGetCode}
-    >
-      {time === null ? $t('4e26899b.d369f4') : time}
-    </View>
-  )
-
   return (
-    <SpPage className={classNames('page-merchant-login')} navbar={false}>
-      <SpImage src='shangjiaruzhu_bg.png' className='login-bg' mode='widthFix' />
-      <View className='page-merchant-login-content'>
-        <View className='login-title'>{$t('4289b966.6e75c6')}</View>
-        <MInput
-          prefix={phonePrefix}
-          placeholder={$t('692ba07e.6e4f4b')}
-          onChange={handleChange('mobile')}
-        />
-        <MInput
-          prefix={tcodePrefix}
-          placeholder={$t('3ca883d0.e70066')}
-          className='mt-32'
-          onChange={handleChange('tcode')}
-          suffix={tcodeSuffix}
-        />
-        <MInput
-          prefix={codePrefix}
-          placeholder={$t('4289b966.080be6')}
-          className='mt-32'
-          onChange={handleChange('vcode')}
-          suffix={codeSuffix}
-        />
-        <MButton className={classNames('mt-52', 'login-button')} onClick={handleLogin}>
-          {$t('4289b966.7c1c42')}
-        </MButton>
-        <View className='mt-32 agree-row'>
-          <MRadio checked={agree} onClick={() => setAgree(!agree)} />
-          <View className='radio-text'>
-            {$t('4289b966.ed8fae')}
-            <Text className='primary-color' onClick={navigateToAgreement}>
-              {$t('3c94bb91.1e058c')}
-            </Text>
-          </View>
-        </View>
+    <SpPage className='page-merchant-login' navbar={false}>
+      <View style={{ paddingTop: '40%' }}>
+        <SpLoading />
       </View>
     </SpPage>
   )

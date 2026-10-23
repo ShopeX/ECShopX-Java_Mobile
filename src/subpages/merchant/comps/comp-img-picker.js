@@ -28,8 +28,8 @@ const ImgPicker = (props) => {
     info = [],
     onChange = () => {},
     value,
-    /** 商家入驻默认走商家上传接口 + 商家 JWT */
-    useMerchantUpload = true
+    /** 与商城统一：默认走会员上传接口 */
+    useMerchantUpload = false
   } = props
 
   const ismultiple = info.length > 1
