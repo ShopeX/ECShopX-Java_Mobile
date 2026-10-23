@@ -146,9 +146,11 @@
   &__goods-price-act {
     display: flex;
     flex-direction: row;
+    /* 正常价格同行展示；价格超长时折行兜底，避免与右侧数量重叠 */
     flex-wrap: wrap;
-    align-items: baseline;
-    gap: 8px;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
   }
 
   &__goods-price-current {
@@ -326,13 +328,6 @@
     .sp-price__int,
     .sp-price__decimal {
       color: #111827;
-      font-weight: 700;
-      font-size: 40px;
-    }
-
-    .sp-price__decimal,
-    .sp-price__symbol {
-      font-size: 32px;
     }
   }
 
