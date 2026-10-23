@@ -4,6 +4,7 @@
   "version": "5.2.0",
   "private": true,
   "description": "taro app for bbc",
+  "packageManager": "pnpm@9.15.9",
   "scripts": {
     "clean": "rm -rf node_modules/.cache",
     "lint": "prettier-eslint 'src/**/*.{js,jsx}' --write",
@@ -16,33 +17,33 @@
     "build:rn": "taro build --type rn",
     "build:app": "cross-env TARGET=app taro build --type h5",
     "build:app:server": "cross-env TARGET=app SERVER=server taro build --type h5",
-    "dev:weapp": "npm run build:weapp -- --watch",
-    "dev:weapp:i18n": "npm run build:weapp -- --watch --i18n",
-    "dev:weapp:live": "APP_LIVE=true npm run build:weapp -- --watch",
-    "dev:weapp:modules": "TARO_MODULES=true npm run build:weapp -- --watch",
-    "dev:weapp:prd": "cross-env BUILD_ENV=prd npm run build:weapp -- --watch",
-    "dev:swan": "npm run build:swan -- --watch",
-    "dev:alipay": "npm run build:alipay -- --watch",
-    "dev:tt": "npm run build:tt -- --watch",
-    "dev:h5": "npm run build:h5 -- --watch",
-    "dev:h5:i18n": "npm run build:h5 -- --watch --i18n",
-    "dev:app": "TARGET=app npm run build:h5 -- --watch",
-    "dev:rn": "npm run build:rn -- --watch",
+    "dev:weapp": "taro build --type weapp --watch --trace-warnings",
+    "dev:weapp:i18n": "taro build --type weapp --watch --i18n --trace-warnings",
+    "dev:weapp:live": "cross-env APP_LIVE=true taro build --type weapp --watch --trace-warnings",
+    "dev:weapp:modules": "cross-env TARO_MODULES=true taro build --type weapp --watch --trace-warnings",
+    "dev:weapp:prd": "cross-env BUILD_ENV=prd taro build --type weapp --watch --trace-warnings",
+    "dev:swan": "taro build --type swan --watch",
+    "dev:alipay": "taro build --type alipay --watch",
+    "dev:tt": "taro build --type tt --watch",
+    "dev:h5": "taro build --type h5 --watch",
+    "dev:h5:i18n": "taro build --type h5 --watch --i18n",
+    "dev:app": "cross-env TARGET=app taro build --type h5 --watch",
+    "dev:rn": "taro build --type rn --watch",
     "eslint:comment": "使用EsLint检查并自动修复src目录下所有扩展名为.js和.jsx",
     "eslint": "eslint --ext .js,.jsx --ignore-path .eslintignore --fix src",
     "prettier:comment": "自动格式化当前目录下的所有文件",
     "prettier": "prettier --write 'src/**/*.{js,jsx}'",
     "commit:comment": "引导设置规范化的提交信息",
     "commit": "git-cz",
-    "husky": "npx husky install",
-    "husky:add": "npx husky add .husky/pre-commit 'npx --no-install lint-staged' & npx husky add .husky/commit-msg 'npx --no-install commitlint --edit \"$1\"'",
+    "husky": "pnpm exec husky install",
+    "husky:add": "pnpm exec husky add .husky/pre-commit 'pnpm exec lint-staged' & pnpm exec husky add .husky/commit-msg 'pnpm exec commitlint --edit \"$1\"'",
     "sync:ai-widget": "cp -v ${AI_WIDGET_DIST:-$HOME/data/httpd/ecx/Java/ai-assistant/ai-assistant-widget/dist}/widget-h5.js src/files/ai-assistant-embed/widget-h5.js",
     "i18n:keys": "python3 .cursor/skills/i18n-translate/scripts/gen_i18n_key.py",
     "i18n:check": "node scripts/check-i18n-locales.js"
   },
   "author": "",
   "engines": {
-    "node": "20.19.0"
+    "node": "22.23.4"
   },
   "browsers": [
     "last 3 versions",
@@ -146,23 +147,21 @@
       "prettier --write"
     ]
   },
-  "overrides": {
-    "request": {
-      "form-data": "2.5.6"
-    },
-    "jsdom": {
-      "form-data": "4.0.6"
-    },
-    "qs": "6.9.6",
-    "lodash": "4.18.1",
-    "lodash-es": "4.18.1",
-    "ws": "8.21.0",
-    "tar": "7.5.19",
-    "minimatch": "9.0.9",
-    "glob": "10.5.0",
-    "tmp": "0.2.7",
-    "http-cache-semantics": "4.2.0",
-    "swiper": "12.1.2",
-    "serialize-javascript": "7.0.7"
+  "pnpm": {
+    "overrides": {
+      "request>form-data": "2.5.6",
+      "jsdom>form-data": "4.0.6",
+      "qs": "6.9.6",
+      "lodash": "4.18.1",
+      "lodash-es": "4.18.1",
+      "ws": "8.21.0",
+      "tar": "7.5.19",
+      "minimatch": "9.0.9",
+      "glob": "10.5.0",
+      "tmp": "0.2.7",
+      "http-cache-semantics": "4.2.0",
+      "swiper": "12.1.2",
+      "serialize-javascript": "7.0.7"
+    }
   }
 }
