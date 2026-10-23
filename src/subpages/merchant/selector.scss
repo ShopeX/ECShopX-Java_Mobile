@@ -71,8 +71,8 @@ $category-footer-height: 120px;
 
     &.is-checked,
     &.is-indeterminate {
-      background: #1a1a1a;
-      border-color: #1a1a1a;
+      background: var(--color-primary);
+      border-color: var(--color-primary);
     }
 
     .icon-gou {
@@ -107,6 +107,18 @@ $category-footer-height: 120px;
         font-weight: 600;
         color: #1a1a1a;
         flex: 1;
+      }
+
+      &__arrow {
+        font-size: 24px;
+        color: #999999;
+        margin-left: 12px;
+        flex-shrink: 0;
+        transition: transform 0.2s ease;
+      }
+
+      &.is-expanded .category-tree-l1__arrow {
+        transform: rotate(180deg);
       }
     }
 

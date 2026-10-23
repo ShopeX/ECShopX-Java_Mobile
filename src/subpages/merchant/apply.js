@@ -75,19 +75,30 @@ const PreviewText = ({ title, value, className }) => (
   </View>
 )
 
-const PreviewImage = ({ title, src, sub }) => (
-  <View className='preview-image'>
-    {title ? <View className='preview-image__label'>{title}</View> : null}
-    <View className='preview-image__box'>
-      {src ? (
-        <Image className='preview-image__img' src={src} mode='aspectFit' />
-      ) : (
-        <Text className='preview-image__empty'>-</Text>
-      )}
+const PreviewImage = ({ title, src, sub, urls }) => {
+  const handlePreview = () => {
+    if (!src) return
+    const list = (urls && urls.length ? urls : [src]).filter(Boolean)
+    Taro.previewImage({
+      current: src,
+      urls: list
+    })
+  }
+
+  return (
+    <View className='preview-image'>
+      {title ? <View className='preview-image__label'>{title}</View> : null}
+      <View className='preview-image__box' onClick={handlePreview}>
+        {src ? (
+          <Image className='preview-image__img' src={src} mode='aspectFit' />
+        ) : (
+          <Text className='preview-image__empty'>-</Text>
+        )}
+      </View>
+      {sub ? <View className='preview-image__sub'>{sub}</View> : null}
     </View>
-    {sub ? <View className='preview-image__sub'>{sub}</View> : null}
-  </View>
-)
+  )
+}
 
 const Apply = () => {
   const { i18n } = useTranslation()
@@ -681,8 +692,13 @@ const Apply = () => {
                         title='法人身份证'
                         src={state.legal_certid_front_url}
                         sub='人像面'
+                        urls={[state.legal_certid_front_url, state.legal_cert_id_back_url]}
                       />
-                      <PreviewImage src={state.legal_cert_id_back_url} sub='国徽面' />
+                      <PreviewImage
+                        src={state.legal_cert_id_back_url}
+                        sub='国徽面'
+                        urls={[state.legal_certid_front_url, state.legal_cert_id_back_url]}
+                      />
                       <PreviewText title='身份证号码' value={state.legal_cert_id} />
                       <PreviewText title='联系人姓名' value={state.contact_name} />
                       <PreviewText title='联系人手机号' value={state.contact_mobile} />

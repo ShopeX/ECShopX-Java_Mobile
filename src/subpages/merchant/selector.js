@@ -25,7 +25,9 @@ const initialState = {
   //表示正在搜索的词
   searchingName: '',
   // 已选分类 [{ category_id, level, name }]
-  selected: []
+  selected: [],
+  // 已展开的一级分类 id（默认空 = 全部收起）
+  expandedL1: []
 }
 
 /** 规范化分类树，补齐 level（优先 category_level） */
@@ -320,7 +322,7 @@ const Selector = () => {
       <View className='title'>{$t('93c6df11.e06442')}</View>
     </View>
   )
-  const { list, name, searchingName, tree, selected } = state
+  const { list, name, searchingName, tree, selected, expandedL1 } = state
 
   const filteredTree = useMemo(() => {
     if (!searchingName) return tree
@@ -350,6 +352,23 @@ const Selector = () => {
       })
       .filter(Boolean)
   }, [tree, searchingName])
+
+  const isL1Expanded = (l1Id) => {
+    // 搜索时自动展开匹配到的一级，便于查看结果
+    if (searchingName) return true
+    return expandedL1.some((id) => String(id) === String(l1Id))
+  }
+
+  const toggleL1Expand = (l1Id) => {
+    setState((v) => {
+      const idx = v.expandedL1.findIndex((id) => String(id) === String(l1Id))
+      if (idx >= 0) {
+        v.expandedL1.splice(idx, 1)
+      } else {
+        v.expandedL1.push(l1Id)
+      }
+    })
+  }
 
   const renderTitle = (item) => {
     const title = item.bank_name
@@ -388,44 +407,60 @@ const Selector = () => {
 
     return (
       <View className='category-tree'>
-        {filteredTree.map((l1) => (
-          <View key={l1.category_id} className='category-tree-group'>
-            <View className='category-tree-l1'>
-              <Text className='category-tree-l1__name'>{renderCategoryName(l1.category_name)}</Text>
-            </View>
-            {(l1.children || []).map((l2) => {
-              const hasL3 = (l2.children || []).length > 0
-              return (
-                <View key={l2.category_id} className='category-tree-l2-wrap'>
-                  <View className='category-tree-row level-2'>
-                    <CategoryCheck status={getCheckStatus(l2)} onClick={() => toggleSelect(l2)} />
-                    <View className='category-tree-row__main' onClick={() => toggleSelect(l2)}>
-                      <Text className='category-tree-row__name'>
-                        {renderCategoryName(l2.category_name)}
-                      </Text>
-                    </View>
-                  </View>
-                  {hasL3 &&
-                    (l2.children || []).map((l3) => (
-                      <View
-                        key={l3.category_id}
-                        className='category-tree-row level-3'
-                        onClick={() => toggleSelect(l3)}
-                      >
+        {filteredTree.map((l1) => {
+          const expanded = isL1Expanded(l1.category_id)
+          return (
+            <View key={l1.category_id} className='category-tree-group'>
+              <View
+                className={classNames('category-tree-l1', { 'is-expanded': expanded })}
+                onClick={() => toggleL1Expand(l1.category_id)}
+              >
+                <Text className='category-tree-l1__name'>
+                  {renderCategoryName(l1.category_name)}
+                </Text>
+                <Text className='iconfont icon-arrowDown category-tree-l1__arrow' />
+              </View>
+              {expanded &&
+                (l1.children || []).map((l2) => {
+                  const hasL3 = (l2.children || []).length > 0
+                  return (
+                    <View key={l2.category_id} className='category-tree-l2-wrap'>
+                      <View className='category-tree-row level-2'>
                         <CategoryCheck
-                          status={getCheckStatus(l3)}
-                          onClick={() => toggleSelect(l3)}
+                          status={getCheckStatus(l2)}
+                          onClick={() => toggleSelect(l2)}
                         />
-                        <Text className='category-tree-row__name'>
-                          {renderCategoryName(l3.category_name)}
-                        </Text>
+                        <View
+                          className='category-tree-row__main'
+                          onClick={() => toggleSelect(l2)}
+                        >
+                          <Text className='category-tree-row__name'>
+                            {renderCategoryName(l2.category_name)}
+                          </Text>
+                        </View>
                       </View>
-                    ))}
-                </View>
-              )
-            })}
-          </View>
-        ))}
+                      {hasL3 &&
+                        (l2.children || []).map((l3) => (
+                          <View
+                            key={l3.category_id}
+                            className='category-tree-row level-3'
+                            onClick={() => toggleSelect(l3)}
+                          >
+                            <CategoryCheck
+                              status={getCheckStatus(l3)}
+                              onClick={() => toggleSelect(l3)}
+                            />
+                            <Text className='category-tree-row__name'>
+                              {renderCategoryName(l3.category_name)}
+                            </Text>
+                          </View>
+                        ))}
+                    </View>
+                  )
+                })}
+            </View>
+          )
+        })}
       </View>
     )
   }

@@ -303,15 +303,11 @@ $prefixCls: 'page-merchant-apply';
     }
   }
 
-  // 底部按钮：圆角，主按钮深色
+  // 底部按钮圆角（主色走 comps-button 的 var(--color-primary)）
   .apply-bottom {
-    &-back {
-      border-radius: 40px;
-    }
-
+    &-back,
     &-button {
       border-radius: 40px;
-      background-color: #1a1a1a;
     }
   }
 }
