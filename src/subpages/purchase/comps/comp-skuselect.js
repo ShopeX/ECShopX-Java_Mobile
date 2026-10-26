@@ -287,16 +287,29 @@ function PurchaseSkuSelect(props) {
       return
     }
     Taro.showLoading({ title: '' })
-    await dispatch(
-      addCart({
-        item_id: curItem ? curItem.itemId : info.itemId,
-        num,
-        distributor_id: info.distributorId,
-        shop_type: 'distributor',
-        activity_id: _activity_id,
-        enterprise_id: _enterprise_id
+    try {
+      await dispatch(
+        addCart({
+          item_id: curItem ? curItem.itemId : info.itemId,
+          num,
+          distributor_id: info.distributorId,
+          shop_type: 'distributor',
+          activity_id: _activity_id,
+          enterprise_id: _enterprise_id,
+          showError: false
+        })
+      ).unwrap()
+    } catch (e) {
+      Taro.hideLoading()
+      onClose()
+      // 内购加购业务错误（如“该企业在本活动下的参与名额已满”）统一用弹窗完整展示，避免 toast 被截断
+      await Taro.showModal({
+        content: e?.message || e,
+        showCancel: false,
+        confirmText: $t('edc703ce.ce2695')
       })
-    )
+      return
+    }
     onClose()
     dispatch(
       fetchCartList({
