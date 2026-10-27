@@ -56,7 +56,20 @@ function PurchaseAuthAccount() {
     if (!enterprise_id) {
       checkParams.distributor_id = getDistributorId()
     }
-    const { list } = await api.purchase.employeeCheck(checkParams)
+    let list = []
+    try {
+      const res = await api.purchase.employeeCheck({ ...checkParams, showError: false })
+      list = res?.list || []
+    } catch (e) {
+      await showModal({
+        title: $t('e441b11e.e8c3ea'),
+        content: e.message,
+        showCancel: false,
+        confirmText: $t('20b64b82.fe0337'),
+        contentAlign: 'center'
+      })
+      return
+    }
 
     if (list && list.length > 1) {
       const matched = list.find((row) => String(row?.enterprise_id) === String(enterprise_id))
@@ -116,7 +129,13 @@ function PurchaseAuthAccount() {
           }&pages_template_id=${pages_template_id || ''}`
         })
       } else {
-        showToast(e.message)
+        await showModal({
+          title: $t('e441b11e.e8c3ea'),
+          content: e.message,
+          showCancel: false,
+          confirmText: $t('20b64b82.fe0337'),
+          contentAlign: 'center'
+        })
       }
     }
   }

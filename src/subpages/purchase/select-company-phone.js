@@ -90,7 +90,21 @@ function PurchaseAuthPhone(props) {
       //不是扫码进来，check接口要传当前店铺ID
       checkParams.distributor_id = getDistributorId()
     }
-    const { list } = await api.purchase.employeeCheck(checkParams)
+    let list = []
+    try {
+      const res = await api.purchase.employeeCheck({ ...checkParams, showError: false })
+      list = res?.list || []
+    } catch (e) {
+      await showModal({
+        title: $t('e441b11e.e8c3ea'),
+        content: e.message,
+        showCancel: false,
+        confirmText: $t('20b64b82.fe0337'),
+        contentAlign: 'center'
+      })
+      getLoginCode()
+      return
+    }
     const matched = list[0]
     if (matched) {
       checkParams.enterprise_id = matched.enterprise_id

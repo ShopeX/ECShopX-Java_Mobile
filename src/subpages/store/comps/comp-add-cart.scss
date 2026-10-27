@@ -75,53 +75,97 @@
     }
   }
   .tabulation {
-    height: 484px;
+    /* 单行商品 168，露出 3 个：168 * 3 +border 1 */
+    height: 507px;
 
     &-list {
-      padding: 0 16px;
+      padding: 24px 16px;
       display: flex;
-      height: 160px;
+      align-items: center;
+      box-sizing: border-box;
+      height: 168px;
+      overflow: hidden;
       border-bottom: 1px solid #e5e5e5;
+
       .sp-checkbox-new {
         margin-left: 4px;
+        margin-top: 0;
+        flex-shrink: 0;
       }
+
       &-details {
         display: flex;
         align-items: center;
+        flex: 1;
+        min-width: 0;
+        height: 100%;
+        box-sizing: border-box;
+
         &-img {
           width: 110px;
           height: 110px;
           margin-right: 18px;
+          flex-shrink: 0;
+          border-radius: 8px;
+          overflow: hidden;
         }
+
         &-text {
-          width: 510px;
+          flex: 1;
+          min-width: 0;
+          height: 110px;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
           font-family: PingFangSC, PingFang SC;
+          box-sizing: border-box;
+
           .name {
             font-weight: 400;
             font-size: 28px;
             color: #222222;
-            line-height: 28px;
+            line-height: 40px;
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 1;
+            overflow: hidden;
+            word-break: break-all;
           }
+
+          /* 规格单行省略，保证三行商品高度稳定 */
+          .details-name-ml {
+            margin-top: 0;
+            font-weight: 400;
+            font-size: 24px;
+            color: #999999;
+            line-height: 34px;
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 1;
+            overflow: hidden;
+            word-break: break-all;
+          }
+
           .addition-and-subtraction {
             display: flex;
+            align-items: center;
             justify-content: space-between;
             width: 100%;
-            .details-name {
-              &-ml {
-                height: 26px;
-                margin: 10px 0;
-                font-weight: 400;
-                font-size: 26px;
-                color: #999999;
-                line-height: 26px;
-              }
+            margin-top: 0;
+            box-sizing: border-box;
+
+            .market-price {
+              flex: 1;
+              min-width: 0;
             }
+
             &-btn {
-              margin-top: 30px;
+              flex-shrink: 0;
               width: 126px;
               display: flex;
               justify-content: space-between;
-              align-items: flex-end;
+              align-items: center;
+
               .iconfont {
                 color: var(--color-primary);
                 font-size: 36px;

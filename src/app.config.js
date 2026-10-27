@@ -120,7 +120,9 @@ const config = {
         'qrcode', // 会员码
         'task/index', // 任务中心
         'task/history', // 历史参与任务
-        'task/rules' // 任务规则
+        'task/rules', // 任务规则
+        'sign-in/index', // 会员签到
+        'sign-in/reward-records' // 签到领奖记录
       ]
     },
     {

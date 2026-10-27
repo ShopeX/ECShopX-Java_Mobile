@@ -210,7 +210,13 @@ function PurchaseAuthEmail() {
           }&pages_template_id=${pages_template_id || ''}`
         })
       } else {
-        showToast(e.message)
+        await showModal({
+          title: $t('e441b11e.e8c3ea'),
+          content: e.message,
+          showCancel: false,
+          confirmText: $t('20b64b82.fe0337'),
+          contentAlign: 'center'
+        })
       }
     }
   }

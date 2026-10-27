@@ -187,15 +187,15 @@ function CompAddCart(props) {
                   <Image className='tabulation-list-details-img' src={item.pics}></Image>
                   <View className='tabulation-list-details-text'>
                     <View className='name'>{item.item_name}</View>
+                    {!!item.item_spec_desc && (
+                      <View className='details-name-ml'>{item.item_spec_desc}</View>
+                    )}
                     <View className='addition-and-subtraction'>
-                      <View className='details-name'>
-                        <View className='details-name-ml'>{item.item_spec_desc}</View>
-                        <SpPrice
-                          className='market-price'
-                          size={32}
-                          value={item.price / 100}
-                        ></SpPrice>
-                      </View>
+                      <SpPrice
+                        className='market-price'
+                        size={32}
+                        value={item.price / 100}
+                      ></SpPrice>
                       <View className='addition-and-subtraction-btn'>
                         <Text
                           className='iconfont icon-jianhao'
