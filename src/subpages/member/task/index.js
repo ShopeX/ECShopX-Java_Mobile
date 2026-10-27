@@ -38,7 +38,7 @@ function TaskCenter() {
 
   useShareAppMessage(() => {
     const task = shareTaskRef.current
-    if (task) return buildTaskShareMessage(task)
+    if (task) return buildTaskShareMessage(task, userInfo?.user_id)
     return {
       title: $t('4062a4c0.2488f5'),
       path: '/subpages/member/task/index'
@@ -101,6 +101,8 @@ function TaskCenter() {
     // 分享类已登录时由 Button open-type=share 处理；此处仅兜底
     if (isShareTaskType(item.type)) {
       shareTaskRef.current = item
+      await goComplete({ ...item, shareUserId: userInfo.user_id })
+      return
     }
     await goComplete(item)
   }

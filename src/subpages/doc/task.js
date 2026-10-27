@@ -94,7 +94,8 @@ export const TASK_ITEM = {
     return {
       cover: share_cover || '',
       title: share_title || '',
-      path: normalizePath(share_jump_page)
+      /** 分享 path 用接口原样，不去改写 */
+      path: share_jump_page || ''
     }
   },
   /** 浏览任务：接口扁平 page / stay_seconds */
