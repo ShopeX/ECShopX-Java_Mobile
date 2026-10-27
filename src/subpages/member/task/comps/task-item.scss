@@ -139,6 +139,16 @@
     box-sizing: border-box;
     border: 2px solid transparent;
 
+    /** 微信原生分享 Button 样式重置 */
+    &.is-share-native {
+      margin: 0;
+      line-height: normal;
+      font-size: inherit;
+      &::after {
+        border: none;
+      }
+    }
+
     &.is-primary {
       background: #1a1a1a;
       border-color: rgba(0, 0, 0, 0.1);

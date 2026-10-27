@@ -4,10 +4,10 @@
  *
  * 任务中心 — Figma 1300:13737（ECX-10436 / F-069）
  */
-import React from 'react'
+import React, { useRef } from 'react'
 import { useSelector } from 'react-redux'
 import { useImmer } from 'use-immer'
-import Taro, { useDidShow } from '@tarojs/taro'
+import Taro, { useDidShow, useShareAppMessage } from '@tarojs/taro'
 import { View, Text } from '@tarojs/components'
 import { SpPage, SpNote } from '@/components'
 import SpImage from '@/components/sp-image'
@@ -16,7 +16,7 @@ import doc from '@/subpages/doc'
 import { pickBy, thousandthFormat } from '@/utils'
 import { useTranslation, $t } from '@/i18n'
 import TaskItem from './comps/task-item'
-import { goComplete } from './goComplete'
+import { goComplete, buildTaskShareMessage, isShareTaskType } from './goComplete'
 import './index.scss'
 
 const initialState = {
@@ -30,9 +30,19 @@ function TaskCenter() {
   const [state, setState] = useImmer(initialState)
   const { point, list, loading } = state
   const userInfo = useSelector((s) => s.user?.userInfo)
+  const shareTaskRef = useRef(null)
 
   useDidShow(() => {
     fetchCenter()
+  })
+
+  useShareAppMessage(() => {
+    const task = shareTaskRef.current
+    if (task) return buildTaskShareMessage(task)
+    return {
+      title: $t('4062a4c0.2488f5'),
+      path: '/subpages/member/task/index'
+    }
   })
 
   const fetchCenter = async () => {
@@ -47,7 +57,9 @@ function TaskCenter() {
       ])
       const nList = pickBy(res?.list || [], doc.task.TASK_ITEM)
       setState((draft) => {
-        draft.point = thousandthFormat(assets?.point ?? res?.point ?? 0)
+        draft.point = thousandthFormat(
+          assets?.point_total_count ?? assets?.point ?? res?.point ?? 0
+        )
         draft.list = nList
         draft.loading = false
       })
@@ -77,10 +89,18 @@ function TaskCenter() {
     Taro.navigateTo({ url: '/subpages/member/task/history' })
   }
 
+  const onSharePrepare = (item) => {
+    shareTaskRef.current = item
+  }
+
   const onAction = async (item) => {
     if (!userInfo?.user_id) {
       Taro.showToast({ title: $t('4062a4c0.8d2433'), icon: 'none' })
       return
+    }
+    // 分享类已登录时由 Button open-type=share 处理；此处仅兜底
+    if (isShareTaskType(item.type)) {
+      shareTaskRef.current = item
     }
     await goComplete(item)
   }
@@ -119,7 +139,13 @@ function TaskCenter() {
         )}
 
         {list.map((item) => (
-          <TaskItem key={item.taskId} item={item} onAction={onAction} />
+          <TaskItem
+            key={item.taskId}
+            item={item}
+            onAction={onAction}
+            onSharePrepare={onSharePrepare}
+            shareEnabled={!!userInfo?.user_id}
+          />
         ))}
       </View>
     </SpPage>

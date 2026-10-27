@@ -12,6 +12,7 @@
 import req from './req'
 
 const BASE = '/promotion/member-tasks'
+const JSON_HEADER = { 'content-type': 'application/json' }
 
 /** 任务中心列表（可见任务 + user_task_status） */
 export function getCenterList(params = {}) {
@@ -23,7 +24,7 @@ export function getCenterList(params = {}) {
  * @param {{ task_id: number|string, page: string, stay_seconds: number }} params
  */
 export function browseReport(params = {}) {
-  return req.post(`${BASE}/browse-report`, params)
+  return req.post(`${BASE}/browse-report`, params, { header: JSON_HEADER })
 }
 
 /**

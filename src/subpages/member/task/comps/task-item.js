@@ -3,17 +3,21 @@
  * See LICENSE file for license details.
  */
 import React, { useMemo, useState } from 'react'
-import { View, Text } from '@tarojs/components'
+import { View, Text, Button } from '@tarojs/components'
 import { classNames } from '@/utils'
 import { $t } from '@/i18n'
 import { SpImage } from '@/components'
 import { TASK_STATUS } from '@/subpages/doc/task'
+import { isShareTaskType } from '../goComplete'
 import './task-item.scss'
 
 const TYPE_ICON = {
   consume_once: 'icon-consume.svg',
   first_order: 'icon-consume.svg',
   consume_sum: 'icon-consume.svg',
+  /** 接口 type_detail */
+  single_spend: 'icon-consume.svg',
+  total_spend: 'icon-consume.svg',
   invite_register: 'icon-share.svg',
   share_order: 'icon-share.svg',
   favorite: 'icon-fav.svg',
@@ -28,11 +32,12 @@ const STATUS_META = {
   [TASK_STATUS.reward_failed]: { key: '04a63642.274500', kind: 'disabled' }
 }
 
-function TaskItem({ item, onAction }) {
+function TaskItem({ item, onAction, onSharePrepare, shareEnabled }) {
   const [expanded, setExpanded] = useState(false)
   const statusMeta = STATUS_META[item.status] || STATUS_META[TASK_STATUS.todo]
   const canAction = item.status === TASK_STATUS.todo
   const typeIcon = TYPE_ICON[item.type] || 'icon-consume.svg'
+  const useShareBtn = canAction && shareEnabled && isShareTaskType(item.type)
 
   const descNeedExpand = useMemo(() => {
     const desc = item.desc || ''
@@ -43,6 +48,15 @@ function TaskItem({ item, onAction }) {
     if (!canAction) return
     onAction && onAction(item)
   }
+
+  const handleShareClick = () => {
+    onSharePrepare && onSharePrepare(item)
+  }
+
+  const btnClass = classNames('comp-task-item__btn', `is-${statusMeta.kind}`, {
+    'is-clickable': canAction,
+    'is-share-native': useShareBtn
+  })
 
   return (
     <View className='comp-task-item'>
@@ -91,14 +105,15 @@ function TaskItem({ item, onAction }) {
         </View>
       </View>
       <View className='comp-task-item__action'>
-        <View
-          className={classNames('comp-task-item__btn', `is-${statusMeta.kind}`, {
-            'is-clickable': canAction
-          })}
-          onClick={handleBtn}
-        >
-          <Text className='comp-task-item__btn-txt'>{$t(statusMeta.key)}</Text>
-        </View>
+        {useShareBtn ? (
+          <Button className={btnClass} openType='share' onClick={handleShareClick}>
+            <Text className='comp-task-item__btn-txt'>{$t(statusMeta.key)}</Text>
+          </Button>
+        ) : (
+          <View className={btnClass} onClick={handleBtn}>
+            <Text className='comp-task-item__btn-txt'>{$t(statusMeta.key)}</Text>
+          </View>
+        )}
         {!!item.subText && (
           <Text className='comp-task-item__sub'>{item.subText}</Text>
         )}

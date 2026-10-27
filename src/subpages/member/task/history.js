@@ -63,12 +63,13 @@ function TaskHistory() {
         {list.map((item) => {
           const pending = item.rewardStatus === TASK_STATUS.pending_reward
           const failed = item.rewardStatus === TASK_STATUS.reward_failed
+          // 优先用接口 grant_status_text（如「奖励已发放」）
           const statusText =
             item.grantStatusText ||
             (pending
               ? $t('885f128b.e466af')
               : failed
-                ? $t('885f128b.1a325c')
+                ? $t('2de1ca1c.9338d5')
                 : $t('885f128b.1a325c'))
           return (
             <View
