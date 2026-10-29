@@ -148,6 +148,66 @@
         line-height: 34px;
       }
     }
+
+    /* 其他资料：评价上方独立卡片 */
+    .goods-materials {
+      margin: 24px 24px 0;
+      background-color: #fff;
+      border-radius: 24px;
+      overflow: hidden;
+
+      &__hd {
+        display: flex;
+        align-items: center;
+        padding: 30px 32px;
+        /* prettier-ignore */
+        border-bottom: 1PX solid #e5e7eb;
+      }
+
+      &__title {
+        font-size: 28px;
+        font-weight: 400;
+        color: #1d2939;
+        line-height: normal;
+      }
+
+      &__bd {
+        padding: 8px 32px 16px;
+      }
+
+      &__item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        min-height: 80px;
+        padding: 12px 0;
+
+        &:not(:last-child) {
+          /* prettier-ignore */
+          border-bottom: 1PX solid #f0f0f0;
+        }
+      }
+
+      &__name {
+        flex: 1;
+        min-width: 0;
+        font-size: 28px;
+        color: #222222;
+        line-height: 40px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        padding-right: 24px;
+      }
+
+      &__action {
+        flex-shrink: 0;
+        font-size: 26px;
+        color: var(--color-primary);
+        line-height: 40px;
+      }
+    }
+
     /* 为你推荐卡片：与评价等区块对齐（Figma 3:195，375 ×2） */
     .goods-recommend {
       margin: 24px 24px 0;
