@@ -18,8 +18,7 @@ const BUILD_APP_SERVER = process.env.SERVER
 
 const CONST_ENVS = {
   APP_NAME: pkg.app_name,
-  APP_AUTH_PAGE:
-    process.env.TARO_ENV == 'h5' ? '/subpages/auth/login' : '/subpages/member/index',
+  APP_AUTH_PAGE: process.env.TARO_ENV == 'h5' ? '/subpages/auth/login' : '/subpages/member/index',
   APP_BUILD_TARGET: BUILD_TARGET,
   APP_LIVE: process.env.APP_LIVE,
   ...APP_ENVS,
@@ -38,7 +37,14 @@ const IS_APP = BUILD_TARGET === 'app'
 const IS_APP_SERVER = BUILD_APP_SERVER === 'server'
 
 // 宝塔等子路径部署：APP_PUBLIC_PATH=/mobile/ 、APP_ROUTER_BASENAME=/mobile
-const H5_PUBLIC_PATH = process.env.APP_PUBLIC_PATH || (IS_APP ? (IS_APP_SERVER ? '/' : './') : '/')
+// 开发态强制本地 publicPath，避免 .env 里 CDN 地址导致 HTML 去拉远端旧 JS
+const H5_PUBLIC_PATH = IS_PROD
+  ? process.env.APP_PUBLIC_PATH || (IS_APP ? (IS_APP_SERVER ? '/' : './') : '/')
+  : IS_APP
+  ? IS_APP_SERVER
+    ? '/'
+    : './'
+  : '/'
 const H5_ROUTER_BASENAME = process.env.APP_ROUTER_BASENAME || undefined
 
 const copyPatterns = []

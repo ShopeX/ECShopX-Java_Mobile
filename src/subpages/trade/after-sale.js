@@ -2,7 +2,7 @@
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
  */
-import React, { useEffect, useMemo } from 'react'
+import React, { useEffect, useMemo, useRef } from 'react'
 import { useSelector } from 'react-redux'
 import { useImmer } from 'use-immer'
 import Taro, { getCurrentInstance } from '@tarojs/taro'
@@ -24,7 +24,14 @@ import {
 } from '@/components'
 import { View, Text, Picker } from '@tarojs/components'
 import { AFTER_SALE_TYPE, REFUND_FEE_TYPE, AFTER_SALE_TYPE1 } from '@/consts'
-import { pickBy, showToast, classNames, VERSION_STANDARD, VERSION_PLATFORM } from '@/utils'
+import {
+  pickBy,
+  showToast,
+  classNames,
+  VERSION_STANDARD,
+  VERSION_PLATFORM,
+  isWeixin
+} from '@/utils'
 import { useTranslation, $t } from '@/i18n'
 import { useNavigation } from '@/hooks'
 import './after-sale.scss'
@@ -62,6 +69,8 @@ function TradeAfterSale(props) {
   const { setNavigationBarTitle } = useNavigation()
   const $instance = getCurrentInstance() || {}
   const [state, setState] = useImmer(initialState)
+  /** 售后驳回订阅：进页预拉，提交时同步调起（不可先 await 接口，否则丢失 TAP 手势） */
+  const subscribeTmplIdsRef = useRef([])
   const {
     info,
     curTabIdx,
@@ -227,6 +236,35 @@ function TradeAfterSale(props) {
     }
   }, [])
 
+  // 预拉 after_refund → aftersalesRefuse，避免提交时 await 打断微信 TAP 手势
+  useEffect(() => {
+    if (!isWeixin) {
+      subscribeTmplIdsRef.current = []
+      return
+    }
+    let cancelled = false
+    api.user
+      .newWxaMsgTmpl({
+        temp_name: 'yykweishop',
+        source_type: 'after_refund'
+      })
+      .then((res) => {
+        if (cancelled) return
+        const ids = Array.isArray(res?.template_id)
+          ? res.template_id.filter((id) => typeof id === 'string' && id).slice(0, 3)
+          : []
+        subscribeTmplIdsRef.current = ids
+        console.log('[subscribe] after_refund prefetch', ids)
+      })
+      .catch((err) => {
+        console.error('[subscribe] after_refund prefetch fail', err)
+        if (!cancelled) subscribeTmplIdsRef.current = []
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
   const onCancel = () => {
     Taro.navigateBack()
   }
@@ -285,7 +323,18 @@ function TradeAfterSale(props) {
     return title
   }
 
-  const onSubmit = async () => {
+  const applyAftersale = async (params) => {
+    console.log(params)
+    await api.aftersales.apply(params)
+    showToast($t('44d65d28.23b62e'))
+    Taro.eventCenter.trigger('onEventOrderStatusChange')
+    Taro.eventCenter.trigger('onEventAfterSalesApply')
+    setTimeout(() => {
+      Taro.navigateBack()
+    }, 200)
+  }
+
+  const onSubmit = () => {
     const { id } = $instance?.router?.params
     const checkedItems = info?.items.filter((item) => !!item.checked)
     if (checkedItems.length == 0) {
@@ -351,14 +400,28 @@ function TradeAfterSale(props) {
         }
       }
     }
-    console.log(params)
-    await api.aftersales.apply(params)
-    showToast($t('44d65d28.23b62e'))
-    Taro.eventCenter.trigger('onEventOrderStatusChange')
-    Taro.eventCenter.trigger('onEventAfterSalesApply')
-    setTimeout(() => {
-      Taro.navigateBack()
-    }, 200)
+
+    const proceed = () => {
+      applyAftersale(params)
+    }
+
+    // 同步调起订阅；校验已全部在上方同步完成，中间不能 await
+    const tmplIds = (subscribeTmplIdsRef.current || []).slice(0, 3)
+    console.log('[subscribe] after_refund submit', { isWeixin, tmplIds })
+    if (isWeixin && tmplIds.length > 0) {
+      const subscribeApi =
+        typeof wx !== 'undefined' && wx.requestSubscribeMessage
+          ? wx.requestSubscribeMessage.bind(wx)
+          : Taro.requestSubscribeMessage.bind(Taro)
+      subscribeApi({
+        tmplIds,
+        success: (res) => console.log('[subscribe] after_refund success', res),
+        fail: (err) => console.error('[subscribe] after_refund fail', err),
+        complete: () => proceed()
+      })
+    } else {
+      proceed()
+    }
   }
 
   return (

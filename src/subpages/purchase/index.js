@@ -69,6 +69,8 @@ function Home() {
   })
   const router = useRouter()
   const pageRef = useRef()
+  /** 同活动同文案只提示一次，避免 init + useDidShow 重复弹 */
+  const extraTipsShownKeyRef = useRef('')
 
   const [policyModal, setPolicyModal] = useState(false)
   const [quotaSheetOpen, setQuotaSheetOpen] = useState(false)
@@ -274,6 +276,19 @@ function Home() {
     }
   }
 
+  const maybeShowActivityExtraTips = (data, context = {}) => {
+    const tips = data?.extraTips
+    if (!tips) return
+    const key = `${context.activity_id || ''}_${context.enterprise_id || ''}_${tips}`
+    if (extraTipsShownKeyRef.current === key) return
+    extraTipsShownKeyRef.current = key
+    Taro.showModal({
+      content: tips,
+      confirmText: $t('edc703ce.ce2695'),
+      showCancel: false
+    })
+  }
+
   const fetchActivity = async (context = resolvePurchaseContext()) => {
     const { activity_id, enterprise_id } = context
     if (!activity_id || !enterprise_id) {
@@ -288,6 +303,8 @@ function Home() {
       setState((draft) => {
         draft.activityInfo = data
       })
+      // ECX-10577：进入活动时提示后端返回的 extraTips（如参与名额已满）
+      maybeShowActivityExtraTips(data, { activity_id, enterprise_id })
     } catch (e) {
       dispatch(updateCurActivityInfo({}))
       setState((draft) => {

@@ -1,5 +1,6 @@
 # FROM node:12.19.1-alpine3.12 AS builder
-FROM reg.ishopex.cn/base-images/node-python3:16.16.0-alpine3.16 AS builder
+# 已核验存在：reg.ishopex.cn/v2/paiops-lang-base/nodejs-alpine/tags/list 含 22.23.4
+FROM reg.ishopex.cn/paiops-lang-base/nodejs-alpine:22.23.4 AS builder
 
 ARG CMD
 ARG APP_BASE_URL
@@ -47,9 +48,13 @@ ENV APP_AI_EMBED_PAGE_URL ${APP_AI_EMBED_PAGE_URL}
 ENV APP_AI_ASSISTANT_BACKEND_URL ${APP_AI_ASSISTANT_BACKEND_URL}
 
 WORKDIR /app
-COPY package*.json ./
+COPY package.json pnpm-lock.yaml .npmrc ./
 COPY .env ./
-RUN npm config set registry https://registry.npmmirror.com && npm config set sass_binary_site=https://cdn.npmmirror.com/binaries/node-sass && npm config set @shopex:registry http://registry.npm.ishopex.cn && npm ci
+RUN corepack enable \
+  && corepack prepare pnpm@9.15.9 --activate \
+  && pnpm config set registry https://registry.npmmirror.com \
+  && pnpm config set @shopex:registry http://registry.npm.ishopex.cn \
+  && pnpm install --frozen-lockfile
 
 COPY . .
 RUN ls -la

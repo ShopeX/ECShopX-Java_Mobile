@@ -3,19 +3,21 @@
 ### <p align="center">Mobile Frontend</p>
 
 # Getting started
-Node.js (current LTS) and npm are required to run the project. To be sure about the version compatibility you can enable Node's corepack.
+Node.js 22.23.4 and pnpm are required to run the project. Enable corepack so the repo `packageManager` field can activate pnpm.
 
 ### System Requirements
-Required Node.js Version: 20.19.0. If your current version differs, follow the steps below to switch
+Required Node.js Version: 22.23.4 (2026-10-21 security release). If your current version differs, follow the steps below to switch
 ```
-nvm install 20.19.0 
-nvm use 20.19.0
+nvm install 22.23.4
+nvm use 22.23.4
+corepack enable
+corepack prepare pnpm@9.15.9 --activate
 ```
 
 ### Installation
 ```
 cd ECShopX_mobile-frontend
-npm i
+pnpm install
 ```
 ### Configure the .env file
 ```shell
@@ -74,29 +76,29 @@ APP_BASE_URL=https://your-domain.com/api
 APP_BASE_URL=http://1.2.3.4:8005/api
 
 # Rebuild after changing the value
-npm run build:h5      # Mobile Web App (H5)
-npm run build:weapp   # WeChat Mini Program
+pnpm run build:h5      # Mobile Web App (H5)
+pnpm run build:weapp   # WeChat Mini Program
 ```
 
 ### Run project 
 ```shell
 # Compile Mobile Web App
-npm run dev:h5
+pnpm run dev:h5
 ```
 ```shell
 # Compile WeChat Mini Program
-npm run dev:weapp
+pnpm run dev:weapp
 ```
 
 ### Build packages 
 ```shell
 # Compile Mobile Web App
-npm run build:h5
+pnpm run build:h5
 ```
 
 ```shell
 # Compile WeChat Mini Program
-npm run build:weapp
+pnpm run build:weapp
 ```
 
 ## License

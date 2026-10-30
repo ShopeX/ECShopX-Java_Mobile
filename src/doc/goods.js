@@ -501,7 +501,18 @@ export const ESPIER_DETAIL_GOODS_INFO = {
   medicineData: 'medicine_data',
   isMedicine: 'is_medicine',
   designWorks: 'design_works',
-  startNum: 'start_num' // 起订量
+  startNum: 'start_num', // 起订量
+  // 其他资料下载（可能不存在或为空数组）
+  otherProductMaterials: ({ other_product_materials }) =>
+    Array.isArray(other_product_materials)
+      ? other_product_materials
+          .filter((item) => item && item.url)
+          .map((item) => ({
+            name: item.name || '',
+            size: item.size,
+            url: item.url
+          }))
+      : []
 }
 
 export const PACKGOODS_INFO = {

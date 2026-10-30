@@ -571,6 +571,31 @@ function EspierDetail(props) {
     })
   }
 
+  // 其他资料下载：H5 新开；小程序下载后打开文档
+  const handleDownloadMaterial = async (material) => {
+    if (!material?.url) return
+    if (isWeb) {
+      window.open(material.url, '_blank')
+      return
+    }
+    Taro.showLoading({ title: $t('ca46254d.2d455c'), mask: true })
+    try {
+      const { tempFilePath, statusCode } = await Taro.downloadFile({ url: material.url })
+      Taro.hideLoading()
+      if (statusCode !== 200 || !tempFilePath) {
+        showToast($t('ca46254d.65e200'))
+        return
+      }
+      await Taro.openDocument({
+        filePath: tempFilePath,
+        showMenu: true
+      })
+    } catch (e) {
+      Taro.hideLoading()
+      showToast(e?.errMsg || e?.message || $t('ca46254d.d94cb9'))
+    }
+  }
+
   const limitedBuyDetail = useMemo(
     () => getLimitedBuyDetailLines(info),
     [info?.activityType, info?.activityInfo]
@@ -872,6 +897,30 @@ function EspierDetail(props) {
                 <Text className='iconfont icon-arrowRight' onClick={handleClose} />
               </View>
             )}
+
+            {/* 其他资料：评价上方独立模块，无数据不展示 */}
+            {Array.isArray(info.otherProductMaterials) &&
+              info.otherProductMaterials.length > 0 && (
+                <View className='goods-materials'>
+                  <View className='goods-materials__hd'>
+                    <Text className='goods-materials__title'>{$t('ca46254d.3aa1fb')}</Text>
+                  </View>
+                  <View className='goods-materials__bd'>
+                    {info.otherProductMaterials.map((item, index) => (
+                      <View
+                        key={`${item.url}-${index}`}
+                        className='goods-materials__item'
+                        onClick={() => handleDownloadMaterial(item)}
+                      >
+                        <Text className='goods-materials__name'>
+                          {item.name || $t('ca46254d.962bc4')}
+                        </Text>
+                        <Text className='goods-materials__action'>{$t('ca46254d.f26ef9')}</Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+              )}
 
             {/* 商品评价 */}
             <CompEvaluation
