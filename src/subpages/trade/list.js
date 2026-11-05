@@ -40,6 +40,7 @@ function TradeList(props) {
     () => [
       { tag_name: $t('2800cb77.dbb4d8'), value: '0' },
       { tag_name: $t('2800cb77.9246fe'), value: '5' },
+      { tag_name: $t('403c9269.d8476e'), value: '6' },
       { tag_name: $t('403c9269.ime8t04'), value: '8' },
       { tag_name: $t('2800cb77.4933ca'), value: '1' },
       { tag_name: $t('2800cb77.a48b28'), value: '7', is_rate: 0 }
