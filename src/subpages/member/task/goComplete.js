@@ -3,11 +3,12 @@
  * See LICENSE file for license details.
  *
  * 去完成路由框架（ECX-10436）
- * 分享类：分享 path 用接口 share_jump_page 原样
- *   + member_task_id + member_task_sharer_user_id；
+ * 分享类：share_jump_page 支持 path 字符串或 linkPage JSON；
+ *   解析后 + member_task_id + member_task_sharer_user_id；
  * 浏览类落地计时后 browse-report。
  */
 import Taro from '@tarojs/taro'
+import { resolveLinkPageUrl } from '@/utils/linkPage'
 
 const SHARE_TYPES = ['share_order', 'invite_register']
 
@@ -16,8 +17,32 @@ export function isShareTaskType(type) {
 }
 
 /**
+ * share_jump_page → 可分享小程序 path
+ * - 字符串 path：原样
+ * - JSON：{"linkPage":"custom_page","id":"196"} → resolveLinkPageUrl
+ */
+export function resolveShareJumpPath(raw) {
+  if (raw == null || raw === '') return ''
+  if (typeof raw === 'object' && raw.linkPage) {
+    return resolveLinkPageUrl(raw) || ''
+  }
+  const s = String(raw).trim()
+  if (!s) return ''
+  if (s.startsWith('{')) {
+    try {
+      const data = JSON.parse(s)
+      if (data && data.linkPage) {
+        return resolveLinkPageUrl(data) || ''
+      }
+    } catch (e) {
+      console.warn('[task] share_jump_page JSON parse fail', raw, e)
+    }
+  }
+  return s
+}
+
+/**
  * 微信分享卡片：title / imageUrl / path
- * path = 接口 share_jump_page 原样 + member_task_id + member_task_sharer_user_id
  * @param {object} task
  * @param {string|number} [userId] 分享人 user_id
  */
@@ -26,10 +51,11 @@ export function buildTaskShareMessage(task, userId) {
     return { title: '', path: '/pages/index' }
   }
   const raw = task.share?.path || task.jumpUrl || ''
+  const path = resolveShareJumpPath(raw) || '/pages/index'
   return {
     title: task.share?.title || task.name || '',
     imageUrl: task.share?.cover || '',
-    path: appendQuery(raw, {
+    path: appendQuery(path, {
       member_task_id: task.taskId,
       member_task_sharer_user_id: userId
     })
@@ -59,6 +85,14 @@ export async function goComplete(task) {
         })
       )
       return
+    case 'profile':
+      // 新人任务 / 填写个人信息
+      await safeNavigate(
+        appendQuery(jumpUrl || '/subpages/member/user-info', {
+          task_id: task.taskId
+        })
+      )
+      return
     case 'browse': {
       const path = task.browse?.page_path || jumpUrl || '/pages/index'
       const page = String(task.browse?.page || path || '')
@@ -80,11 +114,12 @@ export async function goComplete(task) {
       return
     case 'invite_register':
     case 'share_order': {
-      // 兜底：未走 open-type=share 时仍用接口链接原样 + 归因参数
+      // 兜底：未走 open-type=share 时跳到解析后的落地页 + 归因参数
       const raw = task.share?.path || jumpUrl || ''
-      if (raw) {
+      const path = resolveShareJumpPath(raw)
+      if (path) {
         await safeNavigate(
-          appendQuery(raw, {
+          appendQuery(path, {
             member_task_id: task.taskId,
             member_task_sharer_user_id: task.shareUserId
           })

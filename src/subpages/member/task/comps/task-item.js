@@ -22,7 +22,9 @@ const TYPE_ICON = {
   share_order: 'icon-share.svg',
   favorite: 'icon-fav.svg',
   browse: 'icon-browse.svg',
-  signin: 'icon-signin.svg'
+  signin: 'icon-signin.svg',
+  /** 新人任务 / 填写个人信息 */
+  profile: 'icon-signin.svg'
 }
 
 const STATUS_META = {

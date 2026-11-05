@@ -94,7 +94,7 @@ export const TASK_ITEM = {
     return {
       cover: share_cover || '',
       title: share_title || '',
-      /** 分享 path 用接口原样，不去改写 */
+      /** 原样保留；分享时由 resolveShareJumpPath 解析 JSON/path */
       path: share_jump_page || ''
     }
   },
