@@ -22,7 +22,7 @@ import Taro, {
 import { View, Text } from '@tarojs/components'
 import { useImmer } from 'use-immer'
 import { SpFloatMenuItem, SpNote, SpLoading, SpPoweredBy } from '@/components'
-import { useThemsColor, useLogin } from '@/hooks'
+import { useThemsColor, useLogin, useMemberBrowseTask } from '@/hooks'
 import CookieConsent from '@/components/cookie-consent'
 import S from '@/spx'
 import {
@@ -347,6 +347,8 @@ const SpPage = memo(
     const { appName } = sys
     const { themeColor } = useThemsColor()
     const { login } = useLogin()
+    // 浏览任务：路由带 task_id + stay 时，停留达标后上报 browse-report
+    useMemberBrowseTask()
 
     useEffect(() => {
       if (state.lock) {

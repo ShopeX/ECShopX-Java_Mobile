@@ -37,6 +37,10 @@ import {
   isPurchasePrepaidPoint,
   getPrepaidPaymentLabel
 } from '@/subpages/purchase/utils/purchase-mode'
+import {
+  getMemberTaskShareParams,
+  clearMemberTaskShareParams
+} from '@/utils/memberTaskShare'
 import { initialState } from './const'
 import SpPurchaseDeliver from './comps/sp-purchase-deliver'
 import './espier-checkout.scss'
@@ -339,6 +343,7 @@ function PurchaseCheckout(props) {
         const { trade_info } = await api.trade.create(prepaidParams)
         orderInfo = trade_info
         orderId = trade_info.order_id
+        clearMemberTaskShareParams()
       } catch (e) {
         Taro.hideLoading()
         const errMsg = e?.message || e?.res?.data?.data?.message || e?.errMsg || ''
@@ -366,6 +371,7 @@ function PurchaseCheckout(props) {
         })
         orderInfo = h5ResInfo
         orderId = h5ResInfo.order_id
+        clearMemberTaskShareParams()
       } catch (e) {
         setState((draft) => {
           draft.submitLoading = false
@@ -376,6 +382,7 @@ function PurchaseCheckout(props) {
         const { trade_info } = await api.trade.create(params)
         orderInfo = trade_info
         orderId = trade_info.order_id
+        clearMemberTaskShareParams()
       } catch (e) {
         setState((draft) => {
           draft.submitLoading = false
@@ -672,6 +679,12 @@ function PurchaseCheckout(props) {
     // cus_parmas.pay_type = totalInfo.freight_type === 'point' ? 'point' : payType
     cus_parmas.pay_channel = isPrepaidPointMode ? 'prepaid_point' : payChannel
     // }
+
+    // 分享好友下单归因（落地缓存）
+    const memberTaskShare = getMemberTaskShareParams()
+    if (memberTaskShare) {
+      Object.assign(cus_parmas, memberTaskShare)
+    }
 
     return cus_parmas
   }

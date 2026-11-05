@@ -38,6 +38,10 @@ import {
 } from '@/utils'
 import entryLaunch from '@/utils/entryLaunch'
 import {
+  getMemberTaskShareParams,
+  clearMemberTaskShareParams
+} from '@/utils/memberTaskShare'
+import {
   useAsyncCallback,
   useLogin,
   usePayment,
@@ -389,6 +393,7 @@ function CartCheckout(props) {
       const resOrderInfo = await api.trade.h5create(params)
       orderInfo = resOrderInfo
       orderId = resOrderInfo.order_id
+      clearMemberTaskShareParams()
     } catch (e) {
       setState((draft) => {
         draft.submitLoading = false
@@ -1354,6 +1359,11 @@ function CartCheckout(props) {
         item_id: it.item_id,
         num: it.num
       }))
+    }
+    // 分享好友下单归因（落地缓存）
+    const memberTaskShare = getMemberTaskShareParams()
+    if (memberTaskShare) {
+      Object.assign(cus_parmas, memberTaskShare)
     }
     return cus_parmas
   }

@@ -23,6 +23,7 @@ import useProductRecommend, {
   collectMainItemIds,
   resolveRecommendDistributorId
 } from './useProductRecommend'
+import useMemberBrowseTask from './useMemberBrowseTask'
 
 export default {}
 
@@ -46,5 +47,6 @@ export {
   useProductRecommend,
   normalizeRecommendItems,
   collectMainItemIds,
-  resolveRecommendDistributorId
+  resolveRecommendDistributorId,
+  useMemberBrowseTask
 }

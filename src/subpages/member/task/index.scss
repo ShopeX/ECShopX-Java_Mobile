@@ -1,0 +1,156 @@
+/**
+ * 任务中心 — Figma 1300:13737（375 设计稿 ×2）
+ */
+.page-task-center {
+  min-height: 100vh;
+  background: #f5f5f5;
+  box-sizing: border-box;
+
+  &__hero {
+    position: relative;
+    height: 500px;
+    overflow: hidden;
+    background: linear-gradient(180deg, #ffd9ad 0%, rgba(255, 217, 173, 0) 100%), #f8f8f8;
+  }
+
+  &__gift-back {
+    position: absolute;
+    left: 426px;
+    top: 142px;
+    width: 296px;
+    height: 258px;
+    opacity: 0.8;
+    filter: blur(6px);
+  }
+
+  &__gift-front {
+    position: absolute;
+    right: 168px;
+    bottom: 84px;
+    width: 226px;
+    height: 198px;
+  }
+
+  &__deco {
+    position: absolute;
+    left: 182px;
+    top: 142px;
+    width: 36px;
+    height: 50px;
+  }
+
+  &__title-wrap {
+    position: absolute;
+    left: 45px;
+    top: 198px;
+    width: 354px;
+    height: 65px;
+  }
+
+  &__title-union {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 344px;
+    height: 65px;
+  }
+
+  &__title-text {
+    position: absolute;
+    left: 24px;
+    top: 14px;
+    width: 158px;
+    height: 36px;
+  }
+
+  &__rules-entry {
+    position: absolute;
+    right: 24px;
+    top: 200px;
+    height: 44px;
+    padding: 0 12px;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    backdrop-filter: blur(6px);
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 22px;
+    box-sizing: border-box;
+  }
+
+  &__rules-icon {
+    width: 32px;
+    height: 32px;
+  }
+
+  &__rules-txt {
+    font-size: 22px;
+    color: #FFFFFF;
+    line-height: 1.2;
+  }
+
+  &__panel {
+    position: relative;
+    z-index: 1;
+    margin: -188px 24px 48px;
+    background: #fff;
+    border-radius: 24px;
+    overflow: hidden;
+    padding-top: 24px;
+    padding-bottom: 12px;
+  }
+
+  &__point-bar {
+    margin: 0 24px 0;
+    padding: 0 24px;
+    height: 88px;
+    background: #fafafb;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-sizing: border-box;
+  }
+
+  &__point-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  &__point-label {
+    font-size: 28px;
+    font-weight: 500;
+    color: #404040;
+    line-height: 1.2;
+  }
+
+  &__point-num {
+    font-size: 34px;
+    font-weight: 600;
+    color: #000;
+    line-height: 1.2;
+  }
+
+  &__history-entry {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  &__history-txt {
+    font-size: 24px;
+    font-weight: 500;
+    color: #000;
+    line-height: 1.2;
+  }
+
+  &__history-chevron {
+    width: 6px;
+    height: 12px;
+  }
+
+  &__empty {
+    padding: 80px 0;
+  }
+}

@@ -10,6 +10,7 @@ import { showToast, log, isArray, VERSION_STANDARD, resolveUrlParamsParse } from
 import configStore from '@/store'
 import _isEqual from 'lodash/isEqual'
 import { SG_ROUTER_PARAMS, SG_GUIDE_PARAMS } from '@/consts/localstorage'
+import { captureMemberTaskShareFromParams } from '@/utils/memberTaskShare'
 
 import MapLoader from '@/utils/lbs'
 import S from '@/spx'
@@ -97,12 +98,14 @@ class EntryLaunch {
 
     // 只返回小程序启动时的参数（包含冷启动和热启动）
     if (resPage) {
-      return {
+      const bootParams = {
         ...Taro.getStorageSync(SG_ROUTER_PARAMS),
         ...h5Query,
         ...routerParams,
         runFlag: true // 标识小程序启动标志，用于判断是否是小程序启动
       }
+      captureMemberTaskShareFromParams(bootParams)
+      return bootParams
     }
 
     let _options = {}
@@ -130,6 +133,7 @@ class EntryLaunch {
       _options = params
     }
     console.log(`getRouteParams:`, _options)
+    captureMemberTaskShareFromParams(_options)
     return _options
   }
 
