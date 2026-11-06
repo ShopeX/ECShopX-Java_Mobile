@@ -9,14 +9,12 @@ import {
   isAlipay,
   isWeixin,
   isWeb,
-  isMerchantModule,
   isGoodsShelves,
   getExtConfigData,
   VERSION_IN_PURCHASE
 } from '@/utils'
 import log from '@/utils/log'
 import { $t, normalizeStorageLang } from '@/i18n'
-import { SG_TOKEN } from '@/consts/localstorage'
 import { HTTP_STATUS } from './consts'
 
 // 惰性获取 spx：req 与 spx 存在循环依赖（spx→api→req→spx），加载时 spxInstance 可能尚未就绪
@@ -203,9 +201,7 @@ class API {
       delete params.$taroTimestamp
       const fullPath = Object.keys(params).length > 0 ? `${path}?${qs.stringify(params)}` : path
       let url
-      if (isMerchantModule()) {
-        url = '/subpages/merchant/login'
-      } else if (isGoodsShelves()) {
+      if (isGoodsShelves()) {
         url = '/subpages/guide/index'
       } else if (VERSION_IN_PURCHASE) {
         url = `/subpages/purchase/member`
@@ -247,10 +243,8 @@ class API {
       header['content-type'] = header['content-type'] || 'application/x-www-form-urlencoded'
     }
 
-    // 商户子包内默认走 MERCHANT_TOKEN；useMallToken 时改用商城会员 SG_TOKEN（如入驻页证照走会员上传）
-    const token = useMallToken
-      ? Taro.getStorageSync(SG_TOKEN) || getS().get(SG_TOKEN, true)
-      : getS().getAuthToken()
+    // 商家入驻与商城共用会员 JWT（SG_TOKEN）
+    const token = getS().getAuthToken()
     if (token) {
       header['Authorization'] = `Bearer ${token}`
     }
@@ -271,9 +265,7 @@ class API {
       url: reqUrl,
       data: query,
       method: method.toUpperCase(),
-      header: header,
-      // 供响应拦截判断：商城 token 401 时勿清商家登录态
-      __useMallToken: !!useMallToken
+      header: header
     }
     delete config.useMallToken
 
@@ -318,11 +310,6 @@ class API {
           this.errorToast(data)
         }
         return Promise.reject(this.reqError(res, $t('4d9ffcb1.e1c4be')))
-      }
-
-      // 商家入驻页若用商城 token 拉上传凭证失败，只拒绝请求，不清商家登录态、不踢回登录
-      if (isMerchantModule() && config?.__useMallToken) {
-        return Promise.reject(this.reqError(res))
       }
 
       this.handleLogout()

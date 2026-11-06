@@ -8,7 +8,6 @@ import { classNames } from '@/utils'
 import { useState, useEffect } from 'react'
 import * as merchantApi from '@/api/merchant'
 import { useTranslation, $t } from '@/i18n'
-import { MNavBar } from './comps'
 import './agreement.scss'
 
 const Agreement = () => {
@@ -25,9 +24,11 @@ const Agreement = () => {
   }, [])
 
   return (
-    <SpPage className={classNames('page-merchant-agreement')} navbar={false}>
-      <MNavBar canLogout={false} />
-
+    <SpPage
+      className={classNames('page-merchant-agreement')}
+      showNavitionLeft={false}
+      btnHomeEnable={false}
+    >
       <ScrollView className='page-merchant-agreement-content' scrollY>
         <View className='title'>{$t('0f7130d3.ef012e')}</View>
 

@@ -4,19 +4,18 @@
  */
 import Taro from '@tarojs/taro'
 import { useEffect, useState, useMemo } from 'react'
-import { ScrollView, View, Text } from '@tarojs/components'
-import { showToast, isUndefined } from '@/utils'
-import { SpPage, SpLoading } from '@/components'
+import { ScrollView, View, Text, Image } from '@tarojs/components'
+import { showToast, classNames } from '@/utils'
+import { SpPage, SpLoading, SpAddress } from '@/components'
 import { useSelector, useDispatch } from 'react-redux'
 import { useImmer } from 'use-immer'
 import api from '@/api'
 import * as merchantApi from '@/api/merchant'
 import S from '@/spx'
-import { updateBank, updateBusinessScope, updateMerchantType } from '@/store/slices/merchant'
+import { updateBank, updateMerchantType } from '@/store/slices/merchant'
 import { useTranslation, $t, ti } from '@/i18n'
 import {
   MERCHANT_TYPE,
-  BUSINESS_SCOPE,
   BANG_NAME,
   STEPTWO_TEXT_KEY,
   STEPTHREE_TEXT_KEY,
@@ -24,14 +23,12 @@ import {
   BANK_PUBLIC,
   BANK_PRIVATE
 } from './consts'
-import { MButton, MStep, MNavBar, MCell, MImgPicker } from './comps'
-import { useArea, usePrevious } from './hook'
+import { MButton, MStep, MCell, MImgPicker, MRadio } from './comps'
+import { useArea } from './hook'
 import { navigateToAgreement } from './util'
 import './apply.scss'
 
 const initialState = {
-  //商户类型id/经营范围id
-  merchant_type_id: undefined,
   //入驻类型
   settled_type: undefined,
   //商户名称
@@ -48,8 +45,6 @@ const initialState = {
   legal_name: undefined,
   //法人身份证号码
   legal_cert_id: undefined,
-  //法人手机号码
-  legal_mobile: undefined,
   //银行账户类型
   bank_acct_type: BANK_PRIVATE,
   //结算银行卡号
@@ -66,19 +61,61 @@ const initialState = {
   legal_cert_id_back_url: '',
   //结算银行卡正面url
   bank_card_front_url: [],
+  //联系人姓名
+  contact_name: '',
+  //联系人手机号
+  contact_mobile: '',
   formloading: false
+}
+
+const PreviewText = ({ title, value, className }) => (
+  <View className={classNames('preview-text', className)}>
+    {title ? <View className='preview-text__label'>{title}：</View> : null}
+    <View className='preview-text__value'>{value || '-'}</View>
+  </View>
+)
+
+const PreviewImage = ({ title, src, sub, urls }) => {
+  const handlePreview = () => {
+    if (!src) return
+    const list = (urls && urls.length ? urls : [src]).filter(Boolean)
+    Taro.previewImage({
+      current: src,
+      urls: list
+    })
+  }
+
+  return (
+    <View className='preview-image'>
+      {title ? <View className='preview-image__label'>{title}</View> : null}
+      <View className='preview-image__box' onClick={handlePreview}>
+        {src ? (
+          <Image className='preview-image__img' src={src} mode='aspectFit' />
+        ) : (
+          <Text className='preview-image__empty'>-</Text>
+        )}
+      </View>
+      {sub ? <View className='preview-image__sub'>{sub}</View> : null}
+    </View>
+  )
 }
 
 const Apply = () => {
   const { i18n } = useTranslation()
   const [state, setState] = useImmer(initialState)
 
-  const { merchantType, businessScope, bank: bankName } = useSelector((state) => state.merchant)
+  const { merchantType, bank: bankName } = useSelector((state) => state.merchant)
+  const mainCategoryNames = Array.isArray(merchantType)
+    ? merchantType
+        .map((item) => item.name)
+        .filter(Boolean)
+        .join('、')
+    : ''
 
   const dispatch = useDispatch()
 
   const stepOptions = useMemo(
-    () => [$t('3c94bb91.e48700'), $t('3c94bb91.ca1130'), $t('3c94bb91.8f14f8')],
+    () => [$t('3c94bb91.e48700'), '请填写企业信息', '提交审核'],
     [i18n.language]
   )
 
@@ -91,8 +128,11 @@ const Apply = () => {
   )
 
   const [merchantOptions, setMerchantOptions] = useState([])
+  // 是否同意入驻协议
+  const [agreed, setAgreed] = useState(false)
+  // 省市区选择（挂在页面根节点，避免 ScrollView 内 fixed 错位）
+  const [addressOpened, setAddressOpened] = useState(false)
 
-  const previousMerchantType = usePrevious(merchantType)
   //结算银行必填
   const banknameRequired = state.bank_acct_type == BANK_PUBLIC
 
@@ -108,13 +148,6 @@ const Apply = () => {
 
   //当前正在第几步
   const [step, setStep] = useState(1)
-
-  useEffect(() => {
-    if (isUndefined(previousMerchantType)) return
-    if (merchantType.id !== previousMerchantType?.id && previousMerchantType.id) {
-      dispatch(updateBusinessScope({}))
-    }
-  }, [merchantType])
 
   const [loading, setLoading] = useState(false)
 
@@ -133,15 +166,6 @@ const Apply = () => {
       })
     }
   }
-
-  useEffect(() => {
-    //必有经营范围
-    if (businessScope.id) {
-      setState((state) => {
-        state.merchant_type_id = businessScope.id
-      })
-    }
-  }, [businessScope])
 
   useEffect(() => {
     if (bankName.name) {
@@ -163,7 +187,6 @@ const Apply = () => {
   const handleSubmit = async () => {
     const {
       settled_type,
-      merchant_type_id,
       merchant_name,
       social_credit_code_id,
       regions,
@@ -171,11 +194,11 @@ const Apply = () => {
       address,
       legal_name,
       legal_cert_id,
-      legal_mobile,
+      contact_name,
+      contact_mobile,
       bank_acct_type,
       card_id_mask,
       bank_name,
-      bank_mobile,
       license_url,
       legal_certid_front_url,
       legal_cert_id_back_url,
@@ -186,89 +209,103 @@ const Apply = () => {
     let params = {}
     //第一步
     if (step === 1) {
-      if (!merchantType.id && !businessScope.id && !state.settled_type) {
+      const hasCategory = Array.isArray(merchantType) && merchantType.length > 0
+      if (!hasCategory && !state.settled_type) {
         showToast($t('3c94bb91.a3c96f'))
         return true
       }
-      if (!merchantType.id || !businessScope.id || !state.settled_type) {
+      if (!hasCategory || !state.settled_type) {
         showToast($t('3c94bb91.2456c8'))
+        return true
+      }
+      if (!agreed) {
+        showToast($t('4289b966.29c1bc'))
         return true
       }
       params = {
         step: 1,
         settled_type,
-        merchant_type_id
+        main_category_selection: merchantType.map(({ category_id, level }) => ({
+          category_id,
+          level
+        }))
       }
-      //第二步保存
+      //第二步保存：Figma 把营业执照 / 法人身份证 / 银行卡全部收进第 2 步，一次性采集
     } else if (step === 2) {
-      const legalLabel =
-        state.settled_type === 'soletrader' ? $t('3c94bb91.b29725') : $t('3c94bb91.e1a437')
-      if (!merchant_name) {
-        showToast($t('3c94bb91.ce23e1'))
+      if (!license_url[0]) {
+        showToast('请上传营业执照照片')
         return true
       }
-
       if (!social_credit_code_id) {
-        showToast($t('3c94bb91.eb1e77'))
+        showToast('请输入营业执照统一社会信用代码')
         return true
       }
-
-      if (regions_id.length == 0) {
-        showToast($t('b3e42938.075488'))
+      if (!merchant_name) {
+        showToast('请输入企业营业执照公司名称')
         return true
       }
-
       if (!address) {
-        showToast($t('3c94bb91.aa202f'))
+        showToast('请输入企业营业执照注册地')
         return true
       }
-
       if (!legal_name) {
-        showToast(ti('3c94bb91.9a7394', [legalLabel]))
+        showToast('请输入企业营业执照法定代表人')
         return true
       }
-
+      if (!legal_certid_front_url) {
+        showToast('请上传法人身份证人像面')
+        return true
+      }
+      if (!legal_cert_id_back_url) {
+        showToast('请上传法人身份证国徽面')
+        return true
+      }
       if (!legal_cert_id) {
-        showToast(ti('3c94bb91.b5712b', [legalLabel]))
+        showToast('请输入身份证号码')
+        return true
+      }
+      if (!contact_name) {
+        showToast('请输入联系人姓名')
+        return true
+      }
+      if (!contact_mobile) {
+        showToast('请输入联系人手机号')
+        return true
+      }
+      if (!bank_card_front_url[0]) {
+        showToast('请上传收款账户银行卡')
+        return true
+      }
+      if (banknameRequired && !bank_name) {
+        showToast('请选择结算银行')
+        return true
+      }
+      if (!card_id_mask) {
+        showToast('请输入结算银行账号')
         return true
       }
 
-      if (!legal_mobile) {
-        showToast(ti('3c94bb91.1bb424', [legalLabel]))
-        return true
-      }
-
+      // Apifox 527211419：资料 + 证照一次提交；字段名与旧 As-Is 不同
       params = {
         step: 2,
+        license_url: license_url[0],
         merchant_name,
         social_credit_code_id,
-        regions_id,
-        regions,
-        address,
-        legal_name,
+        license_registered_address: address,
+        license_legal_representative: legal_name,
         legal_cert_id,
-        legal_mobile,
+        legal_certid_front_url,
+        legal_cert_id_back_url,
+        contact_name,
+        contact_mobile,
+        bank_card_front_url: bank_card_front_url[0] || '',
+        bank_acct_type: String(bank_acct_type),
         card_id_mask,
-        bank_acct_type,
-        bank_name,
-        bank_mobile
+        bank_name: bank_name || '',
+        bank_mobile: bank_acct_type == BANK_PRIVATE ? contact_mobile || '' : ''
       }
     } else if (step === 3) {
-      if (!license_url[0]) {
-        showToast($t('3c94bb91.291d78'))
-        return true
-      }
-
-      if (!legal_certid_front_url) {
-        showToast($t('3c94bb91.942f3a'))
-        return true
-      }
-
-      if (!legal_cert_id_back_url) {
-        showToast($t('3c94bb91.df1e61'))
-        return true
-      }
-
+      // Apifox 527211420：核对页仅提交审核，body 只有 submit
       const { confirm } = await Taro.showModal({
         title: $t('7187dbd0.02d981'),
         content: $t('3c94bb91.762177'),
@@ -282,10 +319,7 @@ const Apply = () => {
 
       params = {
         step: 3,
-        license_url: license_url[0],
-        legal_certid_front_url,
-        legal_cert_id_back_url,
-        bank_card_front_url: bank_card_front_url[0]
+        submit: true
       }
     }
     try {
@@ -305,47 +339,37 @@ const Apply = () => {
 
   const getDetail = async () => {
     const {
-      merchant_type_id,
-      merchant_type_name,
-      merchant_type_parent_id,
-      merchant_type_parent_name,
+      main_category_selection,
+      main_category_names,
       settled_type,
       merchant_name,
       social_credit_code_id,
-      regions_id,
-      province,
-      city,
-      area,
-      address,
-      legal_name,
+      license_registered_address,
+      license_legal_representative,
       legal_cert_id,
       bank_acct_type,
       bank_name,
       card_id_mask,
-      legal_mobile,
       bank_mobile,
       license_url,
       bank_card_front_url,
       legal_certid_front_url,
-      legal_cert_id_back_url
+      legal_cert_id_back_url,
+      contact_name,
+      contact_mobile
     } = await merchantApi.detail()
 
     //有保存过才赋值
-    if (merchant_type_id) {
-      //缓存已经存在数据则不从接口读取
+    if (Array.isArray(main_category_selection) && main_category_selection.length) {
+      const names = Array.isArray(main_category_names) ? main_category_names : []
       dispatch(
-        updateMerchantType({
-          id: merchant_type_parent_id,
-          name: merchant_type_parent_name,
-          parent_id: 0
-        })
-      )
-      dispatch(
-        updateBusinessScope({
-          id: merchant_type_id,
-          name: merchant_type_name,
-          parent_id: merchant_type_parent_id
-        })
+        updateMerchantType(
+          main_category_selection.map((item, index) => ({
+            category_id: item.category_id,
+            level: item.level,
+            name: names[index] || ''
+          }))
+        )
       )
     }
 
@@ -359,22 +383,21 @@ const Apply = () => {
 
     setState((state) => {
       state.settled_type = settled_type
-      state.merchant_type_id = merchant_type_id
       state.merchant_name = merchant_name
       state.social_credit_code_id = social_credit_code_id
-      state.regions_id = JSON.parse(regions_id)
-      state.regions = province ? [province, city, area] : []
-      state.address = address
-      state.legal_name = legal_name
+      state.address = license_registered_address || ''
+      state.legal_name = license_legal_representative || ''
       state.legal_cert_id = legal_cert_id
-      state.bank_acct_type = bank_acct_type || BANK_PRIVATE
+      // 接口 bank_acct_type 为字符串 "1"|"2"
+      state.bank_acct_type = bank_acct_type ? Number(bank_acct_type) : BANK_PRIVATE
       state.card_id_mask = card_id_mask
-      state.legal_mobile = legal_mobile
       state.bank_mobile = bank_mobile
       state.license_url = license_url ? [license_url] : []
       state.bank_card_front_url = bank_card_front_url ? [bank_card_front_url] : []
       state.legal_certid_front_url = legal_certid_front_url || ''
       state.legal_cert_id_back_url = legal_cert_id_back_url || ''
+      state.contact_name = contact_name || ''
+      state.contact_mobile = contact_mobile || ''
     })
     setState((state) => {
       state.formloading = false
@@ -396,6 +419,13 @@ const Apply = () => {
 
   //获取当前哪一步
   const getStep = async () => {
+    // 与商城统一登录：无会员 token 时走会员中心（带回跳）
+    if (!S?.getAuthToken()) {
+      Taro.redirectTo({
+        url: `/subpages/member/index?redirect_url=${encodeURIComponent('/subpages/merchant/apply')}`
+      })
+      return
+    }
     setState((state) => {
       state.formloading = true
     })
@@ -407,10 +437,14 @@ const Apply = () => {
       step = 1
     }
     const is_audit = step == 4
-    //如果是审核失败跳回第一步
+    // step=4：已提交审核。无本地重申标记则进审核页；从审核页「重新申请」会写入 MerchantStepKey
     if (is_audit) {
       const storeStep = S?.get(MerchantStepKey, true)
-      setStep(storeStep ? storeStep : 1)
+      if (!storeStep) {
+        Taro.redirectTo({ url: '/subpages/merchant/audit' })
+        return
+      }
+      setStep(storeStep)
     } else {
       setStep(step)
     }
@@ -454,40 +488,26 @@ const Apply = () => {
   }, [])
 
   const handleSwitchSelector = (type) => () => {
-    let url = `/subpages/merchant/selector?type=${type}`
-    if (type === BUSINESS_SCOPE) {
-      url += `&parent_id=${merchantType.id}`
-    }
     Taro.navigateTo({
-      url
+      url: `/subpages/merchant/selector?type=${type}`
     })
   }
 
-  const handleLogout = () => {
-    S?.delete(MerchantStepKey, true)
-    clearMerchant()
-  }
-
   const clearMerchant = () => {
-    dispatch(updateMerchantType({}))
-    dispatch(updateBusinessScope({}))
+    dispatch(updateMerchantType([]))
     dispatch(updateBank({}))
   }
 
   const fieldName =
     state.settled_type === 'soletrader' ? $t('3c94bb91.b29725') : $t('3c94bb91.e1a437')
 
-  console.log('===render===>', merchantType, businessScope, bankName)
-
   return (
     <SpPage className='page-merchant-apply' navbar={false}>
-      <MNavBar canBack={step !== 1} onBack={handleStep('back')} onLogout={handleLogout} />
-
       {state.formloading ? (
         <SpLoading />
       ) : (
         <View>
-          <MStep options={stepOptions} className='mt-40' step={step} />
+          <MStep options={stepOptions} step={step} />
           <ScrollView scrollY className='apply-scroll'>
             <View className='page-merchant-apply-content'>
               <View className='card'>
@@ -496,17 +516,9 @@ const Apply = () => {
                     <MCell
                       title={$t('3c94bb91.4709c8')}
                       required
-                      value={merchantType.name}
+                      value={mainCategoryNames}
                       onClick={handleSwitchSelector(MERCHANT_TYPE)}
                     />
-                    {merchantType.id && (
-                      <MCell
-                        title={$t('3c94bb91.04228b')}
-                        required
-                        value={businessScope.name}
-                        onClick={handleSwitchSelector(BUSINESS_SCOPE)}
-                      />
-                    )}
                     <MCell
                       title={$t('3c94bb91.82054a')}
                       required
@@ -518,161 +530,225 @@ const Apply = () => {
                   </View>
                 )}
                 {step === 2 && (
-                  <View>
-                    <MCell
-                      title={$t('3c94bb91.f47e27')}
-                      required
-                      mode='input'
-                      placeholder={$t('3c94bb91.8ded4d')}
-                      value={state.merchant_name}
-                      onChange={handleChange('merchant_name')}
-                    />
-                    <MCell
-                      title={$t('3c94bb91.25c0bd')}
-                      required
-                      mode='input'
-                      placeholder={$t('3c94bb91.4d3652')}
-                      value={state.social_credit_code_id}
-                      onChange={handleChange('social_credit_code_id')}
-                    />
-                    {/* <MCell
-                      title='所在省市'
-                      required
-                      mode='area'
-                      areaList={areaList}
-                      selectArea={state.regions}
-                      onColumnChange={onAreaColumnChange}
-                      onChange={onAreaChange}
-                    /> */}
-                    <MCell
-                      title={$t('3c94bb91.c63fa8')}
-                      required
-                      mode='area'
-                      placeholder={$t('3c94bb91.6074ce')}
-                      value={state.regions}
-                      onChange={(regions, regionIds) => {
-                        console.log('regions', regions)
-                        console.log('regionIds', regionIds)
-                        setState((draft) => {
-                          draft.regions = regions
-                          draft.regions_id = regionIds
-                        })
-                      }}
-                    />
-                    <MCell
-                      title={$t('692ba07e.61a0ec')}
-                      required
-                      mode='input'
-                      placeholder={$t('3c94bb91.86977d')}
-                      value={state.address}
-                      onChange={handleChange('address')}
-                    />
-                    <MCell
-                      title={ti('3c94bb91.e29509', [fieldName])}
-                      required
-                      mode='input'
-                      placeholder={ti('3c94bb91.b696d7', [fieldName])}
-                      value={state.legal_name}
-                      onChange={handleChange('legal_name')}
-                    />
-                    <MCell
-                      title={$t('3c94bb91.84e0cb')}
-                      required
-                      mode='input'
-                      placeholder={$t('3c94bb91.454fd8')}
-                      value={state.legal_cert_id}
-                      onChange={handleChange('legal_cert_id')}
-                    />
-                    <MCell
-                      title={$t('3c94bb91.92448a')}
-                      required
-                      mode='input'
-                      placeholder={$t('3c94bb91.ff95a4')}
-                      value={state.legal_mobile}
-                      onChange={handleChange('legal_mobile')}
-                    />
-                    <MCell
-                      title={$t('3c94bb91.7e763e')}
-                      mode='radio'
-                      value={state.bank_acct_type}
-                      radioOptions={bankAccType}
-                      onRadioChange={handleChange('bank_acct_type')}
-                    />
-                    <MCell
-                      title={$t('3c94bb91.e8ff1e')}
-                      mode='input'
-                      placeholder={$t('3c94bb91.a4d59c')}
-                      value={state.card_id_mask}
-                      onChange={handleChange('card_id_mask')}
-                    />
-                    {banknameRequired && (
+                  <View className='form-vertical'>
+                    {/* 企业营业执照信息 */}
+                    <View className='form-section'>
+                      <View className='form-section__title'>企业营业执照信息</View>
+                      <MImgPicker
+                        title='营业执照'
+                        required
+                        value={state.license_url}
+                        onChange={handleChange('license_url')}
+                        info={['上传营业执照照片']}
+                      />
+                      <View className='form-tip'>图片大小10M以内，格式png/jpg/jpeg，最多可上传1张</View>
+                      <View className='form-tip'>
+                        注意：如果图片像素太小，审核将无法对您的资质正确评估，因此请务必按照图片要求上传
+                      </View>
                       <MCell
-                        title={$t('3c94bb91.be02a6')}
+                        layout='vertical'
+                        title='营业执照统一社会信用代码'
+                        required
+                        mode='input'
+                        placeholder='请输入'
+                        value={state.social_credit_code_id}
+                        onChange={handleChange('social_credit_code_id')}
+                      />
+                      <MCell
+                        layout='vertical'
+                        title='企业营业执照公司名称'
+                        required
+                        mode='input'
+                        placeholder='请输入'
+                        value={state.merchant_name}
+                        onChange={handleChange('merchant_name')}
+                      />
+                      <MCell
+                        layout='vertical'
+                        title='企业营业执照注册地'
+                        required
+                        mode='input'
+                        placeholder='请输入'
+                        value={state.address}
+                        onChange={handleChange('address')}
+                      />
+                      <MCell
+                        layout='vertical'
+                        title='企业营业执照法定代表人'
+                        required
+                        mode='input'
+                        placeholder='请输入'
+                        value={state.legal_name}
+                        onChange={handleChange('legal_name')}
+                      />
+                    </View>
+
+                    {/* 法人代表人信息 */}
+                    <View className='form-section'>
+                      <View className='form-section__title'>法人代表人信息</View>
+                      <MImgPicker
+                        mode='idCard'
+                        title='法人身份证'
+                        required
+                        value={[state.legal_certid_front_url, state.legal_cert_id_back_url]}
+                        onChange={handleChange('legal_certid_front_url', 'legal_cert_id_back_url')}
+                        info={['人像面', '国徽面']}
+                      />
+                      <View className='form-tip'>图片大小10M以内，格式png/jpg/jpeg，最多可上传1张。</View>
+                      <View className='form-tip'>
+                        注意：如果图片像素太小，审核将无法对您的资质正确评估，因此请务必按照图片要求上传。
+                      </View>
+                      <MCell
+                        layout='vertical'
+                        title='身份证号码'
+                        required
+                        mode='input'
+                        placeholder='请输入'
+                        value={state.legal_cert_id}
+                        onChange={handleChange('legal_cert_id')}
+                      />
+                      <MCell
+                        layout='vertical'
+                        title='联系人姓名'
+                        required
+                        mode='input'
+                        placeholder='请输入'
+                        value={state.contact_name}
+                        onChange={handleChange('contact_name')}
+                      />
+                      <MCell
+                        layout='vertical'
+                        title='联系人手机号'
+                        required
+                        mode='input'
+                        placeholder='请输入'
+                        value={state.contact_mobile}
+                        onChange={handleChange('contact_mobile')}
+                      />
+                    </View>
+
+                    {/* 收款账户信息 */}
+                    <View className='form-section'>
+                      <View className='form-section__title'>收款账户信息</View>
+                      <MImgPicker
+                        mode='bankCard'
+                        title='收款账户银行卡'
+                        required
+                        value={state.bank_card_front_url}
+                        onChange={handleChange('bank_card_front_url')}
+                        info={['上传银行卡正面']}
+                      />
+                      <View className='form-tip'>图片大小10M以内，格式png/jpg/jpeg，最多可上传1张。</View>
+                      <View className='form-tip'>
+                        注意：如果图片像素太小，审核将无法对您的资质正确评估，因此请务必按照图片要求上传。
+                      </View>
+                      <MCell
+                        layout='vertical'
+                        title='结算银行账户类型'
+                        required
+                        mode='radio'
+                        value={state.bank_acct_type}
+                        radioOptions={bankAccType}
+                        onRadioChange={handleChange('bank_acct_type')}
+                      />
+                      <MCell
+                        layout='vertical'
+                        title='结算银行'
+                        required
                         value={bankName.name}
                         onClick={handleSwitchSelector(BANG_NAME)}
                       />
-                    )}
-                    {bankmobileRequired && (
                       <MCell
-                        title={$t('3c94bb91.c36b02')}
+                        layout='vertical'
+                        title='结算银行账号'
+                        required
                         mode='input'
-                        placeholder={$t('3c94bb91.31d261')}
-                        value={state.bank_mobile}
-                        onChange={handleChange('bank_mobile')}
+                        placeholder='请输入'
+                        value={state.card_id_mask}
+                        onChange={handleChange('card_id_mask')}
                       />
-                    )}
+                    </View>
                   </View>
                 )}
                 {step === 3 && (
-                  <View className='certificate-information'>
-                    <MImgPicker
-                      title={
-                        <Text>
-                          {$t('3c94bb91.b35543')}
-                          <Text className='primary'>{$t('3c94bb91.e0b8cc')}</Text>
-                          {$t('3c94bb91.d2fb1e')}
-                        </Text>
-                      }
-                      value={state.license_url}
-                      onChange={handleChange('license_url')}
-                      info={[$t('3c94bb91.795dd2')]}
-                    />
-                    <MImgPicker
-                      mode='idCard'
-                      title={
-                        <Text>
-                          {$t('3c94bb91.b35543')}
-                          <Text className='primary'>
-                            {fieldName}
-                            {$t('3c94bb91.d60ad4')}
-                          </Text>
-                          {$t('3c94bb91.d2fb1e')}
-                        </Text>
-                      }
-                      value={[state.legal_certid_front_url, state.legal_cert_id_back_url]}
-                      onChange={handleChange('legal_certid_front_url', 'legal_cert_id_back_url')}
-                      info={[
-                        ti('3c94bb91.a08013', [fieldName]),
-                        ti('3c94bb91.e30ad1', [fieldName])
-                      ]}
-                    />
-                    <MImgPicker
-                      mode='bankCard'
-                      required={false}
-                      value={state.bank_card_front_url}
-                      onChange={handleChange('bank_card_front_url')}
-                      title={
-                        <Text>
-                          {$t('3c94bb91.b35543')}
-                          <Text className='primary'>{$t('3c94bb91.a63e2f')}</Text>
-                          {$t('3c94bb91.d2fb1e')}
-                        </Text>
-                      }
-                      info={[$t('3c94bb91.7895b7')]}
-                    />
+                  <View className='form-vertical form-preview'>
+                    {/* 企业营业执照信息 */}
+                    <View className='form-section'>
+                      <View className='form-section__title'>企业营业执照信息</View>
+                      <PreviewImage title='营业执照' src={state.license_url[0]} />
+                      <PreviewText
+                        title='营业执照统一社会信用代码'
+                        value={state.social_credit_code_id}
+                      />
+                      <PreviewText title='企业营业执照公司名称' value={state.merchant_name} />
+                      <PreviewText title='企业营业执照注册地' value={state.address} />
+                      <PreviewText title='企业营业执照法定代表人' value={state.legal_name} />
+                    </View>
+
+                    {/* 法人代表人信息 */}
+                    <View className='form-section'>
+                      <View className='form-section__title'>法人代表人信息</View>
+                      <PreviewImage
+                        title='法人身份证'
+                        src={state.legal_certid_front_url}
+                        sub='人像面'
+                        urls={[state.legal_certid_front_url, state.legal_cert_id_back_url]}
+                      />
+                      <PreviewImage
+                        src={state.legal_cert_id_back_url}
+                        sub='国徽面'
+                        urls={[state.legal_certid_front_url, state.legal_cert_id_back_url]}
+                      />
+                      <PreviewText title='身份证号码' value={state.legal_cert_id} />
+                      <PreviewText title='联系人姓名' value={state.contact_name} />
+                      <PreviewText title='联系人手机号' value={state.contact_mobile} />
+                    </View>
+
+                    {/* 收款账户信息 */}
+                    <View className='form-section'>
+                      <View className='form-section__title'>收款账户信息</View>
+                      <PreviewImage title='收款账户银行卡' src={state.bank_card_front_url[0]} />
+                      <PreviewText
+                        title='结算银行账户类型'
+                        value={state.bank_acct_type == BANK_PUBLIC ? '对公' : '对私'}
+                      />
+                      <View className='preview-row'>
+                        <PreviewText
+                          className='preview-row__item'
+                          title='开户银行'
+                          value={state.bank_name}
+                        />
+                        <PreviewText
+                          className='preview-row__item'
+                          title='结算银行账号'
+                          value={state.card_id_mask}
+                        />
+                      </View>
+                    </View>
                   </View>
                 )}
+
               </View>
+              {step === 1 && (
+                <View className='agreement-panel'>
+                  <View className='agreement-panel__title'>入驻须知</View>
+                  <View className='agreement-panel__desc'>
+                    请确保您充分知悉并符合以下基本入驻条件及说明，逐条确认后即可申请：
+                  </View>
+                  <View className='agreement-panel__agree'>
+                    <MRadio checked={agreed} onClick={() => setAgreed((v) => !v)} />
+                    <Text
+                      className='agreement-panel__agree-text'
+                      onClick={() => setAgreed((v) => !v)}
+                    >
+                      我已详细阅读并确认
+                    </Text>
+                    <Text className='agreement-panel__agree-link' onClick={navigateToAgreement}>
+                      《入驻条件及说明》
+                    </Text>
+                  </View>
+                </View>
+              )}
               {step !== 1 && (
                 <View className='info mt-24'>
                   <Text className='iconfont icon-info'></Text>
@@ -686,14 +762,28 @@ const Apply = () => {
         </View>
       )}
 
-      <View className='apply-bottom'>
-        <View className='apply-bottom-text' onClick={navigateToAgreement}>
-          {$t('3c94bb91.1e058c')}
-        </View>
+      <View className={classNames('apply-bottom', { 'has-back': step > 1 })}>
+        {step > 1 && (
+          <View className='apply-bottom-back' onClick={handleStep('back')}>
+            返回上一步
+          </View>
+        )}
         <MButton className='apply-bottom-button' onClick={handleStep('next')} loading={loading}>
-          {isSubmit ? $t('b4dfc303.939d53') : $t('d121a348.38ce27')}
+          {isSubmit ? '提交审核' : $t('d121a348.38ce27')}
         </MButton>
       </View>
+
+      <SpAddress
+        isOpened={addressOpened}
+        onClose={() => setAddressOpened(false)}
+        onChange={(selectValue) => {
+          setState((draft) => {
+            draft.regions = selectValue.map((d) => d.label)
+            draft.regions_id = selectValue.map((d) => d.id)
+          })
+          setAddressOpened(false)
+        }}
+      />
     </SpPage>
   )
 }

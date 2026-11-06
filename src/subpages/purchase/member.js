@@ -11,7 +11,7 @@ import Taro, {
 } from '@tarojs/taro'
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { View, ScrollView, Text, Image, Button } from '@tarojs/components'
-import { SG_ROUTER_PARAMS, MERCHANT_TOKEN, SG_TOKEN, INVITE_ACTIVITY_ID } from '@/consts'
+import { SG_ROUTER_PARAMS, SG_TOKEN, INVITE_ACTIVITY_ID } from '@/consts'
 import { updateUserInfo } from '@/store/slices/user'
 import { updateIsOpenPurchase } from '@/store/slices/purchase'
 import { useSelector, useDispatch } from 'react-redux'
@@ -155,9 +155,6 @@ function MemberIndex(props) {
   }, [i18n.language])
 
   useDidShow(() => {
-    if (S.get(MERCHANT_TOKEN, true)) {
-      S?.delete(MERCHANT_TOKEN, true)
-    }
     if (S.get(SG_TOKEN)) {
       setHeaderBlock()
     }

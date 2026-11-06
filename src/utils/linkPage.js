@@ -374,9 +374,9 @@ const memberSetting = {
     path: '/pages/member/item-fav'
   },
   tenants: {
-    // 云店版本不显示
+    // 云店版本不显示；与商城统一登录，入口直接进申请页（未登录由 needLoginPageType + SpLogin 拦截）
     title: $t('ece5ca3e.1107a8'),
-    path: '/subpages/merchant/login'
+    path: '/subpages/merchant/apply'
   },
   address: {
     title: $t('cb93ea29.bca1ea'),

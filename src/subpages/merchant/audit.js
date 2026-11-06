@@ -6,9 +6,10 @@ import Taro from '@tarojs/taro'
 import { View, Text } from '@tarojs/components'
 import { useEffect } from 'react'
 import { useImmer } from 'use-immer'
-import { SpPage, SpImage, Loading } from '@/components'
+import { SpPage, SpImage, Loading, SpToast } from '@/components'
 import { classNames, copyText } from '@/utils'
 import * as merchantApi from '@/api/merchant'
+import S from '@/spx'
 import { useTranslation, $t, ti } from '@/i18n'
 import {
   AUDITING,
@@ -16,9 +17,10 @@ import {
   AUDIT_FAIL,
   AUDIT_UNKNOWN,
   AUDIT_MAP_IMG,
-  AUDIT_STATUS_TITLE_KEY
+  AUDIT_STATUS_TITLE_KEY,
+  MerchantStepKey
 } from './consts'
-import { MButton, MNavBar } from './comps'
+import { MButton } from './comps'
 import './audit.scss'
 
 const initialState = {
@@ -42,6 +44,12 @@ const Audit = () => {
   }, [i18n.language])
 
   const getAuditStatus = async () => {
+    if (!S?.getAuthToken()) {
+      Taro.redirectTo({
+        url: `/subpages/member/index?redirect_url=${encodeURIComponent('/subpages/merchant/audit')}`
+      })
+      return
+    }
     const { audit_status, audit_memo, mobile, password } = await merchantApi.getAuditstatus()
     setState((draft) => {
       draft.status = audit_status
@@ -52,9 +60,10 @@ const Audit = () => {
   }
 
   const handleReset = () => {
-    const url = `/subpages/merchant/apply`
+    // 标记为重新申请，避免 apply 在 step=4 时再次被重定向回审核页
+    S?.set(MerchantStepKey, 1, true)
     Taro.redirectTo({
-      url
+      url: `/subpages/merchant/apply`
     })
   }
 
@@ -79,8 +88,6 @@ const Audit = () => {
         auditing: status == AUDITING
       })}
     >
-      <MNavBar canBack={false} />
-
       <View className='audit-body'>
         {status == AUDIT_UNKNOWN ? (
           <Loading />
@@ -141,6 +148,7 @@ const Audit = () => {
           <MButton onClick={handleReset}>{$t('53023079.a5c7b5')}</MButton>
         </View>
       )}
+      <SpToast />
     </SpPage>
   )
 }
