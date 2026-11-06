@@ -3,10 +3,9 @@
  * See LICENSE file for license details.
  */
 import React, { useEffect, useMemo } from 'react'
-import Taro from '@tarojs/taro'
 import { View, Text } from '@tarojs/components'
 import { SpImage, SpLogin } from '@/components'
-import { classNames, isWeb } from '@/utils'
+import { classNames, linkPage } from '@/utils'
 import { useLogin } from '@/hooks'
 import api from '@/api'
 import { AtIcon } from 'taro-ui'
@@ -14,38 +13,61 @@ import { useTranslation, $t } from '@/i18n'
 import { getGlobalBaseStyle } from '../helper'
 import './index.scss'
 
-const initList = [
-  {
-    contentKey: 'e21efe54.818d78',
-    imgUrl: 'fv_order_daifukuan.png',
-    link: '/subpages/trade/list?status=5',
-    key: 'waitPayNum'
-  },
-  {
-    contentKey: 'e21efe54.4933ca',
-    imgUrl: 'fv_order_daifahuo.png',
-    link: '/subpages/trade/list?status=1',
-    key: 'waitSendNum'
-  },
-  {
-    contentKey: 'e21efe54.a48b28',
-    imgUrl: 'fv_order_daishouhuo.png',
-    link: '/subpages/trade/list?status=7',
-    key: 'waitEvaluateNum'
-  },
-  {
-    contentKey: 'e21efe54.59bd68',
-    imgUrl: 'fv_order_shouhou.png',
-    link: '/subpages/trade/after-sale-list',
-    key: 'afterSalesNum'
+/** 默认图标：仅在装修未上传图片时兜底 */
+const DEFAULT_ICON_BY_ID = {
+  orderWaitPay: 'fv_order_daifukuan.png',
+  orderWaitSend: 'fv_order_daifahuo.png',
+  orderWaitReceive: 'fv_order_daishouhuo.png',
+  orderWaitEvaluate: 'pingjia.png',
+  orderAfterSale: 'fv_order_shouhou.png',
+  orderAll: 'fv_order_daifukuan.png',
+  zitiOrder: 'fv_order_daishouhuo.png'
+}
+
+/** 角标字段：按配置的页面 id / 自定义链接推断 */
+const BADGE_KEY_BY_ID = {
+  orderWaitPay: 'waitPayNum',
+  orderWaitSend: 'waitSendNum',
+  orderWaitReceive: 'waitRecevieNum',
+  orderWaitEvaluate: 'waitEvaluateNum',
+  orderAfterSale: 'afterSalesNum',
+  zitiOrder: 'zitiNum'
+}
+
+const BADGE_KEY_BY_STATUS = {
+  '5': 'waitPayNum',
+  '6': 'waitSendNum',
+  '1': 'waitRecevieNum',
+  '7': 'waitEvaluateNum'
+}
+
+function resolveBadgeKey(item = {}) {
+  if (item.id && BADGE_KEY_BY_ID[item.id]) {
+    return BADGE_KEY_BY_ID[item.id]
   }
-]
+  const url = item.linkUrl || item.link || ''
+  if (/after-sale/i.test(url)) {
+    return 'afterSalesNum'
+  }
+  const matched = String(url).match(/[?&]status=(\d+)/)
+  if (matched) {
+    return BADGE_KEY_BY_STATUS[matched[1]] || null
+  }
+  return null
+}
+
+function resolveItemIcon(item = {}) {
+  return item.imgUrl || DEFAULT_ICON_BY_ID[item.id] || ''
+}
+
+function hasLink(item = {}) {
+  return !!(item.linkPage || item.linkUrl || item.linkType == 1)
+}
 
 export default function WgtOrderNavigation(props) {
   useTranslation()
   const { info, id } = props
   const { isLogin } = useLogin()
-  const [orderList, setOrderList] = React.useState([])
   const [counts, setCounts] = React.useState({
     waitPayNum: 0,
     waitSendNum: 0,
@@ -58,14 +80,9 @@ export default function WgtOrderNavigation(props) {
   // 从 params 中获取配置和数据，兼容两种数据结构
   const params = info?.params || info || {}
   const base = params.base || {}
-  const data = params.data || []
-  const dataLen = (Array.isArray(data) ? data.length : 0) || initList.length
+  const data = Array.isArray(params.data) ? params.data : []
 
   const outerStyle = useMemo(() => getGlobalBaseStyle(base.outerMargin || {}), [base.outerMargin])
-
-  const handleClickLink = (link) => {
-    Taro.navigateTo({ url: link })
-  }
 
   useEffect(() => {
     if (isLogin) {
@@ -97,23 +114,12 @@ export default function WgtOrderNavigation(props) {
     }
   }
 
-  useEffect(() => {
-    const rawData = Array.isArray(data) ? data : []
-    const list = initList.map((item, index) => {
-      const apiItem = rawData[index] || {}
-      return {
-        ...item,
-        ...apiItem,
-        contentKey: item.contentKey,
-        content: apiItem.content,
-        imgUrl: apiItem.imgUrl || item.imgUrl
-      }
-    })
-    console.log('list', list)
-    setOrderList(list)
-  }, [info, data])
+  const handleItemClick = (item) => {
+    if (!hasLink(item)) return
+    linkPage(item)
+  }
 
-  if (!info || dataLen === 0) return null
+  if (!info || data.length === 0) return null
 
   return (
     <View
@@ -126,7 +132,7 @@ export default function WgtOrderNavigation(props) {
           <Text className='wgt-order-navigation-title'>{base.title}</Text>
           <View
             className='wgt-order-navigation-morelink'
-            onClick={() => handleClickLink('/subpages/trade/list?status=0')}
+            onClick={() => linkPage({ linkType: 0, linkPage: 'link', id: 'orderAll' })}
           >
             <Text>{$t('e21efe54.dbb4d8')}</Text>
             <AtIcon value='chevron-right' size={14} color={base.moreBtn?.color} />
@@ -134,30 +140,33 @@ export default function WgtOrderNavigation(props) {
         </View>
       )}
       <View className='wgt-order-navigation-bd'>
-        {orderList.map((item, idx) => (
-          <SpLogin onChange={() => handleClickLink(item.link)} key={`wgt-order-item__${idx}`}>
-            <View className='wgt-order-navigation-item'>
-              <View className='wgt-order-navigation-wrapper'>
-                <View className='wgt-order-navigation-bg'>
-                  <SpImage
-                    src={item.imgUrl || initList[idx]?.imgUrl}
-                    className={
-                      item.imgUrl ? 'wgt-order-navigation-icon' : 'wgt-order-navigation-icon-mr'
-                    }
-                  />
-                </View>
-                {counts[item.key] > 0 && (
-                  <View className='wgt-order-navigation-badge'>
-                    <Text>{counts[item.key] > 999 ? '999+' : counts[item.key]}</Text>
+        {data.map((item, idx) => {
+          const badgeKey = resolveBadgeKey(item)
+          const badgeCount = badgeKey ? counts[badgeKey] : 0
+          const icon = resolveItemIcon(item)
+          return (
+            <SpLogin onChange={() => handleItemClick(item)} key={`wgt-order-item__${idx}`}>
+              <View className='wgt-order-navigation-item'>
+                <View className='wgt-order-navigation-wrapper'>
+                  <View className='wgt-order-navigation-bg'>
+                    <SpImage
+                      src={icon}
+                      className={
+                        item.imgUrl ? 'wgt-order-navigation-icon' : 'wgt-order-navigation-icon-mr'
+                      }
+                    />
                   </View>
-                )}
+                  {badgeCount > 0 && (
+                    <View className='wgt-order-navigation-badge'>
+                      <Text>{badgeCount > 999 ? '999+' : badgeCount}</Text>
+                    </View>
+                  )}
+                </View>
+                <Text className='wgt-order-navigation-label'>{item.content}</Text>
               </View>
-              <Text className='wgt-order-navigation-label'>
-                {item.content || $t(item.contentKey)}
-              </Text>
-            </View>
-          </SpLogin>
-        ))}
+            </SpLogin>
+          )
+        })}
       </View>
     </View>
   )
