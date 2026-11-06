@@ -201,7 +201,7 @@ function WgtCouponCard(props) {
                     </View>
                   )}
                   <View className='coupon-title' style={{ color: amountColor }}>
-                    {item.reduceCost}
+                    {item.type === 'discount' ? item.discount : item.reduceCost}
                   </View>
                   {item.type == 'discount' && (
                     <View className='coupon-unit' style={{ color: amountColor }}>
