@@ -177,19 +177,15 @@ function SpSkuSelect(props) {
   //起订量
   const specItemed = (val = []) => {
     if (info.startNum > 0) {
-      //多规格
+      //多规格：与 skuDict 同一套 selection key（spec_value_id 用 _ 拼接），避免 customSpecId 顺序不一致导致匹配失败
       if (info.specItems.length > 0 && val.length > 0) {
-        //多规格动态获取起订量
-        const newval = val.length == 1 ? val[0] : val.join('-')
-        info.specItems.forEach((item) => {
-          if (item.customSpecId == newval) {
-            setState((draft) => {
-              draft.minNum = item.startNum
-              draft.num = item.startNum
-            })
-            return item.startNum
-          }
+        const matched = skuDictRef.current[val.join('_')]
+        const startNum = Number(matched?.startNum) > 0 ? Number(matched.startNum) : info.startNum
+        setState((draft) => {
+          draft.minNum = startNum
+          draft.num = startNum
         })
+        return startNum
       } else {
         // 单规格
         setState((draft) => {
