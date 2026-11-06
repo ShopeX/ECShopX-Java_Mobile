@@ -6,7 +6,7 @@ import Taro from '@tarojs/taro'
 import { View, Text } from '@tarojs/components'
 import { useEffect } from 'react'
 import { useImmer } from 'use-immer'
-import { SpPage, SpImage, Loading } from '@/components'
+import { SpPage, SpImage, Loading, SpToast } from '@/components'
 import { classNames, copyText } from '@/utils'
 import * as merchantApi from '@/api/merchant'
 import S from '@/spx'
@@ -148,6 +148,7 @@ const Audit = () => {
           <MButton onClick={handleReset}>{$t('53023079.a5c7b5')}</MButton>
         </View>
       )}
+      <SpToast />
     </SpPage>
   )
 }
