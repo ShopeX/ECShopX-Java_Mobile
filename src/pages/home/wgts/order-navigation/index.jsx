@@ -24,7 +24,36 @@ const DEFAULT_ICON_BY_ID = {
   zitiOrder: 'fv_order_daishouhuo.png'
 }
 
-/** 角标字段：按配置的页面 id / 自定义链接推断 */
+const KEY_TO_ID = {
+  waitPayNum: 'orderWaitPay',
+  waitSendNum: 'orderWaitSend',
+  waitRecevieNum: 'orderWaitReceive',
+  waitEvaluateNum: 'orderWaitEvaluate',
+  afterSalesNum: 'orderAfterSale',
+  zitiNum: 'zitiOrder'
+}
+
+const ID_TO_KEY = Object.fromEntries(Object.entries(KEY_TO_ID).map(([k, v]) => [v, k]))
+
+const TEMPLATE_4_KEYS = ['waitPayNum', 'waitRecevieNum', 'waitEvaluateNum', 'afterSalesNum']
+const TEMPLATE_5_KEYS = [
+  'waitPayNum',
+  'waitSendNum',
+  'waitRecevieNum',
+  'waitEvaluateNum',
+  'afterSalesNum'
+]
+
+const DEFAULT_ICON_BY_KEY = {
+  waitPayNum: DEFAULT_ICON_BY_ID.orderWaitPay,
+  waitSendNum: DEFAULT_ICON_BY_ID.orderWaitSend,
+  waitRecevieNum: DEFAULT_ICON_BY_ID.orderWaitReceive,
+  waitEvaluateNum: DEFAULT_ICON_BY_ID.orderWaitEvaluate,
+  afterSalesNum: DEFAULT_ICON_BY_ID.orderAfterSale,
+  zitiNum: DEFAULT_ICON_BY_ID.zitiOrder
+}
+
+/** 角标字段：按 key / 配置的页面 id / 自定义链接推断 */
 const BADGE_KEY_BY_ID = {
   orderWaitPay: 'waitPayNum',
   orderWaitSend: 'waitSendNum',
@@ -41,7 +70,41 @@ const BADGE_KEY_BY_STATUS = {
   '7': 'waitEvaluateNum'
 }
 
+function inferKeyFromContent(content) {
+  const text = String(content || '').trim()
+  if (!text) return ''
+  if (/待支付|待付款/.test(text)) return 'waitPayNum'
+  if (/待发货/.test(text)) return 'waitSendNum'
+  if (/待收货/.test(text)) return 'waitRecevieNum'
+  if (/待评价/.test(text)) return 'waitEvaluateNum'
+  if (/售后/.test(text)) return 'afterSalesNum'
+  return ''
+}
+
+function hasConfiguredLink(item = {}) {
+  if (item.linkType == 1 && item.linkUrl) return true
+  return !!(item.linkPage && item.id)
+}
+
+/** 旧装修数据可能只有 content/imgUrl，用 key 或下标补全 linkPage.id */
+function normalizeNavItem(item = {}, index = 0, total = 1) {
+  const keys = total >= 5 ? TEMPLATE_5_KEYS : TEMPLATE_4_KEYS
+  const indexKey = keys[index] || ''
+  const key =
+    item.key || ID_TO_KEY[item.id] || inferKeyFromContent(item.content) || indexKey || ''
+  const id = item.id || KEY_TO_ID[key] || ''
+  const merged = { ...item, key, id }
+
+  if (!hasConfiguredLink(item) && id) {
+    merged.linkType = 0
+    merged.linkPage = 'link'
+    merged.id = id
+  }
+  return merged
+}
+
 function resolveBadgeKey(item = {}) {
+  if (item.key) return item.key
   if (item.id && BADGE_KEY_BY_ID[item.id]) {
     return BADGE_KEY_BY_ID[item.id]
   }
@@ -57,11 +120,19 @@ function resolveBadgeKey(item = {}) {
 }
 
 function resolveItemIcon(item = {}) {
-  return item.imgUrl || DEFAULT_ICON_BY_ID[item.id] || ''
+  return (
+    item.imgUrl ||
+    DEFAULT_ICON_BY_ID[item.id] ||
+    DEFAULT_ICON_BY_KEY[item.key] ||
+    ''
+  )
 }
 
 function hasLink(item = {}) {
-  return !!(item.linkPage || item.linkUrl || item.linkType == 1)
+  if (item.linkType == 1 && item.linkUrl) return true
+  if (item.linkPage && item.id) return true
+  if (item.key && KEY_TO_ID[item.key]) return true
+  return !!(item.linkUrl || item.link)
 }
 
 export default function WgtOrderNavigation(props) {
@@ -80,7 +151,11 @@ export default function WgtOrderNavigation(props) {
   // 从 params 中获取配置和数据，兼容两种数据结构
   const params = info?.params || info || {}
   const base = params.base || {}
-  const data = Array.isArray(params.data) ? params.data : []
+  const rawData = Array.isArray(params.data) ? params.data : []
+  const data = useMemo(
+    () => rawData.map((item, index) => normalizeNavItem(item, index, rawData.length)),
+    [rawData]
+  )
 
   const outerStyle = useMemo(() => getGlobalBaseStyle(base.outerMargin || {}), [base.outerMargin])
 
