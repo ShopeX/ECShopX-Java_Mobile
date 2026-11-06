@@ -394,6 +394,31 @@ const memberSetting = {
     title: $t('d5036137.9c9137'),
     path: '/subpages/trade/ziti-list'
   },
+  orderAll: {
+    title: $t('e21efe54.dbb4d8'),
+    path: '/subpages/trade/list?status=0'
+  },
+  orderWaitPay: {
+    title: $t('e21efe54.818d78'),
+    path: '/subpages/trade/list?status=5'
+  },
+  orderWaitSend: {
+    title: $t('e21efe54.d8476e'),
+    path: '/subpages/trade/list?status=6'
+  },
+  orderWaitReceive: {
+    title: $t('e21efe54.4933ca'),
+    path: '/subpages/trade/list?status=1'
+  },
+  orderWaitEvaluate: {
+    title: $t('e21efe54.a48b28'),
+    path: '/subpages/trade/list?status=7'
+  },
+  orderAfterSale: {
+    title: $t('e21efe54.59bd68'),
+    path: '/subpages/trade/after-sale-list'
+  },
+
   community_group_enable: {
     // H5不支持
     title: $t('ece5ca3e.b7c829'),
