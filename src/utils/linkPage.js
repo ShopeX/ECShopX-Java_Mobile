@@ -451,6 +451,10 @@ const memberSetting = {
   memberSign: {
     title: $t('ece5ca3e.6ac9a7'),
     path: '/subpages/member/sign-in/index'
+  },
+  memberTask: {
+    title: $t('ece5ca3e.b213c3'),
+    path: '/subpages/member/task/index'
   }
 }
 
