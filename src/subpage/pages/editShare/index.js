@@ -239,6 +239,8 @@ export default class EditShare extends Component {
   render() {
     const { insertData, info, selectPics, showPoster, showSuccess } = this.state
     const { colors } = this.props
+    const theme = colors?.data?.[0] || {}
+    const primaryColor = theme.primary || 'var(--color-primary)'
     const steps = [
       { title: $t('070e8579.da6089') },
       { title: $t('070e8579.3c6407') },
@@ -247,53 +249,66 @@ export default class EditShare extends Component {
 
     return (
       <View className='editShare'>
-        <View className='content'>
-          <Textarea
-            value={info}
-            className='textarea'
-            maxlength='-1'
-            placeholder={$t('070e8579.2edcc2')}
-            onInput={this.inputInfo.bind(this)}
-          ></Textarea>
-          <View className='textData'>
-            <View className='title'>{$t('070e8579.131d2c')}</View>
-            <View className='insertData'>
-              {insertData.map((item, index) => (
-                <View
-                  className={`item ${
-                    info.indexOf(`${item.name}: ${item.value}\n`) !== -1 && 'disabled'
-                  }`}
-                  key={`goodInfo${index}`}
-                  onClick={this.insertInfo.bind(this, item)}
-                >
-                  {item.name}
+        <View className='editShare__body'>
+          <View className='editShare__section'>
+            <Textarea
+              value={info}
+              className='textarea'
+              maxlength='-1'
+              placeholder={$t('070e8579.2edcc2')}
+              placeholderClass='textarea__placeholder'
+              onInput={this.inputInfo.bind(this)}
+            ></Textarea>
+            <View className='textData'>
+              <View className='title'>{$t('070e8579.131d2c')}</View>
+              <View className='insertData'>
+                {insertData.map((item, index) => (
+                  <View
+                    className={`item ${
+                      info.indexOf(`${item.name}: ${item.value}\n`) !== -1 && 'disabled'
+                    }`}
+                    key={`goodInfo${index}`}
+                    style={{
+                      color: primaryColor,
+                      borderColor: primaryColor
+                    }}
+                    onClick={this.insertInfo.bind(this, item)}
+                  >
+                    {item.name}
+                  </View>
+                ))}
+              </View>
+            </View>
+          </View>
+          {showPoster.length > 0 && (
+            <View className='images'>
+              {showPoster.map((item, index) => (
+                <View className='item' key={`poster${index}`}>
+                  <View className='item__pic'>
+                    <Image src={item} className='img' mode='widthFix' />
+                  </View>
+                  <View
+                    className='item__del'
+                    onClick={this.removeItem.bind(this, index)}
+                  >
+                    <View className='iconfont icon-close'></View>
+                  </View>
                 </View>
               ))}
             </View>
-          </View>
-        </View>
-        <View className='images'>
-          {showPoster.map((item, index) => (
-            <View className='item' key={`poster${index}`}>
-              <View
-                className='iconfont icon-close'
-                onClick={this.removeItem.bind(this, index)}
-              ></View>
-              <Image src={item} className='img' mode='widthFix' />
-            </View>
-          ))}
+          )}
         </View>
         <View className='btns'>
           <View
-            className='btn'
-            style={`background: ${colors.data[0].accent}`}
+            className='btn btn--ghost'
+            style={{ color: primaryColor, borderColor: primaryColor }}
             onClick={this.resetShare.bind(this)}
           >
             {$t('986be21d.4b9c32')}
           </View>
           <View
-            className='btn'
-            style={`background: ${colors.data[0].primary}`}
+            className='btn btn--primary'
+            style={{ background: primaryColor }}
             onClick={this.saveShare.bind(this)}
           >
             {$t('20b64b82.be5fbb')}

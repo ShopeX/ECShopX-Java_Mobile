@@ -1,101 +1,213 @@
 /**
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
+ *
+ * 编辑分享：文案编辑 + 海报预览 + 底部保存
+ * 视觉：通栏白底 + 发丝线分隔（微信原生表单风），尺寸按 750 设计稿
  */
 @import '@/style/imports';
+
+$section-padding-x: 24px;
+$section-padding-y: 28px;
+$edit-share-toolbar-height: 132px;
 
 page {
   width: 100%;
   height: 100%;
+  background: #fff;
 }
 
 .editShare {
-  width: 100%;
-  height: 100%;
-  .textarea {
-    background: #fff;
-    margin-top: 10px;
-    width: 100%;
-    box-sizing: border-box;
-    padding: 10px;
-    height: 300px;
+  min-height: 100vh;
+  box-sizing: border-box;
+  background: #fff;
+
+  &__body {
+    // 给固定底部操作栏留位
+    padding-bottom: $edit-share-toolbar-height + 32px;
   }
-  .textData {
-    display: flex;
-    padding: 10px 20px;
-    align-items: center;
+
+  // 通栏分区：只靠发丝线分隔，无卡片无阴影
+  &__section {
+    padding: $section-padding-y $section-padding-x;
     background: #fff;
-    border-top: 2px solid #efefef;
-    .title {
-      margin-top: 10px;
-      color: #666;
-      margin-right: 10px;
-      flex-shrink: 0;
+    border-bottom: 1PX solid $border-base;
+    box-sizing: border-box;
+  }
+
+  // 文案编辑区
+  .textarea {
+    width: 100%;
+    height: 260px;
+    box-sizing: border-box;
+    padding: 0;
+    font-size: 28px;
+    line-height: 1.6;
+    color: $default-text;
+    background: transparent;
+
+    &__placeholder {
+      color: $light-text;
+      font-size: 28px;
     }
+  }
+
+  // 插入数据
+  .textData {
+    margin-top: 24px;
+
+    .title {
+      color: $muted-text;
+      font-size: 24px;
+      line-height: 1;
+      margin-bottom: 20px;
+    }
+
     .insertData {
       display: flex;
       flex-wrap: wrap;
+      margin: -8px -8px 0 0;
+
       .item {
-        padding: 10px 30px;
-        border-radius: 30px;
-        color: #333;
-        background: #efefef;
-        margin-right: 10px;
-        margin-top: 10px;
-        font-size: 26px;
+        position: relative;
+        margin: 8px 8px 0 0;
+        padding: 12px 24px 12px 42px;
+        border: 1PX solid $border-base;
+        border-radius: 100px;
+        font-size: 24px;
+        line-height: 1.4;
+        color: $default-text;
+        background: #fff;
+        box-sizing: border-box;
+        transition: opacity 0.2s ease;
+
+        // 「+」/「✓」用伪元素，避免新增文案
+        &::before {
+          content: '+';
+          position: absolute;
+          left: 18px;
+          top: 50%;
+          transform: translateY(-50%);
+          font-size: 26px;
+          line-height: 1;
+          color: $muted-text;
+        }
+
         &.disabled {
-          color: #999;
+          color: $light-text !important;
+          border-color: $border-light !important;
+          background: $border-lighter;
+
+          &::before {
+            content: '✓';
+            color: $light-text;
+          }
         }
-        &:last-child {
-          margin-right: 0;
+
+        &:active {
+          opacity: 0.6;
         }
       }
     }
   }
+
+  // 海报预览
   .images {
-    margin-top: 30px;
     display: flex;
-    padding: 0 20px;
-    // justify-content: space-around;
     flex-wrap: wrap;
+    padding: $section-padding-y 14px;
+    background: #fff;
+    border-bottom: 1PX solid $border-base;
+    box-sizing: border-box;
+
     .item {
-      width: 33%;
-      flex-shrink: 0;
-      padding: 5px;
+      width: 33.333%;
+      box-sizing: border-box;
+      padding: 10px;
       position: relative;
-      .icon-close {
-        position: absolute;
-        top: 8px;
-        right: 8px;
-        background: rgba($color: #000000, $alpha: 0.5);
-        color: #fff;
-        font-size: 36px;
+
+      &__pic {
+        border: 1PX solid $border-light;
+        border-radius: 8px;
+        overflow: hidden;
+        background: $border-lighter;
       }
+
       .img {
+        display: block;
         width: 100%;
-        box-shadow: 0px 5px 10px 0px rgba(0, 0, 0, 0.3);
+      }
+
+      &__del {
+        position: absolute;
+        top: 2px;
+        right: 2px;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: rgba(#000, 0.45);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        .icon-close {
+          color: #fff;
+          font-size: 22px;
+          line-height: 1;
+        }
+
+        &:active {
+          background: rgba(#000, 0.7);
+        }
       }
     }
   }
+
+  // 底部操作栏
   .btns {
-    display: flex;
-    justify-content: space-around;
-    align-items: center;
-    margin-top: 50px;
-    width: 100%;
     position: fixed;
     left: 0;
+    right: 0;
     bottom: 0;
+    z-index: $z-index-toolbar;
+    display: flex;
+    align-items: center;
+    padding: 20px $section-padding-x calc(20px + env(safe-area-inset-bottom));
     background: #fff;
-    padding-bottom: 20px;
+    border-top: 1PX solid $border-light;
+    box-sizing: border-box;
+
     .btn {
-      padding: 20px 50px;
-      width: 45%;
+      flex: 1;
+      height: 88px;
+      line-height: 88px;
       text-align: center;
-      color: #fff;
-      border-radius: 10px;
+      font-size: 30px;
+      border-radius: 44px;
+      box-sizing: border-box;
+      transition: opacity 0.2s ease;
+
+      & + .btn {
+        margin-left: 20px;
+      }
+
+      &--ghost {
+        background: #fff;
+        border: 1PX solid;
+        line-height: 86px;
+      }
+
+      &--primary {
+        color: #fff;
+        border: 1PX solid transparent;
+      }
+
+      &:active {
+        opacity: 0.8;
+      }
     }
   }
+
   .canvas {
     opacity: 0;
     visibility: hidden;
@@ -103,98 +215,127 @@ page {
     top: 0;
     left: -100%;
   }
+
+  // 保存成功弹窗
   .successModal {
     width: 100%;
     background: #fff;
+
     .at-modal__content {
       max-height: 80%;
+      padding: 40px 40px 20px;
+      box-sizing: border-box;
     }
+
+    .at-modal__action {
+      border-top: 1PX solid $border-light;
+      button {
+        font-size: 30px;
+        color: $default-text !important;
+      }
+    }
+
     .tip {
       display: flex;
-      padding: 10px 60px;
       align-items: center;
-      color: #666;
-      font-size: 28px;
+      padding: 8px 0;
+      color: $secondary-text;
+      font-size: 26px;
+
       .icon-check {
-        margin-right: 30px;
-        font-size: 36px;
-        color: #1aad19;
+        flex-shrink: 0;
+        width: 40px;
+        height: 40px;
+        margin-right: 16px;
+        border-radius: 50%;
+        background: rgba($color-alert-success, 0.12);
+        color: $color-alert-success;
+        font-size: 24px;
+        line-height: 40px;
+        text-align: center;
       }
     }
+
     .sharetip {
       display: flex;
-      justify-content: center;
       align-items: center;
-      margin: 50px 0;
+      justify-content: center;
+      margin: 40px 0 32px;
+
       .text {
         margin: 0 20px;
-        font-size: 36px;
+        font-size: 30px;
+        font-weight: 600;
+        color: $default-text;
+        white-space: nowrap;
       }
+
       .line {
-        width: 20%;
-        border-top: 2px solid #efefef;
+        flex: 1;
+        height: 1PX;
+        background: $border-base;
       }
     }
+
     .steps {
       display: flex;
-      margin-bottom: 30px;
+      margin-bottom: 16px;
+
       .item {
-        flex: auto;
-        text-align: center;
+        flex: 1;
         position: relative;
+        text-align: center;
+
         .title {
           font-size: 24px;
-          margin-bottom: 15px;
+          color: $muted-text;
+          margin-bottom: 20px;
+          padding: 0 8px;
+          line-height: 1.4;
         }
+
         .stepIcon {
-          width: 100%;
           position: relative;
+          height: 44px;
+
           .num {
-            width: 35px;
-            height: 35px;
-            font-size: 20px;
-            line-height: 35px;
-            text-align: center;
-            margin: 0 auto;
-            color: red;
-            border-radius: 100%;
-            border: 2px solid red;
             position: relative;
-            background: #fff;
-            z-index: 99;
+            z-index: 2;
+            width: 40px;
+            height: 40px;
+            margin: 0 auto;
+            border-radius: 50%;
+            background: var(--color-primary);
+            color: #fff;
+            font-size: 22px;
+            line-height: 40px;
+            text-align: center;
           }
+
+          // 与下一个步骤圆心之间的连接线
           &::after {
             content: '';
-            width: 50%;
             position: absolute;
-            right: 0;
+            z-index: 1;
             top: 50%;
+            left: 50%;
+            right: -50%;
+            height: 1PX;
+            background: $border-base;
             transform: translateY(-50%);
-            border-top: 2px solid red;
-          }
-          &.second {
-            &::after {
-              content: '';
-              width: 100%;
-              position: absolute;
-              right: 0;
-              top: 50%;
-              transform: translateY(-50%);
-              border-top: 2px solid red;
-            }
           }
         }
+
         &:last-child {
-          .stepIcon {
-            &::after {
-              left: 0;
-            }
+          .stepIcon::after {
+            display: none;
           }
         }
       }
     }
+
     .btn {
-      color: #666 !important;
+      color: $default-text !important;
     }
   }
 }
