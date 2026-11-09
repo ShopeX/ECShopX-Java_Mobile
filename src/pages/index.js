@@ -28,6 +28,7 @@ import {
   log,
   showToast,
   buildSharePath,
+  getSelfUserId,
   isWeb
 } from '@/utils'
 import {
@@ -202,6 +203,11 @@ function Home() {
     let params = getCurrentPageRouteParams()
     if (VERSION_STANDARD) {
       params = Object.assign(params, { dtid: getCurrentShopId() })
+    }
+    // 朋友圈不能走 share-land，单独补分享人身份（与 buildSharePath 保持一致）
+    const selfUid = getSelfUserId()
+    if (selfUid) {
+      params = Object.assign(params, { uid: String(selfUid) })
     }
 
     console.log('useShareTimeline params:', params)

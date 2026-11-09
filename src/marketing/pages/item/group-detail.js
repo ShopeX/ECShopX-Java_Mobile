@@ -6,9 +6,8 @@ import React, { Component } from 'react'
 import Taro, { getCurrentInstance } from '@tarojs/taro'
 import { View, Image, Text } from '@tarojs/components'
 import { AtButton, AtCountdown, AtCurtain } from 'taro-ui'
-import { withTranslation } from 'react-i18next'
 import { FormIdCollector, SpNavBar } from '@/components'
-import { $t, ti } from '@/i18n'
+import { $t, ti, i18n } from '@/i18n'
 import { classNames, normalizeQuerys, log, isWeixin, isWeb, isAlipay, showToast } from '@/utils'
 import entry from '@/utils/entry'
 import api from '@/api'
@@ -44,12 +43,17 @@ class GroupDetail extends Component {
       }
     }
     this.fetchDetail()
+    // 语言切换重渲染 + 同步导航栏标题（原来靠 withTranslation HOC + componentDidUpdate）
+    i18n.on('languageChanged', this.handleLanguageChanged)
   }
 
-  componentDidUpdate(prevProps) {
-    if (prevProps.i18n?.language !== this.props.i18n?.language) {
-      this.syncNavTitle()
-    }
+  componentWillUnmount() {
+    i18n.off('languageChanged', this.handleLanguageChanged)
+  }
+
+  handleLanguageChanged = () => {
+    this.forceUpdate()
+    this.syncNavTitle()
   }
 
   syncNavTitle = () => {
@@ -365,4 +369,6 @@ class GroupDetail extends Component {
   }
 }
 
-export default withTranslation()(GroupDetail)
+// 页面需直接导出 class，勿用 withTranslation 包
+//（最外层是函数组件时 Taro 会注入不到页面实例，onShareAppMessage 等页面级生命周期不执行）
+export default GroupDetail

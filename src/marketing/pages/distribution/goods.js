@@ -10,9 +10,8 @@ import { SpToast, Loading, FilterBar, SpNote, SpNavBar, SpSearchBar, SpPage } fr
 import S from '@/spx'
 import { getDtidIdUrl } from '@/utils/helper'
 import api from '@/api'
-import { withTranslation } from 'react-i18next'
 import { withPager, withBackToTop } from '@/hocs'
-import { $t } from '@/i18n'
+import { $t, i18n } from '@/i18n'
 import { pickBy, getCurrentRoute, isAlipay } from '@/utils'
 import DistributionGoodsItem from './comps/goods-item'
 import './goods.scss'
@@ -81,12 +80,17 @@ class DistributionGoods extends Component {
       }
     )
     this.syncNavTitle()
+    // 语言切换重渲染 + 同步导航栏标题（原来靠 withTranslation HOC + componentDidUpdate）
+    i18n.on('languageChanged', this.handleLanguageChanged)
   }
 
-  componentDidUpdate(prevProps) {
-    if (prevProps.i18n?.language !== this.props.i18n?.language) {
-      this.syncNavTitle()
-    }
+  componentWillUnmount() {
+    i18n.off('languageChanged', this.handleLanguageChanged)
+  }
+
+  handleLanguageChanged = () => {
+    this.forceUpdate()
+    this.syncNavTitle()
   }
 
   syncNavTitle = () => {
@@ -460,4 +464,6 @@ class DistributionGoods extends Component {
   }
 }
 
-export default withTranslation()(DistributionGoods)
+// 页面需直接导出 class（经 @withPager/@withBackToTop 继承仍为 class），
+// 勿用 withTranslation 包（最外层是函数组件时 Taro 会注入不到实例，onShareAppMessage 不执行）
+export default DistributionGoods

@@ -8,9 +8,8 @@ import { View, ScrollView, Image, Text, Button } from '@tarojs/components'
 import { Loading, SpNote } from '@/components'
 import { classNames, pickBy, getCurrentRoute, isAlipay } from '@/utils'
 import { AtTabBar } from 'taro-ui'
-import { withTranslation } from 'react-i18next'
 import { withPager, withBackToTop } from '@/hocs'
-import { $t } from '@/i18n'
+import { $t, i18n } from '@/i18n'
 import api from '@/api'
 import './shop-category.scss'
 
@@ -65,6 +64,16 @@ class DistributionGoodCategory extends Component {
       tabList
     })
     this.fetchInfo()
+    // 语言切换重渲染（原来靠 withTranslation HOC；HOC 包在最外层会阻断 Taro 注入页面实例，导致 onShareAppMessage 不执行）
+    i18n.on('languageChanged', this.handleLanguageChanged)
+  }
+
+  componentWillUnmount() {
+    i18n.off('languageChanged', this.handleLanguageChanged)
+  }
+
+  handleLanguageChanged = () => {
+    this.forceUpdate()
   }
 
   componentWillReceiveProps(nextProps) {
@@ -399,4 +408,6 @@ class DistributionGoodCategory extends Component {
   }
 }
 
-export default withTranslation()(DistributionGoodCategory)
+// 页面需直接导出 class（经 @withPager/@withBackToTop 继承仍为 class），
+// 勿用 withTranslation 包（最外层是函数组件时 Taro 会注入不到实例，onShareAppMessage 不执行）
+export default DistributionGoodCategory

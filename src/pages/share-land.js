@@ -13,6 +13,30 @@ import { entryLaunch, getExtConfigData, showToast } from '@/utils'
 import api from '@/api'
 
 /**
+ * 太阳码 scene 只有 32 字符上限，后端只编短键，这里做别名映射：
+ * - fs: 落地页类型（shop → poster_shop_home / home → poster_home）
+ * - d:  店铺 id（dtid）
+ */
+const SCENE_FS_MAP = {
+  shop: 'poster_shop_home',
+  home: 'poster_home'
+}
+
+const normalizeSceneAlias = (params) => {
+  if (!params) return params
+  if (!params.from_scene && params.fs) {
+    params.from_scene = SCENE_FS_MAP[params.fs] || ''
+  }
+  if (!params.dtid && params.d) {
+    params.dtid = params.d
+    delete params.d
+  }
+  // 短键已解码，不要再随链接带到业务页
+  delete params.fs
+  return params
+}
+
+/**
  * 统一分享落地页
  * 参数说明:
  * - from_scene: 目标页面类型 (必传, 如: from_scene=xxxx_xxx_xxx)
@@ -31,6 +55,12 @@ function ShareIand() {
 
   const resloveRouterParams = async () => {
     const routeParams = await entryLaunch.getRouteParams(router)
+    // 兼容历史参数名：老海报二维码用 user_id、小店卡片用 featuredshop，注册侧只认 uid
+    const legacyUid = routeParams?.user_id || routeParams?.featuredshop
+    if (!routeParams?.uid && legacyUid) {
+      routeParams.uid = legacyUid
+    }
+    normalizeSceneAlias(routeParams)
     Taro.setStorageSync(SG_ROUTER_PARAMS, routeParams)
 
     if (routeParams?.gu || routeParams?.gu_user_id) {
