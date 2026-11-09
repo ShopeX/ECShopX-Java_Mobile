@@ -17,13 +17,14 @@ const $instance = getCurrentInstance() || {}
 const initialState = {
   curIdx: 0,
   play: false,
-  showPoster: false
+  showPoster: false,
+  sizerFailed: false
 }
 
 const Slider = (props) => {
   const { info } = props
   const [state, setState] = useImmer(initialState)
-  const { curIdx, play } = state
+  const { curIdx, play, sizerFailed } = state
 
   // 从 params 中获取配置和数据，兼容两种数据结构
   // 1. 新结构：info.params.config, info.params.data, info.params.base
@@ -39,15 +40,19 @@ const Slider = (props) => {
 
   const configW = Number(config.firstScreenWidth) > 0 ? Number(config.firstScreenWidth) : 0
   const configH = Number(config.firstScreenHeight) > 0 ? Number(config.firstScreenHeight) : 211
-  // 装修配置了首屏宽高时优先用 aspect-ratio（H5 最稳，不依赖封面图加载）
+  // 装修里配置的首屏宽高（CSS px，如 375x610）
   const hasFirstScreenRatio = configW > 0 && Number(config.firstScreenHeight) > 0
   const firstItem = data[0]
-  // 无首屏比例时：用封面/OSS 截帧作占位图撑高（兼容 9:16）
-  const sizerUrl = hasFirstScreenRatio
-    ? ''
-    : firstItem?.media_type === 'video'
+  // 首屏高度优先跟「第一张素材的真实比例」：隐藏占位图按 widthFix 撑高，小程序/H5 通用。
+  // 配置的 firstScreenWidth/Height 常与素材比例不一致（换图后没更新），
+  // 死守配置会让素材被裁（小程序）或被 height:100% 拉扁（H5）。
+  const sizerUrl =
+    firstItem?.media_type === 'video'
       ? getVideoPoster(firstItem.imgUrl, firstItem.videoUrl)
-      : firstItem?.imgUrl
+      : firstItem?.imgUrl || ''
+  // 取不到素材比例时（如视频首条无封面）才退回配置比例兜底
+  const useSizer = !!sizerUrl && !sizerFailed
+  const useConfigRatio = !useSizer && hasFirstScreenRatio
 
   useEffect(() => {
     // 初始化时，如果有视频且设置了自动播放，则播放
@@ -201,10 +206,16 @@ const Slider = (props) => {
               }
             }}
           >
-            {/* 图片类型 */}
+            {/* 图片类型：容器已按第一张素材比例撑开，等比例裁切兜底不同比例的素材，避免被拉伸 */}
             {item.media_type === 'img' && item.imgUrl && (
               <>
-                <SpImage src={item.imgUrl} className='slider-item__img' lazyLoad />
+                <SpImage
+                  src={item.imgUrl}
+                  mode='aspectFill'
+                  preserveRatio
+                  className='slider-item__img'
+                  lazyLoad
+                />
                 {/* 热区 */}
                 {renderHotZones(item)}
               </>
@@ -258,30 +269,42 @@ const Slider = (props) => {
       <View className='wgt-slider-content'>
         <View
           className={classNames('wgt-slider-wrap', {
-            'wgt-slider-wrap--ratio': hasFirstScreenRatio,
-            'wgt-slider-wrap--sizer': !!sizerUrl
+            'wgt-slider-wrap--ratio': useConfigRatio,
+            'wgt-slider-wrap--sizer': useSizer
           })}
           style={styleNames(
-            hasFirstScreenRatio
+            useConfigRatio
               ? {
                   // 按装修首屏宽高自适应（如 375x827），避免 H5 Video 默认 225px
                   'aspect-ratio': `${configW} / ${Number(config.firstScreenHeight)}`
                 }
-              : {
-                  // 截帧失败时至少按配置高度展示；成功则 widthFix 按真实比例撑开
-                  'min-height': Taro.pxTransform(configH * 2),
-                  ...(sizerUrl ? {} : { height: Taro.pxTransform(configH * 2) })
-                }
+              : useSizer
+                ? {}
+                : {
+                    // 既无素材比例也无配置比例时，按配置高度兜底
+                    'min-height': Taro.pxTransform(configH * 2),
+                    height: Taro.pxTransform(configH * 2)
+                  }
           )}
         >
           {/* 隐藏占位图按真实比例撑高（兼容 H5 / 小程序，避免 9:16 被裁成约 1/3） */}
-          {sizerUrl ? (
-            <Image className='slider-height-sizer' mode='widthFix' src={sizerUrl} />
+          {useSizer ? (
+            <Image
+              className='slider-height-sizer'
+              mode='widthFix'
+              src={sizerUrl}
+              onError={() => {
+                // 占位图加载失败时退回配置比例，避免容器高度塔陷
+                setState((draft) => {
+                  draft.sizerFailed = true
+                })
+              }}
+            />
           ) : null}
           {config && (
             <Swiper
               className={classNames('slider-img', {
-                'slider-img--fill': hasFirstScreenRatio || !!sizerUrl
+                'slider-img--fill': useConfigRatio || useSizer
               })}
               circular
               autoplay={config.autoplay !== false}
@@ -290,7 +313,7 @@ const Slider = (props) => {
               duration={300}
               onAnimationFinish={swiperChange}
               style={styleNames(
-                hasFirstScreenRatio || sizerUrl
+                useConfigRatio || useSizer
                   ? {}
                   : {
                       height: Taro.pxTransform(configH * 2)
