@@ -6,17 +6,13 @@ import React, { Component } from 'react'
 import Taro, { getCurrentInstance } from '@tarojs/taro'
 import { View, Text, Button, Image, Input } from '@tarojs/components'
 import { AtTabBar } from 'taro-ui'
-import { BackToTop, Loading, SpNavBar, SpImg, SpNote, SpPage, SpImage } from '@/components'
+import { Loading, SpNote, SpPage, SpImage } from '@/components'
 import S from '@/spx'
 import api from '@/api'
-import qs from 'qs'
 import throttle from 'lodash/throttle'
-import { withTranslation } from 'react-i18next'
 import { withPager } from '@/hocs'
-import { $t, ti } from '@/i18n'
+import { i18n, $t, ti } from '@/i18n'
 import { getCurrentRoute, pickBy, entryLaunch, log } from '@/utils'
-import entry from '@/utils/entry'
-import CustomHeader from './comps/header'
 import './shop-home.scss'
 
 @withPager
@@ -83,17 +79,7 @@ class DistributionShopHome extends Component {
     //     url: `${process.env.APP_AUTH_PAGE}?redirect_url=${redirect}`
     //   })
     // } else {
-    this.getShopInfo()
-    this.init()
-    // }
-  }
-
-  componentDidShow() {
-    this.handleCloseSearch()
-  }
-
-  componentDidUpdate(prevProps) {
-    if (prevProps.i18n?.language !== this.props.i18n?.language) {
+    this._syncShopNavTitle = () => {
       const { info } = this.state
       const isCurrentPage = this.$instance?.router?.path.indexOf('distribution/shop-home') !== -1
       if (isCurrentPage && (info.shop_name || info.username)) {
@@ -102,11 +88,26 @@ class DistributionShopHome extends Component {
         })
       }
     }
+    i18n.on('languageChanged', this._syncShopNavTitle)
+    this.getShopInfo()
+    this.init()
+    // }
+  }
+
+  componentWillUnmount() {
+    if (this._syncShopNavTitle) {
+      i18n.off('languageChanged', this._syncShopNavTitle)
+    }
+  }
+
+  componentDidShow() {
+    this.handleCloseSearch()
   }
 
   // 分享
   onShareAppMessage() {
     const { info: shopInfo, userId } = this.state
+    console.log('onShareAppMessage shopInfo:', shopInfo, userId)
     const title = shopInfo.shop_name || ti('a569438d.2b0a44', [shopInfo.username])
 
     log.debug(`/marketing/pages/distribution/shop-home?uid=${userId}`)
@@ -458,10 +459,7 @@ class DistributionShopHome extends Component {
       keywords,
       curFilterIdx,
       isFocus,
-      statusBarHeight,
-      paddindTop,
-      isHome
-    } = this.state
+      paddindTop    } = this.state
 
     // 筛选选项
     const filterList = [
@@ -624,4 +622,5 @@ class DistributionShopHome extends Component {
   }
 }
 
-export default withTranslation()(DistributionShopHome)
+// 页面需直接导出 class（经 withPager 继承），勿包 withTranslation，否则 Taro 无法注入 onShareAppMessage
+export default DistributionShopHome
