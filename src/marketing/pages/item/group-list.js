@@ -6,9 +6,8 @@ import React, { Component } from 'react'
 import Taro from '@tarojs/taro'
 import { View, Text, ScrollView, Image } from '@tarojs/components'
 import { AtTabs, AtTabsPane, AtCountdown } from 'taro-ui'
-import { withTranslation } from 'react-i18next'
 import { Loading, SpNote, SpPrice, SpNavBar } from '@/components'
-import { $t } from '@/i18n'
+import { $t, i18n } from '@/i18n'
 import _mapKeys from 'lodash/mapKeys'
 import api from '@/api'
 import { withPager } from '@/hocs'
@@ -40,12 +39,17 @@ class GroupList extends Component {
         shareInfo: res
       })
     })
+    // 语言切换重渲染 + 同步导航栏标题（原来靠 withTranslation HOC + componentDidUpdate）
+    i18n.on('languageChanged', this.handleLanguageChanged)
   }
 
-  componentDidUpdate(prevProps) {
-    if (prevProps.i18n?.language !== this.props.i18n?.language) {
-      this.syncNavTitle()
-    }
+  componentWillUnmount() {
+    i18n.off('languageChanged', this.handleLanguageChanged)
+  }
+
+  handleLanguageChanged = () => {
+    this.forceUpdate()
+    this.syncNavTitle()
   }
 
   syncNavTitle = () => {
@@ -236,4 +240,6 @@ class GroupList extends Component {
   }
 }
 
-export default withTranslation()(GroupList)
+// 页面需直接导出 class（经 @withPager 继承仍为 class），
+// 勿用 withTranslation 包（最外层是函数组件时 Taro 会注入不到实例，onShareAppMessage 不执行）
+export default GroupList

@@ -952,15 +952,31 @@ export const pxToUnitRpx = (px) => {
 }
 
 /**
+ * 当前登录用户 id（分享人身份），未登录返回空
+ */
+export function getSelfUserId() {
+  try {
+    const { userId } = Taro.getStorageSync('userinfo') || {}
+    return userId || ''
+  } catch (e) {
+    return ''
+  }
+}
+
+/**
  * 构建统一分享路径
  * @param {string} from_scene - 目标页面类型
  * @param {object} params - 路径参数
  * @returns {string} 统一的分享落地页路径
  */
 export function buildSharePath(from_scene, params = {}) {
+  const selfUid = getSelfUserId()
   const shareParams = {
     from_scene: from_scene,
-    ...params
+    ...params,
+    // 统一带上分享人身份：新用户从该链接注册时用 uid 建立分销绑定。
+    // 取当前登录用户而不是页面参数 ——— 页面 url 上可能残留「上家 uid」，二次转发会错归因
+    ...(selfUid ? { uid: String(selfUid) } : {})
   }
   const queryString = qs.stringify(shareParams)
   return `/pages/share-land${queryString ? '?' + queryString : ''}`

@@ -35,8 +35,10 @@ class DistributionPoster {
     // const { dtid } =
 
     // const wxappCode = `${host}/wechatAuth/wxapp/qrcode.png?page=${`subpages/item/espier-detail`}&appid=${appid}&company_id=${company_id}&id=${itemId}&uid=${user_id}`
-    const type = isOpenShop && shop_status == 1 ? `poster_shop_home` : `poster_home`
-    const wxappCode = `${process.env.APP_BASE_URL}/promoter/qrcode.png?path=pages/share-land&appid=${appid}&company_id=${company_id}&user_id=${user_id}&from_scene=${type}`
+    // 太阳码 scene 有 32 字符上限：只用短键 fs 传递落地页类型（shop → 小店页 / home → 首页），
+    // 完整值在 pages/share-land 里做别名映射
+    const fs = isOpenShop && shop_status == 1 ? 'shop' : 'home'
+    const wxappCode = `${process.env.APP_BASE_URL}/promoter/qrcode.png?path=pages/share-land&appid=${appid}&company_id=${company_id}&uid=${user_id}&fs=${fs}`
     console.log('wxappCode:', wxappCode)
 
     const pic = qrcode_bg_img || `${process.env.APP_IMAGE_CDN}/fenxiao_bk.png`

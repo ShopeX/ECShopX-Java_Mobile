@@ -10,9 +10,12 @@ $height-percent: 82%;
 
 .page-distribution-shop {
   width: 100%;
-  padding-bottom: $tabbar-height;
   /*  #ifdef  h5  */
   padding-top: $navigate-height-h5;
+  .at-tab-bar {
+    position: relative;
+    height: 100%;
+  }
   /*  #endif  */
   .shop-banner {
     width: 100%;
