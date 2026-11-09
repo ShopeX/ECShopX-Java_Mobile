@@ -28,6 +28,8 @@
   // 隐藏占位：用 widthFix 按素材比例撑开容器（H5/小程序通用）
   .slider-height-sizer {
     width: 100%;
+    // H5 端 taro-image-core 默认 height:240px，必须置 auto，内层 widthFix 图才能按真实比例撑高
+    height: auto;
     display: block;
     visibility: hidden;
     pointer-events: none;

@@ -60,9 +60,34 @@
     &.sp-image--loaded {
       opacity: 1;
     }
+
+    // 默认 scaleToFill：铺满容器（保持原有行为）
     img {
       width: 100%;
       height: 100%;
+    }
+
+    // widthFix / heightFix：H5 端 Taro 只约束了宽度，高度必须放行；
+    // 否则等比素材会被 height:100% 拉扁（小程序端无内层 img，这几条不会命中）
+    &.sp-image-content--width-fix img {
+      height: auto;
+    }
+
+    &.sp-image-content--height-fix img {
+      width: auto;
+    }
+
+    // 等比模式：H5 用 object-fit 对齐小程序原生 mode 的语义（cover / contain）
+    &.sp-image-content--aspect-fill img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    &.sp-image-content--aspect-fit img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
     }
   }
 }

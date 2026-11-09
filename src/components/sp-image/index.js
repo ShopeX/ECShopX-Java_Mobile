@@ -154,6 +154,14 @@ function SpImage(props) {
     [props.width, props.height, props.radius, props.style, props.circle]
   )
 
+  // mode 修饰类（按需开启 preserveRatio）：H5 端 Taro 只给内层 img 约束了宽度（height 交给 auto），
+  // 而组件样式里有 height:100%，等比素材会被拉扁；开启后按 mode 放行高度 / 设置 object-fit。
+  // 默认不开，避免影响其他固定尺寸瓦片；小程序端无内层 img，原生 mode 已处理，这些选择器不命中
+  const mode = props.mode || 'widthFix'
+  const modeClass = props.preserveRatio
+    ? `sp-image-content--${mode.replace(/([A-Z])/g, '-$1').toLowerCase()}`
+    : ''
+
   return (
     <View
       className={classNames('sp-image-container sp-image', props.className)}
@@ -174,11 +182,11 @@ function SpImage(props) {
 
       {/* 实际图片组件（加载完成后淡入） */}
       <Image
-        className={classNames('sp-image-content', {
+        className={classNames('sp-image-content', modeClass, {
           'sp-image--loaded': state.loadSuccess
         })}
         src={imgUrl}
-        mode={props.mode || 'widthFix'}
+        mode={mode}
         onLoad={handleLoad}
         onError={handleError}
         showMenuByLongpress={props.isShowMenuByLongpress ?? true}
@@ -212,6 +220,8 @@ SpImage.defaultProps = {
   isOss: true,
   isShowMenuByLongpress: true,
   mode: 'widthFix',
+  // H5 端按素材真实比例渲染（widthFix/heightFix/aspectFill/aspectFit），不拉伸
+  preserveRatio: false,
   ratio: [],
   src: '',
   width: '',
