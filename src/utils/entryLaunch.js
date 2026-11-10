@@ -404,11 +404,12 @@ class EntryLaunch {
         this._lnglatCache = { key, at: now, data }
         return data
       } else {
-        return { error: $t('9a2a8fcc.38e932') }
+        // 逆地理失败（地图 key 未开通 WebServiceAPI / 签名不对）时仍带上经纬度，调用方可用坐标拉附近门店
+        return { error: $t('9a2a8fcc.38e932'), lng, lat }
       }
     } catch (error) {
       console.error('getAddressByLnglatWebAPI error:', error)
-      return { error: $t('9a2a8fcc.38e932') }
+      return { error: $t('9a2a8fcc.38e932'), lng, lat }
     }
   }
 
@@ -444,15 +445,16 @@ class EntryLaunch {
   /**
    * 判断是否开启定位，去获取经纬度，根据经纬度去获取地址
    * @param {Function} callback - 回调 (res)，res 为 null 表示位置未变化、跳过解析
-   * @param {{ previousLng?: number, previousLat?: number }} [opts] - 上次经纬度，与当前一致则不请求逆地理
+   * @param {{ previousLng?: number, previousLat?: number, force?: boolean }} [opts] - 上次经纬度，与当前一致则不请求逆地理；force 绕开进店规则 LBS 开关（手动定位场景）
    */
   async isOpenPosition(callback, opts = {}) {
-    if (!this.isEntryStoreLbsEnabled()) {
+    const { previousLng, previousLat, force = false } = opts
+    // force：用户手动点「开启定位」，属显式行为，不受进店规则 LBS 开关限制
+    if (!force && !this.isEntryStoreLbsEnabled()) {
       if (callback) callback(false)
       return
     }
 
-    const { previousLng, previousLat } = opts
     const posUnchanged = (lng, lat) => {
       if (previousLng == null || previousLat == null) return false
       const p = LNGLAT_CACHE_PRECISION
@@ -463,79 +465,97 @@ class EntryLaunch {
     }
 
     if (process.env.TARO_ENV === 'weapp') {
-      const { authSetting } = await Taro.getSetting()
-      if (!authSetting['scope.userLocation']) {
-        Taro.authorize({
-          scope: 'scope.userLocation',
-          success: async () => {
-            let { lng, lat } = await this.getLocationInfo()
-            if (lat != null && posUnchanged(lng, lat)) {
-              if (callback) callback(null)
-              return
-            }
-            let res = {}
-            if (lat) {
-              res = await this.getAddressByLnglatWebAPI(lng, lat)
-            }
-            if (callback) callback(res)
-          },
-          fail: async () => {
-            // 曾拒绝定位时 authorize 会立刻 fail；冷启动/最近使用进入时语言包可能尚未就绪
-            await ensureI18nReady()
-            Taro.showModal({
-              title: $t('61e2d21a.02d981') || '提示',
-              content: $t('9a2a8fcc.4681f3') || '请打开定位权限',
-              cancelText: $t('61e2d21a.625fb2') || '取消',
-              confirmText: $t('61e2d21a.e83a25') || '确定',
-              success: async (resConfirm) => {
-                if (resConfirm.confirm) {
-                  await Taro.openSetting()
-                  const setting = await Taro.getSetting()
-                  if (setting.authSetting['scope.userLocation']) {
-                    let { lng, lat } = await this.getLocationInfo()
-                    if (lat != null && posUnchanged(lng, lat)) {
-                      if (callback) callback(null)
-                      return
-                    }
-                    let res = {}
-                    if (lat) {
-                      res = await this.getAddressByLnglatWebAPI(lng, lat)
-                    }
-                    if (callback) callback(res)
-                  } else {
-                    Taro.showToast({
-                      title: $t('9a2a8fcc.e9a580') || '获取定位权限失败',
-                      icon: 'none'
-                    })
-                  }
-                } else {
-                  if (callback) callback(false)
-                }
-              }
-            })
-          }
-        })
-      } else {
-        let { lng, lat } = await this.getLocationInfo()
-        if (lat != null && posUnchanged(lng, lat)) {
-          if (callback) callback(null)
+      let authSetting = {}
+      try {
+        const setting = await Taro.getSetting()
+        authSetting = setting?.authSetting || {}
+      } catch (e) {
+        // 部分环境 getSetting 会直接失败（如 err_code -80002），不能因此阻断定位，降级为直接调定位
+        console.warn('[location] getSetting fail, fallback to getLocation:', e)
+      }
+
+      const locationAuth = authSetting['scope.userLocation']
+      if (locationAuth === false) {
+        // 曾拒绝过定位时 authorize 会立刻 fail，直接引导去设置页
+        this.guideOpenLocationSetting(callback, posUnchanged)
+        return
+      }
+
+      try {
+        // 已授权 / 未申请（getLocation 会拉起系统授权框）/ getSetting 不可用，都直接尝试定位
+        await this.resolveNativePosition(callback, posUnchanged)
+      } catch (e) {
+        console.warn('[location] getLocation fail:', e)
+        this.guideOpenLocationSetting(callback, posUnchanged)
+      }
+      return
+    }
+
+    // h5环境
+    const res = await this.getLocationInfo()
+    if (callback) callback(res)
+  }
+
+  /**
+   * 取经纬度 →（可选）逆地理 → 回调
+   * @returns {Promise<void>}
+   */
+  async resolveNativePosition(callback, posUnchanged) {
+    const { lng, lat } = await this.getLocationInfo()
+    if (lat != null && posUnchanged(lng, lat)) {
+      if (callback) callback(null)
+      return
+    }
+    let res = {}
+    if (lat) {
+      res = await this.getAddressByLnglatWebAPI(lng, lat)
+    }
+    if (callback) callback(res)
+  }
+
+  /** 定位权限被拒：弹窗引导去设置页开启 */
+  async guideOpenLocationSetting(callback, posUnchanged) {
+    // 冷启动/最近使用进入时语言包可能尚未就绪
+    await ensureI18nReady()
+    Taro.showModal({
+      title: $t('61e2d21a.02d981') || '提示',
+      content: $t('9a2a8fcc.4681f3') || '请打开定位权限',
+      cancelText: $t('61e2d21a.625fb2') || '取消',
+      confirmText: $t('61e2d21a.e83a25') || '确定',
+      success: async (resConfirm) => {
+        if (!resConfirm.confirm) {
+          if (callback) callback(false)
           return
         }
-        let res = {}
-        if (lat) {
-          res = await this.getAddressByLnglatWebAPI(lng, lat)
+        await Taro.openSetting()
+        let granted = true
+        try {
+          const setting = await Taro.getSetting()
+          granted = Boolean(setting?.authSetting?.['scope.userLocation'])
+        } catch (e) {
+          // getSetting 不可用时无法判断，直接尝试定位
+          console.warn('[location] getSetting fail after openSetting:', e)
         }
-        if (callback) callback(res)
+        if (granted) {
+          try {
+            await this.resolveNativePosition(callback, posUnchanged)
+          } catch (e) {
+            console.warn('[location] getLocation fail after openSetting:', e)
+            Taro.showToast({
+              title: $t('9a2a8fcc.e9a580') || '获取定位权限失败',
+              icon: 'none'
+            })
+            if (callback) callback(false)
+          }
+        } else {
+          Taro.showToast({
+            title: $t('9a2a8fcc.e9a580') || '获取定位权限失败',
+            icon: 'none'
+          })
+          if (callback) callback(false)
+        }
       }
-    } else {
-      // h5环境
-      const res = await this.getLocationInfo()
-      if (callback) callback(res)
-      // let res = {}
-      // if (lat) {
-      //   res = await this.getAddressByLnglatWebAPI(lng, lat)
-      // }
-    }
+    })
   }
 
   /**

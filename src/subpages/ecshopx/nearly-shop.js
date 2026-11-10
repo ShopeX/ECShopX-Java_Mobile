@@ -33,6 +33,14 @@ const initialState = {
   isToken: false
 }
 
+/** 拼接省市区详细地址；字段缺失时跳过，避免出现 undefinedundefined */
+function formatAddress(addr) {
+  if (!addr) return ''
+  return [addr.province, addr.city, addr.area || addr.county, addr.adrdetail]
+    .filter(Boolean)
+    .join('')
+}
+
 function NearlyShop(props) {
   const { i18n } = useTranslation()
   const { isLogin } = useLogin({
@@ -57,8 +65,13 @@ function NearlyShop(props) {
       try {
         const { list } = await api.member.addressList()
         const addr = reduxStore.getState().user.address
-        const aid = addr?.address_id
-        if (addr == null || aid == null || aid === '') return
+        if (addr == null) return
+        const aid = addr.address_id
+        if (aid == null || aid === '') {
+          // 脏数据兜底：后端无默认地址时会返回空对象 {}，没有 address_id，直接清掉
+          dispatch(updateChooseAddress(null))
+          return
+        }
         const exists = (list || []).some(
           (a) => a?.address_id != null && String(a.address_id) === String(aid)
         )
@@ -95,9 +108,13 @@ function NearlyShop(props) {
       if (address) {
         draft.type = address.is_def ? 2 : 3
       }
-      if (location) {
-        // fix：未授权定位时不设置chooseValue
+      // location 为 {} 也是真值（clearUserInfo 会写成 {}），必须用 province 判真，否则 chooseValue 变成 [undefined,undefined,undefined]
+      if (location?.province) {
         draft.chooseValue = [province, city, district]
+        draft.type = 0
+      } else if (location?.lat) {
+        // 逆地理失败：只有经纬度也能拉附近门店，但地区名称未知
+        draft.chooseValue = []
         draft.type = 0
       }
       draft.refresh = true
@@ -182,7 +199,8 @@ function NearlyShop(props) {
       draft.refresh = false
     })
 
-    if (isObject(defualt_address) && !address) {
+    // 后端（Java）无默认地址时返回 {}，必须再校验 address_id，否则空对象会被写回 Redux
+    if (isObject(defualt_address) && defualt_address.address_id && !address) {
       dispatch(updateChooseAddress(defualt_address))
     }
 
@@ -221,23 +239,44 @@ function NearlyShop(props) {
       draft.locationIng = true
     })
     setPolicyModal(false)
-    await entryLaunch.isOpenPosition(async (res) => {
-      if (res.lat) {
-        dispatch(updateLocation(res))
-        const { province, city, district } = res
-        await setState((draft) => {
-          draft.chooseValue = [province, city, district] // fix:重新定位到上海，值没有更新，导致picker里面的值还是北京
-          draft.shopList = []
-          draft.type = 0
-          draft.refresh = true
-          draft.locationIng = false
-        })
-      } else {
-        setState((draft) => {
-          draft.locationIng = false
-        })
-      }
-    })
+    // force：手动点击「开启定位」是用户显式行为，不受进店规则 LBS 开关限制
+    try {
+      await entryLaunch.isOpenPosition(
+        async (res) => {
+          if (res && res.lat) {
+            dispatch(updateLocation(res))
+            const { province, city, district } = res
+            await setState((draft) => {
+              // 逆地理失败时 res 只有经纬度，不要用 undefined 覆盖 chooseValue
+              draft.chooseValue = province ? [province, city, district] : []
+              draft.shopList = []
+              draft.type = 0
+              draft.refresh = true
+              draft.locationIng = false
+            })
+            if (res.error) {
+              Taro.showToast({ title: res.error, icon: 'none' })
+            }
+          } else {
+            setState((draft) => {
+              draft.locationIng = false
+            })
+            // res 为 null 表示位置未变化；否则定位失败，给出提示避免「点了没反应」
+            if (res !== null) {
+              Taro.showToast({ title: $t('4598cc04.3c7849'), icon: 'none' })
+            }
+          }
+        },
+        { force: true }
+      )
+    } catch (e) {
+      // 授权成功但系统定位失败时，isOpenPosition 会抛错；兜底避免按钮卡在「定位中」
+      console.error('nearly-shop getLocationInfo fail:', e)
+      setState((draft) => {
+        draft.locationIng = false
+      })
+      Taro.showToast({ title: $t('4598cc04.3c7849'), icon: 'none' })
+    }
   }
 
   const handleClickItem = (item) => {
@@ -251,9 +290,15 @@ function NearlyShop(props) {
 
   // 根据定位地址或收货地址定位切换地址
   const onLocationChange = async (info) => {
+    if (!info || (!info.address && !info.province)) return
     let local =
       info.address || info.province + info.city + info?.area + info?.county + info?.adrdetail
     const res = await entryLaunch.getLnglatByAddress(local)
+    // 地址转经纬度失败时（地图 key/签名异常）不要用 error 对象覆盖 location，也不要空跳转
+    if (!res || res.error || !res.lat) {
+      Taro.showToast({ title: res?.error || $t('4598cc04.3c7849'), icon: 'none' })
+      return
+    }
     await dispatch(updateLocation(res))
     Taro.navigateBack()
   }
@@ -282,7 +327,9 @@ function NearlyShop(props) {
               }}
             >
               <View className='iconfont icon-periscope'></View>
-              <Text className='pick-address'>{chooseValue.join('') || $t('4598cc04.e9a36d')}</Text>
+              <Text className='pick-address'>
+                {chooseValue.filter(Boolean).join('') || $t('4598cc04.e9a36d')}
+              </Text>
               {/* <Text className='iconfont icon-arrowDown'></Text> */}
             </View>
           </View>
@@ -344,12 +391,10 @@ function NearlyShop(props) {
               {$t('4598cc04.fcf0b1')}
             </View>
           )}
-          {address && isToken && (
-            <View className='address' onClick={() => onLocationChange(address)}>{`${
-              address.province
-            }${address.city}${address?.area || ''}${address?.county || ''}${
-              address?.adrdetail || ''
-            }`}</View>
+          {address && isToken && formatAddress(address) && (
+            <View className='address' onClick={() => onLocationChange(address)}>
+              {formatAddress(address)}
+            </View>
           )}
         </View>
       </View>

@@ -264,9 +264,10 @@ function NearbyList() {
   }, [refresh])
 
   const getLocationInfo = async () => {
+    // force：手动触发的定位不受进店规则 LBS 开关限制
     await entryLaunch.isOpenPosition(async (res) => {
       bumpListFetchGen()
-      if (res.lat) {
+      if (res && res.lat) {
         dispatch(updateLocation(res))
         setState((draft) => {
           draft.currentLocation = res
@@ -277,7 +278,7 @@ function NearbyList() {
           draft.refresh = true
         })
       }
-    })
+    }, { force: true })
   }
 
   const fetchShopList = async ({ pageIndex, pageSize }) => {
