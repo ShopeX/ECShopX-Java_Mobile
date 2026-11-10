@@ -37,6 +37,30 @@ export default function WgtContentPartition(props) {
   const data = params.data || {}
   const navList = data?.data || []
 
+  // 沉浸式页面里内容是从屏幕顶部（自定义导航栏背后）开始渲染的。
+  // 导航栏吸顶时 top = navBarHeight，只要挂件自身顶部还在导航栏高度之内，
+  // sticky 就会把导航栏整体下顶 navBarHeight，压住它下面的内容（热区图顶部被遮住、显示不全）。
+  // 这里在挂件最顶部让出被顶掉的这段高度，让导航栏的自然位置正好等于吸顶位置。
+  const [topSpacer, setTopSpacer] = useState(0)
+  useEffect(() => {
+    if (!immersive || !base.navSticky || !navBarHeight) {
+      setTopSpacer(0)
+      return
+    }
+    let alive = true
+    getElementRectBox(`#wgt-content-partition-${id}`)
+      .then((rect) => {
+        if (!alive || !rect || typeof rect.top !== 'number') return
+        // 只有紧贴页面顶部（会被顶部导航空间盖住）时才让位，页面中部的分区不能凭空多出空白
+        const gap = navBarHeight - (rect.top || 0)
+        setTopSpacer(gap > 0 ? gap : 0)
+      })
+      .catch(() => {})
+    return () => {
+      alive = false
+    }
+  }, [immersive, base.navSticky, navBarHeight, id])
+
   // 初始化：找到第一个激活的导航项
   useEffect(() => {
     if (isFirstRender.current) {
@@ -193,6 +217,7 @@ export default function WgtContentPartition(props) {
     <View
       className={classNames('wgt wgt-content-partition')}
       id={`wgt-content-partition-${id || ''}`}
+      style={topSpacer ? { paddingTop: `${topSpacer}px` } : null}
     >
       <View
         id={`wgt-content-partition-sticky-trigger-${id}`}
