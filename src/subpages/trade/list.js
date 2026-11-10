@@ -36,12 +36,12 @@ function TradeList(props) {
   const tradeRef = useRef()
   const router = useRouter()
 
+  // ECX-11068：隐藏「部分发货」Tab；status=6（PAYED）本身已含 PARTAIL，无需另请求
   const tradeStatus = useMemo(
     () => [
       { tag_name: $t('2800cb77.dbb4d8'), value: '0' },
       { tag_name: $t('2800cb77.9246fe'), value: '5' },
       { tag_name: $t('403c9269.d8476e'), value: '6' },
-      { tag_name: $t('403c9269.ime8t04'), value: '8' },
       { tag_name: $t('2800cb77.4933ca'), value: '1' },
       { tag_name: $t('2800cb77.a48b28'), value: '7', is_rate: 0 }
     ],
@@ -56,9 +56,11 @@ function TradeList(props) {
   }, [setNavigationBarTitle])
 
   useEffect(() => {
-    const { status = 0 } = router?.params
+    const { status: rawStatus = 0 } = router?.params
+    // 旧链接 status=8（部分发货）归一到待发货
+    const nextStatus = String(rawStatus) === '8' ? '6' : rawStatus
     setState((draft) => {
-      draft.status = status
+      draft.status = nextStatus
     })
 
     Taro.eventCenter.on('onEventOrderStatusChange', () => {
