@@ -9,6 +9,7 @@
  */
 import Taro from '@tarojs/taro'
 import { resolveLinkPageUrl } from '@/utils/linkPage'
+import { cacheMemberTaskForCheckout } from '@/utils/memberTaskShare'
 
 const SHARE_TYPES = ['share_order', 'invite_register']
 
@@ -108,9 +109,7 @@ export async function goComplete(task) {
       return
     }
     case 'favorite':
-      await safeNavigate(
-        appendQuery(jumpUrl || '/pages/item/list', { task_id: task.taskId })
-      )
+      await safeNavigate(appendQuery(jumpUrl || '/pages/item/list', { task_id: task.taskId }))
       return
     case 'invite_register':
     case 'share_order': {
@@ -132,8 +131,12 @@ export async function goComplete(task) {
     case 'consume_sum':
     case 'single_spend':
     case 'total_spend':
+      // 消费类任务：点去完成即缓存 taskId，结算页下单带 member_task_id，后端据此判定完成与发奖
+      cacheMemberTaskForCheckout(task.taskId)
       await safeNavigate(
-        appendQuery(jumpUrl || '/pages/index', { task_id: task.taskId })
+        appendQuery(resolveShareJumpPath(jumpUrl) || '/pages/index', {
+          member_task_id: task.taskId
+        })
       )
       return
     default:

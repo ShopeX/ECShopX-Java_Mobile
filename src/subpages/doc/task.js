@@ -110,8 +110,15 @@ export const TASK_ITEM = {
       stay_seconds: stay_seconds != null ? Number(stay_seconds) : 0
     }
   },
-  jumpUrl: ({ jump_page, jump_url, page }) =>
-    normalizePath(jump_page || jump_url || page || ''),
+  /**
+   * 消费类任务落地页：Admin 指定路径存为 linkPage JSON，需原样保留给 goComplete 解析；
+   * 普通 path 仍补前导 /
+   */
+  jumpUrl: ({ jump_page, jump_url, page }) => {
+    const raw = String(jump_page || jump_url || page || '').trim()
+    if (raw.startsWith('{')) return raw
+    return normalizePath(raw)
+  },
   startTime: 'begin_time',
   endTime: 'end_time',
   beginTimeText: 'begin_time_text',

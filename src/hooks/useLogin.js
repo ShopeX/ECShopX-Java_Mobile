@@ -23,6 +23,7 @@ import S from '@/spx'
 import { $t } from '@/i18n'
 import { SG_POLICY } from '@/consts/localstorage'
 import { INVITE_ACTIVITY_ID, SG_CHECK_STORE_RULE } from '@/consts'
+import { clearMemberTaskShareParams } from '@/utils/memberTaskShare'
 import { normalizeAuthRedirectParam } from '@/subpages/auth/util'
 
 export default (props = {}) => {
@@ -115,6 +116,8 @@ export default (props = {}) => {
     dispatch(clearUserInfo())
     dispatch(clearCart())
     dispatch(purchaseClearCart())
+    // 换号后不能沿用上一个账号缓存的会员任务归因
+    clearMemberTaskShareParams()
   }
 
   const setToken = async (token) => {
