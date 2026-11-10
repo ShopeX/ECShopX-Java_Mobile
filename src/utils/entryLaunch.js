@@ -404,11 +404,12 @@ class EntryLaunch {
         this._lnglatCache = { key, at: now, data }
         return data
       } else {
-        return { error: $t('9a2a8fcc.38e932') }
+        // 逆地理失败（地图 key 未开通 WebServiceAPI / 签名不对）时仍带上经纬度，调用方可用坐标拉附近门店
+        return { error: $t('9a2a8fcc.38e932'), lng, lat }
       }
     } catch (error) {
       console.error('getAddressByLnglatWebAPI error:', error)
-      return { error: $t('9a2a8fcc.38e932') }
+      return { error: $t('9a2a8fcc.38e932'), lng, lat }
     }
   }
 
@@ -444,15 +445,16 @@ class EntryLaunch {
   /**
    * 判断是否开启定位，去获取经纬度，根据经纬度去获取地址
    * @param {Function} callback - 回调 (res)，res 为 null 表示位置未变化、跳过解析
-   * @param {{ previousLng?: number, previousLat?: number }} [opts] - 上次经纬度，与当前一致则不请求逆地理
+   * @param {{ previousLng?: number, previousLat?: number, force?: boolean }} [opts] - 上次经纬度，与当前一致则不请求逆地理；force 绕开进店规则 LBS 开关（手动定位场景）
    */
   async isOpenPosition(callback, opts = {}) {
-    if (!this.isEntryStoreLbsEnabled()) {
+    const { previousLng, previousLat, force = false } = opts
+    // force：用户手动点「开启定位」，属显式行为，不受进店规则 LBS 开关限制
+    if (!force && !this.isEntryStoreLbsEnabled()) {
       if (callback) callback(false)
       return
     }
 
-    const { previousLng, previousLat } = opts
     const posUnchanged = (lng, lat) => {
       if (previousLng == null || previousLat == null) return false
       const p = LNGLAT_CACHE_PRECISION

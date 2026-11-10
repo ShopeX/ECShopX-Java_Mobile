@@ -206,7 +206,8 @@ function NearlyShop(props) {
       draft.refresh = false
     })
 
-    if (isObject(defualt_address)) {
+    // 后端（Java）无默认地址时返回 {}，必须再校验 address_id，否则空对象会把已有地址覆盖掉
+    if (isObject(defualt_address) && defualt_address.address_id) {
       dispatch(updateChooseAddress(defualt_address))
     }
 
@@ -255,22 +256,26 @@ function NearlyShop(props) {
       draft.locationIng = true
     })
     setPolicyModal(false)
-    await entryLaunch.isOpenPosition(async (res) => {
-      if (res.lat) {
-        dispatch(updateLocation(res))
-        await setState((draft) => {
-          draft.shopList = []
-          draft.type = 1
-          draft.filterType = 2
-          draft.refresh = true
-          draft.locationIng = false
-        })
-      } else {
-        setState((draft) => {
-          draft.locationIng = false
-        })
-      }
-    })
+    // force：手动点击定位属于用户显式行为，不受进店规则 LBS 开关限制
+    await entryLaunch.isOpenPosition(
+      async (res) => {
+        if (res && res.lat) {
+          dispatch(updateLocation(res))
+          await setState((draft) => {
+            draft.shopList = []
+            draft.type = 1
+            draft.filterType = 2
+            draft.refresh = true
+            draft.locationIng = false
+          })
+        } else {
+          setState((draft) => {
+            draft.locationIng = false
+          })
+        }
+      },
+      { force: true }
+    )
   }
 
   const handleClickShop = (info) => {
