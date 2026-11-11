@@ -4,7 +4,7 @@
  */
 import React, { Component } from 'react'
 import Taro, { getCurrentInstance } from '@tarojs/taro'
-import { View, Text, Image, Navigator, Button } from '@tarojs/components'
+import { View, Text, Image, Navigator } from '@tarojs/components'
 import { connect } from 'react-redux'
 import { withTranslation } from 'react-i18next'
 import api from '@/api'
@@ -166,22 +166,15 @@ class DistributionShop extends Component {
             <View>{$t('882f13f0.ef5b0e')}</View>
           </View>
           {info.disabled == 0 && (
-            <View className='shop-nav-item width'>
-              <Button openType='share' className='share-btn'>
-                <View className='iconfont icon-share2 iconsize'></View>
-                <View>{$t('882f13f0.386dcc')}</View>
-              </Button>
+            <View
+              className=' shop-nav-item width'
+              onClick={this.handleClick.bind(this, 'miniShop')}
+            >
+              <SpImage className='preview-icon' src='shop.png' mode='aspectFit' />
+              <View>{$t('882f13f0.a6b082')}</View>
             </View>
           )}
         </View>
-        {info.disabled == 0 && (
-          <View className='preview' onClick={this.handleClick.bind(this, 'miniShop')}>
-            <View className='main'>
-              <SpImage className='img' src='shop.png' mode='aspectFill' />
-              <View className='title'>{$t('882f13f0.a6b082')}</View>
-            </View>
-          </View>
-        )}
       </SpPage>
     )
   }
