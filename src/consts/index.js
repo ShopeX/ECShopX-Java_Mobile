@@ -488,6 +488,7 @@ export const needLoginPageType = [
   'purchase',
   'pointShop',
   'registActivity',
+  'registrationRecord',
   'group',
   'boost_activity',
   'boost_order',

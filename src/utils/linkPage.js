@@ -347,6 +347,10 @@ const memberSetting = {
     title: $t('ece5ca3e.7fb92b'), // 我的活动
     path: '/marketing/pages/member/activity-list'
   },
+  registrationRecord: {
+    title: $t('ece5ca3e.42a5b5'),
+    path: '/marketing/pages/member/item-activity'
+  },
   group: {
     title: $t('9503e8f0.75a1d2'),
     path: '/marketing/pages/member/group-list'
