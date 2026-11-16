@@ -6,7 +6,7 @@ import React, { useCallback, useEffect, useMemo, useRef } from 'react'
 import Taro, { useShareAppMessage, useShareTimeline, useDidShow } from '@tarojs/taro'
 import { View, Text, ScrollView } from '@tarojs/components'
 import { useSelector, useDispatch } from 'react-redux'
-import { SG_ROUTER_PARAMS } from '@/consts'
+import { SG_ROUTER_PARAMS, DEFAULT_SAFE_AREA_HEIGHT } from '@/consts'
 import S from '@/spx'
 import {
   SpFloatMenuItem,
@@ -26,7 +26,8 @@ import {
   pickBy,
   log,
   showToast,
-  buildSharePath
+  buildSharePath,
+  isIphoneX
 } from '@/utils'
 import { useImmer } from 'use-immer'
 import { useTranslation, $t } from '@/i18n'
@@ -269,7 +270,8 @@ function StoreIndex() {
   const searchBarH = searchComp ? px(120) : 0
   const stickyTop = (navbarHeight || 0) + searchBarH
   const tabsH = px(98)
-  const footerH = px(160)
+  // 与 SpPage 给 tabbar 预留的高度保持一致（含 iPhone X 安全区），否则面板底部会压到结算栏下面
+  const footerH = px(160) + (isIphoneX() ? px(DEFAULT_SAFE_AREA_HEIGHT) : 0)
   const categoryPanelHeight = Math.max(
     px(720),
     Math.floor(windowHeight - stickyTop - tabsH - footerH)
