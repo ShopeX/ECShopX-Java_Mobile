@@ -69,6 +69,10 @@ export function resolveLinkPageUrl(data = {}) {
     case 'regactivity':
       url = '/marketing/pages/reservation/goods-reservate?activity_id=' + id
       break
+    // admin 装修「页面路径」新增：报名记录（直接下发页面类型，未包在 link + id 里）
+    case 'registrationRecord':
+      url = '/marketing/pages/member/item-activity'
+      break
     case 'liverooms':
     case 'live':
       url = 'plugin-private://wx2b03c6e691cd7370/pages/live-player-plugin?room_id=' + id
@@ -227,6 +231,10 @@ function linkPage(data) {
       break
     case 'regactivity':
       url = '/marketing/pages/reservation/goods-reservate?activity_id=' + id
+      break
+    // admin 装修「页面路径」新增：报名记录（直接下发页面类型，未包在 link + id 里）
+    case 'registrationRecord':
+      url = '/marketing/pages/member/item-activity'
       break
     case 'liverooms':
       url = 'plugin-private://wx2b03c6e691cd7370/pages/live-player-plugin?room_id=' + id
