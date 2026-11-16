@@ -166,6 +166,22 @@
     bottom: 0;
   }
 }
+
+// 换购详情页异常/不存在态（不依赖活动背景图，避免空屏看不出发生了什么）
+.plusprice-state {
+  min-height: 100vh;
+  background: $color-bg-gray;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  &__btn {
+    width: 240px;
+    margin: 24px auto 0;
+    font-size: 28px;
+  }
+}
+
 .cart-page-plusprice {
   // background: #FC7239;
   min-height: 100vh;

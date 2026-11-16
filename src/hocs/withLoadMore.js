@@ -4,8 +4,11 @@
  */
 import Taro, { Component } from '@tarojs/taro'
 import { isWeixin } from '@/utils'
+import assertClassComponent from './assertClassComponent'
 
 export default function withLoadMore(Component) {
+  assertClassComponent('withLoadMore', Component)
+
   return class WithLoadMoreComponent extends Component {
     constructor(props) {
       super(props)

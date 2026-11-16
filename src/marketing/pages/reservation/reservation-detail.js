@@ -102,4 +102,4 @@ class ReservationDetail extends Component {
   }
 }
 
-export default withPager(withBackToTop(withTranslation()(ReservationDetail)))
+export default withTranslation()(withPager(withBackToTop(ReservationDetail)))

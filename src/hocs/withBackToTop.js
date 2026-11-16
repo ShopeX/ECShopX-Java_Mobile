@@ -4,8 +4,11 @@
  */
 import { log } from '@/utils'
 import throttle from 'lodash/throttle'
+import assertClassComponent from './assertClassComponent'
 
 export default function withBackToTop(Component) {
+  assertClassComponent('withBackToTop', Component)
+
   return class WithBackToTopComponent extends Component {
     constructor(props) {
       super(props)

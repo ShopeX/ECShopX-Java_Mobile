@@ -15,6 +15,13 @@ import api from '@/api'
 import { pickBy, hasNavbar, getDistributorId } from '@/utils'
 import './plusprice.scss'
 
+// colors slice 初始值是 { current: {} }，主题接口失败/未就绪时直接取 colors.data[0] 会抛错导致整页白屏
+const COLOR_FALLBACK = {
+  primary: '#d42f29',
+  marketing: '#fba629',
+  accent: '#2e3030'
+}
+
 class CartPluspriceList extends Component {
   $instance = getCurrentInstance() || {}
   constructor(props) {
@@ -125,9 +132,10 @@ class CartPluspriceList extends Component {
 
   render() {
     const { colors } = this.props
+    const themeColor = colors?.data?.[0] || COLOR_FALLBACK
     const { list, showBackToTop, scrollTop, page } = this.state
     return (
-      <View className='cart-page-plusprice' style={`background: ${colors.data[0].primary}`}>
+      <View className='cart-page-plusprice' style={`background: ${themeColor.primary}`}>
         {hasNavbar && <SpNavBar title={$t('447b1443.72494f')} />}
         <ScrollView
           className='cart-page-plusprice-goods__scroll'
@@ -171,14 +179,14 @@ class CartPluspriceList extends Component {
           <View className='footer-list'>
             <View
               className='footer-item no-use'
-              style={`background: ${colors.data[0].accent}`}
+              style={`background: ${themeColor.accent}`}
               onClick={this.handleClickConfirm.bind(this, 'cancel')}
             >
               {$t('447b1443.f6389e')}
             </View>
             <View
               className='footer-item'
-              style={`background: ${colors.data[0].primary}`}
+              style={`background: ${themeColor.primary}`}
               onClick={this.handleClickConfirm.bind(this, 'confirm')}
             >
               {$t('b232790d.38cf16')}
@@ -193,4 +201,4 @@ class CartPluspriceList extends Component {
 
 export default connect(({ colors }) => ({
   colors: colors.current
-}))(withPager(withBackToTop(withTranslation()(CartPluspriceList))))
+}))(withTranslation()(withPager(withBackToTop(CartPluspriceList))))

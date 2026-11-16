@@ -232,4 +232,4 @@ class Coupon extends Component {
 
 export default connect(({ colors }) => ({
   colors: colors.current
-}))(withPager(withTranslation()(Coupon)))
+}))(withTranslation()(withPager(Coupon)))

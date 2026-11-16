@@ -79,4 +79,4 @@ export default connect(
     onUpdateCartCount: (count) => dispatch({ type: 'cart/updateCartNum', payload: count }),
     onFetchFavs: (favs) => dispatch({ type: 'member/favs', payload: favs })
   })
-)(withLogin()(withTranslation()(MemberSetting)))
+)(withTranslation()(withLogin()(MemberSetting)))

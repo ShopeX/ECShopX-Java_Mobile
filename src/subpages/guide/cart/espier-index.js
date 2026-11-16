@@ -268,7 +268,7 @@ function CartIndex() {
                                 <Text className='shop-cart-activity-label'>
                                   {$t('f9ef9536.1687b1')}
                                 </Text>
-                                <Text>{discount_desc.info}</Text>
+                                <Text className='shop-cart-activity-desc'>{discount_desc.info}</Text>
                               </View>
                               <View
                                 className='shop-cart-activity-item-right'
