@@ -1,0 +1,76 @@
+/**
+ * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
+ * See LICENSE file for license details.
+ */
+/**
+ * 购物车换购活动条（公共样式，全局唯一）
+ *
+ * 结构约定（DOM 由各页面渲染）：
+ * .shop-cart-activity
+ *   > .shop-cart-activity-item
+ *     > .shop-cart-activity-item-left
+ *         > .shop-cart-activity-label（「换购」标签）
+ *         > .shop-cart-activity-desc （活动文案，单行省略）
+ *     > .shop-cart-activity-item-right（「查看 >」，固定不换行）
+ *
+ * 使用位置：
+ * - src/pages/cart/espier-index.js             购物车主页面
+ * - src/subpages/guide/cart/espier-index.js    导购购物车
+ * - src/subpages/purchase/espier-index.js      购买页
+ * - src/subpages/store/comps/comp-add-cart.js  门店加购弹层
+ *
+ * 约定：
+ * 1. 横向不设 padding，由父容器控制，保证与商品行左对齐；
+ * 2. 分割线用块内 border-bottom，宽度跟随内容，不再用绝对定位的伪元素；
+ * 3. 左侧自适应收缩 + 单行省略，右侧固定宽度不参与收缩，避免长活动文案把「查看」挤变形。
+ */
+.shop-cart-activity {
+  position: relative;
+  padding: 15px 0;
+  border-bottom: 1px solid $border-light;
+
+  &-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  &-item-left {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+  }
+
+  &-item-right {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    white-space: nowrap;
+
+    .at-icon {
+      margin-left: 4px;
+    }
+  }
+
+  &-label {
+    flex-shrink: 0;
+    display: inline-block;
+    border: 1px solid var(--color-primary);
+    color: var(--color-primary);
+    border-radius: 6px;
+    font-size: 22px;
+    line-height: 1.2;
+    padding: 2px 8px;
+    margin-right: 8px;
+    white-space: nowrap;
+  }
+
+  &-desc {
+    flex: 1;
+    min-width: 0;
+    @include text-overflow;
+  }
+}
