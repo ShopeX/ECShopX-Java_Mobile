@@ -234,4 +234,4 @@ class SeckillGoodsList extends Component {
 
 export default connect(({ colors }) => ({
   colors: colors.current
-}))(withPager(withBackToTop(withTranslation()(SeckillGoodsList))))
+}))(withTranslation()(withPager(withBackToTop(SeckillGoodsList))))

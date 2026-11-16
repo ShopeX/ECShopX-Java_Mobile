@@ -107,4 +107,4 @@ class BrandList extends Component {
   }
 }
 
-export default withPager(withBackToTop(withTranslation()(BrandList)))
+export default withTranslation()(withPager(withBackToTop(BrandList)))

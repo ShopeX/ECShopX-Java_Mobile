@@ -549,4 +549,4 @@ class GoodsReservate extends Component {
 
 export default connect(({ colors }) => ({
   colors: colors.current
-}))(withPager(withBackToTop(withTranslation()(GoodsReservate))))
+}))(withTranslation()(withPager(withBackToTop(GoodsReservate))))

@@ -209,4 +209,4 @@ class SeckillList extends Component {
   }
 }
 
-export default withPager(withBackToTop(withTranslation()(SeckillList)))
+export default withTranslation()(withPager(withBackToTop(SeckillList)))

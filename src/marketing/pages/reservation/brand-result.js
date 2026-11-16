@@ -58,4 +58,4 @@ class BrandResult extends Component {
   }
 }
 
-export default withPager(withBackToTop(withTranslation()(BrandResult)))
+export default withTranslation()(withPager(withBackToTop(BrandResult)))

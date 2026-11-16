@@ -5,6 +5,7 @@
 import Taro from '@tarojs/taro'
 
 import S from '@/spx'
+import assertClassComponent from './assertClassComponent'
 
 const LIFE_CYCLE_TYPES = {
   WILL_MOUNT: 0,
@@ -19,6 +20,8 @@ export default function withLogin(nextFn, lifeCycle = LIFE_CYCLE_TYPES.WILL_MOUN
   }
 
   return function withLoginComponent(Component) {
+    assertClassComponent('withLogin', Component)
+
     return class WithLogin extends Component {
       constructor(props) {
         super(props)

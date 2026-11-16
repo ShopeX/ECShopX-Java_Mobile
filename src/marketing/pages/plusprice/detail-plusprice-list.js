@@ -9,7 +9,7 @@ import { withTranslation } from 'react-i18next'
 import { $t } from '@/i18n'
 import { withPager, withBackToTop } from '@/hocs'
 import { BackToTop, Loading, SpNote, GoodsItem, SpNavBar } from '@/components'
-import { AtCountdown } from 'taro-ui'
+import { AtCountdown, AtButton } from 'taro-ui'
 import api from '@/api'
 import { pickBy, validColor, isString } from '@/utils'
 import './plusprice.scss'
@@ -27,13 +27,15 @@ class DetailPluspriceList extends Component {
       list: [],
       promotion_activity: {},
       isSetBackground: false,
-      timeBackgroundColor: undefined
+      timeBackgroundColor: undefined,
+      // loading | ready | error | invalid，不要再用 marketing_name 当“加载完成”的哨兵
+      status: 'loading'
     }
   }
 
   componentDidMount() {
     this.syncNavTitle()
-    this.nextPage()
+    this.loadFirstPage()
   }
 
   componentDidUpdate(prevProps) {
@@ -44,6 +46,32 @@ class DetailPluspriceList extends Component {
 
   syncNavTitle = () => {
     Taro.setNavigationBarTitle({ title: $t('c4d2fddd.d1ca1e') })
+  }
+
+  /** 从路由参数取合法的 marketing_id，非法时直接出空态，不再发无效请求 */
+  getMarketingId = () => {
+    const raw = this.$instance?.router?.params?.marketing_id
+    const id = raw == null ? '' : String(raw).trim()
+    return /^[1-9]\d*$/.test(id) ? id : ''
+  }
+
+  loadFirstPage = () => {
+    if (!this.getMarketingId()) {
+      this.setState({ status: 'invalid' })
+      return
+    }
+    this.setState({ list: [], promotion_activity: {}, status: 'loading' })
+    this.resetPage(() => {
+      Promise.resolve(this.nextPage()).then((res) => {
+        if (res && res.ok === false) {
+          this.setState({ status: 'error' })
+        }
+      })
+    })
+  }
+
+  handleRetry = () => {
+    this.loadFirstPage()
   }
 
   setNavBar = (navbar_color) => {
@@ -85,24 +113,29 @@ class DetailPluspriceList extends Component {
 
   async fetch(params) {
     const { page_no: page, page_size: pageSize } = params
+    const marketingId = this.getMarketingId()
+    if (!marketingId) {
+      this.setState({ status: 'invalid' })
+      return { total: 0 }
+    }
     const query = {
-      marketing_id: this.$instance?.router?.params.marketing_id,
+      marketing_id: marketingId,
       page,
       pageSize
     }
 
-    const {
-      list,
-      total_count: total,
-      promotion_activity = {}
-    } = await api.promotion.getpluspriceList(query)
+    // marketing_id 非法时后端可能直接返回数组（而不是 { list, total_count, promotion_activity }），
+    // 这里统一兜底成对象 + 数组，避免解构/展开抛错导致页面卡在 loading 或白屏
+    const res = (await api.promotion.getpluspriceList(query)) || {}
+    const { total_count: total } = res
+    const promotion_activity = res.promotion_activity || {}
+    const rawList = Array.isArray(res.list) ? res.list : []
     const { left_time, navbar_color, activity_background, timeBackgroundColor } = promotion_activity
 
     this.setNavBar(navbar_color)
 
-    let timer = null
-    timer = this.calcTimer(left_time)
-    const nList = pickBy(list, {
+    const timer = this.calcTimer(left_time)
+    const nList = pickBy(rawList, {
       img: 'pics[0]',
       item_id: 'item_id',
       title: 'itemName',
@@ -118,6 +151,8 @@ class DetailPluspriceList extends Component {
       list: [...this.state.list, ...nList],
       promotion_activity,
       timer,
+      // 接口通了但拿不到活动名称（活动被删/类型不匹配）时按“活动不存在”兜底，不要一直转圈
+      status: promotion_activity.marketing_name ? 'ready' : 'invalid',
       isSetBackground: activity_background
         ? activity_background
         : `${process.env.APP_IMAGE_CDN}/plusprice-head.png`,
@@ -137,9 +172,27 @@ class DetailPluspriceList extends Component {
       promotion_activity,
       timer,
       isSetBackground,
-      timeBackgroundColor
+      timeBackgroundColor,
+      status
     } = this.state
-    if (!promotion_activity.marketing_name) return <Loading>{$t('f1d3181c.bd0271')}</Loading>
+
+    if (status === 'loading') return <Loading>{$t('f1d3181c.bd0271')}</Loading>
+
+    if (status === 'invalid') {
+      return <SpNote img='trades_empty.png' title={$t('7b1e93f4.2c4cd7')} />
+    }
+
+    if (status === 'error') {
+      return (
+        <View className='plusprice-state'>
+          <SpNote img='trades_empty.png' title={$t('c2581d4c.866b79')} />
+          <AtButton className='plusprice-state__btn' size='small' circle onClick={this.handleRetry}>
+            {$t('c7a229df.132c5c')}
+          </AtButton>
+        </View>
+      )
+    }
+
     return (
       <View
         className='page-plusprice'
@@ -215,7 +268,12 @@ class DetailPluspriceList extends Component {
         </ScrollView>
 
         <BackToTop show={showBackToTop} onClick={this.scrollBackToTop} />
-        {!isSetBackground && <View className='scroll-footer' style={{ 'background-image': `url(${process.env.APP_IMAGE_CDN}/plusprice-footer.png)` }}></View>}
+        {!isSetBackground && (
+          <View
+            className='scroll-footer'
+            style={{ backgroundImage: `url(${process.env.APP_IMAGE_CDN}/plusprice-footer.png)` }}
+          ></View>
+        )}
       </View>
     )
   }

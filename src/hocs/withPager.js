@@ -5,8 +5,11 @@
 // this.fetch 方法需要返回条数总量: { total }，用来计算页数
 // this.state.page 存放page相关的状态
 import { Tracker } from '@/service'
+import assertClassComponent from './assertClassComponent'
 
 export default function withPager(Component) {
+  assertClassComponent('withPager', Component)
+
   return class WithPagerComponent extends Component {
     constructor(props) {
       super(props)
@@ -38,21 +41,35 @@ export default function withPager(Component) {
 
       const { page_no, page_size } = page
       const curPage = page_no + 1
-      const { total } = await this.fetch({
-        page_no: curPage,
-        page_size
-      })
-      if (!total || curPage >= Math.ceil(+total / page_size)) {
-        page.hasNext = false
-      }
-      this.setState({
-        page: {
-          ...page,
-          total,
+      try {
+        const { total } = (await this.fetch({
           page_no: curPage,
-          isLoading: false
+          page_size
+        })) || {}
+        if (!total || curPage >= Math.ceil(+total / page_size)) {
+          page.hasNext = false
         }
-      })
+        this.setState({
+          page: {
+            ...page,
+            total,
+            page_no: curPage,
+            isLoading: false
+          }
+        })
+        return { ok: true, total }
+      } catch (error) {
+        // 请求失败时必须复位 loading，否则页面会永远停在“加载中”（在整页渲染 loading 的页面里就是整页空白）
+        // 错误提示由 api/req 拦截器统一 toast，这里只把状态交还给调用方，避免 Promise 异常冒到事件层
+        page.hasNext = false
+        this.setState({
+          page: {
+            ...page,
+            isLoading: false
+          }
+        })
+        return { ok: false, error }
+      }
     }
 
     resetPage(cb = () => {}) {

@@ -181,4 +181,4 @@ class ReservationList extends Component {
   }
 }
 
-export default withPager(withTranslation()(ReservationList))
+export default withTranslation()(withPager(ReservationList))

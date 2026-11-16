@@ -147,4 +147,4 @@ class BrandDetail extends Component {
   }
 }
 
-export default withPager(withBackToTop(withTranslation()(BrandDetail)))
+export default withTranslation()(withPager(withBackToTop(BrandDetail)))
