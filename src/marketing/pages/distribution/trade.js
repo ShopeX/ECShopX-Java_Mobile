@@ -54,8 +54,7 @@ class DistributionTrade extends Component {
     const query = {
       brokerage_source: type,
       page,
-      pageSize,
-      isSalesmanPage: 1
+      pageSize
     }
 
     const { close, noClose } = await api.distribution.commission(query)

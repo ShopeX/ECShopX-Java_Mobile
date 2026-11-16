@@ -63,7 +63,6 @@ function OfflineTransfer() {
     if (params.isDianwu) {
       const { userId } = Taro.getStorageSync('userinfo')
       _params = {
-        isSalesmanPage: 1,
         promoter_user_id: userId
       }
     }
@@ -168,7 +167,6 @@ function OfflineTransfer() {
 
     if (params.isDianwu) {
       const { userId } = Taro.getStorageSync('userinfo')
-      data.isSalesmanPage = 1
       data.promoter_user_id = userId
     }
 

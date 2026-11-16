@@ -66,8 +66,7 @@ class DistributionShopGoods extends Component {
     const query = {
       ...this.state.query,
       page,
-      pageSize,
-      isSalesmanPage: 1
+      pageSize
     }
 
     const { list, total_count: total } = await api.item.search(query)
@@ -167,8 +166,7 @@ class DistributionShopGoods extends Component {
           goods_id: id,
           item_type: 'normal',
           pageSize: 50,
-          page: 1,
-          isSalesmanPage: 1
+          page: 1
         }
         const res = await api.item.search(query)
         const details = pickBy(res.list, {

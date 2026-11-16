@@ -55,22 +55,6 @@ export default class RegRule extends Component {
       })
       data = registerContent + privacyContent
       navBarTitle = ti('30790878.88b61e', [registerTitle, privactTitle])
-    } else if (type === 'x') {
-      // 隐私和注册协议
-      const { salesman_service } = await api.salesman.shopsProtocolsaleman({
-        type: 'x'
-      })
-      const { content: privacyContent, title: privactTitle } = salesman_service
-      data = privacyContent
-      navBarTitle = privactTitle
-    } else if (type === 'y') {
-      // 隐私和注册协议
-      const { salesman_privacy } = await api.salesman.shopsProtocolsaleman({
-        type: 'x'
-      })
-      const { content: privacyContent, title: privactTitle } = salesman_privacy
-      data = privacyContent
-      navBarTitle = privactTitle
     } else if (type == 'invoice_protocol') {
       // 隐私政策
       const { content, title } = await api.trade.getInvoiceProtocol({

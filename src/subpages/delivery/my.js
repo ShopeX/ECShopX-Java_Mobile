@@ -83,27 +83,6 @@ const MyPage = () => {
               }
             />
           </View>
-          <View className='my-content-btm'>
-            <SpCell
-              isLink
-              title={$t('52004c64.1c1926')}
-              border
-              onClick={() => {
-                Taro.navigateTo({
-                  url: '/subpages/auth/reg-rule?type=x'
-                })
-              }}
-            />
-            <SpCell
-              isLink
-              title={$t('52004c64.b0d560')}
-              onClick={() => {
-                Taro.navigateTo({
-                  url: '/subpages/auth/reg-rule?type=y'
-                })
-              }}
-            />
-          </View>
         </View>
       ) : (
         <AtNoticebar marquee>{$t('ed3eeaa3.c0136f')}</AtNoticebar>

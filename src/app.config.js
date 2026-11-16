@@ -157,8 +157,6 @@ const config = {
         'trade/result', // 订单操作结果
         'delivery-personnel', // 配送员
         'edit-deliveryman', // 配送员创建
-        'salesman-personnel', // 业务员
-        'edit-deliveryman-salesman', // 业务员创建
         'activity-code', // 活动扫码核销
         'payment' //付款页面
       ]
@@ -396,53 +394,6 @@ const config = {
         'selector', //选择页面
         'audit', //审核页面
         'agreement' //协议页面
-      ]
-    },
-    //业务员
-    {
-      root: 'subpages/salesman',
-      pages: [
-        'index', //首页
-        'card', //名片
-        'cart', //购物车
-        'my', //我的
-        'list', //订单
-        'detail', //订单详情
-        'cancel', //取消订单
-        'selectCustomer', //选客户
-        'selectStore', //选店铺
-        'selectShop', //选店铺
-        'achievement', //业绩
-        'delivery-personnel', //业务员管理
-        'edit-deliveryman', //创建业务员
-        'purchasing', //选商品
-        'distribution/index', // 推广管理首页
-        'distribution/setting', // 推广管理会员资料
-        'distribution/shop-home', // 小店首页
-        'distribution/statistics', // 推广费详情页面
-        'distribution/trade', // 推广订单列表
-        'distribution/subordinate', // 我的会员列表
-        'distribution/withdraw', // 提现页面
-        'distribution/withdrawals-record', // 提现记录
-        'distribution/withdrawals-acount', // 提现绑定账户
-        'distribution/goods', // 推广商品列表
-        'distribution/shop', // 我的小店概览页面
-        'distribution/shop-setting', // 小店设置页面
-        'distribution/shop-form', // 小店设置编辑页面
-        'distribution/qrcode', // 小店二维码
-        'distribution/shop-category', // 小店商品分类
-        'distribution/good-category', // 推广商品分类页面
-        'distribution/shop-goods', // 小店商品页面
-        'distribution/shop-trade', // 小店订单页面
-        'distribution/shop-achievement', // 小店业绩页面
-        'distribution/point-platform',
-        'distribution/certification', //实名认证
-        'delivery-info', //查看物流
-        'espier-checkout', // 结算页面
-        'address', // 收货地址
-        'edit-address', //添加收获地址
-        'coupon-picker', //优惠券选择器
-        'ziti-picker' //自提选择器
       ]
     },
     //配送员

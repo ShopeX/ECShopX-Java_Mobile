@@ -31,11 +31,6 @@ function useThemsColor() {
         marketing: '#4980FF',
         accent: '#4980FF'
       },
-      '/subpages/salesman/': {
-        primary: '#4980FF',
-        marketing: '#4980FF',
-        accent: '#4980FF'
-      },
       '/subpages/dianwu/': {
         primary: '#4980FF',
         marketing: '#4980FF',

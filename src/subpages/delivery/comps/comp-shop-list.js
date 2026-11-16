@@ -38,11 +38,6 @@ function CompShopList(props) {
         <View className='comp-customer-list-scroll'>
           <View
             className='comp-customer-list-scroll-list'
-            // onClick={() => {
-            //   Taro.navigateTo({
-            //     url: `/subpages/salesman/purchasing?distributor_id=${item.distributor_id}`
-            //   })
-            // }}
           >
             <SpImage src={item.logo} />
             <View className='details'>
