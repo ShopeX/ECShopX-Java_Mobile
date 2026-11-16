@@ -503,7 +503,8 @@ export const needLoginPageType = [
   'community_group_enable'
 ]
 
-export const needLoginPage = ['purchase_activity', 'regactivity', 'lottery']
+// 按 linkPage 类型判定的登录页（id 不是页面类型时生效）
+export const needLoginPage = ['purchase_activity', 'regactivity', 'lottery', 'registrationRecord']
 
 export const TAB_PAGES = [
   '/pages/index',
