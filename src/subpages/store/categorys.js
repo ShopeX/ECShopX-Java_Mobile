@@ -252,9 +252,8 @@ function StoreItemList(props) {
     })
   }
 
-  const panelStyle = panelHeight
-    ? styleNames({ height: `${panelHeight}px` })
-    : styleNames({ height: '70vh' })
+  // 分类面板高度：不再用 JS 算定高，由父级 flex 撑满（避免 iOS 百分比/flex 高度解析问题）
+  const panelStyle = panelHeight ? styleNames({ height: `${panelHeight}px` }) : undefined
 
   return (
     <View className='store-category' style={panelStyle}>
@@ -266,7 +265,7 @@ function StoreItemList(props) {
         />
       </View>
       <View className='store-category__body'>
-        <View catchMove className='store-category__side'>
+        <View className='store-category__side'>
           <CompSecondCategory
             cusIndex={categorySecondIndex}
             list={secondList}
@@ -284,16 +283,12 @@ function StoreItemList(props) {
               />
             </View>
           )}
-          {/* catchMove：阻止外层门店 ScrollView 抢手势，保证右侧可滑 */}
-          <View catchMove className='store-category__goods goods-list__type-list'>
+          <View className='store-category__goods goods-list__type-list'>
             <ScrollView
               className='store-category__scroll'
               scrollY
-              enhanced
-              showScrollbar={false}
               lowerThreshold={80}
               onScrollToLower={onScrollToLower}
-              style={{ height: '100%' }}
             >
               {allList.map((item, index) => (
                 <View

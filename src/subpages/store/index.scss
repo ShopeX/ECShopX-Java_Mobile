@@ -111,6 +111,14 @@
     background: #fff;
   }
 
+  /*
+   * 商品分类：头图 + 吸顶 tab + 定高双栏面板
+   * 页面本身用 SpPage 的 body 容器滚动，不要再套 scroll-view
+   */
+  &__category {
+    background: #fff;
+  }
+
   &__tab {
     font-family: PingFangSC, PingFang SC, sans-serif;
     font-size: 36px;

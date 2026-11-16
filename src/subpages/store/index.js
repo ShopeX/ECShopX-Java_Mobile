@@ -51,9 +51,7 @@ const initState = {
   /** 页面滚动超过 20px 时搜索条白底 */
   searchSolidBg: false,
   /** 自定义导航高度，沉浸式时用于顶起搜索/头图内容 */
-  navbarHeight: 0,
-  /** 切换到分类 Tab 时滚到吸顶区；滚完后清空 */
-  scrollIntoView: ''
+  navbarHeight: 0
 }
 
 function StoreIndex() {
@@ -69,15 +67,13 @@ function StoreIndex() {
     productSwitching,
     storeInfo,
     searchSolidBg,
-    navbarHeight,
-    scrollIntoView
+    navbarHeight
   } = state
 
   const dispatch = useDispatch()
   const pageRef = useRef()
   const loginRef = useRef()
   const floatLayersRef = useRef()
-  const clearScrollIntoViewTimer = useRef(null)
 
   useDidShow(() => {
     fetchWgts()
@@ -171,24 +167,9 @@ function StoreIndex() {
 
   const tabbarSwitching = useCallback(
     (val) => {
-      if (clearScrollIntoViewTimer.current) {
-        clearTimeout(clearScrollIntoViewTimer.current)
-        clearScrollIntoViewTimer.current = null
-      }
       setState((draft) => {
         draft.productSwitching = val
-        draft.scrollIntoView = val ? '' : 'store-index-tabs'
       })
-      if (!val) {
-        clearScrollIntoViewTimer.current = setTimeout(() => {
-          setState((draft) => {
-            if (draft.scrollIntoView === 'store-index-tabs') {
-              draft.scrollIntoView = ''
-            }
-          })
-          clearScrollIntoViewTimer.current = null
-        }, 400)
-      }
     },
     [setState]
   )
@@ -264,17 +245,65 @@ function StoreIndex() {
     return wgts
   }, [wgts, searchComp])
 
-  // 分类双栏面板高度：视口 - 吸顶偏移 - Tab 条 - 底部结算栏
+  // 分类双栏面板：定高 = 视口 - 吸顶偏移 - Tab 条 - 底部结算栏（与 SpPage 预留的 footer 高度一致）
   const { windowWidth, windowHeight } = Taro.getWindowInfo()
   const px = (design) => (design * windowWidth) / 750
   const searchBarH = searchComp ? px(120) : 0
   const stickyTop = (navbarHeight || 0) + searchBarH
   const tabsH = px(98)
-  // 与 SpPage 给 tabbar 预留的高度保持一致（含 iPhone X 安全区），否则面板底部会压到结算栏下面
   const footerH = px(160) + (isIphoneX() ? px(DEFAULT_SAFE_AREA_HEIGHT) : 0)
   const categoryPanelHeight = Math.max(
     px(720),
-    Math.floor(windowHeight - stickyTop - tabsH - footerH)
+    Math.floor(windowHeight - footerH - stickyTop - tabsH)
+  )
+
+  /** 头图 + 店铺信息卡（商品 / 商品分类 两个 Tab 共用） */
+  const renderHeader = () => (
+    <View className='page-store-index__header'>
+      {storeInfo?.banner ? (
+        <SpImage
+          className='page-store-index__banner'
+          src={storeInfo.banner}
+          mode='widthFix'
+          width={750}
+        />
+      ) : (
+        <View
+          className='page-store-index__banner page-store-index__banner--empty'
+          style={navbarHeight ? { paddingTop: `${navbarHeight}px` } : undefined}
+        />
+      )}
+      <CompShopBrand storeInfo={storeInfo} dtid={distributorId} />
+    </View>
+  )
+
+  /** 首页/全部/分类 切换条（sticky：吸顶位置扣除导航 + 搜索条） */
+  const renderTabs = () => (
+    <View
+      id='store-index-tabs'
+      className='page-store-index__tabs'
+      style={{
+        background: pageData?.base?.pageBackgroundColor || '#fff',
+        top: `${stickyTop}px`
+      }}
+    >
+      <Text
+        className={classNames('page-store-index__tab', {
+          'page-store-index__tab--active': productSwitching
+        })}
+        onClick={() => tabbarSwitching(true)}
+      >
+        {$t('17670153.db1c89')}
+      </Text>
+      <Text
+        className={classNames('page-store-index__tab', {
+          'page-store-index__tab--active': !productSwitching
+        })}
+        onClick={() => tabbarSwitching(false)}
+      >
+        {$t('17670153.c3ece5')}
+      </Text>
+    </View>
   )
 
   return (
@@ -332,101 +361,73 @@ function StoreIndex() {
         }
         renderFooter={<CompTab popFrame={popFrame} />}
       >
-        <ScrollView
-          scrollY
-          className='page-store-index__scroll'
-          style={{ height: '100%' }}
-          scrollIntoView={scrollIntoView || undefined}
-          scrollWithAnimation={!!scrollIntoView}
-          onScroll={(e) => {
-            const st = e?.detail?.scrollTop ?? 0
-            const nextSolid = st > 15
-            setState((draft) => {
-              if (draft.searchSolidBg !== nextSolid) {
-                draft.searchSolidBg = nextSolid
-              }
-            })
-          }}
-        >
-          {searchComp && (
-            <View
-              className={classNames('page-store-index__search', {
-                'page-store-index__search--solid': searchSolidBg
-              })}
-              style={navbarHeight ? { top: `${navbarHeight}px` } : undefined}
-            >
-              <SpSearch
-                info={searchComp}
-                onClick={() => {
-                  Taro.navigateTo({
-                    url: `/subpages/store/item-list?dtid=${distributorId}`
-                  })
-                }}
-              />
-            </View>
-          )}
-
-          <View className='page-store-index__header'>
-            {storeInfo?.banner ? (
-              <SpImage
-                className='page-store-index__banner'
-                src={storeInfo.banner}
-                mode='widthFix'
-                width={750}
-              />
-            ) : (
-              <View
-                className='page-store-index__banner page-store-index__banner--empty'
-                style={navbarHeight ? { paddingTop: `${navbarHeight}px` } : undefined}
-              />
-            )}
-            <CompShopBrand storeInfo={storeInfo} dtid={distributorId} />
-          </View>
-
+        {/* 搜索条：fixed 定位，两个 Tab 下都可见 */}
+        {searchComp && (
           <View
-            id='store-index-tabs'
-            className='page-store-index__tabs'
-            style={{
-              background: pageData?.base?.pageBackgroundColor || '#fff',
-              top: `${stickyTop}px`
+            className={classNames('page-store-index__search', {
+              'page-store-index__search--solid': searchSolidBg || !productSwitching
+            })}
+            style={navbarHeight ? { top: `${navbarHeight}px` } : undefined}
+          >
+            <SpSearch
+              info={searchComp}
+              onClick={() => {
+                Taro.navigateTo({
+                  url: `/subpages/store/item-list?dtid=${distributorId}`
+                })
+              }}
+            />
+          </View>
+        )}
+
+        {productSwitching ? (
+          <ScrollView
+            scrollY
+            className='page-store-index__scroll'
+            style={{ height: '100%' }}
+            onScroll={(e) => {
+              const st = e?.detail?.scrollTop ?? 0
+              const nextSolid = st > 15
+              setState((draft) => {
+                if (draft.searchSolidBg !== nextSolid) {
+                  draft.searchSolidBg = nextSolid
+                }
+              })
             }}
           >
-            <Text
-              className={classNames('page-store-index__tab', {
-                'page-store-index__tab--active': productSwitching
-              })}
-              onClick={() => tabbarSwitching(true)}
-            >
-              {$t('17670153.db1c89')}
-            </Text>
-            <Text
-              className={classNames('page-store-index__tab', {
-                'page-store-index__tab--active': !productSwitching
-              })}
-              onClick={() => tabbarSwitching(false)}
-            >
-              {$t('17670153.c3ece5')}
-            </Text>
-          </View>
+            {renderHeader()}
 
-          {productSwitching && filterWgts.length > 0 && (
-            <WgtsContext.Provider value={{ onAddToCart }}>
-              <HomeWgts wgts={filterWgts} dtid={distributorId} />
-            </WgtsContext.Provider>
-          )}
-          {!productSwitching && (
+            {renderTabs()}
+
+            {filterWgts.length > 0 && (
+              <WgtsContext.Provider value={{ onAddToCart }}>
+                <HomeWgts wgts={filterWgts} dtid={distributorId} />
+              </WgtsContext.Provider>
+            )}
+
+            <View className='sp-page__powered-by w-full'>
+              <SpPoweredBy />
+            </View>
+          </ScrollView>
+        ) : (
+          /*
+           * 商品分类：头图/店铺卡 + 吸顶 tab + 定高双栏面板。
+           * 页面滚动用 SpPage 自带的 body 容器（普通 div 的 overflow 滚动），
+           * 不要再套一个 scroll-view：scroll-view 套 scroll-view 在真机上会抢 touchmove，
+           * 导致面板里两个列表滑不动。
+           */
+          <View className='page-store-index__category'>
+            {renderHeader()}
+
+            {renderTabs()}
+
             <Categorys
               addPurchases={addPurchases}
               dtid={distributorId}
               panelHeight={categoryPanelHeight}
             />
-          )}
-          {productSwitching && (
-            <View className='sp-page__powered-by w-full'>
-              <SpPoweredBy />
-            </View>
-          )}
-        </ScrollView>
+          </View>
+        )}
 
         {/* 弹层放 ScrollView 外 + 独立 state：压得过结算栏，且打开不触发门店页 setData */}
         <StoreFloatLayers ref={floatLayersRef} parameter={parameter} />
