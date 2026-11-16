@@ -16,9 +16,6 @@ function compSecondCategory(props) {
       <ScrollView
         className='comp-second-category-scroll'
         scrollY
-        style={{ height: '100%' }}
-        enhanced
-        showScrollbar={false}
       >
         {list.map((el, elidx) => (
           <View
