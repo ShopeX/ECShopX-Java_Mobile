@@ -150,10 +150,11 @@
     }
   }
 
-  /* 导航栏标题区（自定义导航内） */
+  /* 导航栏标题区（自定义导航内）
+   * 不要改成 flex-start：左右两侧已经各留了一个胶囊宽度的占位，
+   * 只有 justify-content: center 才能让小程序的返回按钮 + 标题整体居中
+   */
   .title-container {
-    justify-content: flex-start !important;
-
     .sp-search {
       width: 75%;
       background: transparent;
