@@ -82,6 +82,10 @@ function ItemActivity(props) {
   })
 
   useEffect(() => {
+    Taro.setNavigationBarTitle({ title: $t('ece5ca3e.42a5b5') })
+  }, [i18n.language])
+
+  useEffect(() => {
     setState((draft) => {
       draft.recordList = []
     })
