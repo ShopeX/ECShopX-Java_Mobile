@@ -221,19 +221,19 @@ function withPageWrapper(Component) {
         }
 
         if (currentShopInfo.open_divided == '1') {
-          // 开启了店铺白名单
+          // 开启了店铺白名单：必须登录后才校验白名单
           if (!S.getAuthToken()) {
-            // 微信不允许首页直接弹出登录授权，不再主动弹窗，先允许进入并设置店铺信息，需登录时再引导
-            console.log(`[进店规则] store open_divided, no auth token, skip login modal`)
-            dispatch(updateShopInfo(currentShopInfo))
-            return
-            // console.log(`[进店规则] rule: store is open divided, no auth token`)
-            // const loginResult = await handleToLogin()
-            // if (!loginResult) {
-            //   // 退出小程序
-            //   Taro.exitMiniProgram()
-            //   throw new Error('EXIT_MINI_PROGRAM')
-            // }
+            if (!isWeixin) {
+              // H5 的登录形态是跳登录页，本次不拦截，先维持原有放行逻辑
+              dispatch(updateShopInfo(currentShopInfo))
+              return
+            }
+            const loginResult = await handleToLogin()
+            if (!loginResult) {
+              // 白名单店铺必须登录，未登录只能退出小程序
+              Taro.exitMiniProgram()
+              throw new Error('EXIT_MINI_PROGRAM')
+            }
           }
           // 去检查当前用户是否在店铺白名单中
           await resloveCheckUserInStoreWhiteList(currentShopInfo)
@@ -244,25 +244,24 @@ function withPageWrapper(Component) {
         }
       }
 
+      // 白名单店铺必须登录：先弹「你还未登录」，用户点「立即登录」再拉起微信授权
       const handleToLogin = async () => {
+        const res = await showModal({
+          title: $t('cefecf05.02d981'),
+          content: $t('cefecf05.6af320'),
+          confirmText: $t('cefecf05.ed2ff8'),
+          showCancel: false,
+          contentAlign: 'center'
+        })
+        if (!res.confirm) {
+          return false
+        }
         try {
-          if (isWeixin) {
-            await showLoinModal()
-          }
+          // 微信不允许自动弹出授权，必须由用户点击按钮触发，这里挂载 SpLogin
+          await showLoinModal()
           return true
         } catch (error) {
-          const res = await showModal({
-            title: $t('cefecf05.02d981'),
-            content: $t('cefecf05.6af320'),
-            cancelText: $t('cefecf05.625fb2'),
-            confirmText: $t('cefecf05.b3b42d'),
-            contentAlign: 'center'
-          })
-          if (res.confirm) {
-            return await handleToLogin()
-          } else {
-            return false
-          }
+          return false
         }
       }
 
@@ -291,35 +290,31 @@ function withPageWrapper(Component) {
           } else {
             const resModalAccessStore = await showModal({
               title: $t('cefecf05.02d981'),
-              content: currentShopInfo?.is_default ? $t('cefecf05.d57233') : $t('cefecf05.39f3a9'),
-              showCancel: false,
-              confirmText:
-                entryDefalutStore == 1
-                  ? currentShopInfo?.is_default
-                    ? $t('cefecf05.fc029a')
-                    : $t('cefecf05.5a1367')
-                  : $t('cefecf05.5f4112'),
+              content: $t('cefecf05.e0adf7'),
+              cancelText: $t('cefecf05.b15d91'),
+              confirmText: $t('cefecf05.98d07d'),
               contentAlign: 'center'
             })
             if (resModalAccessStore.confirm) {
-              // 兜底策略: 默认店铺
-              if (entryDefalutStore == 1) {
-                if (currentShopInfo?.is_default) {
-                  // 退出小程序
-                  Taro.exitMiniProgram()
-                  throw new Error('EXIT_MINI_PROGRAM')
-                } else {
-                  // 清除缓存中的店铺；忽略闭包旧店 id，按正确兜底店重新进店校验
-                  dispatch(updateShopInfo({}))
-                  await checkStoreWhiteList(null, false, false, { ignoreCachedShop: true })
-                }
-              } else {
-                Taro.redirectTo({
-                  url: `/pages/custom/custom-page?id=${guidderTemplateId}&fromConnect=davild`
-                })
-                throw new Error('TO_STORE_GUIDE_PAGE')
-              }
+              // 联系店铺
+              await makePhoneCall(currentShopInfo.phone)
+              return
             }
+            // 关闭：按进店兜底策略处理，未配置兜底则退出小程序
+            if (entryDefalutStore == 1 && !currentShopInfo?.is_default) {
+              // 清除缓存中的店铺；忽略闭包旧店 id，按正确兜底店重新进店校验
+              dispatch(updateShopInfo({}))
+              await checkStoreWhiteList(null, false, false, { ignoreCachedShop: true })
+              return
+            }
+            if (entryDefalutStore == 2) {
+              Taro.redirectTo({
+                url: `/pages/custom/custom-page?id=${guidderTemplateId}&fromConnect=davild`
+              })
+              throw new Error('TO_STORE_GUIDE_PAGE')
+            }
+            Taro.exitMiniProgram()
+            throw new Error('EXIT_MINI_PROGRAM')
           }
         } else {
           dispatch(updateShopInfo(currentShopInfo))
