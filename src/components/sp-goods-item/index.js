@@ -179,6 +179,22 @@ function SpGoodsItem(props) {
   console.log(isPurchase, 'isPurchase', info.activityPrice, info, $instance)
   // console.log( "favs:", favs );
   const isFaved = favs.findIndex((item) => item.item_id == info.itemId) > -1
+  // 会员价/VIP/SVIP 区块是否展示了更低的价格（与下方 more-price 的展示条件一致）。
+  // 只有它真的展示出来时主价格才让位，否则主价格（活动价优先）必须展示，
+  // 不能用 memberPrice === price 判断：有会员折扣时两者必然不等，价格会整块消失。
+  const hasLowerMemberPrice =
+    !info.activityPrice &&
+    isLogin &&
+    !isPurchase &&
+    ((info.memberPrice < info.price && enMemberPrice) ||
+      (info.vipPrice > 0 &&
+        info.vipPrice < info.memberPrice &&
+        (!info.svipPrice || info.vipPrice > info.svipPrice) &&
+        enSvipPrice) ||
+      (info.svipPrice > 0 &&
+        info.svipPrice < info.vipPrice &&
+        info.svipPrice < info.memberPrice &&
+        enSvipPrice))
   const isShowStore =
     !hideStore && VERSION_PLATFORM && info.distributor_info && !Array.isArray(info.distributor_info)
   if (!info) return null
@@ -319,25 +335,18 @@ function SpGoodsItem(props) {
                     )}
                   </>
                 )}
-                {!isPurchase &&
-                  (info.memberPrice === info.price ||
-                    info.vipPrice === info.price ||
-                    info.svipPrice === info.price) && (
-                    <SpPrice size={36} value={info.activityPrice || info.price}></SpPrice>
-                  )}
-                {(info.memberPrice === info.price ||
-                  info.vipPrice === info.price ||
-                  info.svipPrice === info.price) &&
-                  info.marketPrice > 0 &&
-                  enMarketPrice && (
-                    <SpPrice
-                      size={26}
-                      className='mkt-price'
-                      lineThrough
-                      value={info.marketPrice}
-                      pointMode={effectivePointMode}
-                    ></SpPrice>
-                  )}
+                {!isPurchase && !hasLowerMemberPrice && (
+                  <SpPrice size={36} value={info.activityPrice || info.price}></SpPrice>
+                )}
+                {!hasLowerMemberPrice && info.marketPrice > 0 && enMarketPrice && (
+                  <SpPrice
+                    size={26}
+                    className='mkt-price'
+                    lineThrough
+                    value={info.marketPrice}
+                    pointMode={effectivePointMode}
+                  ></SpPrice>
+                )}
               </View>
             </View>
           )}
