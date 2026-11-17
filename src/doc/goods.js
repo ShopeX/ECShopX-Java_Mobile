@@ -217,6 +217,16 @@ export const ITEM_LIST_POINT_GOODS = {
   store: 'store'
 }
 
+// 列表接口把活动价放在 activity_price，商品详情接口放在 act_price（见详情接口活动分支合并逻辑），
+// 两个字段都要兼容，否则详情数据的活动价会缺失、回落成销售价
+const resolveActivityPrice = (activity_price, act_price) => {
+  const value =
+    activity_price === undefined || activity_price === null || activity_price === ''
+      ? act_price
+      : activity_price
+  return value === undefined || value === null || value === '' ? NaN : Number(value) / 100
+}
+
 export const GOODS_INFO = {
   itemId: 'item_id',
   itemBn: 'item_bn',
@@ -232,10 +242,7 @@ export const GOODS_INFO = {
   isPoint: 'is_point',
   price: ({ price }) => price / 100, // 销售价
   // null/缺省不能当 0，否则 SpGoodsPrice 会展示活动价 ¥0.00
-  activityPrice: ({ activity_price }) =>
-    activity_price === undefined || activity_price === null || activity_price === ''
-      ? NaN
-      : Number(activity_price) / 100,
+  activityPrice: ({ activity_price, act_price }) => resolveActivityPrice(activity_price, act_price),
   marketPrice: ({ market_price }) => market_price / 100, // 原价
   memberPrice: ({ member_price }) => member_price / 100, // 当前会员等级价
   vipPrice: ({ vip_price }) => vip_price / 100, // vip价格
@@ -344,10 +351,8 @@ export const GOODS_INFO = {
       point: 'point',
       isPoint: () => is_point,
       price: ({ price }) => price / 100, // 销售价
-      activityPrice: ({ activity_price }) =>
-        activity_price === undefined || activity_price === null || activity_price === ''
-          ? NaN
-          : Number(activity_price) / 100,
+      activityPrice: ({ activity_price, act_price }) =>
+        resolveActivityPrice(activity_price, act_price),
       marketPrice: ({ market_price }) => market_price / 100, // 原价
       memberPrice: ({ member_price }) => member_price / 100, // 当前会员等级价
       vipPrice: ({ vip_price }) => vip_price / 100, // vip价格
