@@ -59,13 +59,12 @@ class CartPluspriceList extends Component {
     })
   }
   handleSelectGoods = (item, checked) => {
+    // 换购商品单选：勾选某项时其余项取消；再次点击已勾选项即取消勾选
     const new_list = this.state.list.map((v) => {
-      v.is_checked = false
-      v.item_id == item.item_id && (v.is_checked = true)
-      return {
-        ...v,
-        is_checked: v.is_checked
+      if (v.item_id == item.item_id) {
+        return { ...v, is_checked: !!checked }
       }
+      return checked ? { ...v, is_checked: false } : v
     })
     this.setState({
       list: new_list
@@ -73,28 +72,28 @@ class CartPluspriceList extends Component {
   }
 
   async handleClickConfirm(type) {
-    let { list } = this.state
+    const { list } = this.state
     if (!list.length) return
     const selected = list.filter((v) => v.is_checked)
-    if (!selected.length) {
-      Taro.showToast({
-        title: $t('1d9cdff5.f52bf3'),
-        icon: 'none'
-      })
-      return
-    }
-    const { marketing_id } = selected[0]
+    // 取消勾选后点「确定」与「不使用换购」同义：清掉已选的换购商品
+    const isSkip = type == 'cancel' || !selected.length
+    const marketing_id =
+      selected[0]?.marketing_id ||
+      list[0]?.marketing_id ||
+      this.$instance?.router?.params?.marketing_id
+    if (!marketing_id) return
     const query = {
-      item_id: type == 'cancel' ? 0 : selected[0].item_id,
+      item_id: isSkip ? 0 : selected[0].item_id,
       marketing_id
     }
-    const { data } = await api.cart.selectedPlusitem(query)
+    await api.cart.selectedPlusitem(query)
     Taro.showToast({
       title: $t('447b1443.53eff7'),
       icon: 'none'
     })
-    type == 'cancel' && (list = list.map((v) => (v.is_checked = false)))
-    this.setState({ list })
+    if (isSkip) {
+      this.setState({ list: list.map((v) => ({ ...v, is_checked: false })) })
+    }
     setTimeout(() => {
       Taro.navigateBack()
     }, 300)
