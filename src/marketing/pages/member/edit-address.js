@@ -11,7 +11,7 @@ import { AtButton, AtTextarea } from 'taro-ui'
 import { SpCell, SpPage, SpAddress, SpInput as AtInput } from '@/components'
 import api from '@/api'
 import { useTranslation, $t } from '@/i18n'
-import { isWxWeb, showToast } from '@/utils'
+import { isWxWeb, showToast, isEmojiCharacter } from '@/utils'
 import S from '@/spx'
 import { useNavigation } from '@/hooks'
 import './edit-address.scss'
@@ -170,6 +170,10 @@ function AddressIndex(props) {
 
     if (!data.adrdetail) {
       return showToast($t('692ba07e.80d685'))
+    }
+
+    if (isEmojiCharacter(data.adrdetail)) {
+      return showToast($t('84664b36.0355c0'))
     }
 
     Taro.showLoading({ title: $t('edc703ce.415038') })

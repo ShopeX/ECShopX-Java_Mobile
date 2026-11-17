@@ -344,6 +344,23 @@ export function maskMobile(mobile) {
   return mobile.replace(/^(\d{2})(\d+)(\d{2}$)/, '$1******$3')
 }
 
+/**
+ * 是否包含表情符号（emoji）
+ * 区段按 Unicode Extended_Pictographic 全集整理：扩展区、杂项符号、装饰符号、
+ * 杂项技术符号（⌚⌛⏰⏳）、几何图形中的表情、变体选择符与关键盘符。
+ * 刻意不含 ℃(2103)、№(2116)、①(2460) 等地址里常见的普通符号；
+ * 也不含零宽连接符 U+200D，否则阿拉伯语 / 印度语连字文本会被误判。
+ */
+const EMOJI_REG =
+  /[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{203C}\u{2049}\u{2122}\u{2139}\u{231A}-\u{231B}\u{2328}\u{23CF}\u{23E9}-\u{23F3}\u{23F8}-\u{23FA}\u{24C2}\u{25AA}-\u{25AB}\u{25B6}\u{25C0}\u{25FB}-\u{25FE}\u{2934}-\u{2935}\u{3030}\u{303D}\u{3297}\u{3299}\u{00A9}\u{00AE}\u{FE0F}\u{20E3}\u{2194}-\u{2199}\u{21A9}-\u{21AA}]/u
+
+export function isEmojiCharacter(text) {
+  if (text == null || text === '') {
+    return false
+  }
+  return EMOJI_REG.test(String(text))
+}
+
 // 不可使用promise/async异步写法
 export function authSetting(scope, succFn, errFn) {
   Taro.getSetting({
