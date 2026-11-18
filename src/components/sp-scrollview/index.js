@@ -27,7 +27,6 @@ function SpScrollView(props, ref) {
     onLoad = () => {},
     renderMore
   } = props
-  // const scope = useScope();
   const { page, getTotal, nextPage, resetPage } = usePage({
     fetch,
     auto,
@@ -36,62 +35,50 @@ function SpScrollView(props, ref) {
   const wrapRef = useRef(null)
   const vidRef = useRef(`sv-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`)
   const vid = vidRef.current
+  // 观察器用 ref 读最新分页状态，避免 loading 切换时拆建 observer 干扰滚动
+  const pageRef = useRef(page)
+  const nextPageRef = useRef(nextPage)
+  pageRef.current = page
+  nextPageRef.current = nextPage
+
   useEffect(() => {
     let observer = null
+    const tryNextPage = () => {
+      const { hasMore, loading } = pageRef.current
+      if (hasMore && !loading) {
+        nextPageRef.current()
+      }
+    }
+
     if (isWeixin || isAlipay) {
       observer = Taro.createIntersectionObserver(Taro.getCurrentInstance()?.page, {
         observeAll: true
       })
       setTimeout(() => {
-        // observer.relativeToViewport({ bottom: 0 }).observe('.scrollview-bottom', (res) => {
         observer.relativeToViewport({ bottom: 0 }).observe(`.scrollview-${vid}`, (res) => {
           if (res.intersectionRatio > 0) {
-            if (page.hasMore && !page.loading) {
-              nextPage()
-            }
+            tryNextPage()
           }
         })
       }, 0)
     }
 
     if (isWeb) {
-      observer = new IntersectionObserver(
-        (res) => {
-          const { isIntersecting } = res[0]
-          if (isIntersecting) {
-            if (page.hasMore && !page.loading) {
-              nextPage()
-            }
+      const el = document.querySelector(`.scrollview-${vid}`)
+      if (el) {
+        observer = new IntersectionObserver((res) => {
+          if (res[0]?.isIntersecting) {
+            tryNextPage()
           }
-        },
-        {
-          // root: document.querySelector(".home-wgts"),
-          // threshold: [0, 0.8]
-        }
-      )
-      // observer.observe(document.querySelector('.scrollview-bottom'))
-      observer.observe(document.querySelector(`.scrollview-${vid}`))
-      // this.observe = observer;
-      // observer = new IntersectionObserver((entries, observer) => {
-      //   entries.forEach((entry) => {
-      //     if (!entry.isIntersecting) {
-      //       setLoading(false);
-      //       observer.unobserve(entry.target);
-      //     }
-      //     if (page.hasMore && !page.loading) {
-      //       nextPage();
-      //     }
-      //   });
-      // });
-      // console.log('wrapRef',wrapRef)
-      // // observer.observe(ref.current);
-      // observer.observe(wrapRef.current);
+        })
+        observer.observe(el)
+      }
     }
 
     return () => {
-      observer.disconnect()
+      observer?.disconnect()
     }
-  }, [page])
+  }, [vid])
 
   useEffect(() => {
     if (!page.hasMore) {
@@ -99,18 +86,15 @@ function SpScrollView(props, ref) {
     }
   }, [page.hasMore])
 
-
   useImperativeHandle(ref, () => ({
-    // reset 就是暴露给父组件的方法
     reset: () => {
       resetPage()
     }
   }))
 
-  // 首屏还没有任何数据时用骨架屏占位；翻页加载由页面自己往列表尾部追加骨架
+  // 仅首屏（尚无数据）用骨架；翻页走 footer 固定 loading，避免列表高度抖动把滚动带走
   const initialLoading = page.loading && getTotal() === 0
   const showSkeleton = !!renderSkeleton && initialLoading
-  // children 允许传函数，页面可以拿到 loading 自己决定加载中的形态
   const isRenderProp = typeof children === 'function'
   const bodyContent = isRenderProp
     ? children({
@@ -124,15 +108,12 @@ function SpScrollView(props, ref) {
     ? renderSkeleton()
     : children
 
-  // console.log('sp scrollview:', page.loading, page.hasMore)
   return (
     <View className={classNames('sp-scrollview', className)} style={style} ref={wrapRef}>
       <View className='sp-scrollview-body'>{bodyContent}</View>
-      {/* 使用固定容器包裹状态提示，保持 DOM 结构稳定，避免滚动位置重置 */}
+      {/* 固定 footer：翻页 loading / 空态 / 没有更多，保持 DOM 结构稳定 */}
       <View className='sp-scrollview-footer'>
-        {!showSkeleton && page.hasMore && !(isRenderProp && page.loading) && (
-          <SpLoading>{$t('eb9a3a24.bd0271')}</SpLoading>
-        )}
+        {!showSkeleton && page.hasMore && <SpLoading>{$t('eb9a3a24.bd0271')}</SpLoading>}
         {!page.hasMore &&
           getTotal() == 0 &&
           (renderEmpty ? (

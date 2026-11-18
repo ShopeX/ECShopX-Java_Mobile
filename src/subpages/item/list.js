@@ -25,7 +25,7 @@ import S from '@/spx'
 import { $t, useTranslation } from '@/i18n'
 
 import FloatSalesperson from '@/subpages/store/comps/float-salesperson'
-import GoodsListSkeleton, { GoodsSkeletonItems } from './comps/goods-list-skeleton'
+import GoodsListSkeleton from './comps/goods-list-skeleton'
 
 import './list.scss'
 
@@ -370,77 +370,72 @@ function ItemList() {
           onChange={handleFilterChange}
         />
       </View>
-      <SpScrollView className='item-list-scroll' auto={false} ref={goodsRef} fetch={fetch}>
-        {({ initialLoading, nextLoading }) => (
-          <>
-            {initialLoading ? (
-              <GoodsListSkeleton count={6} />
-            ) : (
-              <View className='goods-list'>
-                <View className='left-container'>
-                  {leftList.map((list, idx) => {
-                    return list.map((item, sidx) => (
-                      <View className='goods-item-wrap' key={`goods-item-l__${idx}_${sidx}`}>
-                        <SpGoodsItem
-                          showFav
-                          showAddCart
-                          imagePlaceholderHeight={350}
-                          onStoreClick={handleClickStore}
-                          onAddToCart={handleAddToCart}
-                          info={{
-                            ...item,
-                            card_id,
-                            user_card_id
-                          }}
-                        />
-                      </View>
-                    ))
-                  })}
-                  {/* 翻页加载中：往列尾追加骨架，跟已有商品连成一片 */}
-                  {nextLoading && <GoodsSkeletonItems count={2} prefix='l-more' />}
+      <SpScrollView
+        className='item-list-scroll'
+        auto={false}
+        ref={goodsRef}
+        fetch={fetch}
+        renderSkeleton={() => <GoodsListSkeleton count={6} />}
+      >
+        <View className='goods-list'>
+          <View className='left-container'>
+            {leftList.map((list, idx) => {
+              return list.map((item, sidx) => (
+                <View className='goods-item-wrap' key={`goods-item-l__${idx}_${sidx}`}>
+                  <SpGoodsItem
+                    showFav
+                    showAddCart
+                    imagePlaceholderHeight={350}
+                    onStoreClick={handleClickStore}
+                    onAddToCart={handleAddToCart}
+                    info={{
+                      ...item,
+                      card_id,
+                      user_card_id
+                    }}
+                  />
                 </View>
-                <View className='right-container'>
-                  {rightList.map((list, idx) => {
-                    return list.map((item, sidx) => (
-                      <View className='goods-item-wrap' key={`goods-item-r__${idx}_${sidx}`}>
-                        <SpGoodsItem
-                          showFav
-                          showAddCart
-                          imagePlaceholderHeight={350}
-                          onStoreClick={handleClickStore}
-                          onAddToCart={handleAddToCart}
-                          info={{
-                            ...item,
-                            card_id,
-                            user_card_id
-                          }}
-                        />
-                      </View>
-                    ))
-                  })}
-                  {nextLoading && <GoodsSkeletonItems count={2} prefix='r-more' />}
+              ))
+            })}
+          </View>
+          <View className='right-container'>
+            {rightList.map((list, idx) => {
+              return list.map((item, sidx) => (
+                <View className='goods-item-wrap' key={`goods-item-r__${idx}_${sidx}`}>
+                  <SpGoodsItem
+                    showFav
+                    showAddCart
+                    imagePlaceholderHeight={350}
+                    onStoreClick={handleClickStore}
+                    onAddToCart={handleAddToCart}
+                    info={{
+                      ...item,
+                      card_id,
+                      user_card_id
+                    }}
+                  />
                 </View>
-              </View>
-            )}
-            {/* Sku选择器 */}
-            <MSpSkuSelect
-              open={skuPanelOpen}
-              type={selectType}
-              info={info}
-              onClose={() => {
-                setState((draft) => {
-                  draft.skuPanelOpen = false
-                })
-              }}
-              onChange={(skuText, curItem) => {
-                setState((draft) => {
-                  draft.skuText = skuText
-                  draft.curItem = curItem
-                })
-              }}
-            />
-          </>
-        )}
+              ))
+            })}
+          </View>
+        </View>
+        {/* Sku选择器 */}
+        <MSpSkuSelect
+          open={skuPanelOpen}
+          type={selectType}
+          info={info}
+          onClose={() => {
+            setState((draft) => {
+              draft.skuPanelOpen = false
+            })
+          }}
+          onChange={(skuText, curItem) => {
+            setState((draft) => {
+              draft.skuText = skuText
+              draft.curItem = curItem
+            })
+          }}
+        />
       </SpScrollView>
     </SpPage>
   )
