@@ -30,7 +30,15 @@ function SpLogin(props, ref) {
   const [isNewUser, setIsNewUser] = useState(false)
   const [policyModal, setPolicyModal] = useState(false)
   const [loginModal, setLoginModal] = useState(false)
+  // 弹窗体积不小，列表里每张商品卡都会包一层 SpLogin，改成要弹的时候才挂载
+  const [modalMounted, setModalMounted] = useState(false)
   const codeRef = useRef()
+
+  useEffect(() => {
+    if (policyModal || loginModal) {
+      setModalMounted(true)
+    }
+  }, [policyModal, loginModal])
 
   useEffect(() => {
     if (newUser) {
@@ -128,36 +136,39 @@ function SpLogin(props, ref) {
     <View className={classNames('sp-login', className)}>
       <View onClick={handleClickLogin}>{children}</View>
 
-      {/* 隐私协议 */}
-      <SpPrivacyModal
-        open={policyModal}
-        onCancel={handleCloseModal}
-        onConfirm={handleConfirmModal}
-      />
+      {/* 隐私协议 / 授权登录：没弹过之前不挂载，避免列表里每张卡都带一份 */}
+      {modalMounted && (
+        <SpPrivacyModal
+          open={policyModal}
+          onCancel={handleCloseModal}
+          onConfirm={handleConfirmModal}
+        />
+      )}
 
-      {/* 授权登录 */}
-      <AtCurtain
-        isOpened={loginModal}
-        onClose={() => {
-          setLoginModal(false)
-        }}
-      >
-        <View className='login-modal'>
-          <View className='login-modal__hd--alipay'></View>
-          <View className='login-modal__bd'>{$t('9880844c.c4c389')}</View>
-          <View className='login-modal__ft'>
-            <button
-              className='alipay-button--primary'
-              type='primary'
-              open-type='getAuthorize'
-              scope='phoneNumber'
-              onGetAuthorize={onGetAuthorize}
-            >
-              {$t('9880844c.402d19')}
-            </button>
+      {modalMounted && (
+        <AtCurtain
+          isOpened={loginModal}
+          onClose={() => {
+            setLoginModal(false)
+          }}
+        >
+          <View className='login-modal'>
+            <View className='login-modal__hd--alipay'></View>
+            <View className='login-modal__bd'>{$t('9880844c.c4c389')}</View>
+            <View className='login-modal__ft'>
+              <button
+                className='alipay-button--primary'
+                type='primary'
+                open-type='getAuthorize'
+                scope='phoneNumber'
+                onGetAuthorize={onGetAuthorize}
+              >
+                {$t('9880844c.402d19')}
+              </button>
+            </View>
           </View>
-        </View>
-      </AtCurtain>
+        </AtCurtain>
+      )}
     </View>
   )
 }

@@ -52,6 +52,9 @@ const SpLogin = forwardRef((props, ref) => {
   })
   const [policyModal, setPolicyModal] = useState(false)
   const [loginModal, setLoginModal] = useState(false)
+  // 弹窗（AtCurtain + 隐私协议）体积不小。商品列表里每张卡都包了一层 SpLogin，
+  // 无脑全量挂载会让小程序节点数翻好几倍、内存直接炸，这里改成真正要弹的时候才挂载
+  const [modalMounted, setModalMounted] = useState(false)
   const [state, setState] = useImmer(initialState)
   const { logo, registerName, privacyName, agreeMentChecked } = state
   const codeRef = useRef()
@@ -61,6 +64,12 @@ const SpLogin = forwardRef((props, ref) => {
       setLoginModal(true)
     }
   }, [visible])
+
+  useEffect(() => {
+    if (policyModal || loginModal) {
+      setModalMounted(true)
+    }
+  }, [policyModal, loginModal])
 
   useEffect(() => {
     if (loginModal) {
@@ -260,61 +269,64 @@ const SpLogin = forwardRef((props, ref) => {
     <View className={classNames('sp-login', className)}>
       <View onClick={handleClickLogin}>{children}</View>
 
-      {/* 隐私协议 */}
-      <SpPrivacyModal
-        open={policyModal}
-        onCancel={handleCloseModal}
-        onConfirm={handleConfirmModal}
-      />
+      {/* 隐私协议 / 授权登录：没弹过之前不挂载，避免列表里每张卡都带一份 */}
+      {modalMounted && (
+        <SpPrivacyModal
+          open={policyModal}
+          onCancel={handleCloseModal}
+          onConfirm={handleConfirmModal}
+        />
+      )}
 
-      {/* 授权登录 */}
-      <AtCurtain
-        isOpened={loginModal}
-        onClose={() => {
-          onClose()
-          setLoginModal(false)
-        }}
-      >
-        <View className='login-modal'>
-          <View className='login-modal__hd'>
-            <SpImage circle src={icon.replace(/^http:/, 'https:')} width={120} height={120} />
-            <View className='nick-name'>{nickname}</View>
-          </View>
-          <View className='login-modal__bd'>{$t('66f0344f.c4c389')}</View>
-          <View className='agreement-content'>
-            <SpCheckbox checked={agreeMentChecked} onChange={onChangePayment} />
-            <View className='agreement-list'>
-              <Text
-                className='agreement-name'
-                onClick={handleClickPrivacy.bind(this, 'member_register')}
-              >
-                《{registerName}》
-              </Text>
-              <Text>{$t('66f0344f.ab20cc')}</Text>
-              <Text className='agreement-name' onClick={handleClickPrivacy.bind(this, 'privacy')}>
-                《{privacyName}》
-              </Text>
+      {modalMounted && (
+        <AtCurtain
+          isOpened={loginModal}
+          onClose={() => {
+            onClose()
+            setLoginModal(false)
+          }}
+        >
+          <View className='login-modal'>
+            <View className='login-modal__hd'>
+              <SpImage circle src={icon.replace(/^http:/, 'https:')} width={120} height={120} />
+              <View className='nick-name'>{nickname}</View>
+            </View>
+            <View className='login-modal__bd'>{$t('66f0344f.c4c389')}</View>
+            <View className='agreement-content'>
+              <SpCheckbox checked={agreeMentChecked} onChange={onChangePayment} />
+              <View className='agreement-list'>
+                <Text
+                  className='agreement-name'
+                  onClick={handleClickPrivacy.bind(this, 'member_register')}
+                >
+                  《{registerName}》
+                </Text>
+                <Text>{$t('66f0344f.ab20cc')}</Text>
+                <Text className='agreement-name' onClick={handleClickPrivacy.bind(this, 'privacy')}>
+                  《{privacyName}》
+                </Text>
+              </View>
+            </View>
+            <View className='login-modal__ft'>
+              {isNewUser && (
+                <AtButton
+                  type='primary'
+                  disabled={!agreeMentChecked}
+                  openType='getPhoneNumber'
+                  onGetPhoneNumber={handleBindPhone}
+                >
+                  {$t('66f0344f.402d19')}
+                </AtButton>
+              )}
+              {!isNewUser && (
+                <AtButton type='primary' disabled={!agreeMentChecked} onClick={handleUserLogin}>
+                  {$t('66f0344f.402d19')}
+                </AtButton>
+              )}
             </View>
           </View>
-          <View className='login-modal__ft'>
-            {isNewUser && (
-              <AtButton
-                type='primary'
-                disabled={!agreeMentChecked}
-                openType='getPhoneNumber'
-                onGetPhoneNumber={handleBindPhone}
-              >
-                {$t('66f0344f.402d19')}
-              </AtButton>
-            )}
-            {!isNewUser && (
-              <AtButton type='primary' disabled={!agreeMentChecked} onClick={handleUserLogin}>
-                {$t('66f0344f.402d19')}
-              </AtButton>
-            )}
-          </View>
-        </View>
-      </AtCurtain>
+        </AtCurtain>
+      )}
     </View>
   )
 })
