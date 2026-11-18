@@ -2,20 +2,32 @@
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
  */
-import React, { useMemo } from 'react'
+import React, { useMemo, useRef, useEffect } from 'react'
 import { useImmer } from 'use-immer'
 import Taro from '@tarojs/taro'
 import { View, Image, Text } from '@tarojs/components'
 import { classNames, isBase64 } from '@/utils'
 import './index.scss'
 
+// H5 端图片多少毫秒还没触发 onLoad 就回落到默认图，避免卡片永久空白
+const H5_IMAGE_LOAD_TIMEOUT = 4000
+
 function getImageCdnBase() {
   return process.env.APP_IMAGE_CDN || ''
 }
 
+/**
+ * 清洗图片地址：接口里偶有被多余引号包裹的脏数据（如 `"https://xxx.png`），
+ * 不过滤会被当成相对路径拼到 CDN 后面，最终 404。
+ */
+function sanitizeImageSrc(src) {
+  if (typeof src !== 'string') return src
+  return src.trim().replace(/^["'\s]+/, '').replace(/["'\s]+$/, '')
+}
+
 function isAbsoluteImageSrc(src) {
   if (!src || typeof src !== 'string') return false
-  const trimmed = src.trim()
+  const trimmed = sanitizeImageSrc(src)
   return /^(https?:|\/\/|wxfile:|cloud:|data:)/i.test(trimmed)
 }
 
@@ -36,7 +48,10 @@ function resolveImageSrc(src) {
   if (isBase64(src)) {
     return src
   }
-  const trimmed = String(src).trim()
+  const trimmed = sanitizeImageSrc(src)
+  if (!trimmed) {
+    return joinImageCdn('default_img.png')
+  }
   if (/^\/\//.test(trimmed)) {
     return `https:${trimmed}`
   }
@@ -90,12 +105,22 @@ function SpImage(props) {
   // 状态管理：加载成功/失败状态
   const [state, setState] = useImmer({
     loadSuccess: false,
-    isError: false
+    isError: false,
+    // 原图加载不出来时回落到默认图，避免卡片一直空白
+    useFallback: false
   })
+
+  const imageRef = useRef(null)
+  const isWeb = Taro.getEnv() === 'WEB'
+
+  // H5 端不要打开 Taro 的 lazyLoad：它的实现是在 IntersectionObserver 命中前不给
+  // 内层 img 赋 src，一旦观察器漏触发（快速滑动 / 容器尺寸变化）图片就永久空白，
+  // 且没有任何兜底。浏览器自己的加载策略足够，这里让 src 始终有效。
+  const lazyLoad = isWeb ? false : props.lazyLoad ?? false
 
   // 计算最终图片URL（关键：避免OSS参数乱序导致重复请求）
   const imgUrl = useMemo(() => {
-    let url = resolveImageSrc(props.src)
+    let url = resolveImageSrc(state.useFallback ? '' : props.src)
     const isOssUrl = props.isOss && /^https?:\/\//i.test(url)
 
     // 与 sp-img 一致：仅当前存储为 oss/qiniu 时追加处理参数（七牛 URL 拼 x-oss-process 会 400）
@@ -107,7 +132,42 @@ function SpImage(props) {
     }
 
     return url
-  }, [props.src, props.isOss, props.quality, props.ossWebp])
+  }, [props.src, props.isOss, props.quality, props.ossWebp, state.useFallback])
+
+  // 换图（列表翻页 / 数据更新）时重置加载状态，否则新图不会重新走淡入
+  const prevSrcRef = useRef(props.src)
+  useEffect(() => {
+    if (prevSrcRef.current === props.src) return
+    prevSrcRef.current = props.src
+    setState((draft) => {
+      draft.loadSuccess = false
+      draft.isError = false
+      draft.useFallback = false
+    })
+  }, [props.src])
+
+  // H5 兜底：onLoad 没来（元素没渲染 / 请求被吞）时不能一直卡在占位层
+  useEffect(() => {
+    if (!isWeb || state.loadSuccess) return undefined
+    const timer = setTimeout(() => {
+      setState((draft) => {
+        if (draft.loadSuccess) return
+        const innerImg = imageRef.current?.querySelector?.('img')
+        const hasSrc = !!innerImg?.getAttribute?.('src')
+        if (hasSrc && innerImg.naturalWidth) {
+          // 图其实已经出来了，只是 load 事件没接上
+          draft.loadSuccess = true
+          return
+        }
+        // 内层 img 压根没有 src：Taro 的 Image 组件没渲染，换默认图
+        if (!hasSrc && !draft.useFallback) {
+          draft.useFallback = true
+        }
+        // 其余情况保持占位，继续等 onLoad / onError
+      })
+    }, H5_IMAGE_LOAD_TIMEOUT)
+    return () => clearTimeout(timer)
+  }, [imgUrl, state.loadSuccess, isWeb])
 
   // 计算容器高度（基于宽高比）
   const containerHeight = useMemo(() => {
@@ -139,8 +199,11 @@ function SpImage(props) {
   const handleError = (e) => {
     props.onError?.(e)
     setState((draft) => {
-      draft.loadSuccess = false
       draft.isError = true
+      // 原图挂了先换默认图；默认图也挂了就保持占位层，不留给用户一块白板
+      if (!draft.useFallback) {
+        draft.useFallback = true
+      }
     })
   }
 
@@ -162,10 +225,19 @@ function SpImage(props) {
     ? `sp-image-content--${mode.replace(/([A-Z])/g, '-$1').toLowerCase()}`
     : ''
 
+  // 还没加载出来时撑一个占位高度，避免图片没到之前卡片塌成一条。
+  // 这里用 height 而不是 min-height：容器自带 height:100%，父级又是 inline 的 taro-view-core，
+  // 百分比会一路解析到列容器上，min-height 会和它形成回环，把卡片越撑越大
+  const pending = !state.loadSuccess
+  const pendingStyle =
+    pending && props.placeholderHeight ? { height: Taro.pxTransform(props.placeholderHeight) } : null
+
   return (
     <View
-      className={classNames('sp-image-container sp-image', props.className)}
-      style={{ ...containerStyle, ...props.style }}
+      className={classNames('sp-image-container sp-image', props.className, {
+        'sp-image-container--pending': pending
+      })}
+      style={{ ...containerStyle, ...props.style, ...pendingStyle }}
     >
       {/* 加载占位区域（加载完成后淡出，与图片淡入过渡衔接） */}
       <View
@@ -173,8 +245,6 @@ function SpImage(props) {
           'sp-image-placeholder--hidden': state.loadSuccess
         })}
         style={{
-          width: '100%',
-          height: '100%',
           borderRadius: Taro.pxTransform(props.circle || props.radius),
           backgroundColor: props.placeholderColor
         }}
@@ -182,6 +252,7 @@ function SpImage(props) {
 
       {/* 实际图片组件（加载完成后淡入） */}
       <Image
+        ref={imageRef}
         className={classNames('sp-image-content', modeClass, {
           'sp-image--loaded': state.loadSuccess
         })}
@@ -191,7 +262,7 @@ function SpImage(props) {
         onError={handleError}
         showMenuByLongpress={props.isShowMenuByLongpress ?? true}
         onClick={props.onClick}
-        lazyLoad={props.lazyLoad ?? false}
+        lazyLoad={lazyLoad}
         style={imageStyle}
       />
     </View>
@@ -228,6 +299,8 @@ SpImage.defaultProps = {
   quality: 80, // OSS 质量 1–100
   ossWebp: true, // 输出 WebP 减小体积，设为 false 可关闭
   placeholderColor: 'transparent',
+  // 设计稿尺寸。大于 0 时，图片加载完成前按这个高度占位，避免卡片塌陷
+  placeholderHeight: 0,
   onClick: () => {},
   onError: () => {},
   onLoad: () => {}

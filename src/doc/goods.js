@@ -167,8 +167,37 @@ export const BUSINESS_LIST_TAG = {
   name: 'tag_name'
 }
 
+/**
+ * 清洗商品图片地址。
+ * 接口偶有脏数据：pictures 首个元素被多余引号包裹（如 `"https://xxx.png`），
+ * 前端会把它当相对路径拼到 CDN 后面，最终 404、整张卡片空白。
+ */
+const sanitizePicUrl = (url) => {
+  if (typeof url !== 'string') return ''
+  return url.trim().replace(/^["'\s]+/, '').replace(/["'\s]+$/, '')
+}
+
+/**
+ * 列表接口的图片统一从 pics 取第一张。
+ * pics 可能是数组，也可能是 JSON 字符串（历史数据），甚至不是合法 JSON，
+ * 这里统一兜住，避免 JSON.parse 抛错把整个列表请求带崩。
+ */
+const pickGoodsPic = (pics) => {
+  if (!pics) return ''
+  if (Array.isArray(pics)) return sanitizePicUrl(pics[0])
+  if (typeof pics !== 'string') return ''
+  try {
+    const parsed = JSON.parse(pics)
+    if (Array.isArray(parsed)) return sanitizePicUrl(parsed[0])
+    return sanitizePicUrl(parsed)
+  } catch (e) {
+    // 不是 JSON，按纯地址处理
+    return sanitizePicUrl(pics)
+  }
+}
+
 export const ITEM_LIST_GOODS = {
-  pic: ({ pics }) => (pics ? (typeof pics !== 'string' ? pics[0] : JSON.parse(pics)[0]) : ''),
+  pic: ({ pics }) => pickGoodsPic(pics),
   itemId: 'item_id',
   itemName: 'item_name',
   brief: 'brief',
@@ -195,7 +224,7 @@ export const ITEM_LIST_GOODS = {
 }
 
 export const ITEM_LIST_POINT_GOODS = {
-  pic: ({ pics }) => (pics ? (typeof pics !== 'string' ? pics[0] : JSON.parse(pics)[0]) : ''),
+  pic: ({ pics }) => pickGoodsPic(pics),
   itemId: 'item_id',
   itemName: 'item_name',
   brief: 'brief',

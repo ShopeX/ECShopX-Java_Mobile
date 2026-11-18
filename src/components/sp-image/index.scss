@@ -11,14 +11,19 @@
   align-items: center;
   justify-content: center;
 
+  // 图片加载完成前的占位底色（配合 placeholderHeight 撑开高度）
+  &.sp-image-container--pending {
+    background-color: #f2f3f5;
+  }
+
   // 占位符样式（加载中骨架闪，加载完成后淡出）
   .sp-image-placeholder {
     position: absolute;
     top: 0;
     left: 0;
+    right: 0;
+    bottom: 0;
     z-index: 1;
-    width: 100%;
-    height: 100%;
     overflow: hidden;
     opacity: 1;
     transition: opacity 0.25s ease-out;

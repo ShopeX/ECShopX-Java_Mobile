@@ -98,6 +98,7 @@ function SpGoodsItem(props) {
     mode,
     goodsType,
     lazyLoad,
+    imagePlaceholderHeight,
     pointMode = false
   } = props
   const wgtsCtx = useContext(WgtsContext)
@@ -201,7 +202,14 @@ function SpGoodsItem(props) {
   return (
     <View className={classNames('sp-goods-item')} onClick={handleClick.bind(this)}>
       <View className='goods-item__hd'>
-        <SpImage lazyLoad={lazyLoad} src={info.pic} mode={mode} />
+        {/* imagePlaceholderHeight：图片没加载出来时先占个位置，避免整张卡塌成一条 */}
+        <SpImage
+          lazyLoad={lazyLoad}
+          src={info.pic}
+          mode={mode}
+          placeholderHeight={imagePlaceholderHeight}
+          placeholderColor={imagePlaceholderHeight ? '#f2f3f5' : 'transparent'}
+        />
       </View>
       {renderBrand && <View className='goods-brand-wrap'>{renderBrand}</View>}
       <View className='goods-item__bd'>
@@ -443,6 +451,8 @@ SpGoodsItem.defaultProps = {
   mode: 'widthFix',
   goodsType: 'normal',
   lazyLoad: true,
+  // 设计稿尺寸：>0 时图片加载完成前按该高度占位（PLP 这类等高卡片列表用）
+  imagePlaceholderHeight: 0,
   onChange: () => {},
   onAddToCart: () => {},
   onStoreClick: () => {}

@@ -101,15 +101,16 @@ $search-wrap-height: 90px;
     display: flex;
     justify-content: space-between;
     padding: 0 16px;
-    .goods-list-wrap {
-      width: 345px;
-      margin-bottom: 28px;
-    }
+    gap: 16px;
     .left-container {
-      width: 350px;
+      flex: 1;
+      min-width: 0;
+      width: auto;
     }
     .right-container {
-      width: 350px;
+      flex: 1;
+      min-width: 0;
+      width: auto;
       // padding-left: 20px;
     }
     .goods-item-wrap {
