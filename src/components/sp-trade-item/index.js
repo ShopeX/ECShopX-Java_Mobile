@@ -45,14 +45,18 @@ function SpTradeItem(props) {
             {itemName}
           </View>
           {orderClass == 'pointsmall' && (
-            <Text style={{ display: 'flex', justifyContent: 'flex-end', width: '150rpx' }}>
-              {`${pointName}: ${itemPoint}`}{' '}
+            <View className='point-price'>
+              <View className='point-price__point'>
+                <Text className='point-price__label'>{`${pointName}:`}</Text>
+                <Text className='point-price__value'>{itemPoint}</Text>
+              </View>
               {price > 0 ? (
-                <Text>
-                  +<SpPrice value={price} />
-                </Text>
+                <View className='point-price__cash'>
+                  <Text className='point-price__plus'>+</Text>
+                  <SpPrice value={price} size={28} />
+                </View>
               ) : null}
-            </Text>
+            </View>
           )}
           {orderClass == 'employee_purchase' && (
             <SpPrice value={price} pointMode={propsPointMode} />

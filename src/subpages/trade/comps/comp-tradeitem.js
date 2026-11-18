@@ -113,19 +113,20 @@ function CompTradeItem(props) {
         <View className='trade-total'>
           <View className='delivery'>{createDate}</View>
           {orderClass == 'pointsmall' && (
-            <View style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
-              <Text className='num'>{ti('351d8689.17d01f', [totalNum])}</Text>
-              <Text>
+            <View className='trade-total__point'>
+              <View className='trade-total__point-main'>
+                <Text className='num'>{ti('351d8689.17d01f', [totalNum])}</Text>
                 <Text className='label'>{pointName}</Text>
                 <Text className='point-value' style='font-size: 20px;'>
                   {point}
-                </Text>{' '}
-                {totalFee > 0 && (
-                  <Text>
-                    +<SpPrice value={totalFee} size={38} />
-                  </Text>
-                )}
-              </Text>
+                </Text>
+                {totalFee > 0 ? <Text className='trade-total__plus'>+</Text> : null}
+              </View>
+              {totalFee > 0 ? (
+                <View className='trade-total__cash'>
+                  <SpPrice value={totalFee} size={38} />
+                </View>
+              ) : null}
             </View>
           )}
           {orderClass != 'pointsmall' && (

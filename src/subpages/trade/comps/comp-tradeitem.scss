@@ -54,22 +54,28 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-wrap: nowrap;
     background-color: #f8f8f8;
     min-height: 80px;
-    padding: 0 20px;
+    padding: 10px 20px;
     margin-top: 30px;
 
     .delivery {
       font-size: 24px;
       color: #999;
-      flex-shrink: 0;
+      flex-shrink: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
       margin-right: 16px;
+      white-space: nowrap;
     }
 
     .num {
       font-size: 24px;
       color: #666666;
       margin-right: 20px;
+      white-space: nowrap;
     }
 
     .label {
@@ -83,6 +89,51 @@
       color: #222;
       position: relative;
       top: 2px;
+      white-space: nowrap;
+    }
+
+    /* 积分商品：积分 + 现金补差，金额不能嵌在 Text 里，否则小程序不渲染 */
+    &__point {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      justify-content: flex-end;
+      flex-shrink: 0;
+      padding: 6px 0;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    &__point-main {
+      display: flex;
+      align-items: baseline;
+      justify-content: flex-end;
+      white-space: nowrap;
+
+      .num {
+        margin-right: 12px;
+      }
+
+      .label {
+        margin-right: 6px;
+      }
+    }
+
+    &__cash {
+      display: flex;
+      align-items: baseline;
+      justify-content: flex-end;
+      white-space: nowrap;
+
+      .sp-price {
+        height: auto;
+      }
+    }
+
+    &__plus {
+      font-size: 24px;
+      color: #333;
+      margin-left: 6px;
     }
   }
 
