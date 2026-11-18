@@ -146,23 +146,28 @@ function SpImage(props) {
     })
   }, [props.src])
 
-  // H5 兜底：onLoad 没来（元素没渲染 / 请求被吞）时不能让图片一直 opacity:0
+  // H5 兜底：onLoad 没来（元素没渲染 / 请求被吞）时不能一直卡在占位层
   useEffect(() => {
-    if (!isWeb || state.loadSuccess || state.isError) return undefined
+    if (!isWeb || state.loadSuccess) return undefined
     const timer = setTimeout(() => {
       setState((draft) => {
-        if (draft.loadSuccess || draft.isError) return
+        if (draft.loadSuccess) return
         const innerImg = imageRef.current?.querySelector?.('img')
-        // 内层 img 压根没有 src，说明 Taro 的 Image 组件没初始化，换默认图兜住
-        if (!innerImg?.getAttribute?.('src')) {
+        const hasSrc = !!innerImg?.getAttribute?.('src')
+        if (hasSrc && innerImg.naturalWidth) {
+          // 图其实已经出来了，只是 load 事件没接上
+          draft.loadSuccess = true
+          return
+        }
+        // 内层 img 压根没有 src：Taro 的 Image 组件没渲染，换默认图
+        if (!hasSrc && !draft.useFallback) {
           draft.useFallback = true
         }
-        // 还在加载中的图也先放出来，别让骨架屏一直盖着
-        draft.loadSuccess = true
+        // 其余情况保持占位，继续等 onLoad / onError
       })
     }, H5_IMAGE_LOAD_TIMEOUT)
     return () => clearTimeout(timer)
-  }, [imgUrl, state.loadSuccess, state.isError, isWeb])
+  }, [imgUrl, state.loadSuccess, isWeb])
 
   // 计算容器高度（基于宽高比）
   const containerHeight = useMemo(() => {
@@ -195,9 +200,10 @@ function SpImage(props) {
     props.onError?.(e)
     setState((draft) => {
       draft.isError = true
-      // 原图挂了就换默认图；默认图也挂了就停在这里，别让骨架屏一直闪
-      draft.loadSuccess = Boolean(draft.useFallback)
-      draft.useFallback = true
+      // 原图挂了先换默认图；默认图也挂了就保持占位层，不留给用户一块白板
+      if (!draft.useFallback) {
+        draft.useFallback = true
+      }
     })
   }
 
@@ -219,10 +225,19 @@ function SpImage(props) {
     ? `sp-image-content--${mode.replace(/([A-Z])/g, '-$1').toLowerCase()}`
     : ''
 
+  // 还没加载出来时撑一个占位高度，避免图片没到之前卡片塌成一条。
+  // 这里用 height 而不是 min-height：容器自带 height:100%，父级又是 inline 的 taro-view-core，
+  // 百分比会一路解析到列容器上，min-height 会和它形成回环，把卡片越撑越大
+  const pending = !state.loadSuccess
+  const pendingStyle =
+    pending && props.placeholderHeight ? { height: Taro.pxTransform(props.placeholderHeight) } : null
+
   return (
     <View
-      className={classNames('sp-image-container sp-image', props.className)}
-      style={{ ...containerStyle, ...props.style }}
+      className={classNames('sp-image-container sp-image', props.className, {
+        'sp-image-container--pending': pending
+      })}
+      style={{ ...containerStyle, ...props.style, ...pendingStyle }}
     >
       {/* 加载占位区域（加载完成后淡出，与图片淡入过渡衔接） */}
       <View
@@ -230,8 +245,6 @@ function SpImage(props) {
           'sp-image-placeholder--hidden': state.loadSuccess
         })}
         style={{
-          width: '100%',
-          height: '100%',
           borderRadius: Taro.pxTransform(props.circle || props.radius),
           backgroundColor: props.placeholderColor
         }}
@@ -286,6 +299,8 @@ SpImage.defaultProps = {
   quality: 80, // OSS 质量 1–100
   ossWebp: true, // 输出 WebP 减小体积，设为 false 可关闭
   placeholderColor: 'transparent',
+  // 设计稿尺寸。大于 0 时，图片加载完成前按这个高度占位，避免卡片塌陷
+  placeholderHeight: 0,
   onClick: () => {},
   onError: () => {},
   onLoad: () => {}

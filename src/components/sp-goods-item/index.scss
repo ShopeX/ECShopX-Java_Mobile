@@ -10,6 +10,9 @@
 
   .goods-item {
     &__hd {
+      // 显式 block：h5 上 taro-view-core 默认是 inline，会让里面 .sp-image 的 height:100%
+      // 一路解析到列容器，图片占位高度会被撑成整列高度
+      display: block;
       // padding-top: 100%;
       // position: relative;
       // .sp-image {

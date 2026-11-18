@@ -107,16 +107,32 @@ function SpScrollView(props, ref) {
     }
   }))
 
-  // 首屏还没有任何数据时用骨架屏占位；翻页加载仍走底部的加载提示
-  const showSkeleton = !!renderSkeleton && page.loading && getTotal() === 0
+  // 首屏还没有任何数据时用骨架屏占位；翻页加载由页面自己往列表尾部追加骨架
+  const initialLoading = page.loading && getTotal() === 0
+  const showSkeleton = !!renderSkeleton && initialLoading
+  // children 允许传函数，页面可以拿到 loading 自己决定加载中的形态
+  const isRenderProp = typeof children === 'function'
+  const bodyContent = isRenderProp
+    ? children({
+        loading: page.loading,
+        hasMore: page.hasMore,
+        total: getTotal(),
+        initialLoading,
+        nextLoading: page.loading && getTotal() > 0
+      })
+    : showSkeleton
+    ? renderSkeleton()
+    : children
 
   // console.log('sp scrollview:', page.loading, page.hasMore)
   return (
     <View className={classNames('sp-scrollview', className)} style={style} ref={wrapRef}>
-      <View className='sp-scrollview-body'>{showSkeleton ? renderSkeleton() : children}</View>
+      <View className='sp-scrollview-body'>{bodyContent}</View>
       {/* 使用固定容器包裹状态提示，保持 DOM 结构稳定，避免滚动位置重置 */}
       <View className='sp-scrollview-footer'>
-        {!showSkeleton && page.hasMore && <SpLoading>{$t('eb9a3a24.bd0271')}</SpLoading>}
+        {!showSkeleton && page.hasMore && !(isRenderProp && page.loading) && (
+          <SpLoading>{$t('eb9a3a24.bd0271')}</SpLoading>
+        )}
         {!page.hasMore &&
           getTotal() == 0 &&
           (renderEmpty ? (
