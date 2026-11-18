@@ -8,8 +8,7 @@ import { classNames } from '@/utils'
 import './goods-list-skeleton.scss'
 
 /**
- * 一组骨架卡片（不含列容器）。
- * 首屏骨架和分页追加的骨架都复用它，保证两种场景长得一样。
+ * 一组骨架卡片（不含列容器），供首屏双列骨架复用。
  */
 export function GoodsSkeletonItems({ count = 1, prefix = 's' }) {
   return Array.from({ length: count }).map((_, idx) => (
