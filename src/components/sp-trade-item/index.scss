@@ -14,6 +14,8 @@
     display: flex;
     justify-content: space-between;
     .name {
+      flex: 1;
+      min-width: 0;
       font-size: 28px;
       color: #222;
       margin-right: 10px;
@@ -28,6 +30,53 @@
         margin-right: 8px;
       }
     }
+    > .sp-price {
+      flex-shrink: 0;
+      max-width: 240px;
+    }
+  }
+  /* 积分商品：积分 + 现金补差，金额不能嵌在 Text 里，否则小程序不渲染 */
+  .point-price {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    flex-shrink: 0;
+    max-width: 240px;
+    margin-left: 16px;
+    color: #222;
+
+    &__point {
+      display: flex;
+      align-items: baseline;
+      justify-content: flex-end;
+      white-space: nowrap;
+    }
+
+    &__label,
+    &__value {
+      font-size: 28px;
+      line-height: 40px;
+      color: #222;
+    }
+
+    &__label {
+      margin-right: 6px;
+    }
+
+    &__cash {
+      display: flex;
+      align-items: baseline;
+      justify-content: flex-end;
+      white-space: nowrap;
+
+      .sp-price {
+        height: auto;
+      }
+    }
+
+    &__plus {
+      margin: 0 4px;
+    }
   }
   .goods-info-bd {
     display: flex;
@@ -38,6 +87,12 @@
       font-size: 24px;
       color: #999;
       margin-top: 10px;
+    }
+
+    .num {
+      flex-shrink: 0;
+      margin-left: 16px;
+      white-space: nowrap;
     }
   }
 }
