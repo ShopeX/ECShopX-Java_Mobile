@@ -21,6 +21,7 @@ function SpScrollView(props, ref) {
     fetch,
     auto = true,
     renderEmpty,
+    renderSkeleton,
     style,
     pageSize = 10,
     onLoad = () => {},
@@ -106,13 +107,16 @@ function SpScrollView(props, ref) {
     }
   }))
 
+  // 首屏还没有任何数据时用骨架屏占位；翻页加载仍走底部的加载提示
+  const showSkeleton = !!renderSkeleton && page.loading && getTotal() === 0
+
   // console.log('sp scrollview:', page.loading, page.hasMore)
   return (
     <View className={classNames('sp-scrollview', className)} style={style} ref={wrapRef}>
-      <View className='sp-scrollview-body'>{children}</View>
+      <View className='sp-scrollview-body'>{showSkeleton ? renderSkeleton() : children}</View>
       {/* 使用固定容器包裹状态提示，保持 DOM 结构稳定，避免滚动位置重置 */}
       <View className='sp-scrollview-footer'>
-        {page.hasMore && <SpLoading>{$t('eb9a3a24.bd0271')}</SpLoading>}
+        {!showSkeleton && page.hasMore && <SpLoading>{$t('eb9a3a24.bd0271')}</SpLoading>}
         {!page.hasMore &&
           getTotal() == 0 &&
           (renderEmpty ? (

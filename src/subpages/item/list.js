@@ -25,6 +25,7 @@ import S from '@/spx'
 import { $t, useTranslation } from '@/i18n'
 
 import FloatSalesperson from '@/subpages/store/comps/float-salesperson'
+import GoodsListSkeleton from './comps/goods-list-skeleton'
 
 import './list.scss'
 
@@ -369,7 +370,13 @@ function ItemList() {
           onChange={handleFilterChange}
         />
       </View>
-      <SpScrollView className='item-list-scroll' auto={false} ref={goodsRef} fetch={fetch}>
+      <SpScrollView
+        className='item-list-scroll'
+        auto={false}
+        ref={goodsRef}
+        fetch={fetch}
+        renderSkeleton={() => <GoodsListSkeleton count={6} />}
+      >
         <View className='goods-list'>
           <View className='left-container'>
             {leftList.map((list, idx) => {

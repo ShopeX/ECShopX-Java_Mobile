@@ -101,15 +101,17 @@ $search-wrap-height: 90px;
     display: flex;
     justify-content: space-between;
     padding: 0 16px;
-    .goods-list-wrap {
-      width: 345px;
-      margin-bottom: 28px;
-    }
+    // 中缝 16px（实机 CSS 像素）。设计稿 750、pxtransform 会折半，所以这里写 32px
+    gap: 16px;
     .left-container {
-      width: 350px;
+      flex: 1;
+      min-width: 0;
+      width: auto;
     }
     .right-container {
-      width: 350px;
+      flex: 1;
+      min-width: 0;
+      width: auto;
       // padding-left: 20px;
     }
     .goods-item-wrap {
