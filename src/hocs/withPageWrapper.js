@@ -111,7 +111,7 @@ function withPageWrapper(Component) {
                 await checkStoreWhiteList(guideStoreInfo?.distributor_id)
                 resolve()
               } else {
-                nextRule()
+                return nextRule()
               }
             }
 
@@ -133,7 +133,7 @@ function withPageWrapper(Component) {
                   dispatch(updateShopInfo(myShopInfo))
                   resolve()
                 } else {
-                  nextRule()
+                  return nextRule()
                 }
               }
             }
@@ -154,7 +154,9 @@ function withPageWrapper(Component) {
             }
           }
 
-          nextRule()
+          // nextRule 内部有 await，未捕获的 reject 会让外层 Promise 永远不 settle，
+          // 导致 resolveInStoreRule 卡住、setState(true) 不执行，页面渲染成白板
+          nextRule().catch(() => resolve())
         })
       }
 
@@ -288,33 +290,37 @@ function withPageWrapper(Component) {
               dispatch(updateShopInfo(myShopInfo))
             }
           } else {
-            const resModalAccessStore = await showModal({
-              title: $t('cefecf05.02d981'),
-              content: $t('cefecf05.e0adf7'),
-              cancelText: $t('cefecf05.b15d91'),
-              confirmText: $t('cefecf05.98d07d'),
-              contentAlign: 'center'
-            })
-            if (resModalAccessStore.confirm) {
-              // 联系店铺
-              await makePhoneCall(currentShopInfo.phone)
-              return
-            }
-            // 关闭：按进店兜底策略处理，未配置兜底则退出小程序
-            if (entryDefalutStore == 1 && !currentShopInfo?.is_default) {
-              // 清除缓存中的店铺；忽略闭包旧店 id，按正确兜底店重新进店校验
-              dispatch(updateShopInfo({}))
-              await checkStoreWhiteList(null, false, false, { ignoreCachedShop: true })
-              return
-            }
-            if (entryDefalutStore == 2) {
-              Taro.redirectTo({
-                url: `/pages/custom/custom-page?id=${guidderTemplateId}&fromConnect=davild`
+            // 【联系店铺】拨号后用户仍无权限，重新弹窗；
+            // 【关闭】先尝试兜底到有权限的店铺，没有兜底则退出小程序
+            while (true) {
+              const resModalAccessStore = await showModal({
+                title: $t('cefecf05.02d981'),
+                content: $t('cefecf05.e0adf7'),
+                cancelText: $t('cefecf05.b15d91'),
+                confirmText: $t('cefecf05.98d07d'),
+                contentAlign: 'center'
               })
-              throw new Error('TO_STORE_GUIDE_PAGE')
+              if (resModalAccessStore.confirm) {
+                await makePhoneCall(currentShopInfo.phone)
+                continue
+              }
+              // 关闭：先尝试兜底到有权限的店铺
+              if (entryDefalutStore == 1 && !currentShopInfo?.is_default) {
+                // 清除缓存中的店铺；忽略闭包旧店 id，按正确兜底店重新进店校验
+                dispatch(updateShopInfo({}))
+                await checkStoreWhiteList(null, false, false, { ignoreCachedShop: true })
+                return
+              }
+              if (entryDefalutStore == 2) {
+                Taro.redirectTo({
+                  url: `/pages/custom/custom-page?id=${guidderTemplateId}&fromConnect=davild`
+                })
+                throw new Error('TO_STORE_GUIDE_PAGE')
+              }
+              // 没有兜底店铺：退出小程序
+              Taro.exitMiniProgram()
+              throw new Error('EXIT_MINI_PROGRAM')
             }
-            Taro.exitMiniProgram()
-            throw new Error('EXIT_MINI_PROGRAM')
           }
         } else {
           dispatch(updateShopInfo(currentShopInfo))
