@@ -2,6 +2,7 @@
  * Copyright © ShopeX （http://www.shopex.cn）. All rights reserved.
  * See LICENSE file for license details.
  */
+import { VERSION_PLATFORM } from '@/utils'
 
 /** 商品开启店铺库存（店铺发货） */
 export function isDianwuStoreInventoryEnabled(item) {
@@ -21,6 +22,16 @@ function resolvePlatformStockNum(item) {
   return toStockNum(item.platformStore)
 }
 
+/** BBC（platform）只认门店库存，不展示/不依据云仓 */
+function resolveBbcStoreOnlyDisplay(storeStock) {
+  return {
+    showStore: true,
+    showCloud: false,
+    storeValue: storeStock,
+    cloudValue: 0
+  }
+}
+
 /**
  * @param {object} item pickBy(GOODS_ITEM)
  * @param {boolean} isPlatformStoreBuy 门店 is_platform_store_buy
@@ -29,6 +40,11 @@ export function resolveDianwuGoodsDisplay(item, isPlatformStoreBuy) {
   const storeStock = toStockNum(item?.store)
   const platformStock = resolvePlatformStockNum(item)
   const storeInventoryEnabled = isDianwuStoreInventoryEnabled(item)
+
+  // BBC：云仓不参与展示，只显示门店库存
+  if (VERSION_PLATFORM) {
+    return resolveBbcStoreOnlyDisplay(storeStock)
+  }
 
   if (isPlatformStoreBuy) {
     if (storeInventoryEnabled) {
@@ -75,6 +91,18 @@ export function resolveDianwuGoodsActions(item, isPlatformStoreBuy) {
 
   let addToCashier = false
   let buyNow = false
+
+  // BBC：按钮只按门店库存判断，云仓不参与「立即下单」
+  if (VERSION_PLATFORM) {
+    if (storeInventoryEnabled) {
+      if (storeStock > 0) {
+        addToCashier = true
+      }
+    } else if (storeStock > 0) {
+      buyNow = true
+    }
+    return { addToCashier, buyNow }
+  }
 
   if (isPlatformStoreBuy) {
     if (storeInventoryEnabled) {
