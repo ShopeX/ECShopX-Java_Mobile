@@ -3,9 +3,8 @@
  * See LICENSE file for license details.
  */
 import React, { useEffect, useRef, useMemo } from 'react'
-import { useSelector } from 'react-redux'
 import { useImmer } from 'use-immer'
-import Taro, { useRouter } from '@tarojs/taro'
+import Taro, { useDidHide, useDidShow, useRouter } from '@tarojs/taro'
 import { View, ScrollView } from '@tarojs/components'
 import { SpPage, SpScrollView } from '@/components'
 import { SpTagBar } from '@/subpages/components'
@@ -16,7 +15,6 @@ import { useTranslation, $t, i18n } from '@/i18n'
 import { useNavigation } from '@/hooks'
 import CompTradeItem from './comps/comp-tradeitem'
 import CompTrackDetail from './comps/comp-track-detail'
-import CompTrackType from './comps/comp-trade-type'
 import './list.scss'
 
 const initialState = {
@@ -35,6 +33,10 @@ function TradeList(props) {
   const { status, tradeList, refresherTriggered, trackDetailList, openTrackDetail, info } = state
   const tradeRef = useRef()
   const router = useRouter()
+  // 有状态变更时先打标，等列表再次显示再刷新，避免后台清空导致回顶/手势异常
+  const needRefreshRef = useRef(false)
+  const isListVisibleRef = useRef(true)
+  const isFirstShow = useRef(true)
 
   // ECX-11068：隐藏「部分发货」Tab；status=6（PAYED）本身已含 PARTAIL，无需另请求
   const tradeStatus = useMemo(
@@ -55,6 +57,38 @@ function TradeList(props) {
     return () => i18n.off('languageChanged', syncTitle)
   }, [setNavigationBarTitle])
 
+  const reloadList = () => {
+    setState((draft) => {
+      draft.tradeList = []
+    })
+    tradeRef.current?.reset()
+  }
+
+  const markNeedRefresh = () => {
+    needRefreshRef.current = true
+    // 列表正在前台时（少见）立刻刷；后台只打标，等 useDidShow
+    if (isListVisibleRef.current && !isFirstShow.current) {
+      needRefreshRef.current = false
+      reloadList()
+    }
+  }
+
+  useDidShow(() => {
+    isListVisibleRef.current = true
+    if (isFirstShow.current) {
+      isFirstShow.current = false
+      return
+    }
+    if (needRefreshRef.current) {
+      needRefreshRef.current = false
+      reloadList()
+    }
+  })
+
+  useDidHide(() => {
+    isListVisibleRef.current = false
+  })
+
   useEffect(() => {
     const { status: rawStatus = 0 } = router?.params
     // 旧链接 status=8（部分发货）归一到待发货
@@ -63,23 +97,12 @@ function TradeList(props) {
       draft.status = nextStatus
     })
 
-    Taro.eventCenter.on('onEventOrderStatusChange', () => {
-      setState((draft) => {
-        draft.tradeList = []
-      })
-      tradeRef.current.reset()
-    })
-
-    Taro.eventCenter.on('onEventInvoiceStatusChange', () => {
-      setState((draft) => {
-        draft.tradeList = []
-      })
-      tradeRef.current.reset()
-    })
+    Taro.eventCenter.on('onEventOrderStatusChange', markNeedRefresh)
+    Taro.eventCenter.on('onEventInvoiceStatusChange', markNeedRefresh)
 
     return () => {
-      Taro.eventCenter.off('onEventOrderStatusChange')
-      Taro.eventCenter.off('onEventInvoiceStatusChange')
+      Taro.eventCenter.off('onEventOrderStatusChange', markNeedRefresh)
+      Taro.eventCenter.off('onEventInvoiceStatusChange', markNeedRefresh)
     }
   }, [])
 
@@ -148,7 +171,7 @@ function TradeList(props) {
           emptyMsg={$t('2800cb77.082a19')}
         >
           {tradeList.map((item, index) => (
-            <View className='trade-item-wrap' key={index}>
+            <View className='trade-item-wrap' key={item.orderId || index}>
               <CompTradeItem
                 info={item}
                 onClick={async (_info) => {

@@ -107,6 +107,8 @@ export default (props = {}) => {
   const paySuccess = async (params, orderInfo) => {
     const { activityType } = params
     const { order_id } = orderInfo
+    // 统一通知订单列表：商品详情/结算支付成功也会走到这里（不依赖详情页回调）
+    Taro.eventCenter.trigger('onEventOrderStatusChange')
     if (isTradeDetaiPage()) {
       callbackRef.current()
     } else {
