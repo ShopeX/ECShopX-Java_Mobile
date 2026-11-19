@@ -92,14 +92,10 @@ export function resolveDianwuGoodsActions(item, isPlatformStoreBuy) {
   let addToCashier = false
   let buyNow = false
 
-  // BBC：按钮只按门店库存判断，云仓不参与「立即下单」
+  // BBC：不看 isTotalStore / 云仓，仅门店库存 > 0 显示「加入收银」
   if (VERSION_PLATFORM) {
-    if (storeInventoryEnabled) {
-      if (storeStock > 0) {
-        addToCashier = true
-      }
-    } else if (storeStock > 0) {
-      buyNow = true
+    if (storeStock > 0) {
+      addToCashier = true
     }
     return { addToCashier, buyNow }
   }
