@@ -188,47 +188,55 @@ function TradeDetail(props) {
 
   const stopZitiPoll = () => {
     if (zitiPollRef.current) {
-      clearInterval(zitiPollRef.current)
+      clearTimeout(zitiPollRef.current)
       zitiPollRef.current = null
     }
   }
 
-  // 自提核销轮询：Java 后端核销后没有客户端推送，只能主动查询订单状态
+  // 自提核销轮询：用 setTimeout 链式调度，等上一轮结束后再约下一次，避免请求叠跑
   const startZitiPoll = (orderId) => {
     stopZitiPoll()
     const startedAt = Date.now()
-    zitiPollRef.current = setInterval(async () => {
-      // 超时保护，避免用户长时间停留在详情页时无限轮询
-      if (Date.now() - startedAt > ZITI_POLL_TIMEOUT) {
-        stopZitiPoll()
-        return
-      }
-      if (!isMounted.current) {
-        stopZitiPoll()
-        return
-      }
-      try {
-        const { orderInfo } = await api.trade.detail(orderId, { showError: false })
-        if (!orderInfo) return
-        const _orderInfo = pickBy(orderInfo, doc.trade.TRADE_ITEM)
-        // 接口返回缺少 zitiStatus 时不做判断，避免误判为已核销
-        if (!_orderInfo?.zitiStatus) return
-        // 仍处于待核销则继续等待
-        if (_orderInfo.zitiStatus === 'PENDING' && _orderInfo.orderStatus === 'PAYED') return
-        stopZitiPoll()
-        // 已核销：关掉提货码面板并提示；订单被关闭/取消等其它变化只刷新页面
-        if (_orderInfo.zitiStatus === 'DONE') {
-          setState((draft) => {
-            draft.openWriteOffCode = false
-          })
-          showToast($t('34d31722.065407'))
+    const schedule = () => {
+      zitiPollRef.current = setTimeout(async () => {
+        zitiPollRef.current = null
+        if (Date.now() - startedAt > ZITI_POLL_TIMEOUT || !isMounted.current) {
+          return
         }
-        await fetch()
-        Taro.eventCenter.trigger('onEventOrderStatusChange')
-      } catch (e) {
-        // 轮询失败静默处理，等待下一轮
-      }
-    }, ZITI_POLL_INTERVAL)
+        let shouldContinue = true
+        try {
+          const { orderInfo } = await api.trade.detail(orderId, { showError: false })
+          if (!orderInfo) {
+            // 空响应：继续等下一轮
+          } else {
+            const _orderInfo = pickBy(orderInfo, doc.trade.TRADE_ITEM)
+            // 接口返回缺少 zitiStatus 时不做判断，避免误判为已核销
+            if (!_orderInfo?.zitiStatus) {
+              // keep polling
+            } else if (_orderInfo.zitiStatus === 'PENDING' && _orderInfo.orderStatus === 'PAYED') {
+              // 仍待核销
+            } else {
+              shouldContinue = false
+              // 已核销：关掉提货码面板并提示；订单被关闭/取消等其它变化只刷新页面
+              if (_orderInfo.zitiStatus === 'DONE') {
+                setState((draft) => {
+                  draft.openWriteOffCode = false
+                })
+                showToast($t('34d31722.065407'))
+              }
+              await fetch()
+              Taro.eventCenter.trigger('onEventOrderStatusChange')
+            }
+          }
+        } catch (e) {
+          // 轮询失败静默处理，等待下一轮
+        }
+        if (shouldContinue && isMounted.current && Date.now() - startedAt <= ZITI_POLL_TIMEOUT) {
+          schedule()
+        }
+      }, ZITI_POLL_INTERVAL)
+    }
+    schedule()
   }
 
   const getRecommendList = async (orderInfo, distributor) => {
