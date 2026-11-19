@@ -5,7 +5,7 @@
 import React, { useEffect, useRef, useCallback } from 'react'
 import { useSelector } from 'react-redux'
 import { useImmer } from 'use-immer'
-import Taro, { useDidShow, useRouter } from '@tarojs/taro'
+import Taro, { useDidShow, useDidHide, useRouter } from '@tarojs/taro'
 import api from '@/api'
 import doc from '@/doc'
 import { AtButton, AtCountdown, AtFloatLayout } from 'taro-ui'
@@ -49,6 +49,12 @@ const initialState = {
   skuPanelOpen: false,
   skuInfo: null
 }
+
+// 自提核销状态轮询：5s 一次，最长 30 分钟（用户停留过久不再空跑）
+const ZITI_POLL_INTERVAL = 5000
+const ZITI_POLL_TIMEOUT = 30 * 60 * 1000
+// websocket 重连上限，Java 后端无该推送服务时避免无限重连
+const WS_MAX_RETRY = 3
 function TradeDetail(props) {
   useTranslation()
   const { setNavigationBarTitle } = useNavigation()
@@ -85,10 +91,24 @@ function TradeDetail(props) {
   const { cashierPayment } = usePayment()
   const router = useRouter()
   const websocketRef = useRef(null)
+  const zitiPollRef = useRef(null)
+  const wsRetryRef = useRef(0)
+  const isFirstShow = useRef(true)
 
   const isMounted = useRef(true) // 添加组件挂载状态标志
 
-  useDidShow(() => {})
+  // 首次显示由挂载 useEffect 请求；从其他页面返回或切回前台时重新拉取，
+  // fetch 内部会根据订单状态决定是否继续开核销轮询
+  useDidShow(() => {
+    if (isFirstShow.current) {
+      isFirstShow.current = false
+      return
+    }
+    fetch()
+  })
+
+  // 页面不可见时暂停轮询，避免后台空跑
+  useDidHide(() => stopZitiPoll())
 
   useEffect(() => {
     const syncTitle = () => setNavigationBarTitle($t('3d2de2c2.8054f7'))
@@ -129,6 +149,10 @@ function TradeDetail(props) {
       Taro.eventCenter.off('onEventOfflineApply')
       Taro.eventCenter.off('onEventInvoiceStatusChange')
 
+      stopZitiPoll()
+      websocketRef.current?.close?.()
+      websocketRef.current = null
+
       isMounted.current = false // 组件卸载时设置为false
     }
   }, [openingTime])
@@ -137,9 +161,12 @@ function TradeDetail(props) {
     const { order_id } = await parameter()
     const { distributor, orderInfo, tradeInfo, cancelData } = await api.trade.detail(order_id)
     const _orderInfo = pickBy(orderInfo, doc.trade.TRADE_ITEM)
-    // 自提订单未核销，开启websocket监听核销状态
+    // 自提订单未核销：websocket 仅在 PHP 侧有推送服务，Java 侧用轮询兜底
     if (_orderInfo.receiptType == 'ziti' && _orderInfo.zitiStatus == 'PENDING') {
       onWebSocket()
+      startZitiPoll(order_id)
+    } else {
+      stopZitiPoll()
     }
     setState((draft) => {
       draft.info = _orderInfo
@@ -157,6 +184,51 @@ function TradeDetail(props) {
         isArray(_orderInfo?.diagnosisData)
     })
     getRecommendList(_orderInfo, distributor || orderInfo)
+  }
+
+  const stopZitiPoll = () => {
+    if (zitiPollRef.current) {
+      clearInterval(zitiPollRef.current)
+      zitiPollRef.current = null
+    }
+  }
+
+  // 自提核销轮询：Java 后端核销后没有客户端推送，只能主动查询订单状态
+  const startZitiPoll = (orderId) => {
+    stopZitiPoll()
+    const startedAt = Date.now()
+    zitiPollRef.current = setInterval(async () => {
+      // 超时保护，避免用户长时间停留在详情页时无限轮询
+      if (Date.now() - startedAt > ZITI_POLL_TIMEOUT) {
+        stopZitiPoll()
+        return
+      }
+      if (!isMounted.current) {
+        stopZitiPoll()
+        return
+      }
+      try {
+        const { orderInfo } = await api.trade.detail(orderId, { showError: false })
+        if (!orderInfo) return
+        const _orderInfo = pickBy(orderInfo, doc.trade.TRADE_ITEM)
+        // 接口返回缺少 zitiStatus 时不做判断，避免误判为已核销
+        if (!_orderInfo?.zitiStatus) return
+        // 仍处于待核销则继续等待
+        if (_orderInfo.zitiStatus === 'PENDING' && _orderInfo.orderStatus === 'PAYED') return
+        stopZitiPoll()
+        // 已核销：关掉提货码面板并提示；订单被关闭/取消等其它变化只刷新页面
+        if (_orderInfo.zitiStatus === 'DONE') {
+          setState((draft) => {
+            draft.openWriteOffCode = false
+          })
+          showToast($t('34d31722.065407'))
+        }
+        await fetch()
+        Taro.eventCenter.trigger('onEventOrderStatusChange')
+      } catch (e) {
+        // 轮询失败静默处理，等待下一轮
+      }
+    }, ZITI_POLL_INTERVAL)
   }
 
   const getRecommendList = async (orderInfo, distributor) => {
@@ -237,22 +309,27 @@ function TradeDetail(props) {
       })
       websocketRef.current.onOpen(() => {
         console.log('websocket start success')
+        wsRetryRef.current = 0
       })
       websocketRef.current.onError((err) => {
         console.log('websocket start err: ', err)
         websocketRef.current = null
-        if (isMounted.current) {
+        // Java 后端没有 orderzitimsg 推送，重连做退避 + 次数上限，兜底交给轮询
+        if (isMounted.current && wsRetryRef.current < WS_MAX_RETRY) {
+          wsRetryRef.current += 1
           setTimeout(() => {
             onWebSocket()
-          }, 200)
+          }, 1000 * wsRetryRef.current)
         }
       })
       websocketRef.current.onMessage((res) => {
         const { status } = JSON.parse(res.data)
         if (status == 'success') {
+          stopZitiPoll()
           showToast($t('34d31722.065407'))
           setTimeout(() => {
             fetch()
+            Taro.eventCenter.trigger('onEventOrderStatusChange')
           }, 200)
         }
       })
