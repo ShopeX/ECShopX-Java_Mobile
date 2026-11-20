@@ -29,7 +29,6 @@ import * as wgts from './wgts'
 import * as purchase from './purchase'
 import * as guide from './guide'
 import * as im from './im'
-import * as salesman from './salesman'
 import * as prescriptionDrug from './prescriptionDrug'
 import * as design from './design'
 import * as goodsRecommend from './goodsRecommend'
@@ -66,7 +65,6 @@ export default {
   wgts,
   purchase,
   im,
-  salesman,
   prescriptionDrug,
   design,
   goodsRecommend,

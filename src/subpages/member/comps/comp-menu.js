@@ -37,17 +37,6 @@ function CompMenu(props) {
   //   })
   // }
 
-  // if (accessMenu.salesPersonList?.total_count > 0) {
-  //   menus = menus.concat([
-  //     {
-  //       key: 'salesman',
-  //       name: '业务员',
-  //       icon: 'salesman.png',
-  //       link: '/subpages/salesman/index'
-  //     }
-  //   ])
-  // }
-
   if (isWeixin && accessMenu.deliveryStaffList?.total_count > 0) {
     menus = menus.concat([
       {

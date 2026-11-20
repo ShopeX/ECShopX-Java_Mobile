@@ -112,7 +112,6 @@ const Index = () => {
 
   const handleCardClick = () => {
     // Taro.navigateTo({
-    //   url: `/subpages/salesman/card`
     // })
     setState((draft) => {
       draft.codeStatus = true

@@ -59,12 +59,10 @@ const userSlice = createSlice({
         vipgrade = {},
         is_open_popularize,
         is_promoter,
-        favs = [],
-        salesPersonList
+        favs = []
       } = payload || {}
       state.userInfo = {
         ...memberInfo,
-        salesPersonList,
         popularize: is_open_popularize,
         isPromoter: is_promoter,
         deposit: (deposit || 0) / 100 // 储值余额

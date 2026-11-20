@@ -3,17 +3,15 @@
  * See LICENSE file for license details.
  */
 import Taro from '@tarojs/taro'
-import { useEffect, useMemo } from 'react'
-import { useSelector, useDispatch } from 'react-redux'
+import { useMemo } from 'react'
+import { useSelector } from 'react-redux'
 import { AtTabBar } from 'taro-ui'
-import { classNames, getCurrentRoute, isWeb } from '@/utils'
+import { getCurrentRoute, isWeb } from '@/utils'
 import { useTranslation, $t } from '@/i18n'
-import { updateSalesmanCount } from '@/store/slices/cart'
 import './comp-tabbar.scss'
 
 function CompTabbar(props) {
   const { i18n } = useTranslation()
-  const dispatch = useDispatch()
   const TABBAR_LIST = useMemo(
     () => [
       {
@@ -30,16 +28,6 @@ function CompTabbar(props) {
     [i18n.language]
   )
   const { colorPrimary } = useSelector((state) => state.sys)
-  const { cartSalesman = 0 } = useSelector((state) => state.cart)
-
-  useEffect(() => {
-    // 初始化购物车数量
-    // cartSalesmanNumber()
-  }, [])
-
-  const cartSalesmanNumber = async () => {
-    await dispatch(updateSalesmanCount({ shop_type: 'distributor', isSalesmanPage: 1 }))
-  }
 
   const tabList = TABBAR_LIST.map((item) => {
     return {
@@ -49,7 +37,7 @@ function CompTabbar(props) {
       selectedIconType: `${item.iconType}-fill`,
       iconPrefixClass: 'iconfont icon',
       url: item.url,
-      text: item?.text ? (cartSalesman > 0 ? cartSalesman : null) : null
+      text: item?.text ? item.text : null
     }
   })
 

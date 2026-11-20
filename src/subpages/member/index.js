@@ -60,8 +60,7 @@ const initialConfigState = {
     tenants: true, //商家入驻
     purchase: true, // 员工内购
     dianwu: false, // 店务,
-    community: false, // 社区
-    salesman: true
+    community: false // 社区
   },
   infoAppId: '',
   infoPage: '',
@@ -90,7 +89,6 @@ const initialState = {
   // afterSalesNum: 0,
   zitiNum: 0,
   deposit: 0,
-  salesPersonList: {},
   deliveryStaffList: [], //配送员
   wgts: [],
   loading: true,
@@ -307,7 +305,6 @@ function MemberIndex(props) {
     })
     setState((draft) => {
       draft.deposit = (memberRes.deposit || 0) / 100
-      draft.salesPersonList = memberRes?.salesPersonList || {}
       draft.deliveryStaffList = memberRes?.deliveryStaffList || []
       draft.point = memberRes?.point || 0
     })
@@ -570,7 +567,6 @@ function MemberIndex(props) {
           accessMenu={{
             purchase: false,
             popularize: userInfo ? userInfo.popularize : false,
-            salesPersonList: state.salesPersonList,
             deliveryStaffList: state.deliveryStaffList,
             dianwu: config.menu.dianwu
           }}

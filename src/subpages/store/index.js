@@ -77,29 +77,13 @@ function StoreIndex() {
 
   useDidShow(() => {
     fetchWgts()
-    salesmanShare()
   })
 
   useEffect(() => {
     if (S.getAuthToken()) {
       fetchWgts()
-      salesmanShare()
     }
   }, [S.getAuthToken()])
-
-  const salesmanShare = async () => {
-    let params = await parameter()
-
-    if (params?.qr == 'Y') {
-      let param = {
-        promoter_user_id: params?.uid,
-        promoter_shop_id: params?.dtid || params?.id
-      }
-      await api.salesman.salespersonBindusersalesperson(param)
-      Taro.setStorageSync('salesmanUserinfo', param)
-      console.log(param, '分享成功，业务员已存储3')
-    }
-  }
 
   const parameter = async () => {
     const storedData = Taro.getStorageSync(SG_ROUTER_PARAMS)

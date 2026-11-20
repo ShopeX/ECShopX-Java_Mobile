@@ -39,13 +39,11 @@ function SpCashier(props) {
     onChange = () => {},
     paymentAmount = 0,
     defaultVal,
-    salesman = false,
     isPurchase = false,
     showDeposit = true
   } = props
   const $instance = getCurrentInstance() || {}
   const { userInfo } = useSelector((state) => state.user)
-  const { customerLnformation } = useSelector((state) => state.cart)
   const { colorPrimary } = useSelector((state) => state.sys)
   const [state, setState] = useImmer(initialState)
   const { list, selectPayment, selectItem } = state
@@ -84,18 +82,9 @@ function SpCashier(props) {
       platform = 'h5'
     }
     const { shop_id } = $instance?.router?.params
-    let params = {}
-    if (salesman) {
-      params = {
-        distributor_id: getDistributorId(shop_id),
-        platform,
-        ...customerLnformation
-      }
-    } else {
-      params = {
-        distributor_id: getDistributorId(shop_id),
-        platform
-      }
+    let params = {
+      distributor_id: getDistributorId(shop_id),
+      platform
     }
 
     if (isPurchase) {

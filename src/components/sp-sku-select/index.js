@@ -18,13 +18,7 @@ import {
   SpGoodsPrice,
   SpLogin
 } from '@/components'
-import {
-  addCart,
-  updateCount,
-  updateSalesmanCount,
-  updateShopCartCount,
-  updateShopSalesmanCartCount
-} from '@/store/slices/cart'
+import { addCart, updateCount, updateShopCartCount } from '@/store/slices/cart'
 import { BUY_TOOL_BTNS } from '@/consts'
 import api from '@/api'
 import { useAsyncCallback } from '@/hooks'
@@ -72,7 +66,6 @@ function SpSkuSelect(props) {
     onConfirm = null,
     type,
     hideInputNumber = false,
-    salesman = false,
     onSubscribe = () => {}
   } = props
   useTranslation()
@@ -80,7 +73,6 @@ function SpSkuSelect(props) {
   const [state, setState] = useAsyncCallback(initialState)
   const { selection, disabledSet, curItem, skuText, num, loading, minNum, subscribed, subscribeLoading } =
     state
-  const { customerLnformation } = useSelector((state) => state.cart)
   const { shopInfo } = useSelector((state) => state.shop)
   const dispatch = useDispatch()
   const skuDictRef = useRef({})
@@ -322,14 +314,7 @@ function SpSkuSelect(props) {
     if (dtid && dtid !== 'undefined') {
       params = {
         shop_type: 'distributor',
-        distributor_id: dtid,
-        ...customerLnformation
-      }
-    } else if (salesman) {
-      params = {
-        shop_type: 'distributor',
-        distributor_id: info.distributorId,
-        ...customerLnformation
+        distributor_id: dtid
       }
     } else {
       params = {
@@ -345,12 +330,8 @@ function SpSkuSelect(props) {
       })
     )
     onClose()
-    if (salesman) {
-      await shoppings()
-    } else {
-      await shopping()
-    }
-    dispatch(updateSalesmanCount(params))
+    await shopping()
+    dispatch(updateCount(params))
     Taro.hideLoading()
     // showToast('成功加入购物车')
   }
@@ -372,26 +353,6 @@ function SpSkuSelect(props) {
     }
     dispatch(updateCount({ shop_type: 'distributor', shop_id: distributor_id }))
     dispatch(updateShopCartCount(shopCats))
-  }
-
-  const shoppings = async () => {
-    const res = Taro.getStorageSync('distributorSalesman')
-    console.log(res, 'distributorSalesman')
-
-    let params = {
-      distributor_id: res.distributor_id,
-      shop_type: 'distributor',
-      ...customerLnformation
-    }
-    const { valid_cart } = await api.cart.get(params)
-    let shopCats = {
-      shop_id: valid_cart[0]?.shop_id || '', //下单
-      cart_total_num: valid_cart[0]?.cart_total_num || '', //数量
-      total_fee: valid_cart[0]?.total_fee || '', //实付金额
-      discount_fee: valid_cart[0]?.discount_fee || '', //优惠金额
-      storeDetails: valid_cart[0] || {}
-    }
-    dispatch(updateShopSalesmanCartCount(shopCats))
   }
 
   const fastBuy = async () => {

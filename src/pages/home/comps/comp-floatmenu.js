@@ -15,8 +15,7 @@ import './comp-floatmenu.scss'
 
 const initialState = {
   showStore: false,
-  featuredShopId: null,
-  salesPersonList: true
+  featuredShopId: null
 }
 function CompFloatMenu(props) {
   const [state, setState] = useImmer(initialState)
@@ -50,7 +49,6 @@ function CompFloatMenu(props) {
         setState((draft) => {
           draft.showStore = true
           draft.featuredShopId = _userId
-          draft.salesPersonList = userInfo.salesPersonList?.total_count > 0 ? false : true
         })
       }
     } catch (error) {
@@ -64,7 +62,7 @@ function CompFloatMenu(props) {
       <SpFloatAd />
 
       {/* 店铺精选 */}
-      {state.showStore && state.salesPersonList && (
+      {state.showStore && (
         <SpImage
           className='my-store'
           src='gift_mini.png'
