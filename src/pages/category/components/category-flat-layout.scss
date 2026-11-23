@@ -46,7 +46,10 @@ $COMPONENT_NAME: 'category-flat-layout';
 
         .wgt-wrap {
           width: 100%;
-          height: 100%;
+          // 按装修内容撑开，避免轮播等挂件 height:100% 被右侧栏拉高
+          height: auto;
+          min-height: 100%;
+          box-sizing: border-box;
         }
 
         &__powered-by-wrap {

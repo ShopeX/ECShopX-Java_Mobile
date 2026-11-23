@@ -6,11 +6,12 @@
 .wgt-slider {
   box-sizing: border-box;
   width: 100%;
-  height: 100%;
+  // 高度由首图/配置比例撑开；勿用 100% 吃满父级（分类右侧栏会偏高、裁切多、底部空白）
+  height: auto;
 
   &-content {
     width: 100%;
-    height: 100%;
+    height: auto;
     position: relative;
   }
 
