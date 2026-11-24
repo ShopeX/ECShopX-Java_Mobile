@@ -34,8 +34,17 @@ class DistributionWithdraw extends Component {
     }
   }
 
+  /** 拉取页面数据；须在 componentDidMount 调用（withTranslation 包裹后 componentDidShow 可能不触发） */
+  initPage = () => {
+    this.fetch()
+    if (this.state.curIdx == 'bankcard') {
+      this.ongetCertInfo()
+    }
+  }
+
   componentDidMount() {
     this.syncNavTitle()
+    this.initPage()
   }
 
   componentDidUpdate(prevProps) {
@@ -49,10 +58,8 @@ class DistributionWithdraw extends Component {
   }
 
   componentDidShow() {
-    this.fetch()
-    if (this.state.curIdx == 'bankcard') {
-      this.ongetCertInfo()
-    }
+    // 从子页返回时刷新；首进依赖 componentDidMount
+    this.initPage()
   }
 
   ongetCertInfo = async () => {
