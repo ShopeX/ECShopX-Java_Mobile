@@ -3,6 +3,7 @@
  * See LICENSE file for license details.
  */
 $search-container: 90px;
+$filter-container: 86px;
 
 .page-recommend-list {
   .search-container {
@@ -17,8 +18,84 @@ $search-container: 90px;
     }
   }
 
+  .filter-container {
+    height: $filter-container;
+    padding: 0 20px;
+    display: flex;
+    align-items: center;
+    background-color: #fff;
+    @include hairline($color-divider, 20px, bottom);
+
+    .filter-item {
+      display: flex;
+      align-items: center;
+      min-width: 0;
+      max-width: 340px;
+      height: 56px;
+      padding: 0 22px;
+      box-sizing: border-box;
+      border: 1px solid $color-border-gray-light;
+      border-radius: 28px;
+      background-color: #fff;
+      font-size: 26px;
+      line-height: 1;
+      color: #333;
+
+      & + .filter-item {
+        margin-left: 20px;
+      }
+
+      &-active {
+        color: var(--color-primary);
+        border-color: var(--color-primary);
+
+        .filter-item-icon {
+          border-top-color: var(--color-primary);
+        }
+      }
+
+      &-picker {
+        display: block;
+        min-width: 0;
+      }
+
+      &-label {
+        display: flex;
+        align-items: center;
+        min-width: 0;
+      }
+
+      &-text {
+        max-width: 240px;
+        @include text-overflow();
+      }
+
+      &-icon {
+        width: 0;
+        height: 0;
+        margin-left: 10px;
+        margin-top: -4px;
+        border-left: 8px solid transparent;
+        border-right: 8px solid transparent;
+        border-top: 9px solid $color-hint-text;
+      }
+
+      &-clear {
+        display: flex;
+        align-items: center;
+        flex-shrink: 0;
+        margin-left: 10px;
+
+        .iconfont {
+          font-size: 22px;
+          color: $color-hint-text;
+        }
+      }
+    }
+  }
+
   .list-scroll-container {
-    height: calc(100% - #{$search-container});
+    height: calc(100% - #{$search-container} - #{$filter-container});
   }
 
   .article-list {
