@@ -26,6 +26,16 @@ $tag-bar-height: 90px;
     flex-shrink: 0;
     padding: 20px;
     background: #fff;
+
+    // 组件聚焦时会切成 fixed 浮层（top: 导航高度）。本页搜索框在内容流里、页面又没有
+    // 自定义导航，H5 上会整体跳到 Tab 下方并脱离布局，这里保持内联
+    .search-input__focus,
+    .search-input__focus.without-dialog {
+      position: static;
+      height: auto;
+      padding: 0;
+      z-index: auto;
+    }
   }
 
   .sp-tag-bar {
