@@ -6,7 +6,7 @@ import React, { useEffect, useRef, useMemo } from 'react'
 import { useImmer } from 'use-immer'
 import Taro, { useDidHide, useDidShow, useRouter } from '@tarojs/taro'
 import { View, ScrollView } from '@tarojs/components'
-import { SpPage, SpScrollView } from '@/components'
+import { SpPage, SpScrollView, SpSearchBar } from '@/components'
 import { SpTagBar } from '@/subpages/components'
 import api from '@/api'
 import doc from '@/doc'
@@ -20,6 +20,8 @@ import './list.scss'
 const initialState = {
   typeVal: '0',
   status: '0',
+  orderId: '',
+  searchOrderId: '',
   tradeList: [],
   refresherTriggered: false,
   trackDetailList: [],
@@ -30,7 +32,16 @@ function TradeList(props) {
   useTranslation()
   const { setNavigationBarTitle } = useNavigation()
   const [state, setState] = useImmer(initialState)
-  const { status, tradeList, refresherTriggered, trackDetailList, openTrackDetail, info } = state
+  const {
+    status,
+    tradeList,
+    refresherTriggered,
+    trackDetailList,
+    openTrackDetail,
+    info,
+    orderId,
+    searchOrderId
+  } = state
   const tradeRef = useRef()
   const router = useRouter()
   // 有状态变更时先打标，等列表再次显示再刷新，避免后台清空导致回顶/手势异常
@@ -111,7 +122,7 @@ function TradeList(props) {
       draft.tradeList = []
     })
     tradeRef.current.reset()
-  }, [status])
+  }, [status, searchOrderId])
 
   const fetch = async ({ pageIndex, pageSize }) => {
     const { is_rate } = tradeStatus.find((item) => item.value == status)
@@ -121,6 +132,10 @@ function TradeList(props) {
       order_type: 'normal',
       status,
       is_rate
+    }
+    // ECX-11399：按订单号精确搜索
+    if (searchOrderId) {
+      params.order_id = searchOrderId
     }
 
     const {
@@ -143,6 +158,36 @@ function TradeList(props) {
     })
   }
 
+  const onSearchChange = (val) => {
+    setState((draft) => {
+      draft.orderId = val
+    })
+  }
+
+  const onSearchClear = () => {
+    setState((draft) => {
+      draft.orderId = ''
+      draft.searchOrderId = ''
+    })
+  }
+
+  const onSearchConfirm = (val) => {
+    const keyword = String(val || '').trim()
+    // 搜索时切到「全部」，避免当前 Tab 的状态条件把命中的订单过滤掉
+    const needSwitchTab = !!keyword && status !== '0'
+    setState((draft) => {
+      draft.orderId = keyword
+      draft.searchOrderId = keyword
+      if (needSwitchTab) {
+        draft.status = '0'
+      }
+    })
+    // 关键词与 Tab 都没变时上面的 effect 不会触发，这里手动重拉
+    if (keyword === searchOrderId && !needSwitchTab) {
+      tradeRef.current?.reset()
+    }
+  }
+
   const onRefresherRefresh = () => {
     setState((draft) => {
       draft.refresherTriggered = true
@@ -154,6 +199,17 @@ function TradeList(props) {
 
   return (
     <SpPage scrollToTopBtn className='page-trade-list'>
+      <View className='search-bar-container'>
+        <SpSearchBar
+          keyword={orderId}
+          placeholder={$t('b1e93f22.e9e836')}
+          showDailog={false}
+          onChange={onSearchChange}
+          onClear={onSearchClear}
+          onCancel={onSearchClear}
+          onConfirm={onSearchConfirm}
+        />
+      </View>
       <SpTagBar list={tradeStatus} value={status} onChange={onChangeTradeState} />
       <ScrollView
         className='list-scroll-container'

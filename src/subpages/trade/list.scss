@@ -22,6 +22,12 @@ $tag-bar-height: 90px;
     flex-direction: column;
   }
 
+  .search-bar-container {
+    flex-shrink: 0;
+    padding: 20px;
+    background: #fff;
+  }
+
   .sp-tag-bar {
     flex-shrink: 0;
     background: #f5f5f5;
