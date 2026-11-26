@@ -9,6 +9,11 @@ export function search(params = {}) {
   return req.get('/goods/items', params)
 }
 
+/** 搜索中间页热门搜索；不传 channel 时后端默认 mobile */
+export function getSearchHotwords(params = {}) {
+  return req.get('/goods/hotwords', params)
+}
+
 export function detail(item_id, params = {}) {
   return req.get(`/goods/items/${item_id}`, params)
 }
