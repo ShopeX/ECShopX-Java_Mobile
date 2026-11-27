@@ -37,6 +37,12 @@ function CashierResult(props) {
     }
   }
 
+  // Java 线 trade_source_type 为 orderType_orderClass（如 normal_normal），
+  // 这里只判特殊类型，其余一律走兜底按钮，避免新增订单类型时按钮整块消失
+  const tradeSourceType = tradeInfo?.tradeSourceType || ''
+  const isCommunityOrder = tradeSourceType == 'normal_community'
+  const isPointsmallOrder = tradeSourceType.indexOf('normal_pointsmall') === 0
+
   useEffect(() => {
     Taro.hideLoading()
     return () => {
@@ -140,45 +146,8 @@ function CashierResult(props) {
         </View>
       )}
       <View className='btn-block'>
-        {/* 普通订单, 秒杀订单 */}
-        {(tradeInfo?.tradeSourceType == 'normal' ||
-          tradeInfo?.tradeSourceType == 'normal_seckill' ||
-          tradeInfo?.tradeSourceType == 'normal_groups') && (
-          <View className='btn-wrap'>
-            <SpButton
-              resetText={$t('45ab5834.db1c89')}
-              confirmText={$t('45ab5834.8054f7')}
-              onReset={() => {
-                Taro.redirectTo({ url: '/pages/index' })
-              }}
-              onConfirm={() => {
-                Taro.redirectTo({ url: `/subpages/trade/detail?order_id=${orderId}` })
-              }}
-            ></SpButton>
-          </View>
-        )}
-
-        {/* 积分订单 */}
-        {(tradeInfo?.tradeSourceType == 'normal_pointsmall' ||
-          tradeInfo?.tradeSourceType == 'normal_pointsmall_pointsmall') && (
-          <View className='btn-wrap'>
-            <SpButton
-              resetText={$t('45ab5834.db1c89')}
-              confirmText={$t('45ab5834.8054f7')}
-              onReset={() => {
-                Taro.redirectTo({ url: '/pages/index' })
-              }}
-              onConfirm={() => {
-                Taro.redirectTo({
-                  url: `/subpages/trade/detail?order_id=${orderId}&type=pointitem`
-                })
-              }}
-            ></SpButton>
-          </View>
-        )}
-
         {/* 社区拼团订单 */}
-        {tradeInfo?.tradeSourceType == 'normal_community' && (
+        {isCommunityOrder && (
           <View className='btn-wrap'>
             <AtButton
               circle
@@ -204,6 +173,23 @@ function CashierResult(props) {
             >
               {$t('45ab5834.db1c89')}
             </AtButton>
+          </View>
+        )}
+
+        {/* 其余订单（普通/秒杀/拼团/积分/处方药等）：返回首页 + 订单详情 */}
+        {!isCommunityOrder && !czOrder && (
+          <View className='btn-wrap'>
+            <SpButton
+              resetText={$t('45ab5834.db1c89')}
+              confirmText={$t('45ab5834.8054f7')}
+              onReset={() => {
+                Taro.redirectTo({ url: '/pages/index' })
+              }}
+              onConfirm={() => {
+                const pointType = isPointsmallOrder ? '&type=pointitem' : ''
+                Taro.redirectTo({ url: `/subpages/trade/detail?order_id=${orderId}${pointType}` })
+              }}
+            ></SpButton>
           </View>
         )}
       </View>
